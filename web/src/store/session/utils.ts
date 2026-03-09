@@ -26,7 +26,7 @@ export const createDefaultSession = (params?: CreateSessionParams): Session => {
     agent_id: params?.agent_id,
     session_id: null,
     title: params?.title || 'New Chat',
-    options: params?.options || {},
+    options: {},
     created_at: now,
     last_activity_at: now,
   };

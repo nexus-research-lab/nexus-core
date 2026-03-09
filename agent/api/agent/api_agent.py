@@ -26,6 +26,7 @@ from agent.service.schema.model_agent import (
     CreateAgentRequest,
     UpdateAgentRequest,
 )
+from agent.service.session_manager import session_manager
 from agent.service.session_store import session_store
 from agent.shared.server.common import resp
 
@@ -89,6 +90,7 @@ async def update_agent(agent_id: str, request: UpdateAgentRequest):
     if not success:
         raise HTTPException(status_code=500, detail="Failed to update agent")
 
+    await session_manager.refresh_agent_sessions(agent_id)
     agent = await agent_manager.get_agent(agent_id)
     return resp.ok(resp.Resp(data=agent.model_dump()))
 

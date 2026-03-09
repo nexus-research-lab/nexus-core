@@ -23,7 +23,6 @@ export const createSessionAction = (
   try {
     const created = await createSession(newSession.session_key, {
       title: params?.title,
-      options: params?.options,
       agent_id: params?.agent_id,
     });
 
@@ -81,7 +80,6 @@ export const updateSessionAction = (
           ? {
             ...session,
             ...(params.title && { title: params.title }),
-            ...(params.options && { options: { ...session.options, ...params.options } }),
             last_activity_at: Date.now(),
           }
           : session

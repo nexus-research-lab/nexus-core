@@ -32,6 +32,8 @@ Add new tests under `tests/` with `test_<feature>.py` naming.
 
 ## Commit & Pull Request Guidelines
 History favors emoji-prefixed Conventional-style subjects (for example, `:sparkles:`, `:bug:`, `:recycle:`, `:memo:`) with concise Chinese summaries.  
+One complete requirement should be delivered as one commit; avoid mixing unrelated changes in the same commit.  
+When behavior, API contract, or collaboration rules change, update `CHANGELOG.md` in the same delivery if the change is user-visible or affects follow-up work.  
 PRs should include:
 - problem statement and scope;
 - key file/path changes;

@@ -16,15 +16,14 @@ Session API
 [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
 """
 
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from agent.service.process.protocol_adapter import ProtocolAdapter
 from agent.service.schema.model_session import ASession
-from agent.service.session.session_router import build_session_key
-from agent.service.session_manager import session_manager
+from agent.service.session.session_router import build_session_key, get_default_agent_id
 from agent.service.session_store import session_store
 from agent.shared.server.common import resp
 
@@ -44,7 +43,7 @@ def _to_session_key(session_key: str, agent_id: Optional[str] = None) -> str:
         channel="ws",
         chat_type="dm",
         ref=session_key,
-        agent_id=agent_id or "main",
+        agent_id=agent_id or get_default_agent_id(),
     )
 
 
@@ -55,15 +54,13 @@ def _to_session_key(session_key: str, agent_id: Optional[str] = None) -> str:
 class CreateSessionRequest(BaseModel):
     """创建会话请求"""
     session_key: str
-    agent_id: Optional[str] = "main"
+    agent_id: Optional[str] = None
     title: Optional[str] = "New Chat"
-    options: Optional[Dict[str, Any]] = None
 
 
 class UpdateSessionRequest(BaseModel):
     """更新会话请求"""
     title: Optional[str] = None
-    options: Optional[Dict[str, Any]] = None
 
 
 # =====================================================
@@ -89,9 +86,8 @@ async def create_session(request: CreateSessionRequest):
 
     success = await session_store.update_session(
         session_key=session_key,
-        agent_id=request.agent_id or "main",
+        agent_id=request.agent_id or get_default_agent_id(),
         title=request.title,
-        options=request.options,
     )
     if not success:
         raise HTTPException(status_code=500, detail="Failed to create session")
@@ -112,15 +108,9 @@ async def update_session(session_key: str, request: UpdateSessionRequest):
     if not existing:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    if request.options is not None:
-        update_success = await session_manager.update_session_options(session_key=internal_key)
-        if not update_success:
-            raise HTTPException(status_code=409, detail="Failed to update session options")
-
     success = await session_store.update_session(
         session_key=internal_key,
         title=request.title,
-        options=request.options,
     )
     if not success:
         raise HTTPException(status_code=500, detail="Failed to update session")

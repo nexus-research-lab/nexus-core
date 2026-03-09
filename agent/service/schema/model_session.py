@@ -23,11 +23,13 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
+from agent.core.config import settings
+
 
 class ASession(BaseModel):
     """会话模型"""
     session_key: str = Field(..., description="结构化路由键")
-    agent_id: str = Field(default="main", description="智能体 ID")
+    agent_id: str = Field(default=settings.DEFAULT_AGENT_ID or "main", description="智能体 ID")
     session_id: Optional[str] = Field(default=None, description="SDK会话ID")
     channel_type: str = Field(default="websocket", description="通道类型")
     chat_type: str = Field(default="dm", description="会话类型")
@@ -36,7 +38,7 @@ class ASession(BaseModel):
     last_activity: datetime = Field(default_factory=datetime.now, description="最后活动时间")
     title: Optional[str] = Field(default=None, description="会话标题")
     message_count: int = Field(0, description="消息数量")
-    options: Optional[dict] = Field(default=None, description="会话选项")
+    options: Optional[dict] = Field(default=None, description="会话元数据")
 
     model_config = {"from_attributes": True}
 

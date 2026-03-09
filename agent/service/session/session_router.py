@@ -19,14 +19,16 @@
 
 from typing import Optional
 
+from agent.core.config import settings
 from agent.utils.logger import logger
 
 # =====================================================
 # 常量
 # =====================================================
 
-# 单 Agent 模式，硬编码。后续扩展多 Agent 时改为动态读取。
-AGENT_ID = "main"
+def get_default_agent_id() -> str:
+    """返回默认 Agent ID。"""
+    return getattr(settings, "DEFAULT_AGENT_ID", "main") or "main"
 
 
 # =====================================================
@@ -41,7 +43,7 @@ def build_session_key(
     chat_type: str,
     ref: str,
     thread_id: Optional[str] = None,
-    agent_id: str = AGENT_ID,
+    agent_id: Optional[str] = None,
 ) -> str:
     """构建结构化 Session Key
 
@@ -50,7 +52,7 @@ def build_session_key(
         chat_type: 会话类型 (dm / group)
         ref: 通道内定位标识
         thread_id: 线程/Topic ID（可选，Discord Thread / Telegram Topic）
-        agent_id: 智能体 ID（当前固定 "main"）
+        agent_id: 智能体 ID，未传时使用默认 Agent
 
     Returns:
         Session Key 字符串
@@ -61,7 +63,8 @@ def build_session_key(
         >>> build_session_key("dg", "group", "123:456", thread_id="789")
         'agent:main:dg:group:123:456:topic:789'
     """
-    key = f"agent:{agent_id}:{channel}:{chat_type}:{ref}"
+    resolved_agent_id = agent_id or get_default_agent_id()
+    key = f"agent:{resolved_agent_id}:{channel}:{chat_type}:{ref}"
     if thread_id:
         key += f":topic:{thread_id}"
     return key
@@ -76,7 +79,7 @@ def parse_session_key(session_key: str) -> dict:
     parts = session_key.split(":")
     # agent:<agentId>:<channel>:<chatType>:<ref...>[:topic:<threadId>]
     result = {
-        "agent_id": parts[1] if len(parts) > 1 else AGENT_ID,
+        "agent_id": parts[1] if len(parts) > 1 else get_default_agent_id(),
         "channel": parts[2] if len(parts) > 2 else "",
         "chat_type": parts[3] if len(parts) > 3 else "dm",
     }
@@ -103,6 +106,7 @@ async def resolve_session(
     chat_type: str,
     ref: str,
     thread_id: Optional[str] = None,
+    agent_id: Optional[str] = None,
 ) -> "Session":
     """路由到现有 Session 或创建新 Session
 
@@ -117,7 +121,7 @@ async def resolve_session(
     """
     from agent.service.session_store import session_store
 
-    session_key = build_session_key(channel, chat_type, ref, thread_id)
+    session_key = build_session_key(channel, chat_type, ref, thread_id, agent_id=agent_id)
 
     # 1. 查找现有活跃 Session
     existing = await session_store.get_session_by_key(session_key)

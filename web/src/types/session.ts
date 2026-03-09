@@ -38,8 +38,8 @@ export interface Session {
   session_id: SessionId | null;
   /** 会话标题 */
   title: string;
-  /** 会话配置选项 */
-  options: SessionOptions;
+  /** 会话元数据 */
+  options: Record<string, unknown>;
   /** 创建时间（时间戳） */
   created_at: number;
   /** 最后活动时间（时间戳） */
@@ -62,7 +62,7 @@ export interface ApiSession {
   is_active: boolean;
   title: string | null;
   message_count: number;
-  options: Record<string, any> | null;
+  options: Record<string, unknown> | null;
 }
 
 // ==================== 操作参数类型 ====================
@@ -70,12 +70,10 @@ export interface ApiSession {
 /** 创建会话参数 */
 export interface CreateSessionParams {
   title?: string;
-  options?: Partial<SessionOptions>;
   agent_id?: string;
 }
 
 /** 更新会话参数 */
 export interface UpdateSessionParams {
   title?: string;
-  options?: Partial<SessionOptions>;
 }

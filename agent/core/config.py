@@ -79,6 +79,7 @@ class Settings(BaseSettings):
     # 消息通道配置
     # =====================================================
     WEBSOCKET_ENABLED: bool = True
+    DEFAULT_AGENT_ID: str = "main"
 
     DISCORD_ENABLED: bool = False
     DISCORD_BOT_TOKEN: str = ""

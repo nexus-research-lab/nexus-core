@@ -27,6 +27,7 @@ from typing import List, Optional, Set
 from telegram import Update
 from telegram.ext import Application, ContextTypes, filters, MessageHandler
 
+from agent.core.config import settings
 from agent.service.channel.channel import MessageChannel, MessageSender
 from agent.service.channel.discord_channel import AutoAllowPermissionStrategy
 from agent.service.schema.model_message import AError, AEvent, AMessage
@@ -163,13 +164,20 @@ class TelegramChannel(MessageChannel):
         is_private = update.effective_chat.type == "private"
         if is_private:
             session_key = build_session_key(
-                channel="tg", chat_type="dm", ref=str(user.id)
+                channel="tg",
+                chat_type="dm",
+                ref=str(user.id),
+                agent_id=settings.DEFAULT_AGENT_ID,
             )
         else:
             # 群组/Topic 支持
             thread_id = str(update.message.message_thread_id) if update.message.message_thread_id else None
             session_key = build_session_key(
-                channel="tg", chat_type="group", ref=str(chat_id), thread_id=thread_id
+                channel="tg",
+                chat_type="group",
+                ref=str(chat_id),
+                thread_id=thread_id,
+                agent_id=settings.DEFAULT_AGENT_ID,
             )
 
         logger.info(f"📨 Telegram 消息: user={user.username}, chat_id={chat_id}, key={session_key}")

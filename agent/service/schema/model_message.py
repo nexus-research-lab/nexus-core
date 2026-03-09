@@ -18,6 +18,8 @@ from claude_agent_sdk.types import Message  # noqa
 from claude_agent_sdk.types import TextBlock, ThinkingBlock, ToolResultBlock, ToolUseBlock  # noqa
 from pydantic import BaseModel, Field
 
+from agent.core.config import settings
+
 
 class AMessage(BaseModel):
     """
@@ -27,7 +29,7 @@ class AMessage(BaseModel):
      - content 是 str 转换 为 List[TextBlock]
     """
     session_key: str = Field(default="", description="结构化路由键")
-    agent_id: str = Field(default="main", description="智能体 ID")
+    agent_id: str = Field(default=settings.DEFAULT_AGENT_ID or "main", description="智能体 ID")
     round_id: str = Field(default=..., description="轮次对话ID，标识同一用户问题的所有消息(用户消息ID)")
     session_id: str = Field(..., description="SDK会话ID")
     message_id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="消息ID")

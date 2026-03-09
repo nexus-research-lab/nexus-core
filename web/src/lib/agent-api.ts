@@ -89,18 +89,6 @@ export const deleteRound = async (session_key: string, roundId: string): Promise
 };
 
 export const createSession = async (session_key: string, params: CreateSessionParams): Promise<Session> => {
-  const options_obj = {
-    allowed_tools: params.options?.allowedTools,
-    system_prompt: params.options?.systemPrompt,
-    model: params.options?.model,
-    permission_mode: params.options?.permissionMode,
-    max_turns: params.options?.maxTurns,
-    disallowed_tools: params.options?.disallowedTools,
-    cwd: params.options?.cwd,
-    include_partial_messages: params.options?.includePartialMessages,
-    setting_sources: params.options?.settingSources,
-  }
-
   const response = await fetch(`${AGENT_API_BASE_URL}/sessions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -108,7 +96,6 @@ export const createSession = async (session_key: string, params: CreateSessionPa
       session_key: session_key,
       agent_id: params.agent_id,
       title: params.title,
-      options: options_obj,
     }),
   });
   if (!response.ok) {
@@ -119,24 +106,11 @@ export const createSession = async (session_key: string, params: CreateSessionPa
 };
 
 export const updateSession = async (session_key: string, params: UpdateSessionParams): Promise<Session> => {
-  const options_obj = {
-    allowed_tools: params.options?.allowedTools,
-    system_prompt: params.options?.systemPrompt,
-    model: params.options?.model,
-    permission_mode: params.options?.permissionMode,
-    max_turns: params.options?.maxTurns,
-    disallowed_tools: params.options?.disallowedTools,
-    cwd: params.options?.cwd,
-    include_partial_messages: params.options?.includePartialMessages,
-    setting_sources: params.options?.settingSources,
-  }
-
   const response = await fetch(`${AGENT_API_BASE_URL}/sessions/${session_key}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       title: params.title,
-      options: options_obj,
     }),
   });
   if (!response.ok) {

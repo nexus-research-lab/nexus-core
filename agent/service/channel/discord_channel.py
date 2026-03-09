@@ -28,6 +28,7 @@ from typing import Any, Dict, List, Optional, Set
 import discord
 from claude_agent_sdk import PermissionResult, PermissionResultAllow, PermissionResultDeny
 
+from agent.core.config import settings
 from agent.service.channel.channel import MessageChannel, MessageSender, PermissionStrategy
 from agent.service.schema.model_message import AError, AEvent, AMessage
 from agent.service.session.session_router import build_session_key
@@ -252,14 +253,21 @@ class DiscordChannel(MessageChannel):
         is_dm = isinstance(message.channel, discord.DMChannel)
         if is_dm:
             session_key = build_session_key(
-                channel="dg", chat_type="dm", ref=str(message.author.id)
+                channel="dg",
+                chat_type="dm",
+                ref=str(message.author.id),
+                agent_id=settings.DEFAULT_AGENT_ID,
             )
         else:
             ref = f"{message.guild.id}:{message.channel.id}"
             # 线程支持（Phase 2 会完善）
             thread_id = str(message.channel.id) if isinstance(message.channel, discord.Thread) else None
             session_key = build_session_key(
-                channel="dg", chat_type="group", ref=ref, thread_id=thread_id
+                channel="dg",
+                chat_type="group",
+                ref=ref,
+                thread_id=thread_id,
+                agent_id=settings.DEFAULT_AGENT_ID,
             )
 
         logger.info(

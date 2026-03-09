@@ -117,6 +117,28 @@ class SessionManager:
                 logger.error(f"❌ 更新会话选项失败 {session_key}: {e}")
                 return False
 
+    async def refresh_agent_sessions(self, agent_id: str) -> int:
+        """刷新指定 Agent 的活跃会话。
+
+        Agent 配置或 workspace 发生变化后，销毁内存中的 SDK client，
+        让后续消息按最新 Agent 配置懒加载重建。
+        """
+        sessions = await session_store.get_all_sessions()
+        target_keys = [
+            session.session_key
+            for session in sessions
+            if session.agent_id == agent_id and session.session_key in self._sessions
+        ]
+
+        refreshed_count = 0
+        for session_key in target_keys:
+            updated = await self.update_session_options(session_key)
+            if updated:
+                refreshed_count += 1
+
+        logger.info(f"🔄 Agent 活跃会话刷新完成: agent={agent_id}, count={refreshed_count}")
+        return refreshed_count
+
     async def register_sdk_session(self, session_key: str, session_id: str) -> None:
         """注册 session_key 与 SDK session_id 的映射"""
         self._key_sdk_map[session_key] = session_id

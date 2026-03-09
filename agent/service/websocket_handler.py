@@ -81,7 +81,10 @@ class WebSocketHandler:
         # 将前端 agent_id 转换为 session_key
         if "agent_id" in message and "session_key" not in message:
             message["session_key"] = build_session_key(
-                channel="ws", chat_type="dm", ref=message["agent_id"]
+                channel="ws",
+                chat_type="dm",
+                ref=message["agent_id"],
+                agent_id=message["agent_id"],
             )
 
         if msg_type == "chat":
