@@ -20,6 +20,7 @@
 
 from typing import Dict, List, Optional
 
+from agent.service.db.cost_repository import cost_repository
 from agent.service.db.session_repository import session_repository
 from agent.service.schema.model_message import AMessage
 from agent.service.schema.model_session import ASession
@@ -95,7 +96,11 @@ class MessageHistoryStore:
 
     async def delete_session(self, session_key: str) -> bool:
         """删除会话"""
-        return await session_repository.delete_session(session_key)
+        session_info = await session_repository.get_session(session_key)
+        success = await session_repository.delete_session(session_key)
+        if success and session_info:
+            await cost_repository.handle_session_deleted(session_key, session_info.agent_id)
+        return success
 
     # =====================================================
     # Message 操作
@@ -108,7 +113,10 @@ class MessageHistoryStore:
             if not session_info:
                 logger.error(f"❌ 会话不存在: {message.session_key}")
                 return False
-            return await session_repository.create_message(message=message)
+            success = await session_repository.create_message(message=message)
+            if success and message.message_type == "result":
+                await cost_repository.record_result_message(message)
+            return success
         except Exception as e:
             logger.error(f"❌ 保存消息失败: {e}")
             return False
@@ -119,7 +127,15 @@ class MessageHistoryStore:
 
     async def delete_round(self, session_key: str, round_id: str) -> int:
         """删除一轮对话"""
-        return await session_repository.delete_round(session_key, round_id)
+        deleted_count = await session_repository.delete_round(session_key, round_id)
+        if deleted_count > 0:
+            session_info = await session_repository.get_session(session_key)
+            await cost_repository.delete_round_costs(
+                session_key=session_key,
+                round_id=round_id,
+                agent_id=session_info.agent_id if session_info else None,
+            )
+        return deleted_count
 
     async def get_latest_round_id(self, session_key: str) -> Optional[str]:
         """获取最新 round_id"""
@@ -128,6 +144,14 @@ class MessageHistoryStore:
     async def has_round_result(self, session_key: str, round_id: str) -> bool:
         """检查指定轮次是否已有 result 消息。"""
         return await session_repository.has_round_result(session_key, round_id)
+
+    async def get_session_cost_summary(self, session_key: str):
+        """获取 Session 成本汇总。"""
+        return await cost_repository.get_session_cost_summary(session_key)
+
+    async def get_agent_cost_summary(self, agent_id: str):
+        """获取 Agent 成本汇总。"""
+        return await cost_repository.get_agent_cost_summary(agent_id)
 
 
 # 全局实例

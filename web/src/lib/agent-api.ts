@@ -9,6 +9,7 @@
 
 import { ApiSession, CreateSessionParams, Session, UpdateSessionParams } from '@/types/session';
 import { Message as ChatMessage } from '@/types/message';
+import { SessionCostSummary } from '@/types/cost';
 
 const AGENT_API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8010/agent/v1';
 
@@ -61,6 +62,18 @@ export const getSessionMessages = async (session_key: string): Promise<ChatMessa
     throw new Error(`获取会话消息失败: ${response.statusText}`);
   }
   const result: ApiResponse<ChatMessage[]> = await response.json();
+  return result.data;
+};
+
+export const getSessionCostSummary = async (session_key: string): Promise<SessionCostSummary> => {
+  const response = await fetch(`${AGENT_API_BASE_URL}/sessions/${session_key}/cost/summary`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    throw new Error(`获取会话成本失败: ${response.statusText}`);
+  }
+  const result: ApiResponse<SessionCostSummary> = await response.json();
   return result.data;
 };
 

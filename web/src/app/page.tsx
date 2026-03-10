@@ -10,7 +10,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, PanelLeftOpen, Settings2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import { ChatInterface } from "@/components/chat-interface";
 import { AgentOptions } from "@/components/option/agent-options";
@@ -22,27 +22,42 @@ import { WorkspaceSidebar } from "@/components/workspace/workspace-sidebar";
 import { useAgentStore } from "@/store/agent";
 import { useSessionStore } from "@/store/session";
 import { useInitializeSessions } from "@/hooks/use-initialize-sessions";
-import { validateAgentNameApi } from "@/lib/agent-manage-api";
+import { getSessionCostSummary } from "@/lib/agent-api";
+import { getAgentCostSummaryApi, validateAgentNameApi } from "@/lib/agent-manage-api";
 import { initialOptions } from "@/config/options";
 import { SessionOptions } from "@/types/session";
 import { TodoItem } from "@/components/todo/agent-task-widget";
 import { cn } from "@/lib/utils";
-import { SessionTelemetry } from "@/types/telemetry";
+import { AgentCostSummary, SessionCostSummary } from "@/types/cost";
 
-const EMPTY_SESSION_TELEMETRY: SessionTelemetry = {
-  is_loading: false,
-  todos: [],
-  tool_calls: [],
-  pending_permission: null,
-  usage: {
-    input_tokens: 0,
-    output_tokens: 0,
-    total_tokens: 0,
-    total_cost_usd: 0,
-    latest_duration_ms: null,
-    latest_cost_usd: null,
-    completed_rounds: 0,
-  },
+const EMPTY_SESSION_COST_SUMMARY: SessionCostSummary = {
+  agent_id: "",
+  session_key: "",
+  session_id: "",
+  total_input_tokens: 0,
+  total_output_tokens: 0,
+  total_tokens: 0,
+  total_cache_creation_input_tokens: 0,
+  total_cache_read_input_tokens: 0,
+  total_cost_usd: 0,
+  completed_rounds: 0,
+  error_rounds: 0,
+  last_round_id: null,
+  last_run_duration_ms: null,
+  last_run_cost_usd: null,
+};
+
+const EMPTY_AGENT_COST_SUMMARY: AgentCostSummary = {
+  agent_id: "",
+  total_input_tokens: 0,
+  total_output_tokens: 0,
+  total_tokens: 0,
+  total_cache_creation_input_tokens: 0,
+  total_cache_read_input_tokens: 0,
+  total_cost_usd: 0,
+  completed_rounds: 0,
+  error_rounds: 0,
+  cost_sessions: 0,
 };
 
 export default function Home() {
@@ -62,7 +77,6 @@ export default function Home() {
     createSession,
     setCurrentSession,
     deleteSession,
-    updateSession,
     loadSessionsFromServer,
   } = useSessionStore();
 
@@ -85,7 +99,13 @@ export default function Home() {
   const [editorWidthPercent, setEditorWidthPercent] = useState(42);
   const [isResizingEditor, setIsResizingEditor] = useState(false);
   const [currentTodos, setCurrentTodos] = useState<TodoItem[]>([]);
-  const [sessionTelemetry, setSessionTelemetry] = useState<SessionTelemetry>(EMPTY_SESSION_TELEMETRY);
+  const [isSessionBusy, setIsSessionBusy] = useState(false);
+  const [sessionCostSummary, setSessionCostSummary] = useState<SessionCostSummary>(
+    EMPTY_SESSION_COST_SUMMARY,
+  );
+  const [agentCostSummary, setAgentCostSummary] = useState<AgentCostSummary>(
+    EMPTY_AGENT_COST_SUMMARY,
+  );
   const workspaceSplitRef = useRef<HTMLElement | null>(null);
 
   const currentAgent = useMemo(
@@ -158,7 +178,9 @@ export default function Home() {
       setActiveWorkspacePath(null);
       setIsEditorOpen(false);
       setCurrentTodos([]);
-      setSessionTelemetry(EMPTY_SESSION_TELEMETRY);
+      setIsSessionBusy(false);
+      setSessionCostSummary(EMPTY_SESSION_COST_SUMMARY);
+      setAgentCostSummary(EMPTY_AGENT_COST_SUMMARY);
       return;
     }
 
@@ -169,6 +191,77 @@ export default function Home() {
       setCurrentSession(currentAgentSessions[0]?.session_key ?? null);
     }
   }, [current_agent_id, current_session_key, currentAgentSessions, setCurrentSession]);
+
+  useEffect(() => {
+    if (!current_agent_id || isSessionBusy) {
+      return;
+    }
+
+    let ignore = false;
+
+    const loadAgentCostSummary = async () => {
+      try {
+        const nextSummary = await getAgentCostSummaryApi(current_agent_id);
+        if (!ignore) {
+          setAgentCostSummary(nextSummary);
+        }
+      } catch (error) {
+        console.error("Failed to load agent cost summary:", error);
+        if (!ignore) {
+          setAgentCostSummary({
+            ...EMPTY_AGENT_COST_SUMMARY,
+            agent_id: current_agent_id,
+          });
+        }
+      }
+    };
+
+    void loadAgentCostSummary();
+
+    return () => {
+      ignore = true;
+    };
+  }, [current_agent_id, isSessionBusy]);
+
+  useEffect(() => {
+    if (!currentSession?.session_key) {
+      setSessionCostSummary({
+        ...EMPTY_SESSION_COST_SUMMARY,
+        agent_id: current_agent_id ?? "",
+      });
+      return;
+    }
+    if (isSessionBusy) {
+      return;
+    }
+
+    let ignore = false;
+
+    const loadSessionCostSummary = async () => {
+      try {
+        const nextSummary = await getSessionCostSummary(currentSession.session_key);
+        if (!ignore) {
+          setSessionCostSummary(nextSummary);
+        }
+      } catch (error) {
+        console.error("Failed to load session cost summary:", error);
+        if (!ignore) {
+          setSessionCostSummary({
+            ...EMPTY_SESSION_COST_SUMMARY,
+            agent_id: current_agent_id ?? "",
+            session_key: currentSession.session_key,
+            session_id: currentSession.session_id ?? "",
+          });
+        }
+      }
+    };
+
+    void loadSessionCostSummary();
+
+    return () => {
+      ignore = true;
+    };
+  }, [currentSession?.session_id, currentSession?.session_key, current_agent_id, isSessionBusy]);
 
   const handleOpenCreateAgent = useCallback(() => {
     setDialogMode("create");
@@ -384,7 +477,7 @@ export default function Home() {
 
                   <div className="min-h-0 flex-1">
                     <ChatInterface
-                      onTelemetryChange={setSessionTelemetry}
+                      onLoadingChange={setIsSessionBusy}
                       onTodosChange={setCurrentTodos}
                       sessionKey={currentSession?.session_key ?? null}
                       onNewSession={handleNewSession}
@@ -396,10 +489,11 @@ export default function Home() {
               <AgentInspector
                 activeSession={currentSession}
                 agent={currentAgent}
-                isSessionBusy={sessionTelemetry.is_loading}
+                agentCostSummary={agentCostSummary}
+                isSessionBusy={isSessionBusy}
                 onEditAgent={handleEditAgent}
+                sessionCostSummary={sessionCostSummary}
                 sessions={currentAgentSessions}
-                telemetry={sessionTelemetry}
                 todos={currentTodos}
               />
             </div>

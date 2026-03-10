@@ -33,6 +33,7 @@ from agent.service.schema.model_agent import (
     WorkspaceEntryMutationResponse,
     WorkspaceEntryRenameResponse,
 )
+from agent.service.schema.model_cost import AgentCostSummary
 from agent.service.session_manager import session_manager
 from agent.service.session_store import session_store
 from agent.shared.server.common import resp
@@ -134,6 +135,17 @@ async def get_agent_sessions(agent_id: str):
     agent_sessions = [s for s in all_sessions if s.agent_id == agent_id]
     data = [s.model_dump() for s in agent_sessions]
     return resp.ok(resp.Resp(data=data))
+
+
+@router.get("/agents/{agent_id}/cost/summary", response_model=AgentCostSummary)
+async def get_agent_cost_summary(agent_id: str):
+    """获取 Agent 成本汇总。"""
+    agent = await agent_manager.get_agent(agent_id)
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+
+    summary = await session_store.get_agent_cost_summary(agent_id)
+    return resp.ok(resp.Resp(data=summary.model_dump(mode="json")))
 
 
 @router.get("/agents/{agent_id}/workspace/files")

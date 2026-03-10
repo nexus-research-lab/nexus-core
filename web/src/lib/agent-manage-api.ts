@@ -18,6 +18,7 @@ import {
     WorkspaceEntryMutationResponse,
     WorkspaceEntryRenameResponse,
 } from '@/types/agent';
+import { AgentCostSummary } from '@/types/cost';
 
 const AGENT_API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8010/agent/v1';
 
@@ -231,5 +232,17 @@ export const deleteWorkspaceEntryApi = async (
         throw new Error(`删除 Workspace 条目失败: ${response.statusText}`);
     }
     const result: ApiResponse<WorkspaceEntryMutationResponse> = await response.json();
+    return result.data;
+};
+
+export const getAgentCostSummaryApi = async (agent_id: string): Promise<AgentCostSummary> => {
+    const response = await fetch(`${AGENT_API_BASE_URL}/agents/${agent_id}/cost/summary`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+    });
+    if (!response.ok) {
+        throw new Error(`获取 Agent 成本失败: ${response.statusText}`);
+    }
+    const result: ApiResponse<AgentCostSummary> = await response.json();
     return result.data;
 };

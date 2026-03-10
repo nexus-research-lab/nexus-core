@@ -12,6 +12,9 @@
 - 添加全局设计令牌 (success, warning, scrollbar 变量)。
 - 添加统一滚动条样式 (Webkit + Firefox)。
 - 添加全局 kbd 元素样式。
+- 新增基于 workspace 文件存储的成本账本能力，按 Session 持久化 `telemetry_cost.jsonl` 与 `telemetry_cost_summary.json`。
+- 新增 Agent 级成本汇总文件 `telemetry_cost_summary.json`，支持按 Agent 聚合累计 token / cost。
+- 新增 Session / Agent 成本汇总 API，供前端右侧状态栏读取权威成本数据。
 
 ### Accessibility
 - 为所有交互按钮添加 aria-label 属性。
@@ -37,6 +40,7 @@
 - Agent Space 进一步压缩重复信息：移除重复标题文本，文件树改为目录递归结构，点击同一文件可收起编辑器，并支持拖拽调整 editor / session 分栏宽度。
 - 会话区 todo/plan 状态迁移到右侧 `Agent State`，中间 header 收口为更轻的 session telemetry 条。
 - 右侧 `Agent State` 接入真实 telemetry：基于 result 消息展示真实 token/cost，基于 pendingPermission 展示审批队列，基于 toolCalls 展示 trace timeline。
+- 右侧 `Agent State` 收口为只展示成本能力：移除 approval / trace telemetry，改为读取后端成本账本汇总，展示 Session / Agent 成本、token、缓存命中和最近一次执行耗时。
 
 ## 2026-03-09
 

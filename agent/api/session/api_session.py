@@ -22,6 +22,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from agent.service.process.protocol_adapter import ProtocolAdapter
+from agent.service.schema.model_cost import SessionCostSummary
 from agent.service.schema.model_session import ASession
 from agent.service.session.session_router import build_session_key, get_default_agent_id
 from agent.service.session_store import session_store
@@ -127,6 +128,18 @@ async def get_session_messages(session_key: str):
     messages = await session_store.get_session_messages(internal_key)
     data = protocol_adapter.build_history_messages(messages)
     return resp.ok(resp.Resp(data=data))
+
+
+@router.get("/sessions/{session_key}/cost/summary", response_model=SessionCostSummary)
+async def get_session_cost_summary(session_key: str):
+    """获取指定会话的成本汇总。"""
+    internal_key = _to_session_key(session_key)
+    session_info = await session_store.get_session_info(internal_key)
+    if not session_info:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    summary = await session_store.get_session_cost_summary(internal_key)
+    return resp.ok(resp.Resp(data=summary.model_dump(mode="json")))
 
 
 @router.delete("/sessions/{session_key}")

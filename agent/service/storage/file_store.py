@@ -66,6 +66,18 @@ class FileStoragePaths:
         """返回会话消息日志路径。"""
         return self.get_session_dir(workspace_path, session_key) / "messages.jsonl"
 
+    def get_session_cost_log_path(self, workspace_path: str | Path, session_key: str) -> Path:
+        """返回会话成本账本路径。"""
+        return self.get_session_dir(workspace_path, session_key) / "telemetry_cost.jsonl"
+
+    def get_session_cost_summary_path(self, workspace_path: str | Path, session_key: str) -> Path:
+        """返回会话成本汇总路径。"""
+        return self.get_session_dir(workspace_path, session_key) / "telemetry_cost_summary.json"
+
+    def get_agent_cost_summary_path(self, workspace_path: str | Path) -> Path:
+        """返回 Agent 成本汇总路径。"""
+        return Path(workspace_path).expanduser() / "telemetry_cost_summary.json"
+
 
 class JsonFileStore:
     """JSON 文件读写工具。"""
