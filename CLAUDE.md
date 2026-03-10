@@ -1,63 +1,45 @@
-# CLAUDE.md
+# Repository Guidelines
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## Project Structure & Module Organization
+`agent/` contains the FastAPI backend, WebSocket flow, session management, and persistence (`service/`, `api/`, `shared/`, `utils/`).  
+`web/` is the Next.js frontend (`src/components`, `src/hooks`, `src/lib`, `src/store`).  
+`alembic/` stores database migrations; keep schema changes and migration files in the same PR.  
+`tests/` currently holds integration-style scripts and runtime logs (for example, interrupt/session behavior).  
+`docs/` includes architecture and feature guides; update docs when behavior or API contracts change.
 
-## 架构概述
-**AI 聊天应用**: FastAPI 后端 + Next.js 前端 + WebSocket 实时通信 + 多通道消息
-**核心目录:**
-- `agent/` - Python 后端 (FastAPI, WebSocket, 数据库)
-- `agent/service/channel/` - 消息通道抽象层 (WebSocket/Discord/Telegram)
-- `web/src/` - Next.js 前端 (React, TypeScript, Zustand)
-- `alembic/` - 数据库迁移
-**技术栈:**
-- 后端: FastAPI + async SQLite + Alembic
-- 前端: Next.js 14 + TypeScript + Tailwind CSS
-- 实时通信: WebSocket
-- 消息通道: Discord (discord.py) + Telegram (python-telegram-bot)
-- AI 集成: Claude Agent SDK
+## Build, Test, and Development Commands
+- `make install`: install backend (`agent/requirements.txt`) and frontend dependencies.
+- `make dev`: run backend (`python main.py`) and frontend (`cd web && npm run dev`) together.
+- `make run-backend` / `make run-web`: run one side only.
+- `alembic upgrade head`: apply latest DB migrations.
+- `cd web && npm run build`: production frontend build.
+- `cd web && npm run lint`: frontend lint check.
+- `python -m py_compile agent/...`: fast backend syntax smoke check.
+- `cd web && npx tsc --noEmit`: TypeScript type check.
 
-## 核心 API
-- `WebSocket /agent/v1/chat/ws` - 实时聊天
-- `GET /agent/v1/sessions` - 会话管理
-- `GET /agent/v1/sessions/{id}/messages` - 消息历史
+## Coding Style & Naming Conventions
+Python: follow Google Python style, object-oriented design, and use Chinese comments for non-trivial logic. Use `snake_case` for functions/files and `PascalCase` for classes.  
+TypeScript/React: components in `PascalCase`, hooks in `useXxx` style, and keep message/session types centralized under `web/src/types`.  
+Prefer small, composable handlers/processors over monolithic functions.
 
-**数据流:** 前端 → WebSocket → FastAPI → AI 模型 → 响应 → WebSocket → 前端
+## Testing Guidelines
+This repository mainly uses integration-style validation instead of heavy unit coverage.  
+Primary checks before PR:
+- backend compile smoke check (`py_compile`);
+- frontend type/lint checks (`tsc`, `eslint`);
+- targeted manual flow test for chat/interrupt/session history.  
+Add new tests under `tests/` with `test_<feature>.py` naming.
 
-## 配置说明
-**后端 (.env):**
-- `DISCORD_ENABLED` / `DISCORD_BOT_TOKEN` / `DISCORD_ALLOWED_GUILDS` / `DISCORD_TRIGGER_WORD`
-- `TELEGRAM_ENABLED` / `TELEGRAM_BOT_TOKEN` / `TELEGRAM_ALLOWED_USERS`
-**前端 (.env.local):**
+## Commit & Pull Request Guidelines
+History favors emoji-prefixed Conventional-style subjects (for example, `:sparkles:`, `:bug:`, `:recycle:`, `:memo:`) with concise Chinese summaries.  
+One complete requirement should be delivered as one commit; avoid mixing unrelated changes in the same commit.  
+When behavior, API contract, or collaboration rules change, update `CHANGELOG.md` in the same delivery if the change is user-visible or affects follow-up work.  
+PRs should include:
+- problem statement and scope;
+- key file/path changes;
+- commands run for validation;
+- screenshots for UI changes and sample logs for message/session pipeline updates;
+- migration/environment notes when applicable.
 
-## 开发文档索引
-### 📚 详细指南
-- **[前端接口文档](web/README.md)** - React 组件、类型定义和 API 接口
-- **[WebSocket 流程](docs/websocket-session-flow.md)** - WebSocket 会话和数据流
-
-### 📖 技术文档
-- **[会话管理](docs/guides/sessions.md)** - 会话创建、管理和消息处理
-- **[流式 vs 单次模式](docs/guides/streaming-vs-single-mode.md)** - AI 响应模式对比
-- **[自定义工具](docs/guides/custom-tools.md)** - 创建和使用自定义 AI 工具
-- **[Slah 命令](docs/guides/slash-commands.md)** - 自定义斜杠命令开发
-- **[Skills 指南](docs/guides/skills.md)** - 技能系统使用和开发
-- **[MCP 集成](docs/guides/mcp.md)** - Model Context Protocol 集成
-- **[托管指南](docs/guides/hosting.md)** - 生产环境部署和配置
-- **[权限管理](docs/guides/permissions.md)** - 权限控制和安全设置
-- **[结构化输出](docs/guides/structured-outputs.md)** - AI 响应格式化
-- **[成本追踪](docs/guides/cost-tracking.md)** - API 调用成本监控
-- **[Todo 追踪](docs/guides/todo-tracking.md)** - 任务管理和进度追踪
-- **[插件系统](docs/guides/plugins.md)** - 插件开发和管理
-
-## 代码模式
-**后端:** 异步编程、Pydantic 模型、FastAPI 依赖注入、WebSocket
-**前端:** Zustand 状态管理、自定义 Hooks、Radix UI + Tailwind、React Markdown
-
-## 开发规范
-
-## 注释使用中文
-- 面对对象开发
-- Always respond in 中文
-- 不要过度设计，保证代码简洁易懂，简单实用
-- 要注意圈复杂度，代码尽可能复用
-- 注意模块设计，尽量使用设计模式
-- 改动时最小化修改，尽量不修改到其他模块代码
+## Security & Configuration Tips
+Copy env templates (`example.env`, `web/example.env`) and keep secrets local. Never commit API keys, local `.env` files, or debug logs containing sensitive data.
