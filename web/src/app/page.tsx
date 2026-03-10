@@ -76,6 +76,7 @@ export default function Home() {
     current_session_key,
     createSession,
     setCurrentSession,
+    syncSessionSnapshot,
     deleteSession,
     loadSessionsFromServer,
   } = useSessionStore();
@@ -337,6 +338,22 @@ export default function Home() {
     setCurrentSession(sessionKey);
   }, [setCurrentSession]);
 
+  const handleSessionSnapshotChange = useCallback((snapshot: {
+    messageCount: number;
+    lastActivityAt: number;
+    sessionId: string | null;
+  }) => {
+    if (!currentSession?.session_key) {
+      return;
+    }
+
+    syncSessionSnapshot(currentSession.session_key, {
+      message_count: snapshot.messageCount,
+      last_activity_at: snapshot.lastActivityAt,
+      session_id: snapshot.sessionId,
+    });
+  }, [currentSession?.session_key, syncSessionSnapshot]);
+
   const handleDeleteSession = useCallback(async (sessionKey: string) => {
     await deleteSession(sessionKey);
     if (current_session_key === sessionKey) {
@@ -478,6 +495,7 @@ export default function Home() {
                   <div className="min-h-0 flex-1">
                     <ChatInterface
                       onLoadingChange={setIsSessionBusy}
+                      onSessionSnapshotChange={handleSessionSnapshotChange}
                       onTodosChange={setCurrentTodos}
                       sessionKey={currentSession?.session_key ?? null}
                       onNewSession={handleNewSession}

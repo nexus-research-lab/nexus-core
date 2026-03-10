@@ -19,6 +19,11 @@ interface ChatInterfaceProps {
   onNewSession: () => void;
   onTodosChange?: (todos: TodoItem[]) => void;
   onLoadingChange?: (isLoading: boolean) => void;
+  onSessionSnapshotChange?: (snapshot: {
+    messageCount: number;
+    lastActivityAt: number;
+    sessionId: string | null;
+  }) => void;
 }
 
 /**
@@ -44,6 +49,7 @@ export function ChatInterface({
   onNewSession: onNewSession,
   onTodosChange,
   onLoadingChange,
+  onSessionSnapshotChange,
 }: ChatInterfaceProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -76,6 +82,19 @@ export function ChatInterface({
   useEffect(() => {
     onLoadingChange?.(isLoading);
   }, [isLoading, onLoadingChange]);
+
+  useEffect(() => {
+    if (!externalSessionKey) {
+      return;
+    }
+
+    const lastMessage = messages[messages.length - 1];
+    onSessionSnapshotChange?.({
+      messageCount: messages.length,
+      lastActivityAt: lastMessage?.timestamp ?? Date.now(),
+      sessionId: lastMessage?.session_id ?? null,
+    });
+  }, [externalSessionKey, messages, onSessionSnapshotChange]);
 
   // 响应式会话加载 - 统一处理外部 agentId 变化
   useSessionLoader(externalSessionKey, loadSession, "ChatInterface");

@@ -26,6 +26,7 @@ export const useSessionStore = create<SessionStoreState>()(
       deleteSession: actions.deleteSessionAction(set, get),
       updateSession: actions.updateSessionAction(set),
       setCurrentSession: actions.setCurrentSessionAction(set),
+      syncSessionSnapshot: actions.syncSessionSnapshotAction(set),
       getSession: actions.getSessionAction(get),
       loadSessionsFromServer: actions.loadSessionsFromServerAction(set, get),
       clearAllSessions: actions.clearAllSessionsAction(set),

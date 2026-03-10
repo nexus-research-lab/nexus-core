@@ -98,6 +98,30 @@ export const setCurrentSessionAction = (
   set({ current_session_key: key, error: null });
 };
 
+export const syncSessionSnapshotAction = (
+  set: (fn: (state: SessionStoreState) => Partial<SessionStoreState>) => void
+) => (
+  key: string,
+  patch: Partial<Pick<Session, 'message_count' | 'last_activity_at' | 'session_id'>>
+): void => {
+  set((state) => {
+    const updatedSessions = state.sessions.map((session) =>
+      session.session_key === key
+        ? {
+          ...session,
+          ...patch,
+        }
+        : session
+    );
+
+    updatedSessions.sort((left, right) => right.last_activity_at - left.last_activity_at);
+    return {
+      sessions: updatedSessions,
+      error: null,
+    };
+  });
+};
+
 
 // ==================== 查询操作 ====================
 

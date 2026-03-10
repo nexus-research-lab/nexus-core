@@ -25,6 +25,10 @@ export interface SessionStoreState {
   deleteSession: (key: string) => void;
   updateSession: (key: string, params: UpdateSessionParams) => void;
   setCurrentSession: (key: string | null) => void;
+  syncSessionSnapshot: (
+    key: string,
+    patch: Partial<Pick<Session, 'message_count' | 'last_activity_at' | 'session_id'>>
+  ) => void;
 
   // 查询
   getSession: (key: string) => Session | undefined;
