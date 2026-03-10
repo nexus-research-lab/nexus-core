@@ -11,32 +11,6 @@ help: ## Show this help message
 	@echo ""
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-# Database commands
-init-alembic: ## Initialize Alembic for database migrations
-	alembic init -t async alembic
-
-init-db: ## Initialize database structure
-	alembic revision --autogenerate -m "初始数据库结构"
-
-upgrade-db: ## Upgrade database to latest version
-	alembic upgrade head
-
-downgrade-db: ## Downgrade database to base version
-	alembic downgrade base
-
-create-migration: ## Create new migration (usage: make create-migration MSG="description")
-	@if [ -z "$(MSG)" ]; then \
-		echo "Usage: make create-migration MSG='your message'"; \
-		exit 1; \
-	fi
-	alembic revision --autogenerate -m "$(MSG)"
-
-current-version: ## Show current database version
-	alembic current
-
-history-version: ## Show database migration history
-	alembic history --verbose
-
 # Development commands
 run-web: ## Run frontend in development mode
 	cd web && npm run dev
@@ -98,21 +72,3 @@ up: start ## Legacy alias for start
 down: stop ## Legacy alias for stop
 log: logs ## Legacy alias for logs
 reboot: restart ## Legacy alias for restart
-
-# Database management
-reset-db: ## Reset database (WARNING: This will delete all data!)
-	@echo "WARNING: This will delete all database data!"
-	@read -p "Are you sure? [y/N] " -n 1 -r; \
-	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		echo ""; \
-		echo "Stopping services..."; \
-		TAG=$(TAG) docker compose -f deploy/docker-compose.yml down; \
-		echo "Removing database volume..."; \
-		docker volume rm Nexus-Core_db_data 2>/dev/null || true; \
-		echo "Starting services..."; \
-		TAG=$(TAG) docker compose -f deploy/docker-compose.yml up -d; \
-		echo "Database reset complete!"; \
-	else \
-		echo ""; \
-		echo "Cancelled."; \
-	fi
