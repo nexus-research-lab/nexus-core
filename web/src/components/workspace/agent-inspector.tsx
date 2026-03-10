@@ -47,7 +47,7 @@ export function AgentInspector({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto scrollbar-hide">
         <section className="border-b border-border/80 px-3 py-3">
           <div
             className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
