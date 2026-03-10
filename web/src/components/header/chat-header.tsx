@@ -12,12 +12,12 @@ interface ChatHeaderProps {
 const ChatHeader = memo(({sessionKey, isLoading}: ChatHeaderProps) => {
   return (
     <div className="flex h-12 items-center justify-between border-b border-border/80 bg-white/70 px-5 backdrop-blur-sm z-10">
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+      <div className="flex items-center gap-2 py-2 text-xs text-muted-foreground">
         <PanelTop size={14}/>
-        <span>SESSION WORKSPACE</span>
+        <span>SESSION</span>
         <span className="text-border">/</span>
         <span className="text-accent">
-          {sessionKey ? `SESSION: ${sessionKey}` : "NEW_SESSION"}
+          {sessionKey ? `: ${sessionKey}` : "NEW_SESSION"}
         </span>
       </div>
 
