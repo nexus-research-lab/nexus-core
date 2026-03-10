@@ -184,62 +184,45 @@ export function AgentInspector({
 
         <section className="border-b border-border/80 px-3 py-3">
           <div
-            className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             <Cpu className="h-3.5 w-3.5"/>
             Token / Cost
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-xl bg-secondary/80 px-3 py-2.5">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Session Cost</p>
-              <p className="mt-1.5 font-semibold text-foreground">
+          <div className="grid grid-cols-2 gap-1.5">
+            <div className="rounded-lg bg-secondary/80 px-2.5 py-1.5">
+              <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Session</p>
+              <p className="mt-0.5 text-sm font-semibold text-foreground">
                 {formatCost(sessionCostSummary.total_cost_usd)}
               </p>
             </div>
-            <div className="rounded-xl bg-secondary/80 px-3 py-2.5">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Agent Cost</p>
-              <p className="mt-1.5 font-semibold text-foreground">
+            <div className="rounded-lg bg-secondary/80 px-2.5 py-1.5">
+              <p className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Agent</p>
+              <p className="mt-0.5 text-sm font-semibold text-foreground">
                 {formatCost(agentCostSummary.total_cost_usd)}
               </p>
             </div>
-            <div className="rounded-xl bg-secondary/80 px-3 py-2.5">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Session Tokens</p>
-              <p className="mt-1.5 font-semibold text-foreground">
-                {formatTokens(sessionCostSummary.total_tokens)}
-              </p>
-            </div>
-            <div className="rounded-xl bg-secondary/80 px-3 py-2.5">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Last Run</p>
-              <p className="mt-1.5 font-semibold text-foreground">
-                {lastRunDurationMs !== null
-                  ? `${(lastRunDurationMs / 1000).toFixed(1)}s`
-                  : "-"}
-              </p>
-            </div>
           </div>
-          <div className="mt-3 space-y-2 text-sm">
+          <div className="mt-2 space-y-1 text-xs">
             <div className="flex justify-between gap-4">
-              <span className="text-muted-foreground">Input / Output</span>
+              <span className="text-muted-foreground">Tokens</span>
+              <span className="font-medium text-foreground">{formatTokens(sessionCostSummary.total_tokens)}</span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-muted-foreground">In / Out</span>
               <span className="font-medium text-foreground">
-                {formatTokens(sessionCostSummary.total_input_tokens)} /{" "}
-                {formatTokens(sessionCostSummary.total_output_tokens)}
+                {formatTokens(sessionCostSummary.total_input_tokens)} / {formatTokens(sessionCostSummary.total_output_tokens)}
               </span>
             </div>
             <div className="flex justify-between gap-4">
-              <span className="text-muted-foreground">Cache Read</span>
+              <span className="text-muted-foreground">Cache</span>
               <span className="font-medium text-foreground">
-                {formatTokens(sessionCostSummary.total_cache_read_input_tokens)}
+                {formatTokens(sessionCostSummary.total_cache_read_input_tokens)} / {formatTokens(sessionCostSummary.total_cache_creation_input_tokens)}
               </span>
             </div>
             <div className="flex justify-between gap-4">
-              <span className="text-muted-foreground">Cache Create</span>
+              <span className="text-muted-foreground">Last Run</span>
               <span className="font-medium text-foreground">
-                {formatTokens(sessionCostSummary.total_cache_creation_input_tokens)}
-              </span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-muted-foreground">Completed / Error</span>
-              <span className="font-medium text-foreground">
-                {sessionCostSummary.completed_rounds} / {sessionCostSummary.error_rounds}
+                {lastRunDurationMs !== null ? `${(lastRunDurationMs / 1000).toFixed(1)}s` : "-"}
               </span>
             </div>
           </div>
