@@ -27,6 +27,23 @@ import { initialOptions } from "@/config/options";
 import { SessionOptions } from "@/types/session";
 import { TodoItem } from "@/components/todo/agent-task-widget";
 import { cn } from "@/lib/utils";
+import { SessionTelemetry } from "@/types/telemetry";
+
+const EMPTY_SESSION_TELEMETRY: SessionTelemetry = {
+  is_loading: false,
+  todos: [],
+  tool_calls: [],
+  pending_permission: null,
+  usage: {
+    input_tokens: 0,
+    output_tokens: 0,
+    total_tokens: 0,
+    total_cost_usd: 0,
+    latest_duration_ms: null,
+    latest_cost_usd: null,
+    completed_rounds: 0,
+  },
+};
 
 export default function Home() {
   const {
@@ -68,6 +85,7 @@ export default function Home() {
   const [editorWidthPercent, setEditorWidthPercent] = useState(42);
   const [isResizingEditor, setIsResizingEditor] = useState(false);
   const [currentTodos, setCurrentTodos] = useState<TodoItem[]>([]);
+  const [sessionTelemetry, setSessionTelemetry] = useState<SessionTelemetry>(EMPTY_SESSION_TELEMETRY);
   const workspaceSplitRef = useRef<HTMLElement | null>(null);
 
   const currentAgent = useMemo(
@@ -139,6 +157,8 @@ export default function Home() {
       }
       setActiveWorkspacePath(null);
       setIsEditorOpen(false);
+      setCurrentTodos([]);
+      setSessionTelemetry(EMPTY_SESSION_TELEMETRY);
       return;
     }
 
@@ -364,6 +384,7 @@ export default function Home() {
 
                   <div className="min-h-0 flex-1">
                     <ChatInterface
+                      onTelemetryChange={setSessionTelemetry}
                       onTodosChange={setCurrentTodos}
                       sessionKey={currentSession?.session_key ?? null}
                       onNewSession={handleNewSession}
@@ -375,9 +396,10 @@ export default function Home() {
               <AgentInspector
                 activeSession={currentSession}
                 agent={currentAgent}
-                isSessionBusy={currentTodos.some((todo) => todo.status === "in_progress")}
+                isSessionBusy={sessionTelemetry.is_loading}
                 onEditAgent={handleEditAgent}
                 sessions={currentAgentSessions}
+                telemetry={sessionTelemetry}
                 todos={currentTodos}
               />
             </div>

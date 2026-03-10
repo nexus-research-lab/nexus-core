@@ -1,11 +1,20 @@
 "use client";
 
-import { Activity, BrainCircuit, CheckSquare, Cpu, LoaderCircle, ShieldCheck, Waypoints, } from "lucide-react";
+import {
+  Activity,
+  BrainCircuit,
+  CheckSquare,
+  Cpu,
+  LoaderCircle,
+  ShieldCheck,
+  Waypoints,
+} from "lucide-react";
 
 import { Agent } from "@/types/agent";
 import { Session } from "@/types/session";
-import { formatRelativeTime, truncate } from "@/lib/utils";
+import { formatCost, formatRelativeTime, formatTokens, truncate } from "@/lib/utils";
 import { TodoItem } from "@/components/todo/agent-task-widget";
+import { SessionTelemetry } from "@/types/telemetry";
 
 interface AgentInspectorProps {
   agent: Agent;
@@ -13,6 +22,7 @@ interface AgentInspectorProps {
   activeSession: Session | null;
   todos: TodoItem[];
   isSessionBusy: boolean;
+  telemetry: SessionTelemetry;
   onEditAgent: (agentId: string) => void;
 }
 
@@ -22,9 +32,9 @@ export function AgentInspector({
                                  activeSession,
                                  todos,
                                  isSessionBusy,
+                                 telemetry,
                                  onEditAgent,
                                }: AgentInspectorProps) {
-  const estimatedTokens = Math.max((activeSession?.message_count ?? 0) * 320, 0);
   const maxTurns = agent.options.max_turns ?? 24;
   const turnUsage = activeSession?.message_count ?? 0;
   const contextRatio = Math.min(turnUsage / Math.max(maxTurns, 1), 1);
@@ -62,11 +72,23 @@ export function AgentInspector({
             <div className="rounded-xl bg-secondary/80 px-3 py-2.5">
               <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Status</p>
               <p className="mt-1.5 font-semibold text-foreground">
-                {isSessionBusy ? "Running" : activeSession?.is_active === false ? "Idle" : "Active"}
+                {telemetry.pending_permission
+                  ? "Awaiting Approval"
+                  : isSessionBusy
+                    ? "Running"
+                    : activeSession?.is_active === false
+                      ? "Idle"
+                      : "Active"}
               </p>
             </div>
           </div>
           <div className="mt-3 space-y-2 text-sm">
+            <div className="flex justify-between gap-4">
+              <span className="text-muted-foreground">Approvals</span>
+              <span className="font-medium text-foreground">
+                {telemetry.pending_permission ? "1 pending" : "0 pending"}
+              </span>
+            </div>
             <div className="flex justify-between gap-4">
               <span className="text-muted-foreground">Model</span>
               <span className="font-medium text-foreground">{agent.options.model || "inherit"}</span>
@@ -186,13 +208,27 @@ export function AgentInspector({
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="rounded-xl bg-secondary/80 px-3 py-2.5">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Estimated</p>
-              <p className="mt-1.5 font-semibold text-foreground">{estimatedTokens.toLocaleString()}</p>
+              <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Total Tokens</p>
+              <p className="mt-1.5 font-semibold text-foreground">{formatTokens(telemetry.usage.total_tokens)}</p>
             </div>
             <div className="rounded-xl bg-secondary/80 px-3 py-2.5">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Thinking</p>
+              <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Total Cost</p>
               <p className="mt-1.5 font-semibold text-foreground">
-                {agent.options.max_thinking_tokens ?? "-"}
+                {formatCost(telemetry.usage.total_cost_usd)}
+              </p>
+            </div>
+            <div className="rounded-xl bg-secondary/80 px-3 py-2.5">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Input / Output</p>
+              <p className="mt-1.5 font-semibold text-foreground">
+                {formatTokens(telemetry.usage.input_tokens)} / {formatTokens(telemetry.usage.output_tokens)}
+              </p>
+            </div>
+            <div className="rounded-xl bg-secondary/80 px-3 py-2.5">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Last Run</p>
+              <p className="mt-1.5 font-semibold text-foreground">
+                {telemetry.usage.latest_duration_ms !== null
+                  ? `${(telemetry.usage.latest_duration_ms / 1000).toFixed(1)}s`
+                  : "-"}
               </p>
             </div>
           </div>
@@ -201,19 +237,55 @@ export function AgentInspector({
         <section className="border-b border-border/80 px-3 py-3">
           <div
             className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            <LoaderCircle className="h-3.5 w-3.5"/>
+            Approval Queue
+          </div>
+          {telemetry.pending_permission ? (
+            <div className="rounded-xl bg-secondary/80 px-3 py-2.5 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <span className="truncate font-medium text-foreground">
+                  {telemetry.pending_permission.tool_name}
+                </span>
+                <span className="rounded-full border border-warning/20 bg-warning/10 px-2 py-1 text-[11px] text-warning">
+                  Pending
+                </span>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                request_id: {telemetry.pending_permission.request_id}
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">当前没有等待处理的权限请求。</p>
+          )}
+        </section>
+
+        <section className="border-b border-border/80 px-3 py-3">
+          <div
+            className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             <Waypoints className="h-3.5 w-3.5"/>
-            Orchestration
+            Trace Telemetry
           </div>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between gap-4">
-              <span className="text-muted-foreground">Subagents</span>
-              <span className="font-medium text-foreground">待接入</span>
+          {telemetry.tool_calls.length > 0 ? (
+            <div className="space-y-1.5">
+              {telemetry.tool_calls.slice(-6).reverse().map((toolCall) => (
+                <div key={toolCall.id} className="rounded-xl bg-secondary/80 px-3 py-2.5 text-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="truncate font-medium text-foreground">{toolCall.tool_name}</span>
+                    <span className="text-xs text-muted-foreground">{toolCall.status}</span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {new Date(toolCall.start_time).toLocaleTimeString("zh-CN", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                    })}
+                  </p>
+                </div>
+              ))}
             </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-muted-foreground">Agent Team</span>
-              <span className="font-medium text-foreground">待接入</span>
-            </div>
-          </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">当前没有可展示的 trace 事件。</p>
+          )}
         </section>
 
         <section className="px-3 py-3">

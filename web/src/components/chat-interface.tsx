@@ -10,14 +10,16 @@ import { useSessionLoader } from "@/hooks/use-session-loader";
 import ChatHeader from "@/components/header/chat-header";
 import ChatInput from "@/components/chat/chat-input";
 import { EmptyState } from "@/components/empty-state";
-import { Message } from "@/types/message";
+import { Message, ResultMessage } from "@/types/message";
 import { TodoItem } from "@/components/todo/agent-task-widget";
+import { SessionTelemetry } from "@/types/telemetry";
 
 
 interface ChatInterfaceProps {
   sessionKey: string | null;
   onNewSession: () => void;
   onTodosChange?: (todos: TodoItem[]) => void;
+  onTelemetryChange?: (telemetry: SessionTelemetry) => void;
 }
 
 /**
@@ -42,6 +44,7 @@ export function ChatInterface({
   sessionKey: externalSessionKey,
   onNewSession: onNewSession,
   onTodosChange,
+  onTelemetryChange,
 }: ChatInterfaceProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -70,6 +73,43 @@ export function ChatInterface({
   useEffect(() => {
     onTodosChange?.(todos);
   }, [onTodosChange, todos]);
+
+  const telemetry = useMemo<SessionTelemetry>(() => {
+    const resultMessages = messages.filter((message): message is ResultMessage => message.role === "result");
+    const aggregatedUsage = resultMessages.reduce(
+      (accumulator, message) => ({
+        input_tokens: accumulator.input_tokens + (message.usage?.input_tokens ?? 0),
+        output_tokens: accumulator.output_tokens + (message.usage?.output_tokens ?? 0),
+        total_cost_usd: accumulator.total_cost_usd + (message.total_cost_usd ?? 0),
+      }),
+      {
+        input_tokens: 0,
+        output_tokens: 0,
+        total_cost_usd: 0,
+      },
+    );
+    const latestResult = resultMessages[resultMessages.length - 1] ?? null;
+
+    return {
+      is_loading: isLoading,
+      todos,
+      tool_calls: toolCalls,
+      pending_permission: pendingPermission,
+      usage: {
+        input_tokens: aggregatedUsage.input_tokens,
+        output_tokens: aggregatedUsage.output_tokens,
+        total_tokens: aggregatedUsage.input_tokens + aggregatedUsage.output_tokens,
+        total_cost_usd: aggregatedUsage.total_cost_usd,
+        latest_duration_ms: latestResult?.duration_ms ?? null,
+        latest_cost_usd: latestResult?.total_cost_usd ?? null,
+        completed_rounds: resultMessages.length,
+      },
+    };
+  }, [isLoading, messages, pendingPermission, todos, toolCalls]);
+
+  useEffect(() => {
+    onTelemetryChange?.(telemetry);
+  }, [onTelemetryChange, telemetry]);
 
   // 响应式会话加载 - 统一处理外部 agentId 变化
   useSessionLoader(externalSessionKey, loadSession, "ChatInterface");
