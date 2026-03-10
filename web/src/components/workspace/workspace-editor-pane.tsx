@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FileCode2, Minimize2, Save } from "lucide-react";
+import { GripVertical, Minimize2, Save } from "lucide-react";
 
 import { getWorkspaceFileContentApi, updateWorkspaceFileContentApi } from "@/lib/agent-manage-api";
 import { cn } from "@/lib/utils";
@@ -10,14 +10,18 @@ interface WorkspaceEditorPaneProps {
   agentId: string;
   path: string | null;
   isOpen: boolean;
+  widthPercent: number;
   onClose: () => void;
+  onResizeStart: () => void;
 }
 
 export function WorkspaceEditorPane({
   agentId,
   path,
   isOpen,
+  widthPercent,
   onClose,
+  onResizeStart,
 }: WorkspaceEditorPaneProps) {
   const [draftContent, setDraftContent] = useState("");
   const [savedContent, setSavedContent] = useState("");
@@ -81,18 +85,27 @@ export function WorkspaceEditorPane({
   return (
     <section
       className={cn(
-        "flex min-h-0 flex-col overflow-hidden border-r border-border/80 bg-secondary/78 shadow-[12px_0_32px_rgba(17,24,39,0.08)] transition-[width,opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
-        isOpen ? "w-1/2 opacity-100 translate-x-0" : "w-0 opacity-0 -translate-x-6",
+        "relative flex min-h-0 flex-col overflow-hidden border-r border-border/80 bg-secondary/78 shadow-[12px_0_32px_rgba(17,24,39,0.08)] transition-[width,opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        isOpen ? "opacity-100 translate-x-0" : "w-0 opacity-0 -translate-x-6",
       )}
+      style={isOpen ? { width: `${widthPercent}%` } : undefined}
     >
       {isOpen && path && (
         <>
+          <button
+            aria-label="调整编辑器宽度"
+            className="absolute right-0 top-0 z-20 flex h-full w-3 translate-x-1/2 cursor-col-resize items-center justify-center text-muted-foreground/60 transition-colors hover:text-primary"
+            onMouseDown={onResizeStart}
+            type="button"
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+
           <div className="flex items-center justify-between border-b border-border/80 px-4 py-3">
             <div className="min-w-0">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                <FileCode2 className="h-3.5 w-3.5" />
-                <span>{path}</span>
-              </div>
+              <p className="truncate text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                {path}
+              </p>
             </div>
 
             <div className="flex items-center gap-2">

@@ -17,6 +17,8 @@
 - Workspace 文件编辑器改为按需从左侧滑出，展开后与对话主区对半分配，降低常驻编辑器对会话空间的挤压。
 - 右侧状态栏改为 runtime、context capacity、token/cost、planning、orchestration、policy 六个状态区，显式映射后续 harness telemetry 能力。
 - workspace 左栏升级为目录树视图，并补齐文件/目录创建、删除、重命名操作，保持与本地 workspace 目录同步。
+- Agent Space 进一步压缩重复信息：移除重复标题文本，文件树改为目录递归结构，点击同一文件可收起编辑器，并支持拖拽调整 editor / session 分栏宽度。
+- 会话区 todo/plan 状态迁移到右侧 `Agent State`，中间 header 收口为更轻的 session telemetry 条。
 
 ## 2026-03-09
 

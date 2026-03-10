@@ -9,7 +9,7 @@
 
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, PanelLeftOpen, Settings2 } from "lucide-react";
 
 import { ChatInterface } from "@/components/chat-interface";
@@ -25,6 +25,8 @@ import { useInitializeSessions } from "@/hooks/use-initialize-sessions";
 import { validateAgentNameApi } from "@/lib/agent-manage-api";
 import { initialOptions } from "@/config/options";
 import { SessionOptions } from "@/types/session";
+import { TodoItem } from "@/components/todo/agent-task-widget";
+import { cn } from "@/lib/utils";
 
 export default function Home() {
   const {
@@ -63,6 +65,10 @@ export default function Home() {
   const [editingAgentId, setEditingAgentId] = useState<string | null>(null);
   const [activeWorkspacePath, setActiveWorkspacePath] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editorWidthPercent, setEditorWidthPercent] = useState(42);
+  const [isResizingEditor, setIsResizingEditor] = useState(false);
+  const [currentTodos, setCurrentTodos] = useState<TodoItem[]>([]);
+  const workspaceSplitRef = useRef<HTMLElement | null>(null);
 
   const currentAgent = useMemo(
     () => agents.find((agent) => agent.agent_id === current_agent_id) ?? null,
@@ -227,17 +233,54 @@ export default function Home() {
   }, [current_session_key, currentAgentSessions, deleteSession, setCurrentSession]);
 
   const handleOpenWorkspaceFile = useCallback((path: string | null) => {
-    setActiveWorkspacePath(path);
-    setIsEditorOpen(Boolean(path));
+    setActiveWorkspacePath((currentPath) => {
+      if (path && currentPath === path && isEditorOpen) {
+        setIsEditorOpen(false);
+        return null;
+      }
+
+      setIsEditorOpen(Boolean(path));
+      return path;
+    });
+  }, [isEditorOpen]);
+
+  const handleStartEditorResize = useCallback(() => {
+    setIsResizingEditor(true);
   }, []);
 
   const handleCloseWorkspacePane = useCallback(() => {
     setIsEditorOpen(false);
   }, []);
 
-  const handleEditTitle = useCallback((sessionKey: string, title: string) => {
-    updateSession(sessionKey, { title });
-  }, [updateSession]);
+  useEffect(() => {
+    if (!isResizingEditor) {
+      return;
+    }
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const container = workspaceSplitRef.current;
+      if (!container) {
+        return;
+      }
+
+      const bounds = container.getBoundingClientRect();
+      const nextPercent = ((event.clientX - bounds.left) / bounds.width) * 100;
+      const clamped = Math.min(Math.max(nextPercent, 28), 58);
+      setEditorWidthPercent(clamped);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingEditor(false);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizingEditor]);
 
   if (!isHydrated) {
     return (
@@ -301,12 +344,20 @@ export default function Home() {
                 sessions={currentAgentSessions}
               />
 
-              <section className="flex min-h-0 min-w-0 flex-1 rounded-[20px] panel-surface overflow-hidden">
+              <section
+                ref={workspaceSplitRef}
+                className={cn(
+                  "flex min-h-0 min-w-0 flex-1 rounded-[20px] panel-surface overflow-hidden",
+                  isResizingEditor && "select-none cursor-col-resize",
+                )}
+              >
                 <WorkspaceEditorPane
                   agentId={currentAgent.agent_id}
                   isOpen={isEditorOpen}
                   onClose={handleCloseWorkspacePane}
+                  onResizeStart={handleStartEditorResize}
                   path={activeWorkspacePath}
+                  widthPercent={editorWidthPercent}
                 />
 
                 <div className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -314,9 +365,6 @@ export default function Home() {
                     <div className="min-w-0">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         Session Space
-                      </p>
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {currentSession?.title || "Conversation"}
                       </p>
                     </div>
 
@@ -345,6 +393,7 @@ export default function Home() {
 
                   <div className="min-h-0 flex-1">
                     <ChatInterface
+                      onTodosChange={setCurrentTodos}
                       sessionKey={currentSession?.session_key ?? null}
                       onNewSession={handleNewSession}
                     />
@@ -355,8 +404,10 @@ export default function Home() {
               <AgentInspector
                 activeSession={currentSession}
                 agent={currentAgent}
+                isSessionBusy={currentTodos.some((todo) => todo.status === "in_progress")}
                 onEditAgent={handleEditAgent}
                 sessions={currentAgentSessions}
+                todos={currentTodos}
               />
             </div>
           </section>

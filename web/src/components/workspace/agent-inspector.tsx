@@ -5,6 +5,7 @@ import {
   BrainCircuit,
   CheckSquare,
   Cpu,
+  LoaderCircle,
   ShieldCheck,
   Waypoints,
 } from "lucide-react";
@@ -12,11 +13,14 @@ import {
 import { Agent } from "@/types/agent";
 import { Session } from "@/types/session";
 import { formatRelativeTime, truncate } from "@/lib/utils";
+import { TodoItem } from "@/components/todo/agent-task-widget";
 
 interface AgentInspectorProps {
   agent: Agent;
   sessions: Session[];
   activeSession: Session | null;
+  todos: TodoItem[];
+  isSessionBusy: boolean;
   onEditAgent: (agentId: string) => void;
 }
 
@@ -24,12 +28,16 @@ export function AgentInspector({
   agent,
   sessions,
   activeSession,
+  todos,
+  isSessionBusy,
   onEditAgent,
 }: AgentInspectorProps) {
   const estimatedTokens = Math.max((activeSession?.message_count ?? 0) * 320, 0);
   const maxTurns = agent.options.max_turns ?? 24;
   const turnUsage = activeSession?.message_count ?? 0;
   const contextRatio = Math.min(turnUsage / Math.max(maxTurns, 1), 1);
+  const completedTodoCount = todos.filter((todo) => todo.status === "completed").length;
+  const activeTodo = todos.find((todo) => todo.status === "in_progress") ?? null;
 
   return (
     <aside className="flex min-h-0 w-[292px] flex-col rounded-[20px] panel-surface">
@@ -39,7 +47,6 @@ export function AgentInspector({
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               Agent State
             </p>
-            <h2 className="mt-1 truncate text-sm font-semibold text-foreground">{agent.name}</h2>
           </div>
           <button
             className="rounded-xl border border-border/80 bg-secondary/80 px-3 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary/20 hover:text-primary"
@@ -66,7 +73,7 @@ export function AgentInspector({
               <div className="rounded-xl bg-background px-3 py-3">
                 <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Status</p>
                 <p className="mt-2 text-sm font-semibold text-foreground">
-                  {activeSession?.is_active === false ? "Idle" : "Active"}
+                  {isSessionBusy ? "Running" : activeSession?.is_active === false ? "Idle" : "Active"}
                 </p>
               </div>
             </div>
@@ -136,11 +143,57 @@ export function AgentInspector({
               <CheckSquare className="h-3.5 w-3.5" />
               Current Plan
             </div>
-            <p className="mt-3 text-sm text-muted-foreground">
-              当前前端还没有接入实时 todo / plan telemetry，这里保留为 harness planning 区域。
-            </p>
-            <div className="mt-3 rounded-xl bg-background px-3 py-3 text-sm text-muted-foreground">
-              暂无活跃计划。后续可接入 planner / todo 列表、阻塞项与审批节点。
+            <div className="mt-3 rounded-xl bg-background px-3 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm font-medium text-foreground">Plan Progress</span>
+                <span className="text-xs text-muted-foreground">
+                  {todos.length === 0 ? "0 / 0" : `${completedTodoCount} / ${todos.length}`}
+                </span>
+              </div>
+              {todos.length > 0 && (
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all"
+                    style={{ width: `${(completedTodoCount / todos.length) * 100}%` }}
+                  />
+                </div>
+              )}
+              {activeTodo && (
+                <div className="mt-3 flex items-start gap-2 rounded-xl border border-primary/15 bg-primary/6 px-3 py-2.5 text-sm text-foreground">
+                  <LoaderCircle className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-primary" />
+                  <div className="min-w-0">
+                    <p className="truncate">{activeTodo.content}</p>
+                    {activeTodo.activeForm && (
+                      <p className="mt-1 text-xs text-muted-foreground">{activeTodo.activeForm}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+              {todos.length === 0 ? (
+                <p className="mt-3 text-sm text-muted-foreground">暂无活跃计划。</p>
+              ) : (
+                <div className="mt-3 space-y-2">
+                  {todos.map((todo, index) => (
+                    <div
+                      key={`${index}-${todo.content}`}
+                      className="flex items-start gap-2 rounded-xl border border-border/70 px-3 py-2 text-sm"
+                    >
+                      <span
+                        className={
+                          todo.status === "completed"
+                            ? "text-success"
+                            : todo.status === "in_progress"
+                              ? "text-primary"
+                              : "text-muted-foreground"
+                        }
+                      >
+                        {todo.status === "completed" ? "✓" : todo.status === "in_progress" ? "•" : "○"}
+                      </span>
+                      <span className="min-w-0 flex-1 break-words text-foreground">{todo.content}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </section>
 

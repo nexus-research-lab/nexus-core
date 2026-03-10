@@ -11,11 +11,13 @@ import ChatHeader from "@/components/header/chat-header";
 import ChatInput from "@/components/chat/chat-input";
 import { EmptyState } from "@/components/empty-state";
 import { Message } from "@/types/message";
+import { TodoItem } from "@/components/todo/agent-task-widget";
 
 
 interface ChatInterfaceProps {
   sessionKey: string | null;
   onNewSession: () => void;
+  onTodosChange?: (todos: TodoItem[]) => void;
 }
 
 /**
@@ -36,7 +38,11 @@ function groupMessagesByRound(messages: Message[]): Map<string, Message[]> {
   return groups;
 }
 
-export function ChatInterface({ sessionKey: externalSessionKey, onNewSession: onNewSession }: ChatInterfaceProps) {
+export function ChatInterface({
+  sessionKey: externalSessionKey,
+  onNewSession: onNewSession,
+  onTodosChange,
+}: ChatInterfaceProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -60,6 +66,10 @@ export function ChatInterface({ sessionKey: externalSessionKey, onNewSession: on
 
   // Extract todos using custom hook
   const todos = useExtractTodos(messages, externalSessionKey);
+
+  useEffect(() => {
+    onTodosChange?.(todos);
+  }, [onTodosChange, todos]);
 
   // 响应式会话加载 - 统一处理外部 agentId 变化
   useSessionLoader(externalSessionKey, loadSession, "ChatInterface");
@@ -130,7 +140,7 @@ export function ChatInterface({ sessionKey: externalSessionKey, onNewSession: on
       ) : (
         <>
           {/* Header */}
-          <ChatHeader sessionKey={sessionKey} isLoading={isLoading} todos={todos} />
+          <ChatHeader sessionKey={sessionKey} isLoading={isLoading} />
 
           {/* Messages Area */}
           <div ref={scrollRef} className="soft-scrollbar flex-1 overflow-y-auto p-6 space-y-8 relative z-0 scroll-smooth">
