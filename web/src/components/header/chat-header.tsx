@@ -17,7 +17,7 @@ const ChatHeader = memo(({sessionKey, isLoading}: ChatHeaderProps) => {
         <span>SESSION</span>
         <span className="text-border">/</span>
         <span className="text-accent">
-          {sessionKey ? `: ${sessionKey}` : "NEW_SESSION"}
+          {sessionKey ? ` ${sessionKey}` : "NEW_SESSION"}
         </span>
       </div>
 
