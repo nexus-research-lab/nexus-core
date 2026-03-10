@@ -361,35 +361,6 @@ export default function Home() {
                 />
 
                 <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-                  <div className="flex items-center justify-between border-b border-border/80 px-4 py-3">
-                    <div className="min-w-0">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                        Session Space
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="inline-flex items-center gap-2 rounded-xl border border-border/80 bg-secondary/80 px-3 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary/20 hover:text-primary"
-                        onClick={() => setIsEditorOpen((value) => !value)}
-                        type="button"
-                      >
-                        <PanelLeftOpen className="h-4 w-4" />
-                        {isEditorOpen ? "收起文件" : "展开文件"}
-                      </button>
-                      <button
-                        className="inline-flex items-center gap-2 rounded-xl border border-border/80 bg-secondary/80 px-3 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary/20 hover:text-primary"
-                        onClick={() => handleEditAgent(currentAgent.agent_id)}
-                        type="button"
-                      >
-                        <Settings2 className="h-4 w-4" />
-                        设置
-                      </button>
-                      <div className="rounded-full border border-border/80 bg-secondary/80 px-3 py-1.5 text-xs text-muted-foreground">
-                        {currentSession ? `${currentSession.message_count ?? 0} 条消息` : "选择会话"}
-                      </div>
-                    </div>
-                  </div>
 
                   <div className="min-h-0 flex-1">
                     <ChatInterface
