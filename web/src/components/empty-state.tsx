@@ -29,26 +29,23 @@ export function EmptyState({onNewSession}: EmptyStateProps) {
         {/* Title */}
         <div className="mt-8 space-y-3">
           <h2 className="text-3xl font-semibold text-foreground">
-            在当前 Agent 中开启一个新的 Session
+            当前 Agent 暂无 Session
           </h2>
-          <p className="mx-auto max-w-xl text-sm leading-6 text-muted-foreground">
-            这个区域是 Agent Space 的执行主工作区。创建 Session 之后，这里会承载消息时间线、工具调用结果、权限交互和运行状态。
-          </p>
         </div>
 
         {/* Features */}
         <div className="mt-8 grid gap-3 text-sm text-muted-foreground md:grid-cols-3">
           <div className="rounded-2xl bg-secondary/80 px-4 py-4">
             <div className="mx-auto mb-2 h-2 w-2 rounded-full bg-primary"/>
-            <span>按 Agent 隔离会话和上下文</span>
+            <span>按 Agent 隔离上下文</span>
           </div>
           <div className="rounded-2xl bg-secondary/80 px-4 py-4">
             <div className="mx-auto mb-2 h-2 w-2 rounded-full bg-primary"/>
-            <span>保留运行时间线与历史记录</span>
+            <span>保留会话历史</span>
           </div>
           <div className="rounded-2xl bg-secondary/80 px-4 py-4">
             <div className="mx-auto mb-2 h-2 w-2 rounded-full bg-primary"/>
-            <span>承接后续的权限与审计面板</span>
+            <span>支持工具与权限流程</span>
           </div>
         </div>
 
@@ -63,7 +60,7 @@ export function EmptyState({onNewSession}: EmptyStateProps) {
 
         {/* Hint */}
         <p className="mt-5 text-xs text-muted-foreground/80">
-          你也可以先返回 Agent Directory，再切换到其他 Agent 空间。
+          也可以先切换 Agent，再创建会话。
         </p>
       </div>
     </div>

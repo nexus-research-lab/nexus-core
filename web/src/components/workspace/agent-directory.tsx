@@ -38,11 +38,8 @@ export function AgentDirectory({
               Agent Directory
             </p>
             <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-              管理你的 Agent 资产，而不是只管理一段对话
+              Agent 管理
             </h1>
-            <p className="text-sm leading-6 text-muted-foreground">
-              Agent 作为长期配置和工作空间入口，Session 作为运行实例进入二级空间。先选 Agent，再进入它的工作台处理会话、权限和执行记录。
-            </p>
           </div>
 
           <button
@@ -159,7 +156,7 @@ export function AgentDirectory({
                     onClick={() => onSelectAgent(agent.agent_id)}
                     type="button"
                   >
-                    进入 Agent Space
+                    进入工作台
                   </button>
                 </div>
               </article>

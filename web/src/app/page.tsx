@@ -252,11 +252,8 @@ export default function Home() {
               </p>
               <div>
                 <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-                  面向 Agent 的工作台，而不是面向单轮聊天的界面
+                  Agent 工作台
                 </h1>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  第一层管理 Agent 资产，第二层进入 Agent Space 管理 Session、运行状态和执行上下文。顶部保留快速切换器，支持你在多个 Agent 之间连续操作。
-                </p>
               </div>
             </div>
 
@@ -302,15 +299,12 @@ export default function Home() {
                     <span>{currentAgent.name}</span>
                   </div>
 
-                  <div>
-                    <h2 className="text-3xl font-semibold tracking-tight text-foreground">
+                <div>
+                  <h2 className="text-3xl font-semibold tracking-tight text-foreground">
                       {currentAgent.name}
-                    </h2>
-                    <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-                      当前是 Agent Space。你可以直接切换到其他 Agent，不需要返回上一层；但结构上，Session、配置和运行检查器都在这个 Agent 的独立空间里。
-                    </p>
-                  </div>
+                  </h2>
                 </div>
+              </div>
 
                 <div className="flex flex-wrap items-center gap-3">
                   <button
@@ -344,7 +338,7 @@ export default function Home() {
 
                 <div className="flex items-center gap-2 rounded-full border border-border/80 bg-white/80 px-3 py-2 text-sm text-muted-foreground">
                   <Command className="h-4 w-4" />
-                  后续这里接 Command Palette / 全局快捷切换
+                  快速切换入口预留
                 </div>
               </div>
             </div>
@@ -365,7 +359,7 @@ export default function Home() {
                       Session Workspace
                     </p>
                     <p className="mt-1 text-sm text-foreground">
-                      {currentSession?.title || "选择一个 Session 进入执行时间线"}
+                      {currentSession?.title || "选择 Session"}
                     </p>
                   </div>
 
