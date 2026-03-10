@@ -5,6 +5,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Environment variables
+.claude
 .env
 .env.local
 .env.development.local
@@ -28,6 +29,8 @@ pids/
 *.pid
 *.seed
 *.pid.lock
+.agent/
+**/.agent/
 
 # Coverage directory used by tools like istanbul
 coverage/
@@ -128,4 +131,3 @@ __pycache__/
 *$py.class
 *.so
 .Python
-

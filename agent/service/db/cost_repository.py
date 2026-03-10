@@ -90,8 +90,11 @@ class CostRepository:
         """按 Agent ID 解析 workspace 路径。"""
         agent = await agent_repository.get_agent(agent_id)
         if agent and agent.workspace_path:
-            return Path(agent.workspace_path).expanduser()
-        return self._paths.workspace_base / agent_id
+            workspace_path = Path(agent.workspace_path).expanduser()
+        else:
+            workspace_path = self._paths.workspace_base / agent_id
+        self._paths.migrate_workspace_runtime_layout(workspace_path)
+        return workspace_path
 
     async def _resolve_session_dir(self, session_key: str, agent_id: Optional[str] = None) -> Optional[Path]:
         """解析 session 目录。"""
@@ -136,12 +139,15 @@ class CostRepository:
     async def _write_agent_summary(self, agent_id: str, summary: AgentCostSummary) -> None:
         """写入 Agent 成本汇总。"""
         workspace_path = await self._resolve_workspace_path(agent_id)
-        JsonFileStore.write_json(workspace_path / "telemetry_cost_summary.json", summary.model_dump(mode="json"))
+        JsonFileStore.write_json(
+            self._paths.get_agent_cost_summary_path(workspace_path),
+            summary.model_dump(mode="json"),
+        )
 
     async def _read_agent_summary(self, agent_id: str) -> Optional[AgentCostSummary]:
         """读取 Agent 成本汇总。"""
         workspace_path = await self._resolve_workspace_path(agent_id)
-        payload = JsonFileStore.read_json(workspace_path / "telemetry_cost_summary.json", None)
+        payload = JsonFileStore.read_json(self._paths.get_agent_cost_summary_path(workspace_path), None)
         if not payload:
             return None
         return AgentCostSummary(**payload)
@@ -154,6 +160,7 @@ class CostRepository:
         """从历史 messages.jsonl 回填成本账本。"""
         session = await session_repository.get_session(session_key)
         resolved_agent_id = agent_id or (session.agent_id if session else None) or "main"
+        workspace_path = await self._resolve_workspace_path(resolved_agent_id)
         session_dir = await self._resolve_session_dir(session_key, agent_id=resolved_agent_id)
         if not session_dir:
             return self._default_session_summary(resolved_agent_id, session_key)
@@ -173,7 +180,7 @@ class CostRepository:
             entry = self._build_cost_entry(normalized_message)
             result_entries.append(entry.model_dump(mode="json"))
 
-        JsonFileStore.write_jsonl(session_dir / "telemetry_cost.jsonl", result_entries)
+        JsonFileStore.write_jsonl(self._paths.get_session_cost_log_path(workspace_path, session_key), result_entries)
         summary = await self.rebuild_session_summary(session_key, agent_id=resolved_agent_id)
         await self.rebuild_agent_summary(resolved_agent_id)
         return summary
@@ -258,7 +265,9 @@ class CostRepository:
     async def rebuild_agent_summary(self, agent_id: str) -> AgentCostSummary:
         """按 Agent 下的所有 Session 汇总重建成本摘要。"""
         workspace_path = await self._resolve_workspace_path(agent_id)
-        summary_paths = list(workspace_path.glob("sessions/*/telemetry_cost_summary.json"))
+        summary_paths = list(
+            self._paths.get_runtime_dir(workspace_path).glob("sessions/*/telemetry_cost_summary.json")
+        )
 
         session_summaries: List[SessionCostSummary] = []
         for summary_path in summary_paths:
@@ -296,7 +305,7 @@ class CostRepository:
             return False
 
         workspace_path = await self._resolve_workspace_path(message.agent_id)
-        log_path = self._paths.get_session_dir(workspace_path, message.session_key) / "telemetry_cost.jsonl"
+        log_path = self._paths.get_session_cost_log_path(workspace_path, message.session_key)
         entry = self._build_cost_entry(message)
 
         with self._lock:

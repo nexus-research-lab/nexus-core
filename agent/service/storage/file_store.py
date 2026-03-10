@@ -19,6 +19,7 @@
 import base64
 import json
 import sqlite3
+import shutil
 from datetime import datetime
 from pathlib import Path
 from threading import Lock
@@ -30,6 +31,8 @@ from agent.utils.logger import logger
 
 class FileStoragePaths:
     """统一管理文件存储路径。"""
+
+    INTERNAL_DIR_NAME = ".agent"
 
     def __init__(self) -> None:
         self.home_root = Path.home() / ".nexus-core"
@@ -44,6 +47,42 @@ class FileStoragePaths:
         self.agents_dir.mkdir(parents=True, exist_ok=True)
         self.workspace_base.mkdir(parents=True, exist_ok=True)
 
+    def get_runtime_dir(self, workspace_path: str | Path) -> Path:
+        """返回 workspace 内部运行目录。"""
+        runtime_dir = Path(workspace_path).expanduser() / self.INTERNAL_DIR_NAME
+        runtime_dir.mkdir(parents=True, exist_ok=True)
+        return runtime_dir
+
+    def migrate_workspace_runtime_layout(self, workspace_path: str | Path) -> None:
+        """将旧版运行时文件迁移到 `.agent/` 目录。"""
+        workspace_root = Path(workspace_path).expanduser()
+        if not workspace_root.exists():
+            return
+
+        runtime_dir = self.get_runtime_dir(workspace_root)
+        migrations = [
+            (workspace_root / "agent.json", runtime_dir / "agent.json"),
+            (workspace_root / "telemetry_cost_summary.json", runtime_dir / "telemetry_cost_summary.json"),
+            (workspace_root / "sessions", runtime_dir / "sessions"),
+        ]
+
+        for source, target in migrations:
+            if not source.exists():
+                continue
+
+            if target.exists():
+                if source.is_dir():
+                    shutil.rmtree(source, ignore_errors=True)
+                else:
+                    try:
+                        source.unlink()
+                    except FileNotFoundError:
+                        pass
+                continue
+
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(source), str(target))
+
     @staticmethod
     def build_session_dir_name(session_key: str) -> str:
         """将 session_key 编码为安全目录名。"""
@@ -52,11 +91,11 @@ class FileStoragePaths:
 
     def get_agent_file_path(self, workspace_path: str | Path) -> Path:
         """返回 Agent 快照文件路径。"""
-        return Path(workspace_path).expanduser() / "agent.json"
+        return self.get_runtime_dir(workspace_path) / "agent.json"
 
     def get_session_dir(self, workspace_path: str | Path, session_key: str) -> Path:
         """返回会话目录。"""
-        return Path(workspace_path).expanduser() / "sessions" / self.build_session_dir_name(session_key)
+        return self.get_runtime_dir(workspace_path) / "sessions" / self.build_session_dir_name(session_key)
 
     def get_session_meta_path(self, workspace_path: str | Path, session_key: str) -> Path:
         """返回会话元数据路径。"""
@@ -76,7 +115,7 @@ class FileStoragePaths:
 
     def get_agent_cost_summary_path(self, workspace_path: str | Path) -> Path:
         """返回 Agent 成本汇总路径。"""
-        return Path(workspace_path).expanduser() / "telemetry_cost_summary.json"
+        return self.get_runtime_dir(workspace_path) / "telemetry_cost_summary.json"
 
 
 class JsonFileStore:

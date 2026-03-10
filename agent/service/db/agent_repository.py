@@ -49,6 +49,7 @@ class AgentRepository:
         """将 Agent 快照同步到各自 workspace。"""
         workspace_path = Path(record["workspace_path"]).expanduser()
         workspace_path.mkdir(parents=True, exist_ok=True)
+        self._paths.migrate_workspace_runtime_layout(workspace_path)
         JsonFileStore.write_json(self._paths.get_agent_file_path(workspace_path), record)
 
     @staticmethod

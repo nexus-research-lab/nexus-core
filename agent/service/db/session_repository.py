@@ -121,8 +121,11 @@ class SessionRepository:
         """按 agent_id 解析 workspace 路径。"""
         agent = await agent_repository.get_agent(agent_id)
         if agent and agent.workspace_path:
-            return Path(agent.workspace_path).expanduser()
-        return self._paths.workspace_base / agent_id
+            workspace_path = Path(agent.workspace_path).expanduser()
+        else:
+            workspace_path = self._paths.workspace_base / agent_id
+        self._paths.migrate_workspace_runtime_layout(workspace_path)
+        return workspace_path
 
     def _iter_known_workspace_paths(self) -> List[Path]:
         """返回当前所有已知 workspace 路径。"""
@@ -144,16 +147,16 @@ class SessionRepository:
         """定位会话 meta.json。"""
         session_dir_name = self._paths.build_session_dir_name(session_key)
         if workspace_path is not None:
-            candidate = workspace_path / "sessions" / session_dir_name / "meta.json"
+            self._paths.migrate_workspace_runtime_layout(workspace_path)
+            candidate = self._paths.get_session_meta_path(workspace_path, session_key)
             return candidate if candidate.exists() else None
 
         for root_path in self._iter_known_workspace_paths():
-            candidate = root_path / "sessions" / session_dir_name / "meta.json"
+            self._paths.migrate_workspace_runtime_layout(root_path)
+            candidate = self._paths.get_session_meta_path(root_path, session_key)
             if candidate.exists():
                 return candidate
 
-            for meta_path in root_path.glob(f"*/sessions/{session_dir_name}/meta.json"):
-                return meta_path
         return None
 
     def _find_message_log_path(self, session_key: str, workspace_path: Optional[Path] = None) -> Optional[Path]:
@@ -455,7 +458,9 @@ class SessionRepository:
         try:
             seen_paths: set[Path] = set()
             for workspace_path in self._iter_known_workspace_paths():
-                for meta_path in workspace_path.glob("sessions/*/meta.json"):
+                self._paths.migrate_workspace_runtime_layout(workspace_path)
+                runtime_dir = self._paths.get_runtime_dir(workspace_path)
+                for meta_path in runtime_dir.glob("sessions/*/meta.json"):
                     if meta_path in seen_paths:
                         continue
                     seen_paths.add(meta_path)

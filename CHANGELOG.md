@@ -42,6 +42,7 @@
 - 会话区 todo/plan 状态迁移到右侧 `Agent State`，中间 header 收口为更轻的 session telemetry 条。
 - 右侧 `Agent State` 接入真实 telemetry：基于 result 消息展示真实 token/cost，基于 pendingPermission 展示审批队列，基于 toolCalls 展示 trace timeline。
 - 右侧 `Agent State` 收口为只展示成本能力：移除 approval / trace telemetry，改为读取后端成本账本汇总，展示 Session / Agent 成本、token、缓存命中和最近一次执行耗时。
+- Agent 内部运行文件统一下沉到 workspace 隐藏目录 `.agent/`，包括 `agent.json`、Session 元数据/消息日志和成本账本，避免污染用户可见 workspace 根目录。
 
 ## 2026-03-09
 

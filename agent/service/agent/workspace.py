@@ -185,6 +185,8 @@ class AgentWorkspace:
         normalized = (relative_path or "").strip().lstrip("/").replace("\\", "/")
         if not normalized:
             raise ValueError("文件路径不能为空")
+        if normalized == ".agent" or normalized.startswith(".agent/"):
+            raise ValueError("不能直接操作内部运行目录")
 
         target_path = (self.path / normalized).resolve()
         workspace_root = self.path.resolve()
@@ -195,10 +197,8 @@ class AgentWorkspace:
     @staticmethod
     def _is_visible_workspace_path(path: Path) -> bool:
         """过滤运行时数据，避免把会话日志暴露到 workspace 编辑面板。"""
-        hidden_parts = {"sessions", ".git", "__pycache__"}
+        hidden_parts = {".agent", ".git", "__pycache__"}
         if any(part in hidden_parts for part in path.parts):
-            return False
-        if path.name == "agent.json":
             return False
         return True
 
