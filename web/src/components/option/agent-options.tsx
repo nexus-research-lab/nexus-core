@@ -290,8 +290,9 @@ export function AgentOptions(
             </div>
           </div>
           <button
+            aria-label="关闭对话框"
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+            className="p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-primary/50"
           >
             <X className="w-5 h-5"/>
           </button>

@@ -173,7 +173,7 @@ const ChatInput = memo((
             {attachments.map(attachment => (
               <div
                 key={attachment.id}
-                className="relative group flex items-center gap-2 rounded-2xl border border-border/80 bg-white px-3 py-2"
+                className="relative group flex items-center gap-2 rounded-2xl border border-border/80 bg-card px-3 py-2"
               >
                 {attachment.type === 'image' ? (
                   attachment.preview ? (
@@ -192,8 +192,9 @@ const ChatInput = memo((
                   {attachment.file.name}
                 </span>
                 <button
+                  aria-label="移除附件"
                   onClick={() => removeAttachment(attachment.id)}
-                  className="ml-1 rounded p-0.5 text-red-400 opacity-60 transition-opacity hover:bg-red-500/10 hover:opacity-100"
+                  className="ml-1 rounded p-0.5 text-red-400 opacity-60 transition-opacity hover:bg-red-500/10 hover:opacity-100 focus-visible:ring-2 focus-visible:ring-primary/50"
                 >
                   <X size={12}/>
                 </button>
@@ -205,7 +206,7 @@ const ChatInput = memo((
         {/* 主输入框容器 */}
         <div
           className={cn(
-            "relative rounded-[24px] border bg-white/90 backdrop-blur-sm transition-all duration-300",
+            "relative rounded-[24px] border bg-card backdrop-blur-sm transition-all duration-300",
             isFocused
               ? "border-primary/40 shadow-[0_18px_48px_rgba(29,95,145,0.14)]"
               : "border-border/80",
@@ -224,18 +225,20 @@ const ChatInput = memo((
                 accept="image/*,.pdf,.doc,.docx,.txt,.md,.ppt,.pptx,.xls,.xlsx"
                 onChange={handleFileSelect}
                 className="hidden"
+                aria-label="选择附件文件"
               />
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={disabled || isLoading}
+                aria-label="添加附件"
                 className={cn(
                   "p-2 rounded border border-primary/30 transition-all duration-200",
                   "text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/10",
                   "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted-foreground",
+                  "focus-visible:ring-2 focus-visible:ring-primary/50",
                   "hover:shadow-[0_0_10px_rgba(0,240,255,0.2)]"
                 )}
-                title="添加附件"
               >
                 <Paperclip size={16}/>
               </button>
@@ -277,8 +280,8 @@ const ChatInput = memo((
               {charCount > 0 && (
                 <div className="text-[10px] tabular-nums">
                   <span className={cn(
-                    isOverLimit && "text-red-500",
-                    isNearLimit && !isOverLimit && "text-yellow-500",
+                    isOverLimit && "text-destructive",
+                    isNearLimit && !isOverLimit && "text-warning",
                     !isNearLimit && "text-muted-foreground/40"
                   )}>
                     {charCount}
@@ -290,22 +293,23 @@ const ChatInput = memo((
               {/* 发送/停止按钮 */}
               {isLoading ? (
                 <button
+                  aria-label="停止生成"
                   onClick={onStop}
                   className={cn(
                     "flex items-center justify-center p-2",
-                    "bg-red-500/20 hover:bg-red-500/30 text-red-400",
-                    "rounded border border-red-500/50 hover:border-red-500/70",
-                    "transition-all duration-200",
+                    "bg-destructive/20 hover:bg-destructive/30 text-destructive",
+                    "rounded border border-destructive/50 hover:border-destructive/70",
+                    "transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/50",
                     "hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]",
                     "relative overflow-hidden group"
                   )}
-                  title="停止生成 (Esc)"
                 >
-                  <div className="absolute inset-0 bg-red-500/10 animate-pulse"/>
+                  <div className="absolute inset-0 bg-destructive/10 animate-pulse"/>
                   <StopCircle size={16} className="relative z-10"/>
                 </button>
               ) : (
                 <button
+                  aria-label="发送消息"
                   onClick={handleSend}
                   disabled={isInputEmpty || disabled || isOverLimit}
                   className={cn(
@@ -315,9 +319,9 @@ const ChatInput = memo((
                     "hover:bg-primary/30 hover:border-primary/70",
                     "hover:shadow-[0_0_15px_rgba(0,240,255,0.3)]",
                     "disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:bg-primary/20",
+                    "focus-visible:ring-2 focus-visible:ring-primary/50",
                     "relative overflow-hidden group"
                   )}
-                  title="发送 (Enter)"
                 >
                   {/* 悬停光效 */}
                   <div
@@ -341,13 +345,13 @@ const ChatInput = memo((
               ) : (
                 <>
                   <span className="flex items-center gap-1">
-                    <kbd className="px-1 py-0.5 bg-primary/10 rounded text-[9px] border border-primary/20">Enter</kbd>
+                    <kbd>Enter</kbd>
                     <span>发送</span>
                   </span>
                   <span className="flex items-center gap-1">
-                    <kbd className="px-1 py-0.5 bg-primary/10 rounded text-[9px] border border-primary/20">Shift</kbd>
+                    <kbd>Shift</kbd>
                     <span>+</span>
-                    <kbd className="px-1 py-0.5 bg-primary/10 rounded text-[9px] border border-primary/20">Enter</kbd>
+                    <kbd>Enter</kbd>
                     <span>换行</span>
                   </span>
                 </>

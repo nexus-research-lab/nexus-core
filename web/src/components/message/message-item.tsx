@@ -70,7 +70,6 @@ export function MessageItem(
       if (!Array.isArray(msg.content)) continue;
       for (const block of msg.content) {
         if (!block) {
-          console.debug('[assistantMessages] block is null or undefined')
           continue;
         }
         if (block.type === 'tool_use' && block.id) {
@@ -228,25 +227,25 @@ export function MessageItem(
                   {/* 操作按钮 */}
                   <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
+                      aria-label="复制消息"
                       onClick={handleCopyUser}
                       className={cn(
-                        "p-1 rounded transition-colors",
-                        copiedUser ? "text-green-500" : "text-muted-foreground/50 hover:text-foreground"
+                        "p-1 rounded transition-colors focus-visible:ring-2 focus-visible:ring-primary/50",
+                        copiedUser ? "text-success" : "text-muted-foreground/50 hover:text-foreground"
                       )}
-                      title="复制"
                     >
                       {copiedUser ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
                     </button>
                     {onEditUserMessage && (
                       <button
+                        aria-label="编辑消息"
                         onClick={() => {
                           const newContent = prompt('编辑消息:', userContent);
                           if (newContent && newContent !== userContent) {
                             onEditUserMessage(userMessage.message_id, newContent);
                           }
                         }}
-                        className="p-1 rounded text-muted-foreground/50 hover:text-foreground transition-colors"
-                        title="编辑"
+                        className="p-1 rounded text-muted-foreground/50 hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-primary/50"
                       >
                         <Edit2 className="w-3 h-3" />
                       </button>
