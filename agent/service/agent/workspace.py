@@ -149,6 +149,7 @@ class AgentWorkspace:
         self.agent_id = agent_id
         self.path = workspace_path
         self._exists_ensured = False
+        self._initialized = False
 
     def ensure_exists(self) -> None:
         """确保 Workspace 目录和子目录存在"""
@@ -176,8 +177,12 @@ class AgentWorkspace:
 
     def ensure_initialized(self, agent_name: str = "Agent") -> None:
         """确保 workspace 已初始化并写入默认模板（仅首次创建）。"""
+        if self._initialized and self.path.exists():
+            return
+
         self.ensure_exists()
         self._seed_templates(agent_name=agent_name)
+        self._initialized = True
 
     def _seed_templates(self, agent_name: str) -> None:
         """写入缺失的模板文件，不覆盖用户已有内容。"""

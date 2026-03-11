@@ -15,6 +15,7 @@
 - 修复 Next.js 构建时的 workspace root 推断警告，显式设置 `turbopack.root` 为前端工程目录。
 - 修复前端 store 在静态构建阶段直接访问 `localStorage` 的问题，改为构建期安全的 browser storage 包装器。
 - 修复 Workspace 初始化日志刷屏：仅在目录首次创建时输出 `.agent` / `.claude` / `memory` 初始化日志，避免每次读取 workspace 都重复打印。
+- 进一步收敛 Workspace 初始化热路径：`AgentWorkspace` 在进程内只执行一次目录与模板初始化，后续构建 SDK options、读取文件树等路径不再重复跑初始化逻辑。
 
 ### Added
 - 新增自定义对话框组件 (ConfirmDialog, PromptDialog)，替代 window.confirm/prompt。
