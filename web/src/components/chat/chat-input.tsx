@@ -34,9 +34,10 @@ const ChatInput = memo((
   const [inputHistory, setInputHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
-  const [isComposing, setIsComposing] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
+  // 使用 ref 跟踪输入法状态，避免 React 状态更新延迟
+  const isComposingRef = useRef(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -77,7 +78,8 @@ const ChatInput = memo((
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     // 输入法正在组合中，不处理 Enter
-    if (isComposing) return;
+    // 使用 ref 和原生事件双重检查，解决 Safari 中文输入法问题
+    if (isComposingRef.current || e.nativeEvent.isComposing) return;
 
     // Enter发送（不按Shift）
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -251,8 +253,15 @@ const ChatInput = memo((
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                onCompositionStart={() => setIsComposing(true)}
-                onCompositionEnd={() => setIsComposing(false)}
+                onCompositionStart={() => {
+                  isComposingRef.current = true;
+                }}
+                onCompositionEnd={() => {
+                  // Safari 时序问题：延迟更新状态，确保 keydown 事件先处理
+                  setTimeout(() => {
+                    isComposingRef.current = false;
+                  }, 0);
+                }}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
                 placeholder={placeholder}
