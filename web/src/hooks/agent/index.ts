@@ -215,20 +215,20 @@ export function useAgentSession(options: UseAgentSessionOptions = {}): UseAgentS
    * 发送消息
    */
   const sendMessage = useCallback(async (content: string) => {
-    if (!content.trim()) return;
+    if (!content.trim()) return false;
 
     if (!sessionKey) {
       const errorMsg = '请先选择或创建会话';
       console.error('[sendMessage] No sessionKey available');
       setError(errorMsg);
-      return;
+      return false;
     }
 
     if (wsState !== 'connected') {
       const errorMsg = 'WebSocket未连接,请稍候重试';
       console.error('[sendMessage] WebSocket not connected, state:', wsState);
       setError(errorMsg);
-      return;
+      return false;
     }
 
     console.debug('[sendMessage] 发送消息, sessionKey:', sessionKey);
@@ -261,10 +261,12 @@ export function useAgentSession(options: UseAgentSessionOptions = {}): UseAgentS
       });
 
       console.debug('[sendMessage] 消息发送成功');
+      return true;
     } catch (err) {
       console.error('[sendMessage] 发送消息失败:', err);
       setError(err instanceof Error ? err.message : 'Failed to send message');
       setIsLoading(false);
+      return false;
     }
   }, [wsState, sessionKey, wsSend]);
 
@@ -486,6 +488,7 @@ export function useAgentSession(options: UseAgentSessionOptions = {}): UseAgentS
     messages,
     toolCalls,
     sessionKey,
+    connectionState: wsState,
     isLoading,
     pendingPermission,
     sendMessage,

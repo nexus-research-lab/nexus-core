@@ -9,6 +9,7 @@
 
 import { Message, ToolCall } from '@/types';
 import { PendingPermission, PermissionDecisionPayload } from '@/types/permission';
+import { WebSocketState } from '@/lib/websocket/types';
 
 // ==================== Hook 选项 ====================
 
@@ -25,11 +26,12 @@ export interface UseAgentSessionReturn {
     toolCalls: ToolCall[];
     /** 当前 session 路由键 */
     sessionKey: string | null;
+    connectionState: WebSocketState;
     isLoading: boolean;
     error: string | null;
-    sendMessage: (content: string) => Promise<void>;
+    sendMessage: (content: string) => Promise<boolean>;
     startSession: () => void;
-    loadSession: (key: string) => void;
+    loadSession: (key: string) => Promise<void>;
     clearSession: () => void;
     resetSession: () => void;
     loadHistoryMessages: (key: string) => Promise<void>;

@@ -11,6 +11,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { ChatInterface } from "@/components/chat/chat-interface";
 import { AgentOptions } from "@/components/dialog/agent-options";
@@ -61,6 +62,9 @@ const EMPTY_AGENT_COST_SUMMARY: AgentCostSummary = {
 };
 
 export default function Home() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const {
     agents,
     current_agent_id,
@@ -107,7 +111,11 @@ export default function Home() {
   const [agentCostSummary, setAgentCostSummary] = useState<AgentCostSummary>(
     EMPTY_AGENT_COST_SUMMARY,
   );
+  const [autoSendRequest, setAutoSendRequest] = useState<{ id: number; text: string } | null>(null);
   const workspaceSplitRef = useRef<HTMLElement | null>(null);
+  const autoSendRequestIdRef = useRef(0);
+  const processedUrlQueryRef = useRef<string | null>(null);
+  const processingUrlQueryRef = useRef<string | null>(null);
 
   const currentAgent = useMemo(
     () => agents.find((agent) => agent.agent_id === current_agent_id) ?? null,
@@ -299,6 +307,71 @@ export default function Home() {
     });
     setCurrentSession(key);
   }, [createSession, current_agent_id, setCurrentSession]);
+
+  const clearUrlQueryParam = useCallback(() => {
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.delete("query");
+    const nextQueryString = nextParams.toString();
+    router.replace(nextQueryString ? `${pathname}?${nextQueryString}` : pathname);
+  }, [pathname, router, searchParams]);
+
+  useEffect(() => {
+    const nextQuery = searchParams.get("query")?.trim();
+
+    if (!nextQuery) {
+      processingUrlQueryRef.current = null;
+      return;
+    }
+
+    if (processedUrlQueryRef.current === nextQuery || processingUrlQueryRef.current === nextQuery) {
+      return;
+    }
+
+    if (!current_agent_id) {
+      if (agents.length > 0) {
+        set_current_agent(agents[0].agent_id);
+      }
+      return;
+    }
+
+    processingUrlQueryRef.current = nextQuery;
+
+    const prepareAutoSend = async () => {
+      try {
+        let targetSessionKey = current_session_key;
+
+        if (!targetSessionKey) {
+          targetSessionKey = await createSession({
+            title: "New Chat",
+            agent_id: current_agent_id,
+          });
+          setCurrentSession(targetSessionKey);
+        }
+
+        autoSendRequestIdRef.current += 1;
+        processedUrlQueryRef.current = nextQuery;
+        setAutoSendRequest({ id: autoSendRequestIdRef.current, text: nextQuery });
+        clearUrlQueryParam();
+      } finally {
+        processingUrlQueryRef.current = null;
+      }
+    };
+
+    void prepareAutoSend();
+  }, [
+    agents,
+    clearUrlQueryParam,
+    createSession,
+    current_agent_id,
+    current_session_key,
+    searchParams,
+    setCurrentSession,
+    set_current_agent,
+  ]);
+
+  const handleAutoSendHandled = useCallback((requestId: number) => {
+    setAutoSendRequest((current) => (current?.id === requestId ? null : current));
+  }, []);
 
   const handleSaveAgentOptions = useCallback(async (title: string, options: SessionOptions) => {
     const agentOptions = {
@@ -495,6 +568,8 @@ export default function Home() {
                   <div className="min-h-0 flex-1">
                     <ChatInterface
                       agentId={currentAgent.agent_id}
+                      autoSendRequest={autoSendRequest}
+                      onAutoSendHandled={handleAutoSendHandled}
                       onOpenWorkspaceFile={handleOpenWorkspaceFile}
                       onLoadingChange={setIsSessionBusy}
                       onSessionSnapshotChange={handleSessionSnapshotChange}

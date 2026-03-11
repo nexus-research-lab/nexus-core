@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useAgentSession } from "@/hooks/agent";
 import { MessageItem } from "@/components/message";
 import { useExtractTodos } from "@/hooks/use-extract-todos";
-import { useSessionLoader } from "@/hooks/use-session-loader";
 
 import ChatHeader from "./chat-header";
 import ChatInput from "./chat-input";
@@ -26,6 +25,11 @@ interface ChatInterfaceProps {
     lastActivityAt: number;
     sessionId: string | null;
   }) => void;
+  autoSendRequest?: {
+    id: number;
+    text: string;
+  } | null;
+  onAutoSendHandled?: (requestId: number) => void;
 }
 
 /**
@@ -54,14 +58,22 @@ export function ChatInterface({
   onTodosChange,
   onLoadingChange,
   onSessionSnapshotChange,
+  autoSendRequest,
+  onAutoSendHandled,
 }: ChatInterfaceProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const handledAutoSendIdsRef = useRef(new Set<number>());
+  const previousSessionKeyRef = useRef<string | null>(null);
+  const draftTokenRef = useRef(0);
+  const [draftSync, setDraftSync] = useState<{ token: number; text: string } | null>(null);
+  const [isSessionLoading, setIsSessionLoading] = useState(false);
 
   const {
     error,
     messages,
     toolCalls,
     sessionKey,
+    connectionState,
     isLoading,
     pendingPermission,
     sendMessage,
@@ -76,6 +88,11 @@ export function ChatInterface({
       console.error("Session error:", err);
     },
   });
+
+  const syncDraftInput = useCallback((text: string) => {
+    draftTokenRef.current += 1;
+    setDraftSync({ token: draftTokenRef.current, text });
+  }, []);
 
   // Extract todos using custom hook
   const todos = useExtractTodos(messages, externalSessionKey);
@@ -101,8 +118,31 @@ export function ChatInterface({
     });
   }, [externalSessionKey, messages, onSessionSnapshotChange]);
 
-  // 响应式会话加载 - 统一处理外部 agentId 变化
-  useSessionLoader(externalSessionKey, loadSession, "ChatInterface");
+  useEffect(() => {
+    if (previousSessionKeyRef.current === externalSessionKey) {
+      return;
+    }
+
+    previousSessionKeyRef.current = externalSessionKey;
+
+    if (!externalSessionKey) {
+      setIsSessionLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setIsSessionLoading(true);
+
+    void loadSession(externalSessionKey).finally(() => {
+      if (!cancelled) {
+        setIsSessionLoading(false);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [externalSessionKey, loadSession]);
 
   // 按 roundId 分组消息
   const messageGroups = useMemo(() => {
@@ -129,10 +169,54 @@ export function ChatInterface({
     scrollToBottom('smooth');
   }, [messages, toolCalls, scrollToBottom]);
 
-  const handleSendMessage = async (content: string) => {
-    if (!content.trim() || isLoading) return;
-    await sendMessage(content);
-  };
+  const handleSendMessage = useCallback(async (content: string) => {
+    if (!content.trim() || isLoading) return false;
+    return sendMessage(content);
+  }, [isLoading, sendMessage]);
+
+  useEffect(() => {
+    if (!autoSendRequest || handledAutoSendIdsRef.current.has(autoSendRequest.id)) {
+      return;
+    }
+
+    syncDraftInput(autoSendRequest.text);
+
+    if (!externalSessionKey || sessionKey !== externalSessionKey) {
+      return;
+    }
+
+    if (isSessionLoading || isLoading || connectionState !== 'connected') {
+      return;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      const sent = await handleSendMessage(autoSendRequest.text);
+
+      if (cancelled || !sent) {
+        return;
+      }
+
+      handledAutoSendIdsRef.current.add(autoSendRequest.id);
+      syncDraftInput('');
+      onAutoSendHandled?.(autoSendRequest.id);
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [
+    autoSendRequest,
+    connectionState,
+    externalSessionKey,
+    handleSendMessage,
+    isLoading,
+    isSessionLoading,
+    onAutoSendHandled,
+    sessionKey,
+    syncDraftInput,
+  ]);
 
   const handleStop = () => {
     stopGeneration();
@@ -197,6 +281,7 @@ export function ChatInterface({
 
           {/* Input Area */}
           <ChatInput
+            draftSync={draftSync}
             isLoading={isLoading}
             onSendMessage={handleSendMessage}
             onStop={handleStop}

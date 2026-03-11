@@ -19,6 +19,10 @@ interface ChatInputProps {
   disabled?: boolean;
   placeholder?: string;
   maxLength?: number;
+  draftSync?: {
+    token: number;
+    text: string;
+  } | null;
 }
 
 const ChatInput = memo((
@@ -28,7 +32,8 @@ const ChatInput = memo((
     onStop,
     disabled = false,
     placeholder = "输入指令...",
-    maxLength = 10000
+    maxLength = 10000,
+    draftSync = null,
   }: ChatInputProps) => {
   const [input, setInput] = useState("");
   const [inputHistory, setInputHistory] = useState<string[]>([]);
@@ -40,6 +45,7 @@ const ChatInput = memo((
   const isComposingRef = useRef(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const appliedDraftTokenRef = useRef<number | null>(null);
 
   // 自动调整textarea高度
   useEffect(() => {
@@ -55,6 +61,16 @@ const ChatInput = memo((
       textareaRef.current.focus();
     }
   }, [disabled]);
+
+  useEffect(() => {
+    if (!draftSync || appliedDraftTokenRef.current === draftSync.token) {
+      return;
+    }
+
+    // 使用 token 控制外部预填充，只同步一次，避免覆盖用户手动输入。
+    appliedDraftTokenRef.current = draftSync.token;
+    setInput(draftSync.text);
+  }, [draftSync]);
 
   const handleSend = useCallback(() => {
     const trimmedInput = input.trim();
