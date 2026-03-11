@@ -9,6 +9,7 @@
 - 修复左侧 session 区域 `msgs` 长期显示为 0 的问题：前端在消息加载和实时更新后会同步本地 session 快照，及时刷新 `message_count` 和最近活动时间。
 - 修复 workspace 文件编辑面板展开/收起的跳动：改为常驻挂载 + 显式宽度过渡，减少 flex 重排导致的动画突变。
 - 进一步调整 workspace 文件编辑布局：将 editor 从 workspace 侧栏中拆成独立中间面板，避免展开时推挤顶部工具条和侧栏。
+- 修复 Agent Space 左右侧栏宽度不一致的问题，统一 `Workspace` 与 `Agent State` 的固定宽度。
 
 ### Added
 - 新增自定义对话框组件 (ConfirmDialog, PromptDialog)，替代 window.confirm/prompt。
