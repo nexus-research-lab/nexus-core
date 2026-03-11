@@ -489,7 +489,7 @@ export function WorkspaceSidebar({
 
   return (
     <aside
-      className="flex min-h-0 w-[280px] shrink-0 flex-col rounded-[20px] panel-surface"
+      className="flex min-h-0 w-[292px] shrink-0 flex-col rounded-[20px] panel-surface"
     >
       <div className="flex h-12 items-center justify-between border-b border-border/80 px-4">
         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
