@@ -54,7 +54,7 @@ if [ "$PRS" != "[]" ] && [ -n "$PRS" ]; then
 
         # Use Codex to review the branch
         log "  🔍 Reviewing with Codex..."
-        REVIEW=$(cd "$REPO_DIR" && codex review --base main "Review for bugs, security issues, and code quality. Reply with: APPROVE or REJECT and reason." 2>&1 || echo "REVIEW_FAILED")
+        REVIEW=$(cd "$REPO_DIR" && codex review --base main 2>&1 || echo "REVIEW_FAILED")
 
         log "  Codex review output: ${REVIEW:0:200}..."
 
@@ -101,7 +101,7 @@ git branch -r | grep -v HEAD | grep -v main | sed 's/.*origin\///' | while read 
 
         # Use Codex to review
         log "  🔍 Reviewing with Codex..."
-        REVIEW=$(cd "$REPO_DIR" && codex review --base main "Review for bugs, security issues, and code quality. Reply with: APPROVE or REJECT and reason." 2>&1 || echo "REVIEW_FAILED")
+        REVIEW=$(cd "$REPO_DIR" && codex review --base main 2>&1 || echo "REVIEW_FAILED")
 
         log "  Codex review output: ${REVIEW:0:200}..."
 
