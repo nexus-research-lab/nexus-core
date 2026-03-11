@@ -11,7 +11,7 @@ import { Check, CheckCircle, ChevronDown, ChevronRight, Clock, Copy, Loader, Ter
 import { cn } from '@/lib/utils';
 import { ToolResultContent, ToolUseContent } from '@/types/message';
 import { CodeBlock } from './code-block';
-import { PermissionDialog } from '@/components/permission/permission-dialog';
+import { PermissionDialog } from '@/components/dialog/permission-dialog';
 
 // ==================== 类型定义 ====================
 

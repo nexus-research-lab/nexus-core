@@ -7,11 +7,11 @@ import { MessageItem } from "@/components/message";
 import { useExtractTodos } from "@/hooks/use-extract-todos";
 import { useSessionLoader } from "@/hooks/use-session-loader";
 
-import ChatHeader from "@/components/header/chat-header";
-import ChatInput from "@/components/chat/chat-input";
-import { EmptyState } from "@/components/empty-state";
+import ChatHeader from "./chat-header";
+import ChatInput from "./chat-input";
+import { EmptyState } from "./empty-state";
 import { Message } from "@/types/message";
-import { TodoItem } from "@/components/todo/agent-task-widget";
+import { TodoItem } from "@/components/workspace/agent-task-widget";
 
 
 interface ChatInterfaceProps {

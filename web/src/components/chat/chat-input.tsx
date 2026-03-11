@@ -3,7 +3,7 @@
 import { KeyboardEvent, memo, useCallback, useEffect, useRef, useState } from "react";
 import { FileText, Image, Paperclip, Send, StopCircle, X, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { LoadingOrb } from "@/components/header/loading";
+import { LoadingOrb } from "@/components/loading";
 
 interface AttachmentFile {
   id: string;
@@ -137,7 +137,7 @@ const ChatInput = memo((
         const reader = new FileReader();
         reader.onload = (e) => {
           setAttachments(prev =>
-            prev.map(a => a.id === attachment.id ? {...a, preview: e.target?.result as string} : a)
+            prev.map(a => a.id === attachment.id ? { ...a, preview: e.target?.result as string } : a)
           );
         };
         reader.readAsDataURL(file);
@@ -183,10 +183,10 @@ const ChatInput = memo((
                       className="w-8 h-8 object-cover rounded"
                     />
                   ) : (
-                    <Image size={16} className="text-primary"/>
+                    <Image size={16} className="text-primary" />
                   )
                 ) : (
-                  <FileText size={16} className="text-accent"/>
+                  <FileText size={16} className="text-accent" />
                 )}
                 <span className="text-xs text-foreground/70 max-w-[120px] truncate">
                   {attachment.file.name}
@@ -196,7 +196,7 @@ const ChatInput = memo((
                   onClick={() => removeAttachment(attachment.id)}
                   className="ml-1 rounded p-0.5 text-red-400 opacity-60 transition-opacity hover:bg-red-500/10 hover:opacity-100 focus-visible:ring-2 focus-visible:ring-primary/50"
                 >
-                  <X size={12}/>
+                  <X size={12} />
                 </button>
               </div>
             ))}
@@ -240,7 +240,7 @@ const ChatInput = memo((
                   "hover:shadow-[0_0_10px_rgba(0,240,255,0.2)]"
                 )}
               >
-                <Paperclip size={16}/>
+                <Paperclip size={16} />
               </button>
             </div>
 
@@ -304,8 +304,8 @@ const ChatInput = memo((
                     "relative overflow-hidden group"
                   )}
                 >
-                  <div className="absolute inset-0 bg-destructive/10 animate-pulse"/>
-                  <StopCircle size={16} className="relative z-10"/>
+                  <div className="absolute inset-0 bg-destructive/10 animate-pulse" />
+                  <StopCircle size={16} className="relative z-10" />
                 </button>
               ) : (
                 <button
@@ -325,8 +325,8 @@ const ChatInput = memo((
                 >
                   {/* 悬停光效 */}
                   <div
-                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"/>
-                  <Send size={16} className="relative z-10"/>
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                  <Send size={16} className="relative z-10" />
                 </button>
               )}
             </div>
@@ -337,8 +337,8 @@ const ChatInput = memo((
             <div className="flex items-center gap-3 text-[10px] text-muted-foreground/50">
               {isLoading ? (
                 <span className="flex items-center gap-2 text-primary/70">
-                  <LoadingOrb frames={["✽", "✻", "✶", "✢", "·"]}/>
-                  <Zap size={10} className="animate-pulse"/>
+                  <LoadingOrb frames={["✽", "✻", "✶", "✢", "·"]} />
+                  <Zap size={10} className="animate-pulse" />
                   <span className="animate-pulse">正在处理...</span>
                   <span className="text-muted-foreground/30">[ESC 停止]</span>
                 </span>

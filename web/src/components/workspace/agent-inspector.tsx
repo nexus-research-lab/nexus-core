@@ -11,8 +11,8 @@ import {
 import { Agent } from "@/types/agent";
 import { Session } from "@/types/session";
 import { formatCost, formatRelativeTime, formatTokens } from "@/lib/utils";
-import { TodoItem } from "@/components/todo/agent-task-widget";
-import { LoadingOrb } from "@/components/header/loading";
+import { TodoItem } from "./agent-task-widget";
+import { LoadingOrb } from "@/components/loading";
 import { AgentCostSummary, SessionCostSummary } from "@/types/cost";
 
 interface AgentInspectorProps {
@@ -61,7 +61,7 @@ export function AgentInspector({
         {/* Runtime 状态 */}
         <section className="border-b border-border/80 px-3 py-3">
           <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            <Activity className="h-3.5 w-3.5"/>
+            <Activity className="h-3.5 w-3.5" />
             Runtime
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -104,7 +104,7 @@ export function AgentInspector({
         <section className="border-b border-border/80 px-3 py-3">
           <div className="mb-3 flex items-center justify-between gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
             <div className="flex items-center gap-2">
-              <CheckSquare className="h-3.5 w-3.5"/>
+              <CheckSquare className="h-3.5 w-3.5" />
               Current Plan
             </div>
             <div className="flex items-center gap-1.5 rounded-full border border-border/70 bg-secondary/70 px-2 py-0.5 text-[11px] tracking-normal normal-case text-muted-foreground">
@@ -114,7 +114,7 @@ export function AgentInspector({
           </div>
           {activeTodo && (
             <div className="flex items-start gap-2 rounded-xl border border-primary/15 bg-primary/6 px-3 py-2 text-sm text-foreground">
-              <LoaderCircle className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-primary"/>
+              <LoaderCircle className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-primary" />
               <div className="min-w-0">
                 <p className="truncate">{activeTodo.content}</p>
                 {activeTodo.activeForm && (
@@ -154,7 +154,7 @@ export function AgentInspector({
         {/* Token / Cost */}
         <section className="border-b border-border/80 px-3 py-3">
           <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            <Cpu className="h-3.5 w-3.5"/>
+            <Cpu className="h-3.5 w-3.5" />
             Token / Cost
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -200,7 +200,7 @@ export function AgentInspector({
         {/* Policy / Workspace */}
         <section className="px-3 py-3">
           <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-            <ShieldCheck className="h-3.5 w-3.5"/>
+            <ShieldCheck className="h-3.5 w-3.5" />
             Policy / Workspace
           </div>
           <div className="space-y-1.5">

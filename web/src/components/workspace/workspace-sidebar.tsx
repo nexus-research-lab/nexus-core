@@ -32,7 +32,7 @@ import {
 import { Agent, WorkspaceFileEntry } from "@/types/agent";
 import { Session } from "@/types/session";
 import { cn, formatRelativeTime, truncate } from "@/lib/utils";
-import { ConfirmDialog, PromptDialog } from "@/components/ui/confirm-dialog";
+import { ConfirmDialog, PromptDialog } from "@/components/dialog/confirm-dialog";
 
 interface FileTreeNode {
   entry: WorkspaceFileEntry;

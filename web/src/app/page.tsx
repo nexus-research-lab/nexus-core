@@ -12,8 +12,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 
-import { ChatInterface } from "@/components/chat-interface";
-import { AgentOptions } from "@/components/option/agent-options";
+import { ChatInterface } from "@/components/chat/chat-interface";
+import { AgentOptions } from "@/components/dialog/agent-options";
 import { AgentDirectory } from "@/components/workspace/agent-directory";
 import { AgentInspector } from "@/components/workspace/agent-inspector";
 import { AgentSwitcher } from "@/components/workspace/agent-switcher";
@@ -26,7 +26,7 @@ import { getSessionCostSummary } from "@/lib/agent-api";
 import { getAgentCostSummaryApi, validateAgentNameApi } from "@/lib/agent-manage-api";
 import { initialOptions } from "@/config/options";
 import { SessionOptions } from "@/types/session";
-import { TodoItem } from "@/components/todo/agent-task-widget";
+import { TodoItem } from "@/components/workspace/agent-task-widget";
 import { cn } from "@/lib/utils";
 import { AgentCostSummary, SessionCostSummary } from "@/types/cost";
 

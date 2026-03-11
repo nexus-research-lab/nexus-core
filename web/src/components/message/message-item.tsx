@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { ContentBlock, Message, ResultMessage } from "@/types/message";
 import { UserQuestionAnswer } from "@/types/ask-user-question";
 import { ContentRenderer } from "./content-renderer";
-import { MessageStats } from "@/components/header/message-stats";
+import { MessageStats } from "./message-stats";
 
 interface MessageItemProps {
   roundId: string;
