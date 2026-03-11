@@ -48,30 +48,33 @@ if [ "$PRS" != "[]" ] && [ -n "$PRS" ]; then
 
         # Checkout PR branch locally
         log "  Checking out PR branch..."
+        git stash 2>&1 | grep -v "Saved working directory" || true
         git checkout "$PR_BRANCH" 2>&1 | grep -v "Switched to" || true
         git pull origin "$PR_BRANCH" 2>&1 | grep -v "From https" || true
 
-        # Get diff between main and this branch
-        log "  Getting diff for review..."
-        DIFF=$(git diff origin/main...origin/"$PR_BRANCH" 2>/dev/null || echo "")
+        # Use Codex to review the branch
+        log "  🔍 Reviewing with Codex..."
+        REVIEW=$(cd "$REPO_DIR" && codex review --base main "Review for bugs, security issues, and code quality. Reply with: APPROVE or REJECT and reason." 2>&1 || echo "REVIEW_FAILED")
 
-        if [ -n "$DIFF" ]; then
-            # Use Codex to review
-            log "  🔍 Reviewing with Codex..."
-            REVIEW=$(echo "$DIFF" | codex --model auto --full-auto "Review this code change. Check for: 1) Bugs/errors 2) Security issues 3) Code quality 4) Breaking changes. Reply with only: APPROVE or REJECT and one sentence reason." 2>/dev/null || echo "REVIEW_FAILED")
+        log "  Codex review output: ${REVIEW:0:200}..."
 
-            log "  Codex review: $REVIEW"
-
-            if echo "$REVIEW" | grep -qi "APPROVE"; then
-                log "  ✅ Approved by Codex, merging..."
-                gh pr merge "$PR_NUM" --repo nexus-research-lab/nexus-core --squash --delete-branch 2>&1 || log "  ⚠️  Merge failed"
-                log "  ✅ PR #$PR_NUM merged successfully"
-            else
-                log "  ❌ Rejected by Codex: $REVIEW"
-            fi
+        if echo "$REVIEW" | grep -qiE "(approve|approved|✅|looks good|no issues found)"; then
+            log "  ✅ Approved by Codex, merging..."
+            gh pr merge "$PR_NUM" --repo nexus-research-lab/nexus-core --squash --delete-branch 2>&1 || log "  ⚠️  Merge failed"
+            log "  ✅ PR #$PR_NUM merged successfully"
         else
-            log "  ⚠️  No diff available, skipping review"
+            log "  ❌ Rejected by Codex"
+            # Add a comment on the PR
+            gh pr comment "$PR_NUM" --repo nexus-research-lab/nexus-core --body "🤖 **Codex Review: REJECTED**
+
+Review found potential issues that need to be addressed before merging.
+
+${REVIEW:0:500}" 2>&1 || true
         fi
+
+        # Return to main
+        git checkout main 2>&1 | grep -v "Switched to" || true
+        git stash pop 2>&1 | grep -v "Dropped" || true
     done
 else
     log "No open PRs found"
@@ -92,49 +95,45 @@ git branch -r | grep -v HEAD | grep -v main | sed 's/.*origin\///' | while read 
 
         # Checkout the branch
         log "  Checking out $BRANCH..."
+        git stash 2>&1 | grep -v "Saved working directory" || true
         git checkout "$BRANCH" 2>&1 | grep -v "Switched to" || true
         git pull origin "$BRANCH" 2>&1 | grep -v "From https" || true
 
-        # Get diff between main and this branch
-        log "  Getting diff for review..."
-        DIFF=$(git diff origin/main...HEAD 2>/dev/null || echo "")
+        # Use Codex to review
+        log "  🔍 Reviewing with Codex..."
+        REVIEW=$(cd "$REPO_DIR" && codex review --base main "Review for bugs, security issues, and code quality. Reply with: APPROVE or REJECT and reason." 2>&1 || echo "REVIEW_FAILED")
 
-        if [ -n "$DIFF" ]; then
-            # Use Codex to review
-            log "  🔍 Reviewing with Codex..."
-            REVIEW=$(echo "$DIFF" | codex --model auto --full-auto "Review this code change. Check for: 1) Bugs/errors 2) Security issues 3) Code quality 4) Breaking changes. Reply with only: APPROVE or REJECT and one sentence reason." 2>/dev/null || echo "REVIEW_FAILED")
+        log "  Codex review output: ${REVIEW:0:200}..."
 
-            log "  Codex review: $REVIEW"
+        if echo "$REVIEW" | grep -qiE "(approve|approved|✅|looks good|no issues found)"; then
+            log "  ✅ Approved by Codex, merging to main..."
 
-            if echo "$REVIEW" | grep -qi "APPROVE"; then
-                log "  ✅ Approved by Codex, merging to main..."
+            # Switch to main and merge
+            git checkout main 2>&1 | grep -v "Switched to" || true
+            git pull origin main 2>&1 | grep -v "From https" || true
 
-                # Switch to main and merge
-                git checkout main 2>&1 | grep -v "Switched to" || true
-                git pull origin main 2>&1 | grep -v "From https" || true
+            # Merge with squash
+            git merge --squash "$BRANCH" 2>&1 || log "  ⚠️  Merge failed"
+            git commit -m "Merge $BRANCH into main (auto-approved by Codex)" 2>&1 || log "  ⚠️  Commit failed"
+            git push origin main 2>&1 || log "  ⚠️  Push failed"
 
-                # Merge with squash
-                git merge --squash "$BRANCH" 2>&1 || log "  ⚠️  Merge failed"
-                git commit -m "Merge $BRANCH into main (auto-approved by Codex)" 2>&1 || log "  ⚠️  Commit failed"
-                git push origin main 2>&1 || log "  ⚠️  Push failed"
+            # Delete the branch
+            git branch -D "$BRANCH" 2>&1 || true
+            git push origin --delete "$BRANCH" 2>&1 || true
 
-                # Delete the branch
-                git branch -D "$BRANCH" 2>&1 || true
-                git push origin --delete "$BRANCH" 2>&1 || true
-
-                log "  ✅ Branch $BRANCH merged and deleted"
-            else
-                log "  ❌ Rejected by Codex: $REVIEW"
-                log "  Skipping merge for $BRANCH"
-            fi
+            log "  ✅ Branch $BRANCH merged and deleted"
         else
-            log "  ⚠️  No diff available, skipping review"
+            log "  ❌ Rejected by Codex, skipping merge"
+            # Return to main
+            git checkout main 2>&1 | grep -v "Switched to" || true
         fi
+
+        git stash pop 2>&1 | grep -v "Dropped" || true
     fi
 done
 
 # Return to original branch
-if [ -n "$CURRENT_BRANCH" ]; then
+if [ -n "$CURRENT_BRANCH" ] && [ "$CURRENT_BRANCH" != "$(git branch --show-current)" ]; then
     git checkout "$CURRENT_BRANCH" 2>&1 | grep -v "Switched to" || true
 fi
 
