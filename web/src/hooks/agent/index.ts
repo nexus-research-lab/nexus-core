@@ -15,6 +15,7 @@ import { useSessionStore } from '@/store/session';
 import { useWorkspaceLiveStore } from '@/store/workspace-live';
 import { Message, StreamEvent, ToolCall, UserMessage } from '@/types';
 import { PendingPermission, PermissionDecisionPayload } from '@/types/permission';
+import { generateUuid } from '@/lib/uuid';
 import { UseAgentSessionOptions, UseAgentSessionReturn } from './types';
 import {
   createClearSession,
@@ -234,7 +235,7 @@ export function useAgentSession(options: UseAgentSessionOptions = {}): UseAgentS
 
     try {
       // 创建用户消息
-      const message_id = crypto.randomUUID();
+      const message_id = generateUuid();
       activeSessionKeyRef.current = sessionKey;
       const userMessage: Message = {
         message_id: message_id,
@@ -416,7 +417,7 @@ export function useAgentSession(options: UseAgentSessionOptions = {}): UseAgentS
 
   // 创建操作函数
   const startSession = useCallback(() => {
-    const newSessionKey = crypto.randomUUID();
+    const newSessionKey = generateUuid();
     loadRequestIdRef.current += 1;
     activeSessionKeyRef.current = newSessionKey;
     setSessionKey(newSessionKey);
