@@ -58,7 +58,7 @@ if [ "$PRS" != "[]" ] && [ -n "$PRS" ]; then
 
         # Use Codex to review the branch
         log "  🔍 Reviewing with Codex..."
-        REVIEW=$(cd "$REPO_DIR" && timeout 120 codex review --base main 2>&1 || echo "REVIEW_TIMEOUT")
+        REVIEW=$(cd "$REPO_DIR" && codex review --base main 2>&1 || echo "REVIEW_FAILED")
 
         log "  Codex review output: ${REVIEW:0:300}..."
 
@@ -109,7 +109,7 @@ git branch -r | grep -v HEAD | grep -v main | sed 's/.*origin\///' | while read 
 
         # Use Codex to review
         log "  🔍 Reviewing with Codex..."
-        REVIEW=$(cd "$REPO_DIR" && timeout 120 codex review --base main 2>&1 || echo "REVIEW_TIMEOUT")
+        REVIEW=$(cd "$REPO_DIR" && codex review --base main 2>&1 || echo "REVIEW_FAILED")
 
         log "  Codex review output: ${REVIEW:0:300}..."
 
