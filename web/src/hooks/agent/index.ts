@@ -182,7 +182,7 @@ export function useAgentSession(options: UseAgentSessionOptions = {}): UseAgentS
     url: wsUrl,
     autoConnect: true,  // 启用自动连接
     reconnect: true,
-    heartbeatInterval: 0,
+    heartbeatInterval: 30000,
     onMessage: handleWebSocketMessage,
     onError: (event) => {
       const errorMsg = 'WebSocket error occurred';
