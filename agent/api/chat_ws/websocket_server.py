@@ -10,7 +10,7 @@
 
 from fastapi import APIRouter, WebSocket
 
-from agent.channels.ws.handler import WebSocketHandler
+from agent.service.channels.ws.handler import WebSocketHandler
 from agent.utils.logger import logger
 
 router = APIRouter()

@@ -9,7 +9,7 @@
 
 """兼容导出新的 workspace 观察器。"""
 
-from agent.infra.workspace.monitor import (
+from agent.service.workspace.monitor import (
     ActiveWriteState,
     ObservedFileSnapshot,
     WorkspaceObserver,

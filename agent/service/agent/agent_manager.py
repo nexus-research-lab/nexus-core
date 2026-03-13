@@ -10,7 +10,7 @@
 """
 Agent 生命周期管理器
 
-[INPUT]: 依赖 db/agent_repository，依赖 agent/workspace 的 AgentWorkspace
+[INPUT]: 依赖 storage/agent_repository 与 service/workspace
 [OUTPUT]: 对外提供 AgentManager（Agent 创建/查询/配置构建）
 [POS]: service 层的 Agent 管理中心，被 ChatService 和 API 消费
 [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
@@ -22,8 +22,8 @@ import unicodedata
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from agent.infra.storage.agent_repository import agent_repository
-from agent.infra.workspace.initializer import AgentWorkspace, get_workspace_base_path
+from agent.storage.agent_repository import agent_repository
+from agent.service.workspace.initializer import AgentWorkspace, get_workspace_base_path
 from agent.schema.model_agent import AAgent, AgentOptions, ValidateAgentNameResponse
 from agent.utils.logger import logger
 
