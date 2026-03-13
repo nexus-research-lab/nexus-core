@@ -22,14 +22,17 @@
 """
 
 import asyncio
+import uuid
 from typing import Any, Dict
 
 from claude_agent_sdk import ClaudeSDKClient, PermissionResult, ToolPermissionContext
+from claude_agent_sdk.types import ResultMessage
 
 from agent.service.agent_manager import agent_manager
 from agent.service.channel.channel import MessageSender, PermissionStrategy
 from agent.service.handler.base_handler import BaseHandler
 from agent.service.process.chat_message_processor import ChatMessageProcessor
+from agent.service.schema.model_message import AMessage
 from agent.service.session_manager import session_manager
 from agent.service.session_store import session_store
 from agent.utils.logger import logger
@@ -105,8 +108,6 @@ class ChatHandler(BaseHandler):
         async with session_manager.get_lock(session_key):
             logger.info(f"📨 处理消息: key={session_key}, round_id={round_id}")
 
-            await client.query(content)
-
             processor = ChatMessageProcessor(
                 session_key=session_key,
                 query=content,
@@ -114,14 +115,76 @@ class ChatHandler(BaseHandler):
                 agent_id=real_agent_id,
             )
 
-            async for response_msg in client.receive_messages():
-                processed_messages = await processor.process_messages(response_msg)
-                for a_message in processed_messages:
-                    await self.send(a_message)
-                if processor.subtype in ["success", "error"]:
-                    break
+            try:
+                await client.query(content)
 
-            logger.info(f"✅ 消息处理完成: key={session_key}, 共 {processor.message_count} 条响应")
+                async for response_msg in client.receive_messages():
+                    processed_messages = await processor.process_messages(response_msg)
+                    for a_message in processed_messages:
+                        await self.send(a_message)
+                    if processor.subtype in ["success", "error"]:
+                        break
+
+                logger.info(f"✅ 消息处理完成: key={session_key}, 共 {processor.message_count} 条响应")
+            except Exception as e:
+                logger.error(f"❌ 消息处理异常终止: key={session_key}, error={e}")
+                await self._emit_error_result(
+                    session_key=session_key,
+                    agent_id=real_agent_id,
+                    round_id=processor.round_id or round_id,
+                    error=e,
+                )
+
+    async def _emit_error_result(
+            self,
+            session_key: str,
+            agent_id: str,
+            round_id: Any,
+            error: Exception,
+    ) -> None:
+        """为异常终止的轮次补发终态 result，避免前端一直处于 loading。"""
+        if not round_id:
+            logger.warning(f"⚠️ 无法补发错误结果: 缺少 round_id, key={session_key}")
+            return
+
+        if await session_store.has_round_result(session_key, round_id):
+            logger.info(f"ℹ️ 跳过补发错误结果: round 已有 result, key={session_key}, round_id={round_id}")
+            return
+
+        session_id = session_manager.get_session_id(session_key)
+        error_text = str(error).strip() or error.__class__.__name__
+
+        # 工具或流式处理异常时，统一补一条 error result，确保前端能结束当前轮次。
+        result_message = AMessage(
+            session_key=session_key,
+            agent_id=agent_id or "main",
+            round_id=round_id,
+            session_id=session_id,
+            message_id=str(uuid.uuid4()),
+            message=ResultMessage(
+                subtype="error",
+                duration_ms=0,
+                duration_api_ms=0,
+                is_error=True,
+                num_turns=0,
+                session_id=session_id,
+                total_cost_usd=0,
+                usage={
+                    "input_tokens": 0,
+                    "cache_creation_input_tokens": 0,
+                    "cache_read_input_tokens": 0,
+                    "output_tokens": 0,
+                    "server_tool_use": {"web_search_requests": 0, "web_fetch_requests": 0},
+                    "service_tier": "standard",
+                    "cache_creation": {"ephemeral_1h_input_tokens": 0, "ephemeral_5m_input_tokens": 0},
+                },
+                result=f"工具执行失败: {error_text}",
+            ),
+            message_type="result",
+        )
+
+        await session_store.save_message(result_message)
+        await self.send(result_message)
 
     async def _get_or_create_client(self, session_key: str, agent_id: str = "") -> ClaudeSDKClient:
         """懒加载：按需获取或创建 SDK client
