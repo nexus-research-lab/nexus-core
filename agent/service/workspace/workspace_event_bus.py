@@ -9,6 +9,6 @@
 
 """兼容导出新的 workspace 事件总线。"""
 
-from agent.infra.workspace.monitor import WorkspaceEventBus, workspace_event_bus
+from agent.service.workspace.monitor import WorkspaceEventBus, workspace_event_bus
 
 __all__ = ["WorkspaceEventBus", "workspace_event_bus"]

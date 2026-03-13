@@ -12,11 +12,11 @@
 import asyncio
 from typing import Any, Dict
 
-from agent.infra.agent.client import agent_client_runtime
-from agent.infra.agent.chat_message_processor import ChatMessageProcessor
-from agent.channels.message_sender import MessageSender
-from agent.infra.permission.permission_strategy import PermissionStrategy
-from agent.infra.agent.session_manager import session_manager
+from agent.service.agent.client import agent_client_runtime
+from agent.service.message.chat_message_processor import ChatMessageProcessor
+from agent.service.channels.message_sender import MessageSender
+from agent.service.permission.strategy.permission_strategy import PermissionStrategy
+from agent.service.session.session_manager import session_manager
 from agent.schema.model_message import EventMessage, build_error_event
 from agent.service.session.session_store import session_store
 from agent.utils.logger import logger

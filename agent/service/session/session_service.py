@@ -11,8 +11,8 @@
 
 from typing import List, Optional
 
-from agent.infra.agent.session_manager import session_manager
-from agent.infra.session.session_router import build_session_key, get_default_agent_id
+from agent.service.session.session_manager import session_manager
+from agent.service.session.session_router import build_session_key, get_default_agent_id
 from agent.schema.model_cost import SessionCostSummary
 from agent.schema.model_message import Message
 from agent.schema.model_session import ASession

@@ -20,8 +20,8 @@
 
 from typing import Dict, List, Optional
 
-from agent.infra.storage.cost_repository import cost_repository
-from agent.infra.storage.session_repository import session_repository
+from agent.storage.cost_repository import cost_repository
+from agent.storage.session_repository import session_repository
 from agent.schema.model_message import Message
 from agent.schema.model_session import ASession
 from agent.utils.logger import logger

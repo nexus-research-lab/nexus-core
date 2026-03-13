@@ -11,7 +11,7 @@
 
 from typing import List, Optional, Tuple
 
-from agent.infra.agent.session_manager import session_manager
+from agent.service.session.session_manager import session_manager
 from agent.schema.model_agent import AAgent, ValidateAgentNameResponse
 from agent.service.agent.agent_manager import agent_manager
 from agent.schema.model_cost import AgentCostSummary
