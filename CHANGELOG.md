@@ -1,6 +1,13 @@
 # Changelog
 
-## 2026-03-14
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.0.1] - 2026-03-14
 
 ### Fixed
 - 修复 `thinking` / 文本流式内容在前端被二次打字机动画延迟显示的问题，恢复按后端真实 chunk 即时渲染。
@@ -11,6 +18,8 @@
 - 重构消息协议边界，新增 `StreamMessage`，统一后端流式消息、最终消息与前端消费模型。
 - 调整 WebSocket / IM 发送层，显式区分 `message`、`stream` 与 `event` 三类传输。
 - 默认向 SDK 透传 `include_partial_messages`，并同步收敛前端无效的流式/轮次配置项。
+
+## Legacy
 
 ## 2026-03-13
 
