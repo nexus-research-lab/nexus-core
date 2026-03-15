@@ -515,7 +515,7 @@ export function WorkspaceSidebar({
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
               <FolderTree className="h-3.5 w-3.5" />
-              Virtual Filesystem
+              文件
             </div>
             <div className="flex items-center gap-1">
               <button
@@ -546,7 +546,7 @@ export function WorkspaceSidebar({
           <div className="space-y-1">
             {directoryTree.length === 0 ? (
               <div className="rounded-xl border border-dashed border-border/80 bg-secondary/60 px-3 py-4 text-sm text-muted-foreground">
-                当前 workspace 还没有可展示的文件。
+                还没有文件
               </div>
             ) : (
               renderTree(directoryTree)
@@ -558,7 +558,7 @@ export function WorkspaceSidebar({
           <div className="mb-3 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
               <BrainCircuit className="h-3.5 w-3.5" />
-              Context
+              会话与记忆
             </div>
             <button
               className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-2.5 py-1 text-[11px] font-medium text-primary-foreground"
@@ -574,25 +574,25 @@ export function WorkspaceSidebar({
             <div className="rounded-2xl bg-secondary/80 px-3 py-3">
               <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
                 <FileText className="h-3.5 w-3.5" />
-                Memory / Context
+                记忆与上下文
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <div className="rounded-xl bg-background px-3 py-2">
-                  <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Threads</p>
+                  <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">会话数</p>
                   <p className="mt-1 text-sm font-semibold text-foreground">{sessions.length}</p>
                 </div>
                 <div className="rounded-xl bg-background px-3 py-2">
-                  <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">Memory</p>
+                  <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">记忆文件</p>
                   <p className="mt-1 text-sm font-semibold text-foreground">{memoryFiles.length}</p>
                 </div>
               </div>
               <div className="mt-3 flex items-center justify-between rounded-xl bg-background px-3 py-2">
                 <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
                   <Clock3 className="h-3.5 w-3.5" />
-                  <span>Current</span>
+                  <span>当前会话</span>
                 </div>
                 <div className="text-right">
-                  <p className="text-[11px] font-medium text-foreground">{latestSession?.message_count ?? 0} msgs</p>
+                  <p className="text-[11px] font-medium text-foreground">{latestSession?.message_count ?? 0} 条消息</p>
                   <p className="text-[11px] text-muted-foreground">
                     {latestSession ? formatRelativeTime(latestSession.last_activity_at) : "idle"}
                   </p>
@@ -627,10 +627,10 @@ export function WorkspaceSidebar({
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-[11px] font-medium text-foreground">
-                          {truncate(session.title || "Untitled Session", 22)}
+                          {truncate(session.title || "未命名会话", 22)}
                         </p>
                         <p className="mt-0.5 text-[11px] text-muted-foreground">
-                          {formatRelativeTime(session.last_activity_at)} / {session.message_count ?? 0} msgs
+                          {formatRelativeTime(session.last_activity_at)} · {session.message_count ?? 0} 条
                         </p>
                       </div>
 
@@ -669,9 +669,9 @@ export function WorkspaceSidebar({
         message={
           promptDialog.type === "create"
             ? promptDialog.entryType === "file"
-              ? "请输入新文件的相对路径"
-              : "请输入新目录的相对路径"
-            : "请输入新的相对路径"
+              ? "输入文件的路径和名称"
+              : "输入目录的名称"
+            : "输入新的名称"
         }
         placeholder={promptDialog.entryType === "file" ? "notes/todo.md" : "notes"}
         defaultValue={promptDialog.type === "rename" && promptDialog.entry ? promptDialog.entry.path : ""}
@@ -683,7 +683,7 @@ export function WorkspaceSidebar({
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
         title="确认删除"
-        message={`确认删除 ${confirmDialog.entry?.path ?? ""} 吗？此操作无法撤销。`}
+        message={`确定要删除 ${confirmDialog.entry?.path ?? ""} 吗？删除后无法恢复。`}
         confirmText="删除"
         cancelText="取消"
         variant="danger"
