@@ -89,7 +89,7 @@ export function PermissionDialog(
 
     return (
       <div className="mt-3 space-y-2">
-        <p className="text-xs font-medium text-muted-foreground uppercase">参数:</p>
+        <p className="text-xs font-medium text-muted-foreground uppercase">参数详情</p>
         {entries.map(([key, value]) => (
           <div key={key} className="bg-muted/30 rounded-md p-3">
             <span className="text-xs font-medium text-foreground">{key}:</span>
@@ -124,7 +124,7 @@ export function PermissionDialog(
                 权限确认
               </h2>
               <p className="text-xs text-muted-foreground">
-                Agent 请求使用工具
+                Agent 想要使用工具
               </p>
             </div>
           </div>
@@ -140,10 +140,10 @@ export function PermissionDialog(
         <div className="p-5 space-y-4 max-h-[60vh] overflow-auto">
           <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-4">
             <p className="text-sm font-medium text-orange-700 dark:text-orange-400">
-              Agent 请求使用"{toolName}"工具
+              Agent 想要使用「{toolName}」工具
             </p>
             <p className="text-xs text-orange-600/90 dark:text-orange-300/90 mt-1.5 leading-relaxed">
-              允许此操作将使 Agent 能够执行相应的系统操作。请仔细检查参数后再决定。
+              允许后，Agent 将执行此工具对应的操作。请检查下方参数是否正确。
             </p>
             {(summary || riskLabel || expiresAt) && (
               <div className="mt-3 space-y-1 text-xs">
@@ -182,8 +182,8 @@ export function PermissionDialog(
                     className="mt-0.5"
                   />
                   <div>
-                    <p className="text-sm font-medium text-foreground">仅本次允许</p>
-                    <p className="text-xs text-muted-foreground">本次执行结束后不保留规则。</p>
+                    <p className="text-sm font-medium text-foreground">仅本次生效</p>
+                    <p className="text-xs text-muted-foreground">这次允许，下次再问你</p>
                   </div>
                 </label>
                 {readableSuggestions.map((suggestion) => (

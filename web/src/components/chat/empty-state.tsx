@@ -29,7 +29,7 @@ export function EmptyState({onNewSession}: EmptyStateProps) {
         {/* Title */}
         <div className="mt-8 space-y-3">
           <h2 className="text-3xl font-semibold text-foreground">
-            当前 Agent 暂无 Session
+            还没有会话
           </h2>
         </div>
 
@@ -41,11 +41,11 @@ export function EmptyState({onNewSession}: EmptyStateProps) {
           </div>
           <div className="rounded-2xl bg-secondary/80 px-4 py-4">
             <div className="mx-auto mb-2 h-2 w-2 rounded-full bg-primary"/>
-            <span>保留会话历史</span>
+            <span>历史对话自动保存</span>
           </div>
           <div className="rounded-2xl bg-secondary/80 px-4 py-4">
             <div className="mx-auto mb-2 h-2 w-2 rounded-full bg-primary"/>
-            <span>支持工具与权限流程</span>
+            <span>工具使用需你授权</span>
           </div>
         </div>
 
@@ -60,7 +60,7 @@ export function EmptyState({onNewSession}: EmptyStateProps) {
 
         {/* Hint */}
         <p className="mt-5 text-xs text-muted-foreground/80">
-          也可以先切换 Agent，再创建会话。
+          先切换到想要的 Agent，再创建会话
         </p>
       </div>
     </div>

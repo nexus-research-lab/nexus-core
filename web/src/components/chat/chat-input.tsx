@@ -27,7 +27,7 @@ const ChatInput = memo((
     onSendMessage,
     onStop,
     disabled = false,
-    placeholder = "输入指令...",
+    placeholder = "输入消息...",
     maxLength = 10000
   }: ChatInputProps) => {
   const [input, setInput] = useState("");
@@ -348,7 +348,7 @@ const ChatInput = memo((
                 <span className="flex items-center gap-2 text-primary/70">
                   <LoadingOrb frames={["✽", "✻", "✶", "✢", "·"]} />
                   <Zap size={10} className="animate-pulse" />
-                  <span className="animate-pulse">正在处理...</span>
+                  <span className="animate-pulse">Agent 正在思考...</span>
                   <span className="text-muted-foreground/30">[ESC 停止]</span>
                 </span>
               ) : (

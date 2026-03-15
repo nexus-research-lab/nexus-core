@@ -47,7 +47,7 @@ export function AgentSwitcher({
             value={currentAgentId ?? ""}
           >
             <option disabled value="">
-              选择 Agent
+              选择一个 Agent
             </option>
             {agents.map((agent) => (
               <option key={agent.agent_id} value={agent.agent_id}>

@@ -297,7 +297,7 @@ export function AskUserQuestionBlock({
                     "font-medium uppercase tracking-wider",
                     isSubmitted ? "text-green-500" : "text-primary"
                 )}>
-                    {isSubmitted ? 'ANSWERED' : 'WAITING FOR YOUR INPUT'}
+                    {isSubmitted ? '已回答' : '等待你的选择'}
                 </span>
 
                 <span className="text-muted-foreground/30">│</span>
@@ -354,7 +354,7 @@ export function AskUserQuestionBlock({
             {!isSubmitted && isExpanded && (
                 <div className="h-12 px-4 flex items-center justify-between border-t border-primary/20 bg-primary/5">
                     <span className="text-xs text-muted-foreground">
-                        {canSubmit ? '✓ 已完成所有选择' : '请为每个问题至少选择一个选项'}
+                        {canSubmit ? '✓ 所有问题都已选择' : '每个问题至少选一项'}
                     </span>
 
                     <button
@@ -371,7 +371,7 @@ export function AskUserQuestionBlock({
                         )}
                     >
                         <Send className="w-3 h-3" />
-                        提交回答
+                        发送回答
                     </button>
                 </div>
             )}
@@ -380,7 +380,7 @@ export function AskUserQuestionBlock({
             {isSubmitted && isExpanded && (
                 <div className="h-10 px-4 flex items-center gap-2 border-t border-green-500/20 bg-green-500/5">
                     <Check className="w-3.5 h-3.5 text-green-500" />
-                    <span className="text-xs text-green-600 font-medium">回答已提交</span>
+                    <span className="text-xs text-green-600 font-medium">已收到你的回答</span>
                 </div>
             )}
         </div>
