@@ -19,6 +19,7 @@
 
 ## Coding Style & Naming Conventions
 Python: follow Google Python style, object-oriented design, and use Chinese comments for non-trivial logic. Use `snake_case` for functions/files and `PascalCase` for classes.  
+Python files should stay small: hard limit `300` lines per file, target `100-200` lines, and prefer `one file one class`. Split oversized files proactively instead of continuing to append logic.  
 TypeScript/React: components in `PascalCase`, hooks in `useXxx` style, and keep message/session types centralized under `web/src/types`.  
 Prefer small, composable handlers/processors over monolithic functions.
 

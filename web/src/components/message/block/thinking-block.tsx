@@ -11,8 +11,8 @@ interface ThinkingBlockProps {
 }
 
 export function ThinkingBlock({ thinking, isStreaming }: ThinkingBlockProps) {
-    // If it's streaming, default to expanded so the user can see it typing.
-    const [isExpanded, setIsExpanded] = useState(isStreaming ?? true);
+    // 默认展开思考过程，流式状态仅影响展示样式，不影响折叠状态。
+    const [isExpanded, setIsExpanded] = useState(true);
 
     if (!thinking) return null;
 

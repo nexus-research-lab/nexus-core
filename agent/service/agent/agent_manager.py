@@ -23,6 +23,9 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from agent.storage.agent_repository import agent_repository
+from agent.storage.config_store import ConfigStore
+from agent.storage.storage_paths import FileStoragePaths
+from agent.service.session.session_manager import session_manager
 from agent.service.workspace.initializer import AgentWorkspace, get_workspace_base_path
 from agent.schema.model_agent import AAgent, AgentOptions, ValidateAgentNameResponse
 from agent.utils.logger import logger
@@ -37,6 +40,7 @@ class AgentManager:
 
     def __init__(self):
         self._workspaces: Dict[str, AgentWorkspace] = {}
+        self._storage_paths = FileStoragePaths()
 
     @classmethod
     def _normalize_agent_name(cls, name: str) -> str:
@@ -262,8 +266,14 @@ class AgentManager:
         return True
 
     async def delete_agent(self, agent_id: str) -> bool:
-        """删除 Agent（软删除）"""
+        """删除 Agent，并同步清理运行态与工作区。"""
+        agent = await agent_repository.get_agent(agent_id)
+        if not agent:
+            return False
+
+        await session_manager.remove_agent_sessions(agent_id)
         self._workspaces.pop(agent_id, None)
+        self._delete_workspace(agent)
         return await agent_repository.delete_agent(agent_id)
 
     # =====================================================
@@ -303,6 +313,44 @@ class AgentManager:
             self._workspaces[agent_id] = cached
 
         return self._workspaces[agent_id]
+
+    def _delete_workspace(self, agent: AAgent) -> None:
+        """安全删除 Agent 工作区目录。"""
+        workspace_path = Path(agent.workspace_path).expanduser()
+        if not workspace_path.exists():
+            logger.info(f"ℹ️ 工作区目录不存在，跳过删除: agent={agent.agent_id}, path={workspace_path}")
+            return
+
+        if not self._can_delete_workspace(agent, workspace_path):
+            logger.warning(
+                "⚠️ 工作区归属校验失败，跳过物理删除: "
+                f"agent={agent.agent_id}, path={workspace_path}"
+            )
+            return
+
+        shutil.rmtree(workspace_path, ignore_errors=False)
+        logger.info(f"🗑️ 工作区已删除: agent={agent.agent_id}, path={workspace_path}")
+
+    def _can_delete_workspace(self, agent: AAgent, workspace_path: Path) -> bool:
+        """校验工作区目录是否归属于当前 Agent。"""
+        if not workspace_path.is_dir():
+            return False
+
+        if self._is_path_under_workspace_base(workspace_path):
+            return True
+
+        agent_file = self._storage_paths.get_agent_file_path(workspace_path)
+        snapshot = ConfigStore.read(agent_file, {})
+        return snapshot.get("agent_id") == agent.agent_id
+
+    @staticmethod
+    def _is_path_under_workspace_base(workspace_path: Path) -> bool:
+        """判断目录是否位于系统托管的 workspace 根目录下。"""
+        try:
+            workspace_path.resolve().relative_to(get_workspace_base_path().resolve())
+            return True
+        except ValueError:
+            return False
 
     # =====================================================
     # SDK 配置构建

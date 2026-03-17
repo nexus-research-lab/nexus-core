@@ -179,7 +179,6 @@ class AgentRepository:
 
                 record["status"] = "archived"
                 self._write_records(records)
-                self._write_agent_snapshot(record)
                 logger.info(f"🗑️ Agent 已归档: {agent_id}")
                 return True
 
