@@ -16,6 +16,7 @@ from typing import Any, Dict, Optional
 from claude_agent_sdk import CanUseTool, ClaudeAgentOptions, ClaudeSDKClient
 
 from agent.service.session.session_store import session_store
+from agent.service.session.session_router import parse_session_key
 from agent.shared.server.common.base_exception import ServerException
 from agent.utils.logger import logger
 
@@ -70,21 +71,17 @@ class SessionManager:
         return self._locks[session_key]
 
     async def update_session_options(self, session_key: str) -> bool:
-        """刷新会话配置，销毁旧 client。"""
+        """刷新会话配置，淘汰旧 client。"""
         if session_key not in self._sessions:
             logger.info(f"❌ 会话不存在于内存中: {session_key}")
             return True
 
         async with self.get_lock(session_key):
-            old_client = self._sessions.get(session_key)
-            try:
-                await old_client.disconnect()
-                logger.info(f"🔌 断开旧SDK连接: {session_key}")
-            except Exception as exc:
-                logger.warning(f"⚠️ 断开旧连接时出错: {exc}")
-
-            del self._sessions[session_key]
-            logger.info(f"✅ 会话选项已更新，client 已重置: {session_key}")
+            # Claude SDK client 内部使用 anyio cancel scope。
+            # 跨任务直接 disconnect 容易触发 “Attempted to exit cancel scope in a different task”。
+            # 这里改为仅淘汰内存缓存，让当前轮次自然结束，下一次请求再按最新配置重建 client。
+            self.remove_session(session_key)
+            logger.info(f"✅ 会话选项已更新，旧 client 已淘汰: {session_key}")
             return True
 
     async def refresh_agent_sessions(self, agent_id: str) -> int:
@@ -105,6 +102,30 @@ class SessionManager:
         logger.info(f"🔄 Agent 活跃会话刷新完成: agent={agent_id}, count={refreshed_count}")
         return refreshed_count
 
+    async def remove_agent_sessions(self, agent_id: str) -> int:
+        """移除指定 Agent 的所有活跃会话。"""
+        sessions = await session_store.get_all_sessions()
+        target_keys = {
+            session.session_key
+            for session in sessions
+            if session.agent_id == agent_id
+        }
+
+        # 兼容尚未完成持久化的运行态会话，避免删除工作区后仍有旧 client 残留。
+        for session_key in list(self._sessions.keys()):
+            parsed = parse_session_key(session_key)
+            if parsed.get("agent_id") == agent_id:
+                target_keys.add(session_key)
+
+        removed_count = 0
+        for session_key in target_keys:
+            removed = await self.close_session(session_key)
+            if removed:
+                removed_count += 1
+
+        logger.info(f"🧹 Agent 活跃会话清理完成: agent={agent_id}, count={removed_count}")
+        return removed_count
+
     async def register_sdk_session(self, session_key: str, session_id: str) -> None:
         """注册 session_key 与 SDK session_id 的映射。"""
         self._key_sdk_map[session_key] = session_id
@@ -123,6 +144,26 @@ class SessionManager:
     def get_session_key(self, session_id: str) -> Optional[str]:
         """根据 SDK session_id 获取 session_key。"""
         return self._sdk_key_map.get(session_id)
+
+    async def close_session(self, session_key: str) -> bool:
+        """关闭并移除会话。"""
+        client = self._sessions.get(session_key)
+        if client:
+            try:
+                # 关闭会话时优先请求中断生成，避免跨任务强制 disconnect 带来的 anyio 异常。
+                await client.interrupt()
+                await client.disconnect()
+                logger.info(f"⏸️ 已中断 SDK 会话: {session_key}")
+            except Exception as exc:
+                logger.warning(f"⚠️ 中断 SDK 会话失败: key={session_key}, error={exc}")
+
+        existed = (
+            session_key in self._sessions
+            or session_key in self._locks
+            or session_key in self._key_sdk_map
+        )
+        self.remove_session(session_key)
+        return existed
 
     def remove_session(self, session_key: str) -> None:
         """移除会话。"""
