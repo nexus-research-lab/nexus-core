@@ -1,10 +1,10 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 # =====================================================
-# @File   ：sdk_message_processor.py
+# @File   ：sdk_message_logger.py
 # @Date   ：2025/11/28
 # @Author ：leemysw
-# @Description ：Claude Agent SDK 消息处理器，将 SDK 消息类型转换为 JSON 格式
+# @Description ：Claude Agent SDK 日志打印
 # =====================================================
 
 import json
@@ -16,13 +16,7 @@ from claude_agent_sdk.types import AssistantMessage, Message, ResultMessage, Str
 from claude_agent_sdk.types import ContentBlock, TextBlock, ThinkingBlock, ToolResultBlock, ToolUseBlock
 
 
-class MessageVis:
-    """Claude Agent SDK 消息处理器
-
-    将 Claude Agent SDK 的各种消息类型转换为 JSON 格式，
-    在保留原始数据的基础上添加 type 字段来标识消息类型。
-    """
-
+class MessageLog:
     def print_message(self, message: Message, session_id: str = None) -> None:
         """美观地打印消息，展示 agent 执行过程
 
@@ -183,4 +177,4 @@ class MessageVis:
 
 
 # 创建全局消息处理器实例
-message_vis = MessageVis()
+message_log = MessageLog()
