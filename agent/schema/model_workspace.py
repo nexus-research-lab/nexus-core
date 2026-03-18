@@ -6,15 +6,9 @@
 # @Author ：Codex
 # =====================================================
 
-"""
-Workspace 实时事件模型
+"""Workspace 实时事件与观察状态模型。"""
 
-[INPUT]: 无
-[OUTPUT]: 对外提供 WorkspaceEvent / WorkspaceDiffStats
-[POS]: schema 层的 workspace 事件协议，供后端广播与前端消费
-[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
-"""
-
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Literal, Optional
 
@@ -43,3 +37,22 @@ class WorkspaceEvent(BaseModel):
     appended_text: Optional[str] = Field(default=None, description="本次 delta 追加的文本")
     diff_stats: Optional[WorkspaceDiffStats] = Field(default=None, description="写入完成后的 diff 摘要")
     timestamp: datetime = Field(default_factory=datetime.now, description="事件时间")
+
+
+@dataclass
+class ObservedFileSnapshot:
+    """文件快照。"""
+
+    modified_at: str
+    size: int
+
+
+@dataclass
+class ActiveWriteState:
+    """正在写入中的文件状态。"""
+
+    before_content: Optional[str]
+    current_content: Optional[str]
+    last_modified_at: str
+    last_change_at: float
+    version: int

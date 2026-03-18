@@ -14,9 +14,10 @@ from typing import Any, Dict
 from fastapi import WebSocket
 
 from agent.service.channels.message_sender import MessageSender
-from agent.service.workspace.monitor import workspace_event_bus, workspace_observer
+from agent.service.workspace.workspace_event_bus import workspace_event_bus
+from agent.service.workspace.workspace_observer import workspace_observer
 from agent.schema.model_message import EventMessage, Message, StreamMessage
-from agent.schema.model_workspace_event import WorkspaceEvent
+from agent.schema.model_workspace import WorkspaceEvent
 from agent.utils.logger import logger
 
 

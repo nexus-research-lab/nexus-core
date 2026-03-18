@@ -20,6 +20,7 @@ from agent.schema.model_agent import AAgent, CreateAgentRequest, CreateWorkspace
     WorkspaceFileEntry
 from agent.schema.model_cost import AgentCostSummary
 from agent.service.agent.agent_service import agent_service
+from agent.service.workspace.workspace_service import workspace_service
 from agent.shared.server.common import resp
 
 router = APIRouter(tags=["agent"])
@@ -118,7 +119,7 @@ async def get_agent_cost_summary(agent_id: str):
 async def get_workspace_files(agent_id: str):
     """获取 Agent workspace 文件列表。"""
     try:
-        files = await agent_service.get_workspace_files(agent_id)
+        files = await workspace_service.get_workspace_files(agent_id)
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     data = [WorkspaceFileEntry(**item).model_dump() for item in files]
@@ -129,7 +130,7 @@ async def get_workspace_files(agent_id: str):
 async def get_workspace_file(agent_id: str, path: str):
     """读取 Agent workspace 文件内容。"""
     try:
-        content = await agent_service.get_workspace_file(agent_id, path)
+        content = await workspace_service.get_workspace_file(agent_id, path)
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except FileNotFoundError as exc:
@@ -145,7 +146,7 @@ async def get_workspace_file(agent_id: str, path: str):
 async def update_workspace_file(agent_id: str, request: UpdateWorkspaceFileRequest):
     """更新 Agent workspace 文件内容。"""
     try:
-        saved_path = await agent_service.update_workspace_file(
+        saved_path = await workspace_service.update_workspace_file(
             agent_id=agent_id,
             path=request.path,
             content=request.content,
@@ -163,7 +164,7 @@ async def update_workspace_file(agent_id: str, request: UpdateWorkspaceFileReque
 async def create_workspace_entry(agent_id: str, request: CreateWorkspaceEntryRequest):
     """创建 Agent workspace 条目。"""
     try:
-        created_path = await agent_service.create_workspace_entry(
+        created_path = await workspace_service.create_workspace_entry(
             agent_id=agent_id,
             path=request.path,
             entry_type=request.entry_type,
@@ -182,7 +183,7 @@ async def create_workspace_entry(agent_id: str, request: CreateWorkspaceEntryReq
 async def rename_workspace_entry(agent_id: str, request: RenameWorkspaceEntryRequest):
     """重命名 Agent workspace 条目。"""
     try:
-        old_path, new_path = await agent_service.rename_workspace_entry(
+        old_path, new_path = await workspace_service.rename_workspace_entry(
             agent_id=agent_id,
             path=request.path,
             new_path=request.new_path,
@@ -204,7 +205,7 @@ async def rename_workspace_entry(agent_id: str, request: RenameWorkspaceEntryReq
 async def delete_workspace_entry(agent_id: str, path: str):
     """删除 Agent workspace 条目。"""
     try:
-        deleted_path = await agent_service.delete_workspace_entry(agent_id, path)
+        deleted_path = await workspace_service.delete_workspace_entry(agent_id, path)
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except FileNotFoundError as exc:

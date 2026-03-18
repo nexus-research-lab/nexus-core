@@ -7,26 +7,16 @@
 # 2026/3/4 15:09   Create
 # =====================================================
 
-"""
-Agent 生命周期管理器
+"""Agent 生命周期管理器。"""
 
-[INPUT]: 依赖 storage/agent_repository 与 service/workspace
-[OUTPUT]: 对外提供 AgentManager（Agent 创建/查询/配置构建）
-[POS]: service 层的 Agent 管理中心，被 ChatService 和 API 消费
-[PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
-"""
-
-import re
-import shutil
-import unicodedata
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from agent.storage.agent_repository import agent_repository
-from agent.storage.config_store import ConfigStore
-from agent.storage.storage_paths import FileStoragePaths
+from agent.service.agent.agent_name_policy import AgentNamePolicy
+from agent.service.agent.agent_prompt_builder import AgentPromptBuilder
+from agent.service.agent.agent_workspace import AgentWorkspaceRegistry
 from agent.service.session.session_manager import session_manager
-from agent.service.workspace.initializer import AgentWorkspace, get_workspace_base_path
 from agent.schema.model_agent import AAgent, AgentOptions, ValidateAgentNameResponse
 from agent.utils.logger import logger
 
@@ -34,75 +24,10 @@ from agent.utils.logger import logger
 class AgentManager:
     """Agent 生命周期管理"""
 
-    NAME_MIN_LEN = 2
-    NAME_MAX_LEN = 40
-    NAME_ALLOWED_PATTERN = re.compile(r"^[\u4e00-\u9fffA-Za-z0-9 _-]+$")
-
     def __init__(self):
-        self._workspaces: Dict[str, AgentWorkspace] = {}
-        self._storage_paths = FileStoragePaths()
-
-    @classmethod
-    def _normalize_agent_name(cls, name: str) -> str:
-        """标准化 Agent 名称（去首尾空格，压缩中间连续空格）。"""
-        return " ".join((name or "").strip().split())
-
-    @classmethod
-    def _build_workspace_dir_name(cls, agent_name: str) -> str:
-        """从 Agent 名称生成安全的目录名。"""
-        normalized = unicodedata.normalize("NFKC", cls._normalize_agent_name(agent_name))
-        normalized = normalized.replace(" ", "_")
-        safe_name = re.sub(r"[^A-Za-z0-9\u4e00-\u9fff_-]", "_", normalized)
-        safe_name = re.sub(r"_+", "_", safe_name).strip("._-")
-        return safe_name or "agent"
-
-    @classmethod
-    def _resolve_workspace_path(cls, agent_name: str) -> Path:
-        """统一计算 Agent 工作空间路径。"""
-        return get_workspace_base_path() / cls._build_workspace_dir_name(agent_name)
-
-    def _validate_name_format(self, normalized_name: str) -> Optional[str]:
-        """校验名称格式并返回失败原因。"""
-        if not normalized_name:
-            return "名称不能为空"
-
-        if len(normalized_name) < self.NAME_MIN_LEN:
-            return f"名称至少 {self.NAME_MIN_LEN} 个字符"
-
-        if len(normalized_name) > self.NAME_MAX_LEN:
-            return f"名称不能超过 {self.NAME_MAX_LEN} 个字符"
-
-        if not self.NAME_ALLOWED_PATTERN.fullmatch(normalized_name):
-            return "仅支持中文、英文、数字、空格、下划线和连字符"
-
-        return None
-
-    async def _resolve_name_conflict_reason(
-        self,
-        normalized_name: str,
-        expected_workspace: Path,
-        exclude_agent_id: Optional[str] = None,
-    ) -> Optional[str]:
-        """检查名称与 workspace 是否冲突。"""
-        name_occupied = await agent_repository.exists_active_agent_name(
-            normalized_name,
-            exclude_agent_id=exclude_agent_id,
-        )
-        if name_occupied:
-            return "名称已存在，请更换一个名称"
-
-        if not expected_workspace.exists():
-            return None
-
-        if not exclude_agent_id:
-            return "同名工作区目录已存在，请更换名称"
-
-        current_agent = await agent_repository.get_agent(exclude_agent_id)
-        current_path = Path(current_agent.workspace_path).expanduser() if current_agent else None
-        if not current_path or current_path != expected_workspace:
-            return "同名工作区目录已存在，请更换名称"
-
-        return None
+        self._name_policy = AgentNamePolicy()
+        self._prompt_builder = AgentPromptBuilder()
+        self._workspace_registry = AgentWorkspaceRegistry()
 
     async def validate_agent_name(
         self,
@@ -110,67 +35,7 @@ class AgentManager:
         exclude_agent_id: Optional[str] = None,
     ) -> ValidateAgentNameResponse:
         """校验 Agent 名称规则、重复性和目标 workspace 冲突。"""
-        normalized_name = self._normalize_agent_name(name)
-        invalid_reason = self._validate_name_format(normalized_name)
-        if invalid_reason:
-            return ValidateAgentNameResponse.invalid(name, normalized_name, invalid_reason)
-
-        expected_workspace = self._resolve_workspace_path(normalized_name)
-        expected_workspace_str = str(expected_workspace)
-        conflict_reason = await self._resolve_name_conflict_reason(
-            normalized_name=normalized_name,
-            expected_workspace=expected_workspace,
-            exclude_agent_id=exclude_agent_id,
-        )
-        if conflict_reason:
-            return ValidateAgentNameResponse.unavailable(
-                name=name,
-                normalized_name=normalized_name,
-                workspace_path=expected_workspace_str,
-                reason=conflict_reason,
-            )
-
-        return ValidateAgentNameResponse.available(
-            name=name,
-            normalized_name=normalized_name,
-            workspace_path=expected_workspace_str,
-        )
-
-    async def _sync_workspace_path(self, agent: AAgent) -> str:
-        """同步 Agent 的工作区路径到“名称目录”规则。"""
-        expected_path = self._resolve_workspace_path(agent.name)
-        current_path = Path(agent.workspace_path).expanduser() if agent.workspace_path else None
-        target_path = expected_path
-
-        if current_path and current_path != expected_path:
-            if current_path.exists() and not expected_path.exists():
-                expected_path.parent.mkdir(parents=True, exist_ok=True)
-                try:
-                    shutil.move(str(current_path), str(expected_path))
-                    logger.info(
-                        "✅ 工作区目录迁移完成: "
-                        f"{current_path} -> {expected_path}"
-                    )
-                except Exception as exc:
-                    logger.warning(
-                        "⚠️ 工作区目录迁移失败，保留旧目录继续运行: "
-                        f"{current_path}, error={exc}"
-                    )
-                    target_path = current_path
-            elif current_path.exists() and expected_path.exists():
-                logger.warning(
-                    "⚠️ 目标工作区已存在，保留当前路径避免覆盖: "
-                    f"{current_path} (expected={expected_path})"
-                )
-                target_path = current_path
-
-        target_path_str = str(target_path)
-        if agent.workspace_path != target_path_str:
-            await agent_repository.update_agent_workspace_path(agent.agent_id, target_path_str)
-            agent.workspace_path = target_path_str
-            self._workspaces.pop(agent.agent_id, None)
-
-        return target_path_str
+        return await self._name_policy.validate_name(name, exclude_agent_id)
 
     # =====================================================
     # Agent CRUD
@@ -214,7 +79,7 @@ class AgentManager:
             return None
 
         # 初始化 workspace 目录
-        workspace = self._get_or_create_workspace(agent_id, resolved_path_str)
+        workspace = self._workspace_registry.get_workspace(agent_id, resolved_path_str)
         workspace.ensure_initialized(agent_name=normalized_name)
 
         agent = await agent_repository.get_agent(agent_id)
@@ -260,8 +125,8 @@ class AgentManager:
         if not latest:
             return False
 
-        synced_path = await self._sync_workspace_path(latest)
-        workspace = self._get_or_create_workspace(agent_id, synced_path)
+        synced_path = await self._workspace_registry.sync_workspace_path(latest)
+        workspace = self._workspace_registry.get_workspace(agent_id, synced_path)
         workspace.ensure_initialized(agent_name=latest.name)
         return True
 
@@ -272,92 +137,23 @@ class AgentManager:
             return False
 
         await session_manager.remove_agent_sessions(agent_id)
-        self._workspaces.pop(agent_id, None)
-        self._delete_workspace(agent)
+        self._workspace_registry.delete_workspace(agent)
         return await agent_repository.delete_agent(agent_id)
 
     # =====================================================
     # Workspace
     # =====================================================
 
-    def get_workspace(self, agent_id: str) -> AgentWorkspace:
-        """获取 Agent 的 workspace 实例"""
-        return self._get_or_create_workspace(agent_id)
-
-    async def get_agent_workspace(self, agent_id: str) -> AgentWorkspace:
+    async def get_agent_workspace(self, agent_id: str):
         """按 Agent 当前配置获取 workspace 实例。"""
         agent = await agent_repository.get_agent(agent_id)
         if not agent:
             raise ValueError(f"Agent not found: {agent_id}")
-
-        synced_workspace = await self._sync_workspace_path(agent)
-        workspace = self._get_or_create_workspace(agent_id, synced_workspace)
-        workspace.ensure_initialized(agent_name=agent.name)
-        return workspace
-
-    def _get_or_create_workspace(self, agent_id: str, workspace_path: Optional[str] = None) -> AgentWorkspace:
-        """惰性创建 workspace 实例"""
-        desired_path = (
-            Path(workspace_path).expanduser()
-            if workspace_path
-            else get_workspace_base_path() / agent_id
-        )
-
-        cached = self._workspaces.get(agent_id)
-        if cached and cached.path != desired_path:
-            logger.warning(f"⚠️ workspace 缓存路径不一致，重建实例: {agent_id}, {desired_path}")
-            cached = None
-
-        if not cached:
-            cached = AgentWorkspace(agent_id, desired_path)
-            self._workspaces[agent_id] = cached
-
-        return self._workspaces[agent_id]
-
-    def _delete_workspace(self, agent: AAgent) -> None:
-        """安全删除 Agent 工作区目录。"""
-        workspace_path = Path(agent.workspace_path).expanduser()
-        if not workspace_path.exists():
-            logger.info(f"ℹ️ 工作区目录不存在，跳过删除: agent={agent.agent_id}, path={workspace_path}")
-            return
-
-        if not self._can_delete_workspace(agent, workspace_path):
-            logger.warning(
-                "⚠️ 工作区归属校验失败，跳过物理删除: "
-                f"agent={agent.agent_id}, path={workspace_path}"
-            )
-            return
-
-        shutil.rmtree(workspace_path, ignore_errors=False)
-        logger.info(f"🗑️ 工作区已删除: agent={agent.agent_id}, path={workspace_path}")
-
-    def _can_delete_workspace(self, agent: AAgent, workspace_path: Path) -> bool:
-        """校验工作区目录是否归属于当前 Agent。"""
-        if not workspace_path.is_dir():
-            return False
-
-        if self._is_path_under_workspace_base(workspace_path):
-            return True
-
-        agent_file = self._storage_paths.get_agent_file_path(workspace_path)
-        snapshot = ConfigStore.read(agent_file, {})
-        return snapshot.get("agent_id") == agent.agent_id
-
-    @staticmethod
-    def _is_path_under_workspace_base(workspace_path: Path) -> bool:
-        """判断目录是否位于系统托管的 workspace 根目录下。"""
-        try:
-            workspace_path.resolve().relative_to(get_workspace_base_path().resolve())
-            return True
-        except ValueError:
-            return False
+        return await self._workspace_registry.get_agent_workspace(agent)
 
     # =====================================================
     # SDK 配置构建
     # =====================================================
-
-    # SDK 不支持的配置字段（业务层专用）
-    _NON_SDK_FIELDS = {"skills_enabled"}
 
     async def build_sdk_options(self, agent_id: str) -> dict:
         """从 Agent 配置 + Workspace 构建 ClaudeAgentOptions 参数
@@ -365,25 +161,20 @@ class AgentManager:
         合并顺序: workspace options (cwd + system_prompt) → agent options (model + tools + ...)
         每次调用重新读取 workspace 文件，修改后立即生效。
         """
-        base_options = {"include_partial_messages": True}
         agent = await agent_repository.get_agent(agent_id)
         if not agent:
             raise ValueError(f"Agent not found: {agent_id}")
 
-        synced_workspace = await self._sync_workspace_path(agent)
+        workspace = await self._workspace_registry.get_agent_workspace(agent)
+        base_options = {"include_partial_messages": True, "cwd": str(workspace.path)}
+        system_prompt = self._prompt_builder.build(workspace)
+        if system_prompt:
+            base_options["system_prompt"] = system_prompt
 
-        # Workspace 层: cwd + system_prompt
-        workspace = self._get_or_create_workspace(agent_id, synced_workspace)
-        workspace.ensure_initialized(agent_name=agent.name)
-        sdk_options = workspace.build_sdk_options(base_options)
-
-        # Agent 层: model + tools + permissions + ...（过滤掉非 SDK 字段）
-        agent_opts = agent.options.model_dump(exclude_none=True)
-        for field in self._NON_SDK_FIELDS:
-            agent_opts.pop(field, None)
-        sdk_options.update(agent_opts)
-
-        return sdk_options
+        agent_options = agent.options.model_dump(exclude_none=True)
+        agent_options.pop("skills_enabled", None)
+        base_options.update(agent_options)
+        return base_options
 
 
 # 全局实例

@@ -13,7 +13,7 @@ import asyncio
 from typing import Any, Dict
 
 from agent.schema.model_message import build_error_event, EventMessage
-from agent.service.agent.client import agent_client_runtime
+from agent.service.agent.agent_runtime import agent_runtime
 from agent.service.channels.message_sender import MessageSender
 from agent.service.message.chat_message_processor import ChatMessageProcessor
 from agent.service.permission.strategy.permission_strategy import PermissionStrategy
@@ -70,7 +70,7 @@ class ChatService:
         )
 
         try:
-            client = await agent_client_runtime.get_or_create_client(
+            client = await agent_runtime.get_or_create_client(
                 session_key=session_key,
                 agent_id=real_agent_id,
                 permission_strategy=self._permission_strategy,

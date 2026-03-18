@@ -20,7 +20,7 @@ import base64
 import shutil
 from pathlib import Path
 
-from agent.service.workspace.initializer import get_workspace_base_path
+from agent.service.workspace.workspace_paths import get_workspace_base_path
 
 
 class FileStoragePaths:
