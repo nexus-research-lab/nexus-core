@@ -1,7 +1,7 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 # =====================================================
-# @File   ：client.py
+# @File   ：agent_runtime.py
 # @Date   ：2026/3/13 14:28
 # @Author ：leemysw
 # 2026/3/13 14:28   Create
@@ -21,7 +21,7 @@ from agent.service.session.session_store import session_store
 from agent.utils.logger import logger
 
 
-class AgentClientRuntime:
+class AgentRuntime:
     """负责按 session_key 获取或初始化 Claude SDK client。"""
 
     async def get_or_create_client(
@@ -69,4 +69,4 @@ class AgentClientRuntime:
         return client
 
 
-agent_client_runtime = AgentClientRuntime()
+agent_runtime = AgentRuntime()
