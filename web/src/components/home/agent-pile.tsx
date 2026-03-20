@@ -279,7 +279,8 @@ export function AgentPile({
     let previousTime = performance.now();
 
     const update = (time: number) => {
-      const delta = Math.min(time - previousTime, 1000 / 30);
+      // Matter 建议 delta 不超过 16.667ms，避免低帧率时积分不稳定。
+      const delta = Math.min(time - previousTime, 1000 / 60);
       previousTime = time;
       Engine.update(engine, delta || 1000 / 60);
 
