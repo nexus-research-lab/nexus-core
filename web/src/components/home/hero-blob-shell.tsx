@@ -30,7 +30,8 @@ interface HeroInputShellProps {
 
 export function HeroBlobShell({children, className}: HeroBlobShellProps) {
   const gradientId = useId();
-  const glowId = useId();
+  const outerEdgeGlowGradientId = useId();
+  const outerEdgeGlowId = useId();
   const outer = useEditableShape({
     defaultPoints: DEFAULT_OUTER_POINTS,
     storageKey: OUTER_STORAGE_KEY,
@@ -61,37 +62,50 @@ export function HeroBlobShell({children, className}: HeroBlobShellProps) {
           >
             <defs>
               <linearGradient id={gradientId} x1="142" x2="900" y1="92" y2="640" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="rgba(255,255,255,0.44)"/>
-                <stop offset="44%" stopColor="rgba(208,221,255,0.26)"/>
-                <stop offset="100%" stopColor="rgba(255,255,255,0.12)"/>
+                <stop offset="0%" stopColor="rgba(255,255,255,0.08)"/>
+                <stop offset="44%" stopColor="rgba(255,255,255,0.08)"/>
+                <stop offset="100%" stopColor="rgba(255,255,255,0.08)"/>
               </linearGradient>
-              <filter id={glowId} x="-20%" y="-20%" width="140%" height="140%">
-                <feGaussianBlur result="blur" stdDeviation="22"/>
-                <feColorMatrix
-                  in="blur"
-                  type="matrix"
-                  values="1 0 0 0 0
-                          0 1 0 0 0
-                          0 0 1 0 0
-                          0 0 0 17 -8"
-                />
+              <linearGradient id={outerEdgeGlowGradientId} x1="176" x2="888" y1="74" y2="674" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="rgba(255,255,255,0.78)"/>
+                <stop offset="34%" stopColor="rgba(255,255,255,0.34)"/>
+                <stop offset="74%" stopColor="rgba(211,224,248,0.26)"/>
+                <stop offset="100%" stopColor="rgba(255,255,255,0.18)"/>
+              </linearGradient>
+              <filter id={outerEdgeGlowId} x="-20%" y="-80%" width="140%" height="260%">
+                <feGaussianBlur stdDeviation="6"/>
               </filter>
             </defs>
 
             <path
               d={outer.path}
-              fill={outer.debugEnabled ? "rgba(182,191,237,0.58)" : `url(#${gradientId})`}
-              filter={`url(#${glowId})`}
-              opacity={0.95}
-              stroke={outer.debugEnabled ? "rgba(189,200,255,0.68)" : "rgba(175,223,223,0.62)"}
-              strokeWidth="2.4"
+              fill="none"
+              filter={`url(#${outerEdgeGlowId})`}
+              opacity={outer.debugEnabled ? 0 : 0.88}
+              stroke={`url(#${outerEdgeGlowGradientId})`}
+              strokeWidth="18"
             />
             <path
-              d={createClosedSplinePath(createInnerPoints(outer.points))}
-              fill={outer.debugEnabled ? "rgba(88,102,164,0.22)" : "rgba(196,229,230,0.27)"}
+              d={createClosedSplinePath(createInnerPoints(outer.points, 0.985, 0.982))}
+              fill="none"
+              filter={`url(#${outerEdgeGlowId})`}
+              opacity={outer.debugEnabled ? 0 : 0.78}
+              stroke="rgba(255,255,255,0.22)"
+              strokeWidth="14"
+            />
+            <path
+              d={outer.path}
+              fill={outer.debugEnabled ? "rgba(182,191,237,0.58)" : `url(#${gradientId})`}
+              opacity={0.92}
+              stroke={outer.debugEnabled ? "rgba(189,200,255,0.68)" : "rgba(255,255,255,0.32)"}
+              strokeWidth="2"
+            />
+            <path
+              d={createClosedSplinePath(createInnerPoints(outer.points, 0.992, 0.99))}
+              fill={outer.debugEnabled ? "rgba(88,102,164,0.22)" : "rgba(255,255,255,0.04)"}
               opacity={outer.debugEnabled ? 0.96 : 0.92}
-              stroke={outer.debugEnabled ? "rgba(214,221,255,0.32)" : "rgba(255,255,255,0.25)"}
-              strokeWidth="1"
+              stroke={outer.debugEnabled ? "rgba(214,221,255,0.32)" : "rgba(255,255,255,0.08)"}
+              strokeWidth="4"
             />
           </svg>
         </div>
@@ -153,6 +167,8 @@ export function HeroBlobShell({children, className}: HeroBlobShellProps) {
 }
 
 export function HeroInputShell({children, className}: HeroInputShellProps) {
+  const inputGlowGradientId = useId();
+  const inputGlowId = useId();
   const input = useEditableShape({
     defaultPoints: DEFAULT_INPUT_POINTS,
     storageKey: INPUT_STORAGE_KEY,
@@ -172,18 +188,46 @@ export function HeroInputShell({children, className}: HeroInputShellProps) {
             preserveAspectRatio="none"
             viewBox={`0 0 ${INPUT_VIEWBOX_WIDTH} ${INPUT_VIEWBOX_HEIGHT}`}
           >
+            <defs>
+              <linearGradient id={inputGlowGradientId} x1="42" x2="712" y1="34" y2="142" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="rgba(255,255,255,0.78)"/>
+                <stop offset="34%" stopColor="rgba(255,255,255,0.34)"/>
+                <stop offset="74%" stopColor="rgba(211,224,248,0.26)"/>
+                <stop offset="100%" stopColor="rgba(255,255,255,0.18)"/>
+              </linearGradient>
+              <filter id={inputGlowId} x="-20%" y="-80%" width="140%" height="260%">
+                <feGaussianBlur stdDeviation="6"/>
+              </filter>
+            </defs>
+
+            <path
+              d={input.path}
+              fill="none"
+              filter={`url(#${inputGlowId})`}
+              opacity={input.debugEnabled ? 0 : 0.88}
+              stroke={`url(#${inputGlowGradientId})`}
+              strokeWidth="18"
+            />
+            <path
+              d={createClosedSplinePath(createInnerPoints(input.points, 0.965, 0.92))}
+              fill="none"
+              filter={`url(#${inputGlowId})`}
+              opacity={input.debugEnabled ? 0 : 0.78}
+              stroke="rgba(255,255,255,0.22)"
+              strokeWidth="14"
+            />
             <path
               d={input.path}
               fill={input.debugEnabled ? "rgba(23,34,52,0.72)" : "rgba(255,255,255,0.08)"}
               stroke={input.debugEnabled ? "rgba(176,235,220,0.58)" : "rgba(255,255,255,0.32)"}
-              strokeWidth="1.25"
+              strokeWidth="2"
             />
             <path
               d={createClosedSplinePath(createInnerPoints(input.points, 0.93, 0.86))}
               fill={input.debugEnabled ? "rgba(80,122,146,0.24)" : "rgba(255,255,255,0.04)"}
               opacity={input.debugEnabled ? 0.98 : 0.92}
               stroke={input.debugEnabled ? "rgba(206,244,236,0.3)" : "rgba(255,255,255,0.08)"}
-              strokeWidth="0.8"
+              strokeWidth="4"
             />
           </svg>
         </div>
@@ -227,7 +271,7 @@ export function HeroInputShell({children, className}: HeroInputShellProps) {
         <BlobDebugPanel
           currentTarget={target}
           onCopy={async () => {
-            await navigator.clipboard.writeText(JSON.stringify(activeShape.points, null, 2));
+            await navigator.clipboard.writeText(activeShape.points.map(p => `{\"x\":${p.x},\"y\":${p.y}}`).join(",\n"));
           }}
           onReset={() => {
             localStorage.removeItem(INPUT_STORAGE_KEY);
