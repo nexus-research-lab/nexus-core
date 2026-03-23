@@ -290,8 +290,17 @@ export function AgentPile({
 
     let animationFrame = 0;
     let previousTime = performance.now();
+    let disposed = false;
+    let isDocumentVisible = document.visibilityState !== "hidden";
+    let isInView = true;
 
     const update = (time: number) => {
+      if (disposed || !isDocumentVisible || !isInView) {
+        animationFrame = 0;
+        previousTime = time;
+        return;
+      }
+
       // Matter 建议 delta 不超过 16.667ms，避免低帧率时积分不稳定。
       const delta = Math.min(time - previousTime, 1000 / 60);
       previousTime = time;
@@ -312,11 +321,54 @@ export function AgentPile({
       animationFrame = window.requestAnimationFrame(update);
     };
 
-    animationFrame = window.requestAnimationFrame(update);
+    const stopAnimation = () => {
+      if (animationFrame !== 0) {
+        window.cancelAnimationFrame(animationFrame);
+        animationFrame = 0;
+      }
+    };
+
+    const startAnimation = () => {
+      if (disposed || animationFrame !== 0 || !isDocumentVisible || !isInView) {
+        return;
+      }
+
+      previousTime = performance.now();
+      animationFrame = window.requestAnimationFrame(update);
+    };
+
+    const syncAnimationState = () => {
+      if (isDocumentVisible && isInView) {
+        startAnimation();
+        return;
+      }
+
+      stopAnimation();
+    };
+
+    const intersectionObserver = new IntersectionObserver(
+      ([entry]) => {
+        isInView = entry?.isIntersecting ?? true;
+        syncAnimationState();
+      },
+      { threshold: 0.05 },
+    );
+    intersectionObserver.observe(container);
+
+    const handleVisibilityChange = () => {
+      isDocumentVisible = document.visibilityState !== "hidden";
+      syncAnimationState();
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    syncAnimationState();
 
     return () => {
+      disposed = true;
       timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
-      window.cancelAnimationFrame(animationFrame);
+      stopAnimation();
+      intersectionObserver.disconnect();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       Matter.World.clear(engine.world, false);
       Matter.Engine.clear(engine);
     };
