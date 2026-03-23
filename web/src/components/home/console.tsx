@@ -146,7 +146,7 @@ const HeaderActionButton = memo(function HeaderActionButton({
       <HeroActionPillShell active={active}>
         <span className={cn(
           "text-sm font-medium transition-colors",
-          active ? "text-white/96" : "text-white/72",
+          active ? "text-slate-900/88" : "text-slate-800/70",
         )}>
           {children}
         </span>
@@ -305,13 +305,13 @@ const ContactsPopover = memo(function ContactsPopover({
   }, [agents, deferredQuery]);
 
   return (
-    <HeroSidePanelShell className="absolute right-6 top-0 z-20">
-      <div className="space-y-4">
-        <HeroInputShell className="w-full">
+    <HeroSidePanelShell className="absolute right-0 top-[calc(100%+14px)] z-30">
+      <div className="space-y-4 mx-2">
+        <HeroInputShell className="w-full opacity-[0.92]">
           <div className="flex min-w-0 items-center gap-3">
-            <Search className="h-4 w-4 text-white/56" />
+            <Search className="h-4 w-4 text-slate-700/50" />
             <input
-              className="flex-1 bg-transparent text-sm text-white/92 outline-none placeholder:text-white/38"
+              className="flex-1 bg-transparent text-sm text-slate-900/82 outline-none placeholder:text-slate-700/42"
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search contacts..."
               value={query}
@@ -324,19 +324,19 @@ const ContactsPopover = memo(function ContactsPopover({
             <div
               key={agent.agent_id}
               className={cn(
-                "flex items-center gap-3 rounded-[18px] bg-white/[0.05] px-2 py-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/[0.09]",
-                index === 0 && "bg-white/[0.10]",
+                "flex items-center gap-3 rounded-[18px] bg-[rgba(255,255,255,0.05)] px-2 py-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[rgba(255,255,255,0.09)]",
+                index === 0 && "bg-[rgba(255,255,255,0.10)]",
               )}
             >
               <button
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/14 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)] transition-colors hover:bg-white/18"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/12 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.10)] transition-colors hover:bg-white/16"
                 onClick={() => {
                   onClose();
                   onSelectAgent(agent.agent_id);
                 }}
                 type="button"
               >
-                <span className="text-sm font-semibold text-white/92">
+                <span className="text-sm font-semibold text-slate-900/84">
                   {getInitials(agent.name)}
                 </span>
               </button>
@@ -349,10 +349,10 @@ const ContactsPopover = memo(function ContactsPopover({
                 }}
                 type="button"
               >
-                <p className="truncate text-sm font-semibold text-white/92">{agent.name}</p>
+                <p className="truncate text-sm font-semibold text-slate-900/84">{agent.name}</p>
                 <div className="mt-1 flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-[#7fe3a8]" />
-                  <p className="truncate text-xs text-white/54">
+                  <p className="truncate text-xs text-slate-700/54">
                     {truncate(agent.workspace_path, 22)}
                   </p>
                 </div>
@@ -360,7 +360,7 @@ const ContactsPopover = memo(function ContactsPopover({
 
               <div className="flex items-center gap-1">
                 <button
-                  className="rounded-full p-2 text-white/44 transition-colors hover:bg-white/10 hover:text-white/84"
+                  className="rounded-full p-2 text-slate-700/44 transition-colors hover:bg-white/10 hover:text-slate-900/80"
                   onClick={() => onEditAgent(agent.agent_id)}
                   type="button"
                   aria-label="编辑 Agent 设置"
@@ -368,7 +368,7 @@ const ContactsPopover = memo(function ContactsPopover({
                   <Settings className="h-4 w-4" />
                 </button>
                 <button
-                  className="rounded-full p-2 text-white/44 transition-colors hover:bg-white/10 hover:text-white/84"
+                  className="rounded-full p-2 text-slate-700/44 transition-colors hover:bg-white/10 hover:text-slate-900/80"
                   onClick={() => onDeleteAgent(agent.agent_id)}
                   type="button"
                   aria-label="删除 Agent"
@@ -383,7 +383,7 @@ const ContactsPopover = memo(function ContactsPopover({
         <div className="h-px w-full bg-white/10" />
 
         <button
-          className="flex w-full items-center gap-2 rounded-[18px] bg-white/[0.05] px-3 py-3 text-sm font-medium text-white/88 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/[0.09]"
+          className="flex w-full items-center gap-2 rounded-[18px] bg-[rgba(255,255,255,0.05)] px-3 py-3 text-sm font-medium text-slate-900/80 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[rgba(255,255,255,0.09)]"
           onClick={onCreateAgent}
           type="button"
         >
@@ -422,13 +422,13 @@ const RoomsPopover = memo(function RoomsPopover({
   }, [deferredQuery, sessionsWithOwners]);
 
   return (
-    <HeroSidePanelShell className="absolute right-6 top-0 z-20">
-      <div className="space-y-4">
-        <HeroInputShell className="w-full">
+    <HeroSidePanelShell className="absolute right-0 top-[calc(100%+14px)] z-30">
+      <div className="space-y-4 mx-2">
+        <HeroInputShell className="w-full opacity-[0.92]">
           <div className="flex min-w-0 items-center gap-3">
-            <Search className="h-4 w-4 text-white/56" />
+            <Search className="h-4 w-4 text-slate-700/50" />
             <input
-              className="flex-1 bg-transparent text-sm text-white/92 outline-none placeholder:text-white/38"
+              className="flex-1 bg-transparent text-sm text-slate-900/82 outline-none placeholder:text-slate-700/42"
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search rooms..."
               value={query}
@@ -441,8 +441,8 @@ const RoomsPopover = memo(function RoomsPopover({
             <button
               key={session.session_key}
               className={cn(
-                "flex w-full items-center justify-between rounded-[18px] bg-white/[0.05] px-3 py-3 text-left shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/[0.09]",
-                index === 0 && "bg-white/[0.10]",
+                "flex w-full items-center justify-between rounded-[18px] bg-[rgba(255,255,255,0.05)] px-2 py-2 text-left shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[rgba(255,255,255,0.09)]",
+                index === 0 && "bg-[rgba(255,255,255,0.10)]",
               )}
               onClick={() => {
                 onClose();
@@ -451,23 +451,23 @@ const RoomsPopover = memo(function RoomsPopover({
               type="button"
             >
               <div>
-                <p className="text-sm font-semibold text-white/92">
+                <p className="text-sm font-semibold text-slate-900/84">
                   {truncate(session.title || "Untitled Room", 26)}
                 </p>
-                <p className="max-w-[210px] truncate text-xs text-white/52">
+                <p className="max-w-[210px] truncate text-xs text-slate-700/54">
                   {(owner?.name ?? "Unknown")} · 最近消息 · {formatRelativeTime(session.last_activity_at)}
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-[11px] text-white/40">
+                <span className="text-[11px] text-slate-700/42">
                   {formatRelativeTime(session.last_activity_at)}
                 </span>
                 {(session.message_count ?? 0) > 0 && (
-                  <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-white/16 px-1.5 text-[9px] font-bold text-white/92 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
+                  <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-white/14 px-1.5 text-[9px] font-bold text-slate-900/80 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
                     {Math.min(session.message_count ?? 0, 9)}
                   </span>
                 )}
-                <ChevronRight className="h-4 w-4 text-white/40" />
+                <ChevronRight className="h-4 w-4 text-slate-700/40" />
               </div>
             </button>
           ))}
@@ -476,7 +476,7 @@ const RoomsPopover = memo(function RoomsPopover({
         <div className="h-px w-full bg-white/10" />
 
         <button
-          className="flex w-full items-center gap-2 rounded-[18px] bg-white/[0.05] px-3 py-3 text-sm font-medium text-white/88 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/[0.09]"
+          className="flex w-full items-center gap-2 rounded-[18px] bg-[rgba(255,255,255,0.05)] px-3 py-3 text-sm font-medium text-slate-900/80 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[rgba(255,255,255,0.09)]"
           onClick={() => {
             onClose();
             if (recentRooms[0]) {
@@ -592,7 +592,7 @@ export function Console({
           <span className="text-base font-semibold text-foreground">Nexus</span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="relative flex items-center gap-2">
           <HeaderActionButton
             active={showContacts}
             onClick={() => {
@@ -618,33 +618,33 @@ export function Console({
             aria-label="创建 Agent"
           >
             <HeroActionOrbShell active>
-              <Plus className="h-4 w-4 text-white/92" />
+              <Plus className="h-4 w-4 text-slate-900/80" />
             </HeroActionOrbShell>
           </button>
+
+          {showContacts && (
+            <ContactsPopover
+              agents={agents}
+              onClose={() => setShowContacts(false)}
+              onCreateAgent={onCreateAgent}
+              onDeleteAgent={onDeleteAgent}
+              onEditAgent={onEditAgent}
+              onSelectAgent={onSelectAgent}
+            />
+          )}
+
+          {showRooms && (
+            <RoomsPopover
+              onClose={() => setShowRooms(false)}
+              onOpenSession={onOpenSession}
+              recentRooms={recentRooms}
+              sessionsWithOwners={sessionsWithOwners}
+            />
+          )}
         </div>
       </div>
 
       <div className="relative flex min-h-0 flex-1 items-center justify-center px-8 pb-8 pt-6">
-        {showContacts && (
-          <ContactsPopover
-            agents={agents}
-            onClose={() => setShowContacts(false)}
-            onCreateAgent={onCreateAgent}
-            onDeleteAgent={onDeleteAgent}
-            onEditAgent={onEditAgent}
-            onSelectAgent={onSelectAgent}
-          />
-        )}
-
-        {showRooms && (
-          <RoomsPopover
-            onClose={() => setShowRooms(false)}
-            onOpenSession={onOpenSession}
-            recentRooms={recentRooms}
-            sessionsWithOwners={sessionsWithOwners}
-          />
-        )}
-
         <HeroStage
           currentAgentId={currentAgentId}
           decorativeTokens={decorativeTokens}

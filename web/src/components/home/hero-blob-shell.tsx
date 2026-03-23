@@ -34,11 +34,17 @@ interface HeroInputShellProps {
 }
 
 interface StaticGlassShellProps {
+  auraBackground?: string;
+  auraBlurClassName?: string;
   children: ReactNode;
   className?: string;
   contentClassName?: string;
   fill: string;
+  fillGradientStops?: Array<{ color: string; offset: string }>;
+  glowBlurDeviation?: number;
   innerFill: string;
+  innerFillGradientStops?: Array<{ color: string; offset: string }>;
+  innerGlowOpacity?: number;
   innerPath: string;
   innerStroke: string;
   outerGlowOpacity?: number;
@@ -96,11 +102,20 @@ const ACTION_ORB_PATH = createClosedSplinePath(ACTION_ORB_POINTS);
 const ACTION_ORB_INNER_PATH = createClosedSplinePath(createInnerPoints(ACTION_ORB_POINTS, 0.93, 0.93));
 
 function StaticGlassShell({
+  auraBackground = `radial-gradient(28% 22% at 20% 24%, rgba(255,190,122,0.12), rgba(255,190,122,0) 76%),
+    radial-gradient(24% 24% at 82% 18%, rgba(118,231,206,0.12), rgba(118,231,206,0) 78%),
+    radial-gradient(34% 26% at 46% 82%, rgba(133,119,255,0.14), rgba(133,119,255,0) 74%),
+    radial-gradient(40% 20% at 52% 12%, rgba(255,255,255,0.12), rgba(255,255,255,0) 72%)`,
+  auraBlurClassName = "blur-[44px]",
   children,
   className,
   contentClassName,
   fill,
+  fillGradientStops,
+  glowBlurDeviation = 6,
   innerFill,
+  innerFillGradientStops,
+  innerGlowOpacity = 0.78,
   innerPath,
   innerStroke,
   outerGlowOpacity = 0.86,
@@ -113,19 +128,20 @@ function StaticGlassShell({
 }: StaticGlassShellProps) {
   const glowGradientId = useId();
   const glowId = useId();
+  const fillGradientId = useId();
+  const innerFillGradientId = useId();
+  const surfaceFill = fillGradientStops ? `url(#${fillGradientId})` : fill;
+  const innerSurfaceFill = innerFillGradientStops ? `url(#${innerFillGradientId})` : innerFill;
 
   return (
     <div className={cn("relative isolate overflow-visible", className)}>
       <div className="absolute inset-[-14%] z-0 pointer-events-none">
-        <div
-          className="absolute inset-0 blur-[44px]"
-          style={{
-            background: `radial-gradient(28% 22% at 20% 24%, rgba(255,190,122,0.12), rgba(255,190,122,0) 76%),
-              radial-gradient(24% 24% at 82% 18%, rgba(118,231,206,0.12), rgba(118,231,206,0) 78%),
-              radial-gradient(34% 26% at 46% 82%, rgba(133,119,255,0.14), rgba(133,119,255,0) 74%),
-              radial-gradient(40% 20% at 52% 12%, rgba(255,255,255,0.12), rgba(255,255,255,0) 72%)`,
-          }}
-        />
+        {auraBackground ? (
+          <div
+            className={cn("absolute inset-0", auraBlurClassName)}
+            style={{ background: auraBackground }}
+          />
+        ) : null}
       </div>
 
       <svg
@@ -142,8 +158,22 @@ function StaticGlassShell({
             <stop offset="100%" stopColor="rgba(255,255,255,0.18)"/>
           </linearGradient>
           <filter id={glowId} x="-20%" y="-80%" width="140%" height="260%">
-            <feGaussianBlur stdDeviation="6"/>
+            <feGaussianBlur stdDeviation={glowBlurDeviation}/>
           </filter>
+          {fillGradientStops ? (
+            <linearGradient id={fillGradientId} x1="28" x2={viewBoxWidth - 20} y1="24" y2={viewBoxHeight - 18} gradientUnits="userSpaceOnUse">
+              {fillGradientStops.map((stop) => (
+                <stop key={`fill-${stop.offset}-${stop.color}`} offset={stop.offset} stopColor={stop.color}/>
+              ))}
+            </linearGradient>
+          ) : null}
+          {innerFillGradientStops ? (
+            <linearGradient id={innerFillGradientId} x1="42" x2={viewBoxWidth - 36} y1="32" y2={viewBoxHeight - 22} gradientUnits="userSpaceOnUse">
+              {innerFillGradientStops.map((stop) => (
+                <stop key={`inner-${stop.offset}-${stop.color}`} offset={stop.offset} stopColor={stop.color}/>
+              ))}
+            </linearGradient>
+          ) : null}
         </defs>
 
         <path
@@ -158,20 +188,20 @@ function StaticGlassShell({
           d={innerPath}
           fill="none"
           filter={`url(#${glowId})`}
-          opacity="0.78"
+          opacity={innerGlowOpacity}
           stroke="rgba(255,255,255,0.22)"
           strokeWidth={Math.max(outerGlowWidth - 4, 10)}
         />
         <path
           d={path}
-          fill={fill}
+          fill={surfaceFill}
           opacity="0.94"
           stroke={stroke}
           strokeWidth="2"
         />
         <path
           d={innerPath}
-          fill={innerFill}
+          fill={innerSurfaceFill}
           opacity="0.92"
           stroke={innerStroke}
           strokeWidth="4"
@@ -203,12 +233,31 @@ export function HeroSidePanelShell({children, className}: HeroBlobShellProps) {
       <StaticGlassShell
         className={cn("w-[280px]", className)}
         contentClassName="px-6 py-7"
-        fill={panel.debugEnabled ? "rgba(37,55,88,0.5)" : "rgba(255,255,255,0.08)"}
-        innerFill={panel.debugEnabled ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)"}
+        auraBackground={`radial-gradient(24% 20% at 18% 28%, rgba(255,184,124,0.10), rgba(255,184,124,0) 78%),
+          radial-gradient(24% 20% at 80% 18%, rgba(110,228,214,0.10), rgba(110,228,214,0) 78%),
+          radial-gradient(32% 18% at 46% 92%, rgba(128,118,255,0.12), rgba(128,118,255,0) 76%),
+          radial-gradient(40% 18% at 52% 8%, rgba(255,255,255,0.08), rgba(255,255,255,0) 72%)`}
+        auraBlurClassName="blur-[34px]"
+        fill={panel.debugEnabled ? "rgba(37,55,88,0.5)" : "rgba(214,224,246,0.12)"}
+        fillGradientStops={panel.debugEnabled ? undefined : [
+          { offset: "0%", color: "rgba(245,248,255,0.18)" },
+          { offset: "42%", color: "rgba(212,224,248,0.12)" },
+          { offset: "100%", color: "rgba(182,200,235,0.14)" },
+        ]}
+        glowBlurDeviation={5}
+        innerFill={panel.debugEnabled ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.05)"}
+        innerFillGradientStops={panel.debugEnabled ? undefined : [
+          { offset: "0%", color: "rgba(250,252,255,0.08)" },
+          { offset: "52%", color: "rgba(217,229,249,0.04)" },
+          { offset: "100%", color: "rgba(200,214,240,0.07)" },
+        ]}
+        innerGlowOpacity={panel.debugEnabled ? 0.78 : 0.42}
         innerPath={innerPath}
-        innerStroke={panel.debugEnabled ? "rgba(170,226,255,0.22)" : "rgba(255,255,255,0.08)"}
+        innerStroke={panel.debugEnabled ? "rgba(170,226,255,0.22)" : "rgba(255,255,255,0.09)"}
+        outerGlowOpacity={panel.debugEnabled ? 0.86 : 0.5}
+        outerGlowWidth={panel.debugEnabled ? 18 : 13}
         path={panel.path}
-        stroke={panel.debugEnabled ? "rgba(170,226,255,0.42)" : "rgba(255,255,255,0.28)"}
+        stroke={panel.debugEnabled ? "rgba(170,226,255,0.42)" : "rgba(255,255,255,0.22)"}
         svgOverlay={panel.debugEnabled ? (
           <BlobDebugController
             active={target === "panel"}
@@ -276,14 +325,24 @@ export function HeroActionPillShell({
     <StaticGlassShell
       className={cn("h-11 min-w-[108px]", className)}
       contentClassName="flex h-full items-center justify-center px-5"
-      fill={active ? "rgba(255,255,255,0.16)" : "rgba(255,255,255,0.10)"}
+      auraBackground={active
+        ? "radial-gradient(48% 38% at 50% 50%, rgba(255,255,255,0.12), rgba(255,255,255,0) 72%)"
+        : ""}
+      auraBlurClassName="blur-[18px]"
+      fill={active ? "rgba(219,228,246,0.16)" : "rgba(204,216,239,0.12)"}
+      fillGradientStops={[
+        { offset: "0%", color: active ? "rgba(247,250,255,0.24)" : "rgba(238,244,255,0.18)" },
+        { offset: "100%", color: active ? "rgba(203,217,241,0.14)" : "rgba(188,204,233,0.12)" },
+      ]}
+      glowBlurDeviation={4}
       innerFill={active ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)"}
       innerPath={ACTION_PILL_INNER_PATH}
+      innerGlowOpacity={active ? 0.3 : 0.22}
       innerStroke={active ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.08)"}
-      outerGlowOpacity={active ? 0.92 : 0.78}
-      outerGlowWidth={14}
+      outerGlowOpacity={active ? 0.44 : 0.28}
+      outerGlowWidth={10}
       path={ACTION_PILL_PATH}
-      stroke={active ? "rgba(255,255,255,0.34)" : "rgba(255,255,255,0.24)"}
+      stroke={active ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.14)"}
       viewBoxHeight={ACTION_PILL_VIEWBOX_HEIGHT}
       viewBoxWidth={ACTION_PILL_VIEWBOX_WIDTH}
     >
@@ -301,14 +360,24 @@ export function HeroActionOrbShell({
     <StaticGlassShell
       className={cn("h-11 w-11", className)}
       contentClassName="flex h-full items-center justify-center"
-      fill={active ? "rgba(190,240,202,0.22)" : "rgba(255,255,255,0.12)"}
-      innerFill={active ? "rgba(191,240,202,0.12)" : "rgba(255,255,255,0.05)"}
+      auraBackground={active
+        ? "radial-gradient(54% 54% at 50% 50%, rgba(171,238,194,0.22), rgba(171,238,194,0) 70%)"
+        : ""}
+      auraBlurClassName="blur-[18px]"
+      fill={active ? "rgba(176,235,192,0.22)" : "rgba(204,216,239,0.12)"}
+      fillGradientStops={[
+        { offset: "0%", color: active ? "rgba(229,252,235,0.30)" : "rgba(238,244,255,0.18)" },
+        { offset: "100%", color: active ? "rgba(150,222,170,0.20)" : "rgba(188,204,233,0.12)" },
+      ]}
+      glowBlurDeviation={4}
+      innerFill={active ? "rgba(191,240,202,0.10)" : "rgba(255,255,255,0.05)"}
       innerPath={ACTION_ORB_INNER_PATH}
+      innerGlowOpacity={active ? 0.3 : 0.2}
       innerStroke={active ? "rgba(180,235,194,0.18)" : "rgba(255,255,255,0.08)"}
-      outerGlowOpacity={active ? 0.9 : 0.76}
-      outerGlowWidth={12}
+      outerGlowOpacity={active ? 0.46 : 0.28}
+      outerGlowWidth={10}
       path={ACTION_ORB_PATH}
-      stroke={active ? "rgba(191,240,202,0.44)" : "rgba(255,255,255,0.24)"}
+      stroke={active ? "rgba(191,240,202,0.26)" : "rgba(255,255,255,0.14)"}
       viewBoxHeight={ACTION_ORB_VIEWBOX_HEIGHT}
       viewBoxWidth={ACTION_ORB_VIEWBOX_WIDTH}
     >
