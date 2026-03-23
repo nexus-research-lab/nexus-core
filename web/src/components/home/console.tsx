@@ -582,7 +582,7 @@ export function Console({
     <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="pointer-events-none absolute inset-0" />
 
-      <div className="relative flex items-center justify-between px-7 pt-6">
+      <div className="relative z-30 flex items-center justify-between px-7 pt-6">
         <div className="relative flex items-center gap-3 px-1 py-1">
           <LottiePlayer
             className="pointer-events-none absolute left-7.5 -top-10 h-20 w-24 opacity-[0.8] sm:left-7.5 sm:-top-13 sm:h-24 sm:w-24"
@@ -592,7 +592,7 @@ export function Console({
           <span className="text-base font-semibold text-foreground">Nexus</span>
         </div>
 
-        <div className="relative flex items-center gap-2">
+        <div className="relative z-40 flex items-center gap-2">
           <HeaderActionButton
             active={showContacts}
             onClick={() => {
