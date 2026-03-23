@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { memo, useCallback, useDeferredValue, useMemo, useState } from "react";
 import {
   ArrowUp,
   ChevronRight,
@@ -31,6 +31,11 @@ interface AgentDirectoryProps {
   onDeleteAgent: (agentId: string) => void;
 }
 
+type SessionWithOwner = {
+  owner: Agent | null;
+  session: Session;
+};
+
 const TOKEN_SWATCHES = [
   { fill: "#5FA052", text: "#FFFFFF", ring: "#8DBA86" },
   { fill: "#E8A838", text: "#FFFFFF", ring: "#F0C56C" },
@@ -59,7 +64,7 @@ function getInitials(name: string) {
 
 function buildDecorativeTokens(
   agents: Agent[],
-  sessions: Array<{ session: Session; owner: Agent | null }>,
+  sessions: SessionWithOwner[],
 ): SpotlightToken[] {
   const agentTokens: SpotlightToken[] =
     agents.map((agent, index) => ({
@@ -115,6 +120,125 @@ function buildDecorativeTokens(
   return source.slice(0, 22);
 }
 
+const HeroStage = memo(function HeroStage({
+  currentAgentId,
+  decorativeTokens,
+  onOpenContacts,
+  onOpenSession,
+  onQueryChange,
+  onSelectAgent,
+  onSubmit,
+  query,
+  recentAgents,
+  recentRooms,
+}: {
+  currentAgentId: string | null;
+  decorativeTokens: SpotlightToken[];
+  onOpenContacts: () => void;
+  onOpenSession: (sessionKey: string, agentId?: string) => void;
+  onQueryChange: (value: string) => void;
+  onSelectAgent: (agentId: string) => void;
+  onSubmit: () => void;
+  query: string;
+  recentAgents: Agent[];
+  recentRooms: SessionWithOwner[];
+}) {
+  return (
+    <div className="relative flex w-full max-w-[1180px] flex-col items-center">
+      <DebugReferenceOverlay />
+
+      <HeroBlobShell className="z-10">
+        <div className="space-y-3">
+          <p className="text-[9px] font-medium uppercase tracking-[0.32em] text-muted-foreground/70">
+            Collaboration Hub
+          </p>
+          <div className="relative inline-block">
+            <LottiePlayer
+              className="pointer-events-none absolute -right-8 -top-7 h-18 w-18 opacity-[0.5] sm:-right-16 sm:-top-14 sm:h-24 sm:w-24"
+              src={ANIMATIONS.SPARKLES}
+            />
+            <h1 className="text-[32px] mb-10 font-extrabold text-foreground/96 tracking-[-0.05em] sm:text-[42px] sm:leading-[1.05]">
+              和你的 agents 开始协作
+            </h1>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <HeroInputShell className="mx-auto w-full max-w-[480px]">
+            <div className="flex min-w-0 items-center gap-3">
+              <MessageSquare className="h-4.5 w-4.5 text-black/58" />
+              <input
+                className="flex-1 bg-transparent text-[15px] text-white/92 outline-none placeholder:text-black/42"
+                onChange={(event) => onQueryChange(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    onSubmit();
+                  }
+                }}
+                placeholder="描述意图，@提及 Agent 或 #Room 来启动协作..."
+                value={query}
+              />
+              <button
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/84 text-slate-900 shadow-[0_10px_20px_rgba(255,255,255,0.16)] transition-transform duration-300 hover:-translate-y-0.5"
+                onClick={onSubmit}
+                type="button"
+              >
+                <ArrowUp className="h-4 w-4" />
+              </button>
+            </div>
+          </HeroInputShell>
+
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+            {recentAgents.map((agent, index) => (
+              <button
+                key={agent.agent_id}
+                className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium text-white/84 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/18"
+                onClick={() => onSelectAgent(agent.agent_id)}
+                type="button"
+              >
+                <span
+                  className="h-4 w-4 rounded-full"
+                  style={{
+                    backgroundColor: index === 0 ? "#bff0ca" : "#ffd7b8",
+                    border: `1px solid ${index === 0 ? "#7fe3a8" : "#e3c6ad"}`,
+                  }}
+                />
+                {agent.name}
+              </button>
+            ))}
+
+            {recentRooms.map(({ session }) => (
+              <button
+                key={session.session_key}
+                className="rounded-full bg-white/8 px-3 py-1.5 text-sm font-medium text-white/76 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/16"
+                onClick={() => onOpenSession(session.session_key, session.agent_id)}
+                type="button"
+              >
+                #{truncate(session.title || "Untitled Room", 18)}
+              </button>
+            ))}
+
+            <button
+              className="px-2 text-sm font-medium text-white/52 transition-colors hover:text-white/82"
+              onClick={onOpenContacts}
+              type="button"
+            >
+              See all →
+            </button>
+          </div>
+        </div>
+      </HeroBlobShell>
+
+      <AgentPile
+        currentAgentId={currentAgentId}
+        onSelectAgent={onSelectAgent}
+        tokens={decorativeTokens}
+      />
+    </div>
+  );
+});
+
 export function Console({
   agents,
   sessions,
@@ -130,15 +254,22 @@ export function Console({
   const [showRooms, setShowRooms] = useState(false);
   const [contactsQuery, setContactsQuery] = useState("");
   const [roomsQuery, setRoomsQuery] = useState("");
+  const deferredContactsQuery = useDeferredValue(contactsQuery);
+  const deferredRoomsQuery = useDeferredValue(roomsQuery);
+
+  const agentsById = useMemo(
+    () => new Map(agents.map((agent) => [agent.agent_id, agent])),
+    [agents],
+  );
 
   const sessionsWithOwners = useMemo(() => {
     return sessions
       .map((session) => ({
         session,
-        owner: agents.find((agent) => agent.agent_id === session.agent_id) ?? null,
+        owner: session.agent_id ? agentsById.get(session.agent_id) ?? null : null,
       }))
       .sort((left, right) => right.session.last_activity_at - left.session.last_activity_at);
-  }, [agents, sessions]);
+  }, [agentsById, sessions]);
 
   const recentAgents = useMemo(() => agents.slice(0, 2), [agents]);
   const recentRooms = useMemo(() => sessionsWithOwners.slice(0, 3), [sessionsWithOwners]);
@@ -148,7 +279,7 @@ export function Console({
   );
 
   const filteredContacts = useMemo(() => {
-    const keyword = contactsQuery.trim().toLowerCase();
+    const keyword = deferredContactsQuery.trim().toLowerCase();
     if (!keyword) {
       return agents;
     }
@@ -157,10 +288,10 @@ export function Console({
         field.toLowerCase().includes(keyword),
       ),
     );
-  }, [agents, contactsQuery]);
+  }, [agents, deferredContactsQuery]);
 
   const filteredRooms = useMemo(() => {
-    const keyword = roomsQuery.trim().toLowerCase();
+    const keyword = deferredRoomsQuery.trim().toLowerCase();
     if (!keyword) {
       return sessionsWithOwners;
     }
@@ -169,9 +300,9 @@ export function Console({
         field.toLowerCase().includes(keyword),
       ),
     );
-  }, [roomsQuery, sessionsWithOwners]);
+  }, [deferredRoomsQuery, sessionsWithOwners]);
 
-  const handleSubmit = () => {
+  const handleSubmit = useCallback(() => {
     const trimmed = query.trim();
     if (!trimmed) {
       return;
@@ -214,7 +345,12 @@ export function Console({
     if (agentFirst) {
       onSelectAgent(agentFirst.agent_id);
     }
-  };
+  }, [agents, onOpenSession, onSelectAgent, query, sessionsWithOwners]);
+
+  const handleOpenContacts = useCallback(() => {
+    setShowContacts(true);
+    setShowRooms(false);
+  }, []);
 
   return (
     <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -420,101 +556,18 @@ export function Console({
           </div>
         )}
 
-        <div className="relative flex w-full max-w-[1180px] flex-col items-center">
-          <DebugReferenceOverlay />
-
-          <HeroBlobShell className="z-10">
-            <div className="space-y-3">
-              <p className="text-[9px] font-medium uppercase tracking-[0.32em] text-muted-foreground/70">
-                Collaboration Hub
-              </p>
-              <div className="relative inline-block">
-                <LottiePlayer
-                  className="pointer-events-none absolute -right-8 -top-7 h-18 w-18 opacity-[0.5] sm:-right-16 sm:-top-14 sm:h-24 sm:w-24"
-                  src={ANIMATIONS.SPARKLES}
-                />
-                <h1 className="text-[32px] mb-10 font-extrabold text-foreground/96 tracking-[-0.05em] sm:text-[42px] sm:leading-[1.05]">
-                  和你的 agents 开始协作
-                </h1>
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <HeroInputShell className="mx-auto w-full max-w-[480px]">
-                <div className="flex min-w-0 items-center gap-3">
-                  <MessageSquare className="h-4.5 w-4.5 text-black/58" />
-                  <input
-                    className="flex-1 bg-transparent text-[15px] text-white/92 outline-none placeholder:text-black/42"
-                    onChange={(event) => setQuery(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        handleSubmit();
-                      }
-                    }}
-                    placeholder="描述意图，@提及 Agent 或 #Room 来启动协作..."
-                    value={query}
-                  />
-                  <button
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/84 text-slate-900 shadow-[0_10px_20px_rgba(255,255,255,0.16)] transition-transform duration-300 hover:-translate-y-0.5"
-                    onClick={handleSubmit}
-                    type="button"
-                  >
-                    <ArrowUp className="h-4 w-4" />
-                  </button>
-                </div>
-              </HeroInputShell>
-
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                {recentAgents.map((agent, index) => (
-                  <button
-                    key={agent.agent_id}
-                    className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-sm font-medium text-white/84 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/18"
-                    onClick={() => onSelectAgent(agent.agent_id)}
-                    type="button"
-                  >
-                    <span
-                      className="h-4 w-4 rounded-full"
-                      style={{
-                        backgroundColor: index === 0 ? "#bff0ca" : "#ffd7b8",
-                        border: `1px solid ${index === 0 ? "#7fe3a8" : "#e3c6ad"}`,
-                      }}
-                    />
-                    {agent.name}
-                  </button>
-                ))}
-
-                {recentRooms.map(({ session }) => (
-                  <button
-                    key={session.session_key}
-                    className="rounded-full bg-white/8 px-3 py-1.5 text-sm font-medium text-white/76 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/16"
-                    onClick={() => onOpenSession(session.session_key, session.agent_id)}
-                    type="button"
-                  >
-                    #{truncate(session.title || "Untitled Room", 18)}
-                  </button>
-                ))}
-
-                <button
-                  className="px-2 text-sm font-medium text-white/52 transition-colors hover:text-white/82"
-                  onClick={() => {
-                    setShowContacts(true);
-                    setShowRooms(false);
-                  }}
-                  type="button"
-                >
-                  See all →
-                </button>
-              </div>
-            </div>
-          </HeroBlobShell>
-
-          <AgentPile
-            currentAgentId={currentAgentId}
-            onSelectAgent={onSelectAgent}
-            tokens={decorativeTokens}
-          />
-        </div>
+        <HeroStage
+          currentAgentId={currentAgentId}
+          decorativeTokens={decorativeTokens}
+          onOpenContacts={handleOpenContacts}
+          onOpenSession={onOpenSession}
+          onQueryChange={setQuery}
+          onSelectAgent={onSelectAgent}
+          onSubmit={handleSubmit}
+          query={query}
+          recentAgents={recentAgents}
+          recentRooms={recentRooms}
+        />
       </div>
     </section>
   );
