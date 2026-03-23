@@ -402,14 +402,14 @@ export function HeroBlobShell({children, className}: HeroBlobShellProps) {
   return (
     <>
       <div className={cn("relative isolate w-full max-w-[980px]", className)}>
-        <div className="absolute inset-[-20%] z-0">
+        <div className="absolute inset-[-20%] z-0 pointer-events-none">
           <div
             className="absolute inset-0 pointer-events-none blur-[56px]"
             style={{
-              background: `radial-gradient(30% 16% at 50% 82%, rgba(133,119,255,0.26), rgba(133,119,255,0) 74%),
+              background: `radial-gradient(30% 16% at 50% 82%, rgba(133,119,255,0.30), rgba(133,119,255,0) 74%),
                 radial-gradient(12% 20% at 86% 22%, rgba(118,231,206,0.18), rgba(118,231,206,0) 76%),
                 radial-gradient(12% 18% at 14% 38%, rgba(255,190,122,0.14), rgba(255,190,122,0) 76%),
-                radial-gradient(40% 12% at 50% 12%, rgba(255,255,255,0.12), rgba(255,255,255,0) 74%)`,
+                radial-gradient(40% 12% at 50% 12%, rgba(255,255,255,0.14), rgba(255,255,255,0) 74%)`,
             }}
           />
 
@@ -421,9 +421,9 @@ export function HeroBlobShell({children, className}: HeroBlobShellProps) {
           >
             <defs>
               <linearGradient id={gradientId} x1="142" x2="900" y1="92" y2="640" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="rgba(255,255,255,0.08)"/>
-                <stop offset="44%" stopColor="rgba(255,255,255,0.08)"/>
-                <stop offset="100%" stopColor="rgba(255,255,255,0.08)"/>
+                <stop offset="0%" stopColor="rgba(229,237,255,0.12)"/>
+                <stop offset="44%" stopColor="rgba(214,225,248,0.11)"/>
+                <stop offset="100%" stopColor="rgba(203,216,241,0.12)"/>
               </linearGradient>
               <linearGradient id={outerEdgeGlowGradientId} x1="176" x2="888" y1="74" y2="674" gradientUnits="userSpaceOnUse">
                 <stop offset="0%" stopColor="rgba(255,255,255,0.78)"/>
@@ -461,7 +461,7 @@ export function HeroBlobShell({children, className}: HeroBlobShellProps) {
             />
             <path
               d={createClosedSplinePath(createInnerPoints(outer.points, 0.992, 0.99))}
-              fill={outer.debugEnabled ? "rgba(88,102,164,0.22)" : "rgba(255,255,255,0.04)"}
+              fill={outer.debugEnabled ? "rgba(88,102,164,0.22)" : "rgba(216,226,247,0.06)"}
               opacity={outer.debugEnabled ? 0.96 : 0.92}
               stroke={outer.debugEnabled ? "rgba(214,221,255,0.32)" : "rgba(255,255,255,0.08)"}
               strokeWidth="4"
