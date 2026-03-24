@@ -108,22 +108,22 @@ export function AgentOptions(
   const [title, setTitle] = useState(initialTitle || 'Agent');
   const [model, setModel] = useState(sourceOptions.model || 'glm-5');
   const [permissionMode, setPermissionMode] = useState(
-    sourceOptions.permissionMode || sourceOptions.permission_mode || 'default'
+    sourceOptions.permission_mode || sourceOptions.permission_mode || 'default'
   );
   const [allowedTools, setAllowedTools] = useState<string[]>(
-    sourceOptions.allowedTools || sourceOptions.allowed_tools || []
+    sourceOptions.allowed_tools || sourceOptions.allowed_tools || []
   );
   const [disallowedTools, setDisallowedTools] = useState<string[]>(
-    sourceOptions.disallowedTools || sourceOptions.disallowed_tools || []
+    sourceOptions.disallowed_tools || sourceOptions.disallowed_tools || []
   );
-  const [systemPrompt, setSystemPrompt] = useState(sourceOptions.systemPrompt || '');
+  const [systemPrompt, setSystemPrompt] = useState(sourceOptions.system_prompt || '');
 
   // 技能配置状态
   const [skillsEnabled, setSkillsEnabled] = useState(
-    sourceOptions.skillsEnabled ?? sourceOptions.skills_enabled ?? true
+    sourceOptions.skills_enabled ?? sourceOptions.skills_enabled ?? true
   );
   const [settingSources, setSettingSources] = useState<('user' | 'project' | 'local')[]>(
-    sourceOptions.settingSources || sourceOptions.setting_sources || ['user', 'project']
+    sourceOptions.setting_sources || sourceOptions.setting_sources || ['user', 'project']
   );
   const [nameValidation, setNameValidation] = useState<AgentNameValidationResult | null>(null);
   const [isValidatingName, setIsValidatingName] = useState(false);
@@ -134,13 +134,13 @@ export function AgentOptions(
     setActiveTab('basic');
     setTitle(initialTitle || 'Agent');
     setModel(nextOptions.model || 'glm-5');
-    setPermissionMode(nextOptions.permissionMode || nextOptions.permission_mode || 'default');
-    setAllowedTools(nextOptions.allowedTools || nextOptions.allowed_tools || []);
-    setDisallowedTools(nextOptions.disallowedTools || nextOptions.disallowed_tools || []);
-    setSystemPrompt(nextOptions.systemPrompt || '');
-    setSkillsEnabled(nextOptions.skillsEnabled ?? nextOptions.skills_enabled ?? true);
+    setPermissionMode(nextOptions.permission_mode || nextOptions.permission_mode || 'default');
+    setAllowedTools(nextOptions.allowed_tools || nextOptions.allowed_tools || []);
+    setDisallowedTools(nextOptions.disallowed_tools || nextOptions.disallowed_tools || []);
+    setSystemPrompt(nextOptions.system_prompt || '');
+    setSkillsEnabled(nextOptions.skills_enabled ?? nextOptions.skills_enabled ?? true);
     setSettingSources(
-      nextOptions.settingSources || nextOptions.setting_sources || ['user', 'project']
+      nextOptions.setting_sources || nextOptions.setting_sources || ['user', 'project']
     );
     setNameValidation(null);
     setIsValidatingName(false);
@@ -243,13 +243,13 @@ export function AgentOptions(
 
     const options: SessionOptions = {
       model,
-      permissionMode,
-      allowedTools: finalAllowedTools,
-      disallowedTools,
-      systemPrompt: systemPrompt || undefined,
+      permission_mode: permissionMode,
+      allowed_tools: finalAllowedTools,
+      disallowed_tools: disallowedTools,
+      system_prompt: systemPrompt || undefined,
       // Skills 配置
-      skillsEnabled,
-      settingSources: settingSources.length > 0 ? settingSources : undefined,
+      skills_enabled: skillsEnabled,
+      setting_sources: settingSources.length > 0 ? settingSources : undefined,
     };
     onSave(trimmedTitle, options);
     onClose();

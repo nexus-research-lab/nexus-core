@@ -2,10 +2,10 @@ import { useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { AppRouteBuilders } from "@/app/router/route-paths";
-import { AgentOptions } from "@/components/dialog/agent-options";
 import { RoomWorkspaceShell } from "@/features/room-conversation/room-workspace-shell";
 import { useRoomPageController } from "@/hooks/use-room-page-controller";
 import { RouteScaffold } from "@/shared/ui/route-scaffold";
+import { AgentOptions } from "@/shared/ui/agent-options-dialog";
 import { AppStage } from "@/shared/ui/app-stage";
 import { AppLoadingScreen } from "@/shared/ui/app-loading-screen";
 import { useSessionStore } from "@/store/session";
