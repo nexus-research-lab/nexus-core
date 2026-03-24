@@ -14,11 +14,31 @@ import { useAppConversationStore } from "@/store/app-conversation";
 import { getConversationStoreSnapshot } from "@/store/conversation";
 import { AgentOptions as AgentConfigOptions } from "@/types/agent";
 
+function build_room_title_from_prompt(prompt: string | undefined) {
+  const normalized_prompt = (prompt ?? "")
+    .trim()
+    .replace(/[。！？!?,，；;：:\s]+$/g, "")
+    .replace(/^(帮我|请|我想|我要|我需要|帮忙|麻烦你)/, "")
+    .replace(/^(创建|新建|开始|组织|整理)(一个|一条|个)?/, "")
+    .replace(/(协作|room|Room|任务)$/g, "")
+    .trim();
+
+  if (!normalized_prompt) {
+    return "新协作";
+  }
+
+  return normalized_prompt.slice(0, 24);
+}
+
 export function LauncherPage() {
   const controller = useLauncherPageController();
   const navigate = useNavigate();
   const [should_bootstrap_room_after_create, set_should_bootstrap_room_after_create] = useState(false);
+  const [pending_room_title, set_pending_room_title] = useState<string>("");
   const push_app_message = useAppConversationStore((state) => state.push_app_message);
+  const latest_user_prompt = [...controller.app_conversation_messages]
+    .reverse()
+    .find((message) => message.role === "user")?.body;
 
   const handleSelectAgent = useCallback((agent_id: string) => {
     controller.handle_select_agent(agent_id);
@@ -52,12 +72,15 @@ export function LauncherPage() {
     .sort((left, right) => right.conversation.last_activity_at - left.conversation.last_activity_at);
 
   const handleCreateRoom = useCallback(() => {
+    const next_room_title = build_room_title_from_prompt(latest_user_prompt);
     push_app_message("我会先创建一个新的协作 room，并在完成后直接带你进入第一条对话。");
+    set_pending_room_title(next_room_title);
     set_should_bootstrap_room_after_create(true);
     controller.handle_open_create_agent();
-  }, [controller, push_app_message]);
+  }, [controller, latest_user_prompt, push_app_message]);
 
   const handleCreateAgent = useCallback(() => {
+    set_pending_room_title("");
     set_should_bootstrap_room_after_create(false);
     controller.handle_open_create_agent();
   }, [controller]);
@@ -84,17 +107,20 @@ export function LauncherPage() {
     await controller.handle_save_agent_options(title, options);
 
     if (!should_open_room_after_create) {
+      set_pending_room_title("");
       set_should_bootstrap_room_after_create(false);
       return;
     }
 
     const next_agent_id = useAgentStore.getState().current_agent_id;
     if (!next_agent_id) {
+      set_pending_room_title("");
       set_should_bootstrap_room_after_create(false);
       return;
     }
 
     if (!should_bootstrap_room_after_create) {
+      set_pending_room_title("");
       set_should_bootstrap_room_after_create(false);
       navigate(AppRouteBuilders.room(next_agent_id));
       return;
@@ -107,6 +133,7 @@ export function LauncherPage() {
     });
     conversation_store.set_current_conversation(next_conversation_id);
     push_app_message(`新的协作 room 已创建完成，正在进入 ${title} 的第一条对话。`);
+    set_pending_room_title("");
     set_should_bootstrap_room_after_create(false);
     navigate(AppRouteBuilders.room_conversation(next_agent_id, next_conversation_id));
   }, [controller, navigate, push_app_message, should_bootstrap_room_after_create]);
@@ -154,18 +181,19 @@ export function LauncherPage() {
             <div className="h-full transition-all duration-500 ease-out lg:translate-x-0 lg:scale-100">
               <LauncherAppConversationPanel
                 agents={controller.agents}
-                app_conversation_draft={controller.app_conversation_draft}
-                app_conversation_messages={controller.app_conversation_messages}
-                conversations_with_owners={conversations_with_owners}
-                on_create_room={handleCreateRoom}
-                on_clear_conversation={controller.clear_app_conversation}
+              app_conversation_draft={controller.app_conversation_draft}
+              app_conversation_messages={controller.app_conversation_messages}
+              conversations_with_owners={conversations_with_owners}
+              on_create_room={handleCreateRoom}
+              on_clear_conversation={controller.clear_app_conversation}
                 on_change_draft={controller.set_app_conversation_draft}
                 on_close={controller.close_app_conversation}
-                on_open_agent_room={handleOpenAgentRoomFromApp}
-                on_open_conversation={handleOpenConversationFromApp}
-                on_open_contacts_page={handleOpenContactsPageFromApp}
-                on_submit={controller.submit_app_conversation}
-              />
+              on_open_agent_room={handleOpenAgentRoomFromApp}
+              on_open_conversation={handleOpenConversationFromApp}
+              on_open_contacts_page={handleOpenContactsPageFromApp}
+              on_submit={controller.submit_app_conversation}
+              suggested_room_title={build_room_title_from_prompt(latest_user_prompt)}
+            />
             </div>
           </div>
         ) : null}
@@ -175,12 +203,17 @@ export function LauncherPage() {
         mode={controller.dialog_mode}
         is_open={controller.is_dialog_open}
         on_close={() => {
+          set_pending_room_title("");
           set_should_bootstrap_room_after_create(false);
           controller.set_is_dialog_open(false);
         }}
         on_save={handleSaveAgentOptions}
         on_validate_name={controller.handle_validate_agent_name}
-        initial_title={controller.dialog_initial_title}
+        initial_title={
+          should_bootstrap_room_after_create
+            ? pending_room_title || controller.dialog_initial_title
+            : controller.dialog_initial_title
+        }
         initial_options={controller.dialog_initial_options}
       />
     </AppStage>
