@@ -34,6 +34,7 @@ interface LauncherAppConversationPanelProps {
   on_open_conversation: (conversation_id: string, agent_id?: string) => void;
   on_open_contacts_page: () => void;
   on_submit: (next_prompt: string) => void;
+  suggested_room_title: string;
 }
 
 function buildConversationMessages(app_conversation_messages: AppConversationMessage[]): AppConversationMessage[] {
@@ -64,6 +65,7 @@ export function LauncherAppConversationPanel({
   on_open_conversation,
   on_open_contacts_page,
   on_submit,
+  suggested_room_title,
 }: LauncherAppConversationPanelProps) {
   const messages = buildConversationMessages(app_conversation_messages);
   const recent_room = conversations_with_owners[0] ?? null;
@@ -238,7 +240,7 @@ export function LauncherAppConversationPanel({
           >
             <p className="text-sm font-semibold text-slate-950/84">创建新协作</p>
             <p className="mt-1 text-xs leading-5 text-slate-700/58">
-              直接进入创建流程，再把成员和上下文逐步补齐。
+              默认会预填为“{suggested_room_title}”，你也可以在创建时再修改。
             </p>
           </button>
         </div>
