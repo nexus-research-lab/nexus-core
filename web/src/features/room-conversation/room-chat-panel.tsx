@@ -325,10 +325,10 @@ export function RoomChatPanel({
 
           <RoomComposerPanel
             compact={is_mobile_layout}
-            currentAgentName={current_agent_name ?? null}
-            isLoading={is_loading}
-            onSendMessage={handle_send_message}
-            onStop={handle_stop}
+            current_agent_name={current_agent_name ?? null}
+            is_loading={is_loading}
+            on_send_message={handle_send_message}
+            on_stop={handle_stop}
           />
         </>
       )}
