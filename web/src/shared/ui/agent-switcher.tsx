@@ -24,22 +24,22 @@ export function AgentSwitcher({
 }: AgentSwitcherProps) {
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <div className="neo-pill flex items-center gap-2 rounded-full px-4 py-2.5">
-        <Grid2X2 className="h-4 w-4 text-muted-foreground" />
+      <div className="workspace-chip flex items-center gap-2 rounded-full px-4 py-2.5">
+        <Grid2X2 className="h-4 w-4 text-slate-700/54" />
         <button
           onClick={onOpenDirectory}
-          className="text-sm font-semibold text-foreground transition-colors hover:text-primary"
+          className="text-sm font-semibold text-slate-900/84 transition-colors hover:text-slate-950"
           type="button"
         >
           Agents
         </button>
       </div>
 
-      <div className="neo-pill flex items-center gap-2 rounded-full px-4 py-2.5">
+      <div className="workspace-chip flex items-center gap-2 rounded-full px-4 py-2.5">
         <div className="relative">
           <select
             aria-label="选择 Agent"
-            className="appearance-none bg-transparent pr-6 text-sm font-semibold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            className="appearance-none bg-transparent pr-6 text-sm font-semibold text-slate-900/84 outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             onChange={(event) => onSelectAgent(event.target.value)}
             value={currentAgentId ?? ""}
           >
@@ -52,7 +52,7 @@ export function AgentSwitcher({
               </option>
             ))}
           </select>
-          <ChevronDown className="pointer-events-none absolute right-0 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <ChevronDown className="pointer-events-none absolute right-0 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-700/50" />
         </div>
       </div>
 
@@ -63,10 +63,10 @@ export function AgentSwitcher({
             <button
               key={agent.agent_id}
               className={cn(
-                "rounded-full px-3.5 py-2 text-sm transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary/50",
+                "rounded-full px-3.5 py-2 text-sm transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary/40",
                 isActive
-                  ? "bg-[linear-gradient(135deg,rgba(174,163,255,0.34),rgba(240,237,232,0.92))] text-primary neo-soft-shadow"
-                  : "neo-pill text-muted-foreground hover:-translate-y-0.5 hover:text-foreground",
+                  ? "workspace-card-strong text-slate-950 shadow-[0_14px_26px_rgba(111,126,162,0.12)]"
+                  : "workspace-chip text-slate-700/72 hover:-translate-y-0.5 hover:text-slate-950",
               )}
               onClick={() => onSelectAgent(agent.agent_id)}
               type="button"
@@ -78,7 +78,7 @@ export function AgentSwitcher({
       </div>
 
       <button
-        className="neo-pill inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-foreground transition-all duration-300 hover:-translate-y-0.5 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/50"
+        className="workspace-chip inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-slate-900/84 transition-all duration-300 hover:-translate-y-0.5 hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-primary/40"
         onClick={onCreateAgent}
         type="button"
       >

@@ -1,4 +1,4 @@
 export const ANIMATIONS = {
   SPARKLES: "/lotties/sparkles-icon-animation_IVlJtTDRww.lottie",
-  PRIDE: "/lotties/01-small-pride_ysBmm4jXMh.lottie",
+  BOM: "/public/lotties/0101bt_bom_01_6aZ6qX40PY.lottie",
 } as const;
