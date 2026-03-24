@@ -1,5 +1,15 @@
 # Nexus 前端 Room-First 重构方案
 
+> 2026-03-24 更新：
+>
+> 旧方案中“独立 `nexus` 页面 + 多条 `nexus conversation`”的设想已废弃。
+> 当前以前台产品规格 [nexus-page-ux-spec.md](./nexus-page-ux-spec.md) 为准：
+>
+> - 首页保留双态：`Launcher / App 对话态`
+> - `App / Nexus` 通过首页输入框触发，不再强化成独立编排页
+> - 全局只保留一条 `App conversation`
+> - 主页面以 `首页 / Contacts / Room` 为核心
+
 ## 1. 背景
 
 当前前端已经从 Next.js 迁移为 `Vite + React + React Router`，但信息架构仍然保留了较强的“单页状态切换”思路：
@@ -13,7 +23,7 @@
 这导致两个问题：
 
 1. **产品语义错位**：当前实现更接近“选中某个 Agent 后进入工作台”，而产品定义要求是“进入某个 Room，在 Room 中围绕成员协作”。
-2. **工程结构失真**：路由、目录、状态模型仍以早期原型为中心，难以支撑后续 `nexus / room / contacts / conversation` 的独立演进。
+2. **工程结构失真**：路由、目录、状态模型仍以早期原型为中心，难以支撑后续 `launcher 双态 / room / contacts / conversation` 的独立演进。
 
 本方案用于指导前端完成一次 **Room-First** 的长期重构。
 
@@ -25,10 +35,10 @@
 
 前端必须对齐以下产品模型：
 
-- `launcher`：启动协作，不承载复杂系统管理；
+- `launcher`：启动协作，并承载系统级 agent 的唤醒入口；
 - `room`：协作单元，是主要工作页面；
 - `conversation`：`room` 内的对话线程；
-- `nexus`：系统级组织与编排入口，对应当前 `Ask App`；
+- `app conversation`：首页中被唤醒的全局系统级对话面；
 - `contacts`：联系人与 Agent 网络；
 - `agent`：成员，而不是页面主入口。
 
@@ -36,7 +46,7 @@
 
 前端必须具备以下能力：
 
-- 页面可寻址，可直接打开具体 `room / conversation / nexus conversation`；
+- 页面可寻址，可直接打开具体 `room / conversation`，并可恢复首页 `app conversation` 状态；
 - 浏览器前进后退可用；
 - 页面语义与目录语义一致；
 - 路由层与状态层分离；
@@ -51,7 +61,8 @@
 | 产品概念 | 前端术语 | 说明 |
 | --- | --- | --- |
 | 首页启动器 | `launcher` | 首页，负责快速启动协作 |
-| 系统级编排入口 | `nexus` | 原 `Ask App`，独立页面与独立对话流 |
+| 系统级 agent | `app agent` | 首页中被唤醒的系统级 agent，不是独立页面 |
+| 全局系统对话 | `app conversation` | 全局唯一的一条系统级对话 |
 | 协作空间 | `room` | 用户与成员协作发生的地方 |
 | 对话线程 | `conversation` | `room` 内的具体会话流 |
 | 数字成员 | `agent` | 可加入 `room` 的成员 |
@@ -63,7 +74,7 @@
 | --- | --- | --- |
 | `currentAgent` 驱动页面切换 | 错把成员当页面锚点 | 改为 `currentRoomId / currentConversationId` 驱动 |
 | `session` 既像 room 又像 conversation | 概念混用 | 逐步收敛为 `conversation` |
-| `Ask App` 是输入框模式 | 页面职责不清 | 独立为 `nexus` 页面 |
+| `Ask App` 是输入框模式 | 页面职责不清 | 收敛为首页 `app conversation` 状态 |
 | 左侧 `Rooms` + 输入框 `Room` mode | 同页概念重复 | `room` 页左侧应展示 `conversations` |
 
 ---
@@ -79,29 +90,13 @@
 - 启动 1v1；
 - 继续已有 `room`；
 - 创建新的 `room`；
-- 提示切换到 `nexus` 处理系统级组织动作。
+- 在同页内唤醒 `app conversation` 处理系统级组织动作。
 
 不负责：
 
 - 展示复杂运行参数；
 - 承载深度协作对话；
-- 作为 `nexus` 的长期聊天页。
-
-### 4.2 `nexus`
-
-职责：
-
-- 系统级组织和编排；
-- 创建 `agent`；
-- 创建 `room`；
-- 邀请成员；
-- 查询网络状态；
-- 承接长期 `nexus conversation`。
-
-不负责：
-
-- 替代某个具体专业成员完成业务对话；
-- 混在 `room` 页面中作为输入框模式存在。
+- 作为独立的系统管理页存在。
 
 ### 4.3 `room`
 
@@ -118,7 +113,7 @@
 - 1v1 和多人协作都属于 `room`；
 - 二者共享页面骨架，但右侧信息和成员展示策略可不同。
 
-### 4.4 `contacts`
+### 4.2 `contacts`
 
 职责：
 
@@ -135,8 +130,7 @@
 
 ```txt
 /                                   launcher
-/nexus                              nexus 入口
-/nexus/conversations/:conversationId
+/                                   launcher + app conversation 状态
 /rooms/:roomId
 /rooms/:roomId/conversations/:conversationId
 /contacts
@@ -146,7 +140,7 @@
 ### 5.2 路由设计原则
 
 - `launcher` 保持轻；
-- `nexus` 和 `room` 必须可直接打开；
+- `app conversation` 在视觉上不独立成页，但应具备可恢复状态；
 - `conversation` 应成为 URL 可表达对象；
 - 页面不能继续依赖 `HomePage` 内部状态分支来切换主视图。
 
@@ -172,14 +166,13 @@ src/
   pages/
     launcher/
     room/
-    nexus/
     contacts/
   features/
     launcher-search/
+    app-conversation/
     room-conversation/
     room-members/
     room-context/
-    nexus-chat/
     contacts-list/
   types/
   shared/
@@ -206,7 +199,7 @@ src/
 #### `features`
 
 - 按产品能力拆分业务功能块；
-- 例如 `room-members`、`nexus-chat`、`launcher-search`。
+- 例如 `room-members`、`app-conversation`、`launcher-search`。
 
 #### `types`
 
@@ -231,7 +224,7 @@ src/
 
 | 当前文件 | 目标归属 |
 | --- | --- |
-| `web/src/pages/home-page.tsx` | 拆分为 `pages/launcher`、`pages/room`、`pages/nexus`、`pages/contacts` |
+| `web/src/pages/home-page.tsx` | 拆分为 `pages/launcher`、`pages/room`、`pages/contacts` |
 | `web/src/routes/app-router.tsx` | 迁移到 `app/router` |
 
 ### 7.2 组件层
@@ -240,7 +233,7 @@ src/
 | --- | --- |
 | `components/home/console.tsx` | `pages/launcher` + `features/launcher-search` |
 | `components/home/agent-workspace.tsx` | `pages/room` 容器 |
-| `components/chat/*` | `features/room-conversation` 或 `features/nexus-chat` |
+| `components/chat/*` | `features/room-conversation` 或 `features/app-conversation` |
 | `components/workspace/workspace-sidebar.tsx` | 拆为 `room-conversation` / `room-members` / `room-context` |
 | `components/workspace/agent-inspector.tsx` | 根据单人 / 多人场景拆到 `room-members` 或 `room-context` |
 | `components/message/*` | `features/room-conversation` 与 `shared/ui` 分层 |
@@ -264,28 +257,14 @@ src/
 - 中心 launcher；
 - 最近 `rooms`；
 - 最近活跃成员；
-- `Ask Nexus` 入口提示。
+- `App Agent` 唤醒入口。
 
 交互重点：
 
 - 数秒内开始一次协作；
-- 当用户输入系统组织意图时，引导进入 `nexus`。
+- 当用户输入系统组织意图时，在首页内唤醒 `app conversation`。
 
-### 8.2 `nexus`
-
-页面元素：
-
-- `nexus` 对话主区；
-- 最近系统动作；
-- 推荐组织动作；
-- 可选的快捷模板。
-
-交互重点：
-
-- 接收自然语言系统指令；
-- 不与 `room composer` 混用。
-
-### 8.3 `room`
+### 8.2 `room`
 
 页面元素：
 
@@ -301,7 +280,7 @@ src/
 - 通过 `@成员` 指派；
 - 多个 `conversation` 之间可切换。
 
-### 8.4 1v1 room 与多人 room 的差异
+### 8.3 1v1 room 与多人 room 的差异
 
 #### 1v1
 
@@ -330,7 +309,7 @@ src/
 
 应逐步引入以下页面级状态：
 
-- `activeSurface`: `launcher | nexus | room | contacts`
+- `active_surface`: `launcher | app_conversation | room | contacts`
 - `currentRoomId`
 - `currentConversationId`
 - `currentAgentId` 仅作为成员选择，不作为主页面锚点
@@ -364,7 +343,8 @@ src/
 
 目标：
 
-- 把当前 `HomePage` 拆成 `launcher / room / nexus / contacts`；
+- 把当前 `HomePage` 拆成 `launcher / room / contacts`；
+- 把 `app conversation` 收敛为首页内第二状态；
 - 用路由替代单页状态分支。
 
 交付：
@@ -391,8 +371,8 @@ src/
 目标：
 
 - 移除当前不正确的 `Agent / Room / Ask App` 输入切换；
-- `room` 页面使用统一 `room composer`；
-- `nexus` 页面使用独立 `nexus composer`。
+- 首页形成 `launcher -> app conversation` 双态；
+- `room` 页面使用统一 `room composer`。
 
 交付：
 
@@ -432,11 +412,11 @@ src/
 
 当以下条件全部成立时，本次前端重构视为完成：
 
-- `launcher / nexus / room / contacts` 均有独立页面入口；
+- `launcher / room / contacts` 均有独立页面入口；
+- `app conversation` 作为首页内状态存在；
 - `room` 与 `conversation` 的页面语义完全分离；
-- `nexus` 不再作为输入框内模式存在；
+- `app agent` 不再作为独立后台页面存在；
 - `room` 页面不再出现概念重复的 `Rooms / Room` 混用；
 - 页面切换主要依赖路由，而非单页状态分支；
 - 目录结构与产品对象一致；
 - 视觉语言在不同页面间统一但不混用职责。
-
