@@ -4,9 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { AppRouteBuilders } from "@/app/router/route-paths";
 import { AgentOptions } from "@/components/dialog/agent-options";
 import { LauncherConsole } from "@/features/launcher-search/launcher-console";
-import { HomeLoadingScreen } from "@/components/home/home-loading-screen";
 import { useLauncherPageController } from "@/hooks/use-launcher-page-controller";
 import { AppStage } from "@/shared/ui/app-stage";
+import { AppLoadingScreen } from "@/shared/ui/app-loading-screen";
 import { useAgentStore } from "@/store/agent";
 import { SessionOptions } from "@/types/session";
 
@@ -50,7 +50,7 @@ export function LauncherPage() {
   }, [controller, navigate]);
 
   if (!controller.isHydrated) {
-    return <HomeLoadingScreen />;
+    return <AppLoadingScreen />;
   }
 
   return (

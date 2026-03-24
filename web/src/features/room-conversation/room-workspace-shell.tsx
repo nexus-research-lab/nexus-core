@@ -3,7 +3,6 @@
 import { RefObject } from "react";
 
 import { TodoItem } from "@/components/workspace/agent-task-widget";
-import { MobileAgentWorkspace } from "@/components/home/mobile-agent-workspace";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { HOME_WORKSPACE_SECTION_GAP_CLASS } from "@/lib/home-layout";
 import { cn } from "@/lib/utils";
@@ -11,6 +10,7 @@ import { Agent } from "@/types/agent";
 import { Conversation, ConversationSnapshotPayload } from "@/types/conversation";
 import { AgentCostSummary, SessionCostSummary } from "@/types/cost";
 
+import { RoomMobileWorkspace } from "./room-mobile-workspace";
 import { RoomWorkspaceLayout } from "./room-workspace-layout";
 
 export interface RoomWorkspaceShellProps {
@@ -80,23 +80,16 @@ export function RoomWorkspaceShell({
 
   if (is_mobile) {
     return (
-      <MobileAgentWorkspace
-        currentAgent={current_agent}
-        currentAgentSessions={current_room_conversations}
-        currentSession={current_conversation}
-        currentSessionKey={current_conversation_id}
-        onBackToDirectory={on_back_to_directory}
-        onLoadingChange={on_loading_change}
-        onNewSession={on_create_conversation}
-        onSelectSession={on_select_conversation}
-        onSessionSnapshotChange={(snapshot) =>
-          on_conversation_snapshot_change({
-            conversation_id: snapshot.sessionKey,
-            message_count: snapshot.messageCount,
-            last_activity_at: snapshot.lastActivityAt,
-            session_id: snapshot.sessionId,
-          })
-        }
+      <RoomMobileWorkspace
+        current_agent={current_agent}
+        current_conversation={current_conversation}
+        current_conversation_id={current_conversation_id}
+        current_room_conversations={current_room_conversations}
+        on_back_to_directory={on_back_to_directory}
+        on_conversation_snapshot_change={on_conversation_snapshot_change}
+        on_create_conversation={on_create_conversation}
+        on_loading_change={on_loading_change}
+        on_select_conversation={on_select_conversation}
       />
     );
   }
