@@ -449,6 +449,60 @@
       0 18px 32px rgba(110, 117, 142, 0.08);
     backdrop-filter: blur(18px) saturate(112%);
   }
+
+  .launcher-surface-left {
+    transition:
+      transform 560ms cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 560ms cubic-bezier(0.22, 1, 0.36, 1),
+      filter 560ms cubic-bezier(0.22, 1, 0.36, 1),
+      max-width 560ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform, opacity, filter;
+  }
+
+  .launcher-surface-left[data-surface="app"] {
+    filter: saturate(0.96) blur(1.5px);
+  }
+
+  .launcher-surface-bridge {
+    pointer-events: none;
+    position: absolute;
+    inset: 18% 22% 14% auto;
+    width: min(34vw, 420px);
+    border-radius: 999px;
+    background:
+      radial-gradient(circle at 18% 50%, rgba(255, 255, 255, 0.28), transparent 34%),
+      linear-gradient(90deg, rgba(181, 214, 255, 0.02), rgba(181, 214, 255, 0.22) 28%, rgba(181, 214, 255, 0.12) 62%, rgba(255, 255, 255, 0.03));
+    filter: blur(24px);
+    opacity: 0;
+    transform: translateX(44px) scaleX(0.82);
+    transform-origin: left center;
+    transition:
+      opacity 560ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 560ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: opacity, transform;
+  }
+
+  .launcher-surface-bridge[data-open="true"] {
+    opacity: 1;
+    transform: translateX(0) scaleX(1);
+  }
+
+  .launcher-app-panel-shell {
+    transition:
+      transform 560ms cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 560ms cubic-bezier(0.22, 1, 0.36, 1),
+      filter 560ms cubic-bezier(0.22, 1, 0.36, 1);
+    transform: translateX(34px) scale(0.94);
+    opacity: 0;
+    filter: blur(8px);
+    will-change: transform, opacity, filter;
+  }
+
+  .launcher-app-panel-shell[data-open="true"] {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+    filter: blur(0);
+  }
 }
 
 ::-webkit-scrollbar {

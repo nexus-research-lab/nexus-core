@@ -153,13 +153,18 @@ export function LauncherPage() {
               : "translate-x-10 opacity-0",
           )}
         />
+        <div
+          className="launcher-surface-bridge hidden lg:block"
+          data-open={controller.is_app_conversation_open ? "true" : "false"}
+        />
 
         <div
           className={cn(
-            "min-w-0 flex-1 transition-all duration-500 ease-out",
+            "launcher-surface-left min-w-0 flex-1",
             controller.is_app_conversation_open &&
               "lg:max-w-[calc(100%-390px)] lg:-translate-x-6 lg:scale-[0.985] lg:opacity-[0.96]",
           )}
+          data-surface={controller.surface}
         >
           <LauncherConsole
             agents={controller.agents}
@@ -178,10 +183,13 @@ export function LauncherPage() {
 
         {controller.is_app_conversation_open ? (
           <div className="absolute inset-x-3 bottom-4 top-[96px] z-40 lg:static lg:inset-auto lg:block lg:w-[380px] lg:shrink-0 lg:pb-8 lg:pt-4">
-            <div className="h-full transition-all duration-500 ease-out lg:translate-x-0 lg:scale-100">
+            <div
+              className="launcher-app-panel-shell h-full"
+              data-open={controller.is_app_conversation_open ? "true" : "false"}
+            >
               <LauncherAppConversationPanel
                 agents={controller.agents}
-              app_conversation_draft={controller.app_conversation_draft}
+                app_conversation_draft={controller.app_conversation_draft}
               app_conversation_messages={controller.app_conversation_messages}
               conversations_with_owners={conversations_with_owners}
               on_create_room={handleCreateRoom}
