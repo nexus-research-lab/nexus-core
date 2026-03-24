@@ -10,6 +10,7 @@ import { AppStage } from "@/shared/ui/app-stage";
 import { AgentOptions } from "@/shared/ui/agent-options-dialog";
 import { AppLoadingScreen } from "@/shared/ui/app-loading-screen";
 import { useAgentStore } from "@/store/agent";
+import { useAppConversationStore } from "@/store/app-conversation";
 import { getConversationStoreSnapshot } from "@/store/conversation";
 import { AgentOptions as AgentConfigOptions } from "@/types/agent";
 
@@ -17,6 +18,7 @@ export function LauncherPage() {
   const controller = useLauncherPageController();
   const navigate = useNavigate();
   const [should_bootstrap_room_after_create, set_should_bootstrap_room_after_create] = useState(false);
+  const push_app_message = useAppConversationStore((state) => state.push_app_message);
 
   const handleSelectAgent = useCallback((agent_id: string) => {
     controller.handle_select_agent(agent_id);
@@ -35,6 +37,11 @@ export function LauncherPage() {
     navigate(AppRouteBuilders.contacts());
   }, [navigate]);
 
+  const handleOpenContactsPageFromApp = useCallback(() => {
+    push_app_message("正在为你打开 Contacts，你可以先筛选成员，再回到这里继续组织协作。");
+    handleOpenContactsPage();
+  }, [handleOpenContactsPage, push_app_message]);
+
   const conversations_with_owners = controller.conversations
     .map((conversation) => ({
       conversation,
@@ -45,14 +52,32 @@ export function LauncherPage() {
     .sort((left, right) => right.conversation.last_activity_at - left.conversation.last_activity_at);
 
   const handleCreateRoom = useCallback(() => {
+    push_app_message("我会先创建一个新的协作 room，并在完成后直接带你进入第一条对话。");
     set_should_bootstrap_room_after_create(true);
     controller.handle_open_create_agent();
-  }, [controller]);
+  }, [controller, push_app_message]);
 
   const handleCreateAgent = useCallback(() => {
     set_should_bootstrap_room_after_create(false);
     controller.handle_open_create_agent();
   }, [controller]);
+
+  const handleOpenConversationFromApp = useCallback((conversation_id: string, agent_id?: string) => {
+    const matched_conversation = conversations_with_owners.find(
+      ({ conversation }) => conversation.session_key === conversation_id,
+    );
+    const title = matched_conversation?.conversation.title || "最近协作";
+    push_app_message(`正在带你回到“${title}”，继续已有协作。`);
+    handleOpenConversation(conversation_id, agent_id);
+  }, [conversations_with_owners, handleOpenConversation, push_app_message]);
+
+  const handleOpenAgentRoomFromApp = useCallback((agent_id: string) => {
+    const matched_agent = controller.agents.find((agent) => agent.agent_id === agent_id);
+    push_app_message(
+      `正在带你进入 ${matched_agent?.name ?? "目标成员"} 的协作 room。`,
+    );
+    handleSelectAgent(agent_id);
+  }, [controller.agents, handleSelectAgent, push_app_message]);
 
   const handleSaveAgentOptions = useCallback(async (title: string, options: AgentConfigOptions) => {
     const should_open_room_after_create = controller.dialog_mode === "create";
@@ -81,9 +106,10 @@ export function LauncherPage() {
       agent_id: next_agent_id,
     });
     conversation_store.set_current_conversation(next_conversation_id);
+    push_app_message(`新的协作 room 已创建完成，正在进入 ${title} 的第一条对话。`);
     set_should_bootstrap_room_after_create(false);
     navigate(AppRouteBuilders.room_conversation(next_agent_id, next_conversation_id));
-  }, [controller, navigate, should_bootstrap_room_after_create]);
+  }, [controller, navigate, push_app_message, should_bootstrap_room_after_create]);
 
   if (!controller.is_hydrated) {
     return <AppLoadingScreen />;
@@ -126,20 +152,20 @@ export function LauncherPage() {
         {controller.is_app_conversation_open ? (
           <div className="absolute inset-x-3 bottom-4 top-[96px] z-40 lg:static lg:inset-auto lg:block lg:w-[380px] lg:shrink-0 lg:pb-8 lg:pt-4">
             <div className="h-full transition-all duration-500 ease-out lg:translate-x-0 lg:scale-100">
-            <LauncherAppConversationPanel
-              agents={controller.agents}
-              app_conversation_draft={controller.app_conversation_draft}
-              app_conversation_messages={controller.app_conversation_messages}
-              conversations_with_owners={conversations_with_owners}
-              on_create_room={handleCreateRoom}
-              on_clear_conversation={controller.clear_app_conversation}
-              on_change_draft={controller.set_app_conversation_draft}
-              on_close={controller.close_app_conversation}
-              on_open_agent_room={handleSelectAgent}
-              on_open_conversation={handleOpenConversation}
-              on_open_contacts_page={handleOpenContactsPage}
-              on_submit={controller.submit_app_conversation}
-            />
+              <LauncherAppConversationPanel
+                agents={controller.agents}
+                app_conversation_draft={controller.app_conversation_draft}
+                app_conversation_messages={controller.app_conversation_messages}
+                conversations_with_owners={conversations_with_owners}
+                on_create_room={handleCreateRoom}
+                on_clear_conversation={controller.clear_app_conversation}
+                on_change_draft={controller.set_app_conversation_draft}
+                on_close={controller.close_app_conversation}
+                on_open_agent_room={handleOpenAgentRoomFromApp}
+                on_open_conversation={handleOpenConversationFromApp}
+                on_open_contacts_page={handleOpenContactsPageFromApp}
+                on_submit={controller.submit_app_conversation}
+              />
             </div>
           </div>
         ) : null}
