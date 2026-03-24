@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { AppRouteBuilders } from "@/app/router/route-paths";
@@ -10,11 +10,13 @@ import { AppStage } from "@/shared/ui/app-stage";
 import { AgentOptions } from "@/shared/ui/agent-options-dialog";
 import { AppLoadingScreen } from "@/shared/ui/app-loading-screen";
 import { useAgentStore } from "@/store/agent";
+import { getConversationStoreSnapshot } from "@/store/conversation";
 import { AgentOptions as AgentConfigOptions } from "@/types/agent";
 
 export function LauncherPage() {
   const controller = useLauncherPageController();
   const navigate = useNavigate();
+  const [should_bootstrap_room_after_create, set_should_bootstrap_room_after_create] = useState(false);
 
   const handleSelectAgent = useCallback((agent_id: string) => {
     controller.handle_select_agent(agent_id);
@@ -43,6 +45,12 @@ export function LauncherPage() {
     .sort((left, right) => right.conversation.last_activity_at - left.conversation.last_activity_at);
 
   const handleCreateRoom = useCallback(() => {
+    set_should_bootstrap_room_after_create(true);
+    controller.handle_open_create_agent();
+  }, [controller]);
+
+  const handleCreateAgent = useCallback(() => {
+    set_should_bootstrap_room_after_create(false);
     controller.handle_open_create_agent();
   }, [controller]);
 
@@ -51,14 +59,31 @@ export function LauncherPage() {
     await controller.handle_save_agent_options(title, options);
 
     if (!should_open_room_after_create) {
+      set_should_bootstrap_room_after_create(false);
       return;
     }
 
     const next_agent_id = useAgentStore.getState().current_agent_id;
-    if (next_agent_id) {
-      navigate(AppRouteBuilders.room(next_agent_id));
+    if (!next_agent_id) {
+      set_should_bootstrap_room_after_create(false);
+      return;
     }
-  }, [controller, navigate]);
+
+    if (!should_bootstrap_room_after_create) {
+      set_should_bootstrap_room_after_create(false);
+      navigate(AppRouteBuilders.room(next_agent_id));
+      return;
+    }
+
+    const conversation_store = getConversationStoreSnapshot();
+    const next_conversation_id = await conversation_store.create_conversation({
+      title: "New Chat",
+      agent_id: next_agent_id,
+    });
+    conversation_store.set_current_conversation(next_conversation_id);
+    set_should_bootstrap_room_after_create(false);
+    navigate(AppRouteBuilders.room_conversation(next_agent_id, next_conversation_id));
+  }, [controller, navigate, should_bootstrap_room_after_create]);
 
   if (!controller.is_hydrated) {
     return <AppLoadingScreen />;
@@ -91,7 +116,7 @@ export function LauncherPage() {
             on_open_app_conversation={controller.open_app_conversation}
             on_select_agent={handleSelectAgent}
             on_open_conversation={handleOpenConversation}
-            on_create_agent={controller.handle_open_create_agent}
+            on_create_agent={handleCreateAgent}
             on_edit_agent={controller.handle_edit_agent}
             on_delete_agent={controller.handle_delete_agent}
             surface={controller.surface}
@@ -123,7 +148,10 @@ export function LauncherPage() {
       <AgentOptions
         mode={controller.dialog_mode}
         is_open={controller.is_dialog_open}
-        on_close={() => controller.set_is_dialog_open(false)}
+        on_close={() => {
+          set_should_bootstrap_room_after_create(false);
+          controller.set_is_dialog_open(false);
+        }}
         on_save={handleSaveAgentOptions}
         on_validate_name={controller.handle_validate_agent_name}
         initial_title={controller.dialog_initial_title}
