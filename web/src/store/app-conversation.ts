@@ -40,6 +40,20 @@ export const useAppConversationStore = create<AppConversationState>()(
         set({ messages: [] });
       },
 
+      push_app_message: (message: string) => {
+        const trimmed_message = message.trim();
+        if (!trimmed_message) {
+          return;
+        }
+
+        set((state) => ({
+          messages: [
+            ...state.messages,
+            create_message("app", trimmed_message),
+          ],
+        }));
+      },
+
       submit_prompt: (prompt: string) => {
         const trimmed_prompt = prompt.trim();
         if (!trimmed_prompt) {
