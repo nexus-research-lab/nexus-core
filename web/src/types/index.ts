@@ -30,3 +30,6 @@ export * from './workspace-live';
 
 // WebSocket 相关类型
 export * from './websocket';
+
+// Launcher 相关类型
+export * from './launcher';

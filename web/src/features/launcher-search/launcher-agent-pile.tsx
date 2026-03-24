@@ -4,18 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import Matter from "matter-js";
 
 import { cn } from "@/lib/utils";
-
-export type SpotlightToken = {
-  key: string;
-  label: string;
-  agent_id: string | null;
-  kind: "agent" | "room";
-  swatch: {
-    fill: string;
-    text: string;
-    ring: string;
-  };
-};
+import { SpotlightToken } from "@/types/launcher";
 
 interface SpotlightTokenPileProps {
   tokens: SpotlightToken[];
@@ -27,23 +16,23 @@ type TokenPhysicsConfig = {
   key: string;
   size: number;
   radius: number;
-  spawnX: number;
-  spawnY: number;
+  spawn_x: number;
+  spawn_y: number;
   angle: number;
   delay: number;
 };
 
 type TokenBrandStyle = {
-  labelClassName: string;
-  labelTransform: string;
+  label_class_name: string;
+  label_transform: string;
   tag: string;
-  tagClassName: string;
-  tagOpacity: number;
-  rotationClassName: string;
-  innerInset: number;
-  innerRadius: string;
-  accentOpacity: number;
-  glossOpacity: number;
+  tag_class_name: string;
+  tag_opacity: number;
+  rotation_class_name: string;
+  inner_inset: number;
+  inner_radius: string;
+  accent_opacity: number;
+  gloss_opacity: number;
   fold: boolean;
   stacked: boolean;
   ring: boolean;
@@ -64,9 +53,9 @@ function createTokenConfig(tokens: SpotlightToken[], width: number): TokenPhysic
       key: token.key,
       size,
       radius: token.kind === "agent" ? size / 2 : Math.max(12, Math.round(size * 0.28)),
-      spawnX:
+      spawn_x:
         horizontalPadding + seededUnit(seed, 2) * Math.max(width - horizontalPadding * 2, 72),
-      spawnY: -180 - seededUnit(seed, 3) * 240 - index * 14,
+      spawn_y: -180 - seededUnit(seed, 3) * 240 - index * 14,
       angle: ((seededUnit(seed, 4) * 36 - 18) * Math.PI) / 180,
       delay: 40 + index * 55,
     };
@@ -109,16 +98,16 @@ function getTokenBrandStyle(token: SpotlightToken): TokenBrandStyle {
 
   if (variant === 0) {
     return {
-      labelClassName: token.label.length >= 3 ? "text-[9px] tracking-[-0.03em]" : "text-[13px] tracking-[-0.08em]",
-      labelTransform: "none",
+      label_class_name: token.label.length >= 3 ? "text-[9px] tracking-[-0.03em]" : "text-[13px] tracking-[-0.08em]",
+      label_transform: "none",
       tag: token.kind === "agent" ? "core" : "room",
-      tagClassName: "text-[6px] tracking-[0.2em]",
-      tagOpacity: 0.62,
-      rotationClassName: "",
-      innerInset: 2,
-      innerRadius: token.kind === "agent" ? "9999px" : "12px",
-      accentOpacity: 0.2,
-      glossOpacity: 0.38,
+      tag_class_name: "text-[6px] tracking-[0.2em]",
+      tag_opacity: 0.62,
+      rotation_class_name: "",
+      inner_inset: 2,
+      inner_radius: token.kind === "agent" ? "9999px" : "12px",
+      accent_opacity: 0.2,
+      gloss_opacity: 0.38,
       fold: false,
       stacked: false,
       ring: true,
@@ -127,16 +116,16 @@ function getTokenBrandStyle(token: SpotlightToken): TokenBrandStyle {
 
   if (variant === 1) {
     return {
-      labelClassName: token.label.length >= 3 ? "text-[8px] tracking-[0.04em]" : "text-[12px] tracking-[0.08em]",
-      labelTransform: "uppercase",
+      label_class_name: token.label.length >= 3 ? "text-[8px] tracking-[0.04em]" : "text-[12px] tracking-[0.08em]",
+      label_transform: "uppercase",
       tag: token.kind === "agent" ? "lab" : "sync",
-      tagClassName: "text-[6px] tracking-[0.24em]",
-      tagOpacity: 0.54,
-      rotationClassName: "rotate-[-4deg]",
-      innerInset: 2,
-      innerRadius: token.kind === "agent" ? "9999px" : "11px",
-      accentOpacity: 0.26,
-      glossOpacity: 0.32,
+      tag_class_name: "text-[6px] tracking-[0.24em]",
+      tag_opacity: 0.54,
+      rotation_class_name: "rotate-[-4deg]",
+      inner_inset: 2,
+      inner_radius: token.kind === "agent" ? "9999px" : "11px",
+      accent_opacity: 0.26,
+      gloss_opacity: 0.32,
       fold: token.kind === "room",
       stacked: false,
       ring: false,
@@ -145,16 +134,16 @@ function getTokenBrandStyle(token: SpotlightToken): TokenBrandStyle {
 
   if (variant === 2) {
     return {
-      labelClassName: token.label.length >= 3 ? "text-[10px] tracking-[-0.08em]" : "text-[14px] tracking-[-0.1em]",
-      labelTransform: "none",
+      label_class_name: token.label.length >= 3 ? "text-[10px] tracking-[-0.08em]" : "text-[14px] tracking-[-0.1em]",
+      label_transform: "none",
       tag: token.kind === "agent" ? "net" : "grid",
-      tagClassName: "text-[6px] tracking-[0.16em]",
-      tagOpacity: 0.58,
-      rotationClassName: token.kind === "room" ? "rotate-[-8deg]" : "",
-      innerInset: 2,
-      innerRadius: token.kind === "agent" ? "9999px" : "12px",
-      accentOpacity: 0.18,
-      glossOpacity: 0.34,
+      tag_class_name: "text-[6px] tracking-[0.16em]",
+      tag_opacity: 0.58,
+      rotation_class_name: token.kind === "room" ? "rotate-[-8deg]" : "",
+      inner_inset: 2,
+      inner_radius: token.kind === "agent" ? "9999px" : "12px",
+      accent_opacity: 0.18,
+      gloss_opacity: 0.34,
       fold: false,
       stacked: token.kind === "room",
       ring: false,
@@ -163,16 +152,16 @@ function getTokenBrandStyle(token: SpotlightToken): TokenBrandStyle {
 
   if (variant === 3) {
     return {
-      labelClassName: getLabelSize(token.label),
-      labelTransform: "capitalize",
+      label_class_name: getLabelSize(token.label),
+      label_transform: "capitalize",
       tag: token.kind === "agent" ? "ai" : "hub",
-      tagClassName: "text-[6px] tracking-[0.28em]",
-      tagOpacity: 0.48,
-      rotationClassName: "rotate-[3deg]",
-      innerInset: 1.5,
-      innerRadius: token.kind === "agent" ? "9999px" : "13px",
-      accentOpacity: 0.24,
-      glossOpacity: 0.3,
+      tag_class_name: "text-[6px] tracking-[0.28em]",
+      tag_opacity: 0.48,
+      rotation_class_name: "rotate-[3deg]",
+      inner_inset: 1.5,
+      inner_radius: token.kind === "agent" ? "9999px" : "13px",
+      accent_opacity: 0.24,
+      gloss_opacity: 0.3,
       fold: hash % 2 === 0,
       stacked: false,
       ring: false,
@@ -180,16 +169,16 @@ function getTokenBrandStyle(token: SpotlightToken): TokenBrandStyle {
   }
 
   return {
-    labelClassName: token.label.length >= 3 ? "text-[8px] tracking-[0.12em]" : "text-[11px] tracking-[0.16em]",
-    labelTransform: "uppercase",
+    label_class_name: token.label.length >= 3 ? "text-[8px] tracking-[0.12em]" : "text-[11px] tracking-[0.16em]",
+    label_transform: "uppercase",
     tag: token.kind === "agent" ? "os" : "flow",
-    tagClassName: "text-[5px] tracking-[0.3em]",
-    tagOpacity: 0.42,
-    rotationClassName: token.kind === "room" ? "rotate-[6deg]" : "rotate-[-2deg]",
-    innerInset: 2.5,
-    innerRadius: token.kind === "agent" ? "9999px" : "10px",
-    accentOpacity: 0.22,
-    glossOpacity: 0.26,
+    tag_class_name: "text-[5px] tracking-[0.3em]",
+    tag_opacity: 0.42,
+    rotation_class_name: token.kind === "room" ? "rotate-[6deg]" : "rotate-[-2deg]",
+    inner_inset: 2.5,
+    inner_radius: token.kind === "agent" ? "9999px" : "10px",
+    accent_opacity: 0.22,
+    gloss_opacity: 0.26,
     fold: false,
     stacked: true,
     ring: hash % 2 === 1,
@@ -271,8 +260,8 @@ export function AgentPile({
 
       const body =
         token.kind === "agent"
-          ? Bodies.circle(config.spawnX, config.spawnY, config.size / 2, common)
-          : Bodies.rectangle(config.spawnX, config.spawnY, config.size, config.size, {
+          ? Bodies.circle(config.spawn_x, config.spawn_y, config.size / 2, common)
+          : Bodies.rectangle(config.spawn_x, config.spawn_y, config.size, config.size, {
             ...common,
             chamfer: { radius: config.radius },
           });
@@ -447,8 +436,8 @@ export function AgentPile({
                 token.kind === "agent" ? "rounded-full" : "rounded-[11px]",
               )}
               style={{
-                inset: brandStyle.innerInset,
-                borderRadius: brandStyle.innerRadius,
+                inset: brandStyle.inner_inset,
+                borderRadius: brandStyle.inner_radius,
                 background: `radial-gradient(circle at 28% 24%, ${hexToRgba("#ffffff", 0.32)} 0%, transparent 34%), linear-gradient(180deg, ${hexToRgba(token.swatch.fill, 0.88)} 0%, ${hexToRgba(token.swatch.fill, 1)} 100%)`,
                 borderColor: hexToRgba(token.swatch.ring, 0.78),
                 boxShadow: `inset 0 1px 0 ${hexToRgba("#ffffff", 0.34)}, inset 0 -3px 8px ${hexToRgba("#000000", 0.06)}`,
@@ -511,7 +500,7 @@ export function AgentPile({
                 right: "16%",
                 top: token.kind === "agent" ? "18%" : "16%",
                 height: "22%",
-                background: `linear-gradient(180deg, ${hexToRgba("#ffffff", brandStyle.glossOpacity)} 0%, rgba(255,255,255,0) 100%)`,
+                background: `linear-gradient(180deg, ${hexToRgba("#ffffff", brandStyle.gloss_opacity)} 0%, rgba(255,255,255,0) 100%)`,
                 filter: "blur(0.8px)",
               }}
             />
@@ -537,33 +526,33 @@ export function AgentPile({
               )}
               style={{
                 inset: token.kind === "agent" ? "10%" : "12%",
-                background: `radial-gradient(circle at 50% 56%, transparent 0%, transparent 58%, ${hexToRgba(token.swatch.text, brandStyle.accentOpacity)} 100%)`,
+                background: `radial-gradient(circle at 50% 56%, transparent 0%, transparent 58%, ${hexToRgba(token.swatch.text, brandStyle.accent_opacity)} 100%)`,
                 opacity: 0.55,
               }}
             />
             <span
               className={cn(
                 "relative z-10 flex h-full w-full flex-col items-center justify-center leading-none",
-                brandStyle.rotationClassName,
+                brandStyle.rotation_class_name,
               )}
             >
               <span
                 className={cn(
                   "font-black",
-                  brandStyle.labelClassName,
+                  brandStyle.label_class_name,
                 )}
                 style={{
                   color: hexToRgba(token.swatch.text, 0.98),
-                  textTransform: brandStyle.labelTransform as "none" | "uppercase" | "capitalize",
+                  textTransform: brandStyle.label_transform as "none" | "uppercase" | "capitalize",
                   textShadow: `0 1px 0 ${hexToRgba("#ffffff", 0.24)}, 0 2px 5px ${hexToRgba("#000000", 0.12)}`,
                 }}
               >
                 {token.label}
               </span>
               <span
-                className={cn("mt-0.5 font-semibold uppercase", brandStyle.tagClassName)}
+                className={cn("mt-0.5 font-semibold uppercase", brandStyle.tag_class_name)}
                 style={{
-                  color: hexToRgba(token.swatch.text, brandStyle.tagOpacity),
+                  color: hexToRgba(token.swatch.text, brandStyle.tag_opacity),
                 }}
               >
                 {brandStyle.tag}

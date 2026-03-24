@@ -24,8 +24,9 @@ import { ANIMATIONS } from "@/shared/ui/animation-assets";
 import { LottiePlayer } from "@/shared/ui/lottie-player";
 import { Agent } from "@/types/agent";
 import { Conversation } from "@/types/conversation";
+import { ConversationWithOwner, SpotlightToken } from "@/types/launcher";
 
-import { SpotlightToken, AgentPile } from "./launcher-agent-pile";
+import { AgentPile } from "./launcher-agent-pile";
 
 interface LauncherConsoleProps {
   agents: Agent[];
@@ -74,11 +75,6 @@ interface RecentRoomsPopoverProps {
   on_open_conversation: (conversation_id: string, agent_id?: string) => void;
   recent_rooms: ConversationWithOwner[];
   conversations_with_owners: ConversationWithOwner[];
-}
-
-interface ConversationWithOwner {
-  owner: Agent | null;
-  conversation: Conversation;
 }
 
 const TOKEN_SWATCHES = [
