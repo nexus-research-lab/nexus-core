@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getAgentWsUrl } from '@/config/runtime-config';
+import { getAgentWsUrl } from '@/config/options';
 import { useWebSocket } from '@/lib/websocket';
 import { useWorkspaceLiveStore } from '@/store/workspace-live';
 import { Message } from '@/types';

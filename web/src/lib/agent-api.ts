@@ -16,7 +16,7 @@ import {
 import { Message as ChatMessage } from '@/types/message';
 import { ConversationCostSummary } from '@/types/cost';
 import { ApiResponse } from '@/types/api';
-import { getAgentApiBaseUrl } from '@/config/runtime-config';
+import { getAgentApiBaseUrl } from '@/config/options';
 
 const AGENT_API_BASE_URL = getAgentApiBaseUrl();
 
