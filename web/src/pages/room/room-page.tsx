@@ -3,11 +3,11 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { AppRouteBuilders } from "@/app/router/route-paths";
 import { AgentOptions } from "@/components/dialog/agent-options";
-import { HomeLoadingScreen } from "@/components/home/home-loading-screen";
 import { RoomWorkspaceShell } from "@/features/room-conversation/room-workspace-shell";
 import { useRoomPageController } from "@/hooks/use-room-page-controller";
 import { RouteScaffold } from "@/shared/ui/route-scaffold";
 import { AppStage } from "@/shared/ui/app-stage";
+import { AppLoadingScreen } from "@/shared/ui/app-loading-screen";
 import { useSessionStore } from "@/store/session";
 
 export function RoomPage() {
@@ -46,7 +46,7 @@ export function RoomPage() {
   }, [controller, navigate, params.roomId]);
 
   if (!controller.isHydrated) {
-    return <HomeLoadingScreen />;
+    return <AppLoadingScreen />;
   }
 
   if (controller.currentAgent) {

@@ -1,6 +1,6 @@
 "use client";
 
-export function HomeLoadingScreen() {
+export function AppLoadingScreen() {
   return (
     <main className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-background px-6 text-foreground">
       <div className="pointer-events-none absolute left-[10%] top-[12%] h-56 w-56 rounded-full glow-lilac opacity-70" />

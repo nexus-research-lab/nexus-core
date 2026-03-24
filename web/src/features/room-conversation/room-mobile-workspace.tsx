@@ -3,47 +3,48 @@
 import { useMemo, useState } from "react";
 import { ArrowLeft, Check, ChevronDown, MessageSquare, Plus, Search, X } from "lucide-react";
 
-import { RoomChatPanel } from "@/features/room-conversation/room-chat-panel";
 import { formatRelativeTime } from "@/lib/utils";
+import { Conversation } from "@/types/conversation";
 import { Agent } from "@/types/agent";
-import { Session } from "@/types/session";
 
-interface MobileAgentWorkspaceProps {
-  currentAgent: Agent;
-  currentSession: Session | null;
-  currentSessionKey: string | null;
-  currentAgentSessions: Session[];
-  onBackToDirectory: () => void;
-  onNewSession: () => void;
-  onSelectSession: (sessionKey: string) => void;
-  onLoadingChange: (isLoading: boolean) => void;
-  onSessionSnapshotChange: (snapshot: {
-    sessionKey: string;
-    messageCount: number;
-    lastActivityAt: number;
-    sessionId: string | null;
+import { RoomChatPanel } from "./room-chat-panel";
+
+export interface RoomMobileWorkspaceProps {
+  current_agent: Agent;
+  current_conversation: Conversation | null;
+  current_conversation_id: string | null;
+  current_room_conversations: Conversation[];
+  on_back_to_directory: () => void;
+  on_create_conversation: () => void;
+  on_select_conversation: (conversation_id: string) => void;
+  on_loading_change: (is_loading: boolean) => void;
+  on_conversation_snapshot_change: (snapshot: {
+    conversation_id: string;
+    message_count: number;
+    last_activity_at: number;
+    session_id: string | null;
   }) => void;
 }
 
-export function MobileAgentWorkspace({
-  currentAgent,
-  currentSession,
-  currentSessionKey,
-  currentAgentSessions,
-  onBackToDirectory,
-  onNewSession,
-  onSelectSession,
-  onLoadingChange,
-  onSessionSnapshotChange,
-}: MobileAgentWorkspaceProps) {
-  const [isSessionSheetOpen, setIsSessionSheetOpen] = useState(false);
+export function RoomMobileWorkspace({
+  current_agent,
+  current_conversation,
+  current_conversation_id,
+  current_room_conversations,
+  on_back_to_directory,
+  on_create_conversation,
+  on_select_conversation,
+  on_loading_change,
+  on_conversation_snapshot_change,
+}: RoomMobileWorkspaceProps) {
+  const [is_conversation_sheet_open, setIsConversationSheetOpen] = useState(false);
 
-  const currentSessionTitle = useMemo(() => {
-    if (currentSession?.title?.trim()) {
-      return currentSession.title;
+  const current_conversation_title = useMemo(() => {
+    if (current_conversation?.title?.trim()) {
+      return current_conversation.title;
     }
     return "新会话";
-  }, [currentSession]);
+  }, [current_conversation]);
 
   return (
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background/90">
@@ -51,7 +52,7 @@ export function MobileAgentWorkspace({
         <div className="workspace-shell radius-shell-lg flex items-center gap-2 px-2 py-2">
           <button
             className="workspace-chip inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-slate-900/82 transition hover:text-slate-950"
-            onClick={onBackToDirectory}
+            onClick={on_back_to_directory}
             type="button"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -59,7 +60,7 @@ export function MobileAgentWorkspace({
 
           <button
             className="workspace-card flex min-w-0 flex-1 items-center gap-3 rounded-[24px] px-3 py-2 text-left transition hover:bg-white/18"
-            onClick={() => setIsSessionSheetOpen(true)}
+            onClick={() => setIsConversationSheetOpen(true)}
             type="button"
           >
             <div className="workspace-chip flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-700/56">
@@ -67,8 +68,8 @@ export function MobileAgentWorkspace({
             </div>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-slate-900/84">{currentAgent.name}</p>
-              <p className="truncate text-[12px] text-slate-700/54">{currentSessionTitle}</p>
+              <p className="truncate text-sm font-semibold text-slate-900/84">{current_agent.name}</p>
+              <p className="truncate text-[12px] text-slate-700/54">{current_conversation_title}</p>
             </div>
 
             <ChevronDown className="h-4 w-4 shrink-0 text-slate-700/50" />
@@ -77,8 +78,8 @@ export function MobileAgentWorkspace({
           <button
             className="workspace-chip inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-slate-900/82 transition hover:text-slate-950"
             onClick={() => {
-              onNewSession();
-              setIsSessionSheetOpen(false);
+              on_create_conversation();
+              setIsConversationSheetOpen(false);
             }}
             type="button"
           >
@@ -89,30 +90,30 @@ export function MobileAgentWorkspace({
 
       <div className="min-h-0 min-w-0 flex-1">
         <RoomChatPanel
-          agent_id={currentAgent.agent_id}
-          current_agent_name={currentAgent.name}
+          agent_id={current_agent.agent_id}
+          current_agent_name={current_agent.name}
           layout="mobile"
           on_conversation_snapshot_change={(snapshot) =>
-            onSessionSnapshotChange({
-              sessionKey: snapshot.session_key,
-              messageCount: snapshot.message_count,
-              lastActivityAt: snapshot.last_activity_at,
-              sessionId: snapshot.session_id,
+            on_conversation_snapshot_change({
+              conversation_id: snapshot.session_key,
+              message_count: snapshot.message_count,
+              last_activity_at: snapshot.last_activity_at,
+              session_id: snapshot.session_id,
             })
           }
-          on_create_conversation={onNewSession}
-          on_loading_change={onLoadingChange}
-          session_key={currentSessionKey}
-          session_title={currentSession?.title ?? null}
+          on_create_conversation={on_create_conversation}
+          on_loading_change={on_loading_change}
+          session_key={current_conversation_id}
+          session_title={current_conversation?.title ?? null}
         />
       </div>
 
-      {isSessionSheetOpen && (
+      {is_conversation_sheet_open ? (
         <>
           <button
             aria-label="关闭会话列表"
             className="absolute inset-0 z-30 bg-black/20 backdrop-blur-[1px]"
-            onClick={() => setIsSessionSheetOpen(false)}
+            onClick={() => setIsConversationSheetOpen(false)}
             type="button"
           />
 
@@ -123,13 +124,13 @@ export function MobileAgentWorkspace({
               <div>
                 <p className="text-sm font-semibold text-slate-900/84">切换会话</p>
                 <p className="text-xs text-slate-700/54">
-                  {currentAgentSessions.length} 个会话
+                  {current_room_conversations.length} 个会话
                 </p>
               </div>
 
               <button
                 className="workspace-chip inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-700/54 transition hover:text-slate-950"
-                onClick={() => setIsSessionSheetOpen(false)}
+                onClick={() => setIsConversationSheetOpen(false)}
                 type="button"
               >
                 <X className="h-4 w-4" />
@@ -139,8 +140,8 @@ export function MobileAgentWorkspace({
             <button
               className="mb-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,rgba(174,163,255,0.18),rgba(255,255,255,0.82))] px-4 py-3 text-sm font-semibold text-foreground shadow-[0_10px_24px_rgba(133,119,255,0.12)]"
               onClick={() => {
-                onNewSession();
-                setIsSessionSheetOpen(false);
+                on_create_conversation();
+                setIsConversationSheetOpen(false);
               }}
               type="button"
             >
@@ -149,28 +150,28 @@ export function MobileAgentWorkspace({
             </button>
 
             <div className="max-h-[50vh] space-y-2 overflow-y-auto pr-1">
-              {currentAgentSessions.map((session) => {
-                const isActive = session.session_key === currentSessionKey;
+              {current_room_conversations.map((conversation) => {
+                const is_active = conversation.session_key === current_conversation_id;
                 return (
                   <button
-                    key={session.session_key}
+                    key={conversation.session_key}
                     className="workspace-card flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-white/18"
                     onClick={() => {
-                      onSelectSession(session.session_key);
-                      setIsSessionSheetOpen(false);
+                      on_select_conversation(conversation.session_key);
+                      setIsConversationSheetOpen(false);
                     }}
                     type="button"
                   >
                     <div className="workspace-chip mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-900/76">
-                      {isActive ? <Check className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
+                      {is_active ? <Check className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
                     </div>
 
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-slate-900/84">
-                        {session.title?.trim() || "未命名会话"}
+                        {conversation.title?.trim() || "未命名会话"}
                       </p>
                       <p className="mt-1 text-xs text-slate-700/54">
-                        {formatRelativeTime(session.last_activity_at)} · {session.message_count ?? 0} 条
+                        {formatRelativeTime(conversation.last_activity_at)} · {conversation.message_count ?? 0} 条
                       </p>
                     </div>
                   </button>
@@ -179,7 +180,7 @@ export function MobileAgentWorkspace({
             </div>
           </div>
         </>
-      )}
+      ) : null}
     </section>
   );
 }
