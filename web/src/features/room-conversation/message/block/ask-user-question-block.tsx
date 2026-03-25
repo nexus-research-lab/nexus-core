@@ -12,7 +12,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from 'react';
-import { Check, CheckCircle, ChevronDown, ChevronRight, Circle, MessageSquare, Send, Square, CheckSquare } from 'lucide-react';
+import { Check, CheckCircle, CheckSquare, ChevronDown, ChevronRight, Circle, MessageSquare, Send, Square } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AskUserQuestionInput, UserQuestion, UserQuestionAnswer } from '@/types/ask-user-question';
 import { ToolUseContent } from '@/types/message';
@@ -21,7 +21,9 @@ interface AskUserQuestionCardProps {
   question: UserQuestion;
   question_index: number;
   selected_options: Set<string>;
+  custom_answer: string;
   on_toggle_option: (question_index: number, option_label: string, multi_select: boolean) => void;
+  on_custom_answer_change: (question_index: number, custom_answer: string, multi_select: boolean) => void;
   is_submitted: boolean;
   default_expanded?: boolean;
 }
@@ -39,17 +41,22 @@ function QuestionCard({
     question,
     question_index,
     selected_options,
+    custom_answer,
     on_toggle_option,
+    on_custom_answer_change,
     is_submitted,
     default_expanded = false,
 }: AskUserQuestionCardProps) {
     const [isExpanded, setIsExpanded] = useState(default_expanded);
     const isMultiSelect = question.multi_select ?? false;
-    const hasSelection = selected_options.size > 0;
+    const hasCustomAnswer = custom_answer.trim().length > 0;
+    const hasSelection = selected_options.size > 0 || hasCustomAnswer;
+    const selectedCount = selected_options.size + (hasCustomAnswer ? 1 : 0);
 
     // 选中摘要（收起时显示）
-    const selectionSummary = Array.from(selected_options).slice(0, 2).join('、') +
-        (selected_options.size > 2 ? '...' : '');
+    const summaryItems = [...Array.from(selected_options), ...(hasCustomAnswer ? [custom_answer.trim()] : [])];
+    const selectionSummary = summaryItems.slice(0, 2).join('、') +
+        (summaryItems.length > 2 ? '...' : '');
 
     return (
         <div className={cn(
@@ -99,7 +106,7 @@ function QuestionCard({
                 {/* 选中数量 */}
                 {hasSelection && (
                     <span className="text-[10px] px-1.5 py-0.5 bg-primary/20 text-primary rounded font-medium">
-                        {selected_options.size}
+                        {selectedCount}
                     </span>
                 )}
 
@@ -166,6 +173,44 @@ function QuestionCard({
                             </button>
                         );
                     })}
+
+                    <div
+                        className={cn(
+                            "radius-shell-sm p-3 transition-all duration-200",
+                            hasCustomAnswer
+                                ? "neo-card bg-primary/10 shadow-[0_12px_20px_rgba(133,119,255,0.12)]"
+                                : "neo-card-flat"
+                        )}
+                        onClick={(event) => event.stopPropagation()}
+                    >
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                            <div className="text-sm font-medium text-foreground">自定义回答</div>
+                            {hasCustomAnswer && (
+                                <span className="text-[10px] px-1.5 py-0.5 bg-primary/20 text-primary rounded font-medium">
+                                    已填写
+                                </span>
+                            )}
+                        </div>
+                        <textarea
+                            disabled={is_submitted}
+                            value={custom_answer}
+                            onChange={(event) => {
+                                on_custom_answer_change(
+                                    question_index,
+                                    event.target.value,
+                                    isMultiSelect,
+                                );
+                            }}
+                            onClick={(event) => event.stopPropagation()}
+                            placeholder={isMultiSelect ? "可补充其他答案…" : "没有合适选项时，在这里输入你的回答…"}
+                            rows={3}
+                            className={cn(
+                                "w-full resize-none rounded-2xl border border-white/50 bg-white/55 px-3 py-2 text-sm text-foreground outline-none transition-all",
+                                "placeholder:text-muted-foreground/70 focus:border-primary/40 focus:bg-white/75",
+                                is_submitted && "cursor-not-allowed opacity-60"
+                            )}
+                        />
+                    </div>
                 </div>
             )}
         </div>
@@ -187,6 +232,11 @@ export function AskUserQuestionBlock({
     const [selections, setSelections] = useState<Map<number, Set<string>>>(() => {
         const map = new Map();
         questions.forEach((_, index) => map.set(index, new Set()));
+        return map;
+    });
+    const [customAnswers, setCustomAnswers] = useState<Map<number, string>>(() => {
+        const map = new Map();
+        questions.forEach((_, index) => map.set(index, ''));
         return map;
     });
     const [isSubmitted, setIsSubmitted] = useState(initialSubmitted);
@@ -217,46 +267,94 @@ export function AskUserQuestionBlock({
             newMap.set(questionIndex, currentSet);
             return newMap;
         });
+
+        if (!multiSelect) {
+            setCustomAnswers((prev) => {
+                const nextMap = new Map(prev);
+                nextMap.set(questionIndex, '');
+                return nextMap;
+            });
+        }
+    }, [isSubmitted]);
+
+    const handleCustomAnswerChange = useCallback((
+        questionIndex: number,
+        customAnswer: string,
+        multiSelect: boolean,
+    ) => {
+        if (isSubmitted) return;
+
+        setCustomAnswers((prev) => {
+            const nextMap = new Map(prev);
+            nextMap.set(questionIndex, customAnswer);
+            return nextMap;
+        });
+
+        if (!multiSelect && customAnswer.trim()) {
+            setSelections((prev) => {
+                const nextMap = new Map(prev);
+                nextMap.set(questionIndex, new Set());
+                return nextMap;
+            });
+        }
     }, [isSubmitted]);
 
     // 检查是否可以提交（每个问题至少选一个）
     const canSubmit = useMemo(() => {
         return questions.every((_, index) => {
             const selected = selections.get(index);
-            return selected && selected.size > 0;
+            const customAnswer = customAnswers.get(index)?.trim() || '';
+            return (selected && selected.size > 0) || customAnswer.length > 0;
         });
-    }, [questions, selections]);
+    }, [customAnswers, questions, selections]);
 
     // 提交回答
     const handleSubmit = useCallback(() => {
         if (!canSubmit || isSubmitted) return;
 
-        const answers: UserQuestionAnswer[] = questions.map((_, index) => ({
-            question_index: index,
-            selected_options: Array.from(selections.get(index) || []),
-        }));
+        const answers: UserQuestionAnswer[] = questions.map((_, index) => {
+            const selectedOptions = Array.from(selections.get(index) || []);
+            const customAnswer = customAnswers.get(index)?.trim() || '';
+            if (customAnswer) {
+                selectedOptions.push(customAnswer);
+            }
+
+            return {
+                question_index: index,
+                selected_options: selectedOptions,
+            };
+        });
 
         setIsSubmitted(true);
         setIsExpanded(false); // 提交后收起
         on_submit?.(tool_use.id, answers);
-    }, [canSubmit, isSubmitted, questions, selections, tool_use.id, on_submit]);
+    }, [canSubmit, customAnswers, isSubmitted, questions, selections, tool_use.id, on_submit]);
 
     // 计算已选数量
     const totalSelected = useMemo(() => {
         let count = 0;
-        selections.forEach(set => count += set.size);
+        selections.forEach((set, index) => {
+            count += set.size;
+            if (customAnswers.get(index)?.trim()) {
+                count += 1;
+            }
+        });
         return count;
-    }, [selections]);
+    }, [customAnswers, selections]);
 
     // 获取回答摘要（收起时显示）
     const answerSummary = useMemo(() => {
         if (!isSubmitted) return null;
         const allSelected: string[] = [];
-        selections.forEach(set => {
+        selections.forEach((set, index) => {
             set.forEach(label => allSelected.push(label));
+            const customAnswer = customAnswers.get(index)?.trim();
+            if (customAnswer) {
+                allSelected.push(customAnswer);
+            }
         });
         return allSelected.slice(0, 3).join('、') + (allSelected.length > 3 ? '...' : '');
-    }, [isSubmitted, selections]);
+    }, [customAnswers, isSubmitted, selections]);
 
     if (questions.length === 0) {
         return null;
@@ -340,7 +438,9 @@ export function AskUserQuestionBlock({
                             question={question}
                             question_index={index}
                             selected_options={selections.get(index) || new Set()}
+                            custom_answer={customAnswers.get(index) || ''}
                             on_toggle_option={handleToggleOption}
+                            on_custom_answer_change={handleCustomAnswerChange}
                             is_submitted={isSubmitted}
                         />
                     ))}
