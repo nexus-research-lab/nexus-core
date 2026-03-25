@@ -129,8 +129,8 @@ class WerewolfDemoProtocolDefinition:
     """Protocol Room 示例规则：狼人杀式多频道协作。"""
 
     slug = "werewolf_demo"
-    name = "Werewolf Demo"
-    description = "A demo protocol showing public, scoped, direct, and system collaboration channels."
+    name = "狼人杀演示协议"
+    description = "用于验证协议协作内核的演示协议，包含公开舞台、系统广播、私密频道、阶段推进与结构化动作。"
     version = 1
     coordinator_mode = "main_agent"
     phases = [
@@ -143,9 +143,9 @@ class WerewolfDemoProtocolDefinition:
     ]
     visibility_resolver = "membership_or_observer_redaction"
     turn_policy = {
-        "night": "parallel_secret_actions",
-        "day_speeches": "single_speaker_turns",
-        "voting": "parallel_public_vote",
+        "night": "夜间并行秘密行动",
+        "day_speeches": "白天依次发言",
+        "voting": "公开并行投票",
     }
     action_schemas = {
         "kill_target": {
@@ -153,7 +153,7 @@ class WerewolfDemoProtocolDefinition:
                 {
                     "name": "target_agent_id",
                     "type": "agent_id",
-                    "label": "Night target",
+                    "label": "夜间目标",
                     "required": True,
                 }
             ]
@@ -163,7 +163,7 @@ class WerewolfDemoProtocolDefinition:
                 {
                     "name": "target_agent_id",
                     "type": "agent_id",
-                    "label": "Inspect target",
+                    "label": "查验目标",
                     "required": True,
                 }
             ]
@@ -173,7 +173,7 @@ class WerewolfDemoProtocolDefinition:
                 {
                     "name": "target_agent_id",
                     "type": "agent_id",
-                    "label": "Protect target",
+                    "label": "保护目标",
                     "required": True,
                 }
             ]
@@ -183,7 +183,7 @@ class WerewolfDemoProtocolDefinition:
                 {
                     "name": "content",
                     "type": "text",
-                    "label": "Speech",
+                    "label": "发言内容",
                     "required": True,
                     "multiline": True,
                 }
@@ -194,7 +194,7 @@ class WerewolfDemoProtocolDefinition:
                 {
                     "name": "target_agent_id",
                     "type": "agent_id",
-                    "label": "Vote target",
+                    "label": "投票目标",
                     "required": True,
                 }
             ]
@@ -262,20 +262,20 @@ class WerewolfDemoProtocolDefinition:
         channels = [
             ChannelBlueprint(
                 slug="public-main",
-                name="Public Stage",
+                name="公共舞台",
                 channel_type="public",
                 visibility="public",
-                topic="Shared public discussion timeline",
+                topic="所有成员都能看到的公开协作舞台",
                 member_agent_ids=agent_ids,
                 include_user=True,
                 position=0,
             ),
             ChannelBlueprint(
                 slug="system-broadcast",
-                name="Coordinator Broadcast",
+                name="系统广播",
                 channel_type="system",
                 visibility="system",
-                topic="Coordinator events and rulings",
+                topic="主持人与系统裁决广播区",
                 member_agent_ids=agent_ids,
                 include_user=True,
                 position=1,
@@ -286,10 +286,10 @@ class WerewolfDemoProtocolDefinition:
             channels.append(
                 ChannelBlueprint(
                     slug="wolves-den",
-                    name="Wolves Den",
+                    name="狼人密聊",
                     channel_type="scoped",
                     visibility="scoped",
-                    topic="Secret wolf coordination channel",
+                    topic="仅狼人阵营可见的秘密协作频道",
                     member_agent_ids=wolves,
                     position=2,
                     metadata={"role_group": "wolf"},
@@ -301,10 +301,10 @@ class WerewolfDemoProtocolDefinition:
             channels.append(
                 ChannelBlueprint(
                     slug=f"direct-{agent_id}",
-                    name=f"Direct · {agent_id}",
+                    name=f"私密频道 · {agent_id}",
                     channel_type="direct",
                     visibility="direct",
-                    topic=f"Private direct channel for {agent_id}",
+                    topic=f"{agent_id} 的私密行动频道",
                     member_agent_ids=[agent_id],
                     position=offset,
                     metadata={"owner_agent_id": agent_id, "role": role},
@@ -331,8 +331,8 @@ class WerewolfDemoProtocolDefinition:
                     phase_name="night",
                     channel_slug="system-broadcast",
                     visibility="system",
-                    headline=f"Night {day} has begun",
-                    body="Private coordination is open. Public discussion is paused until dawn.",
+                    headline=f"第 {day} 夜开始",
+                    body="秘密协作已经开放，公共讨论暂停直到天亮。",
                     metadata={"message_kind": "phase_event"},
                 )
             ]
@@ -349,7 +349,7 @@ class WerewolfDemoProtocolDefinition:
                         audience_agent_ids=wolf_agents,
                         input_schema=self._schema_with_candidates("kill_target", wolf_targets),
                         target_scope={"candidate_agent_ids": wolf_targets},
-                        prompt_text="Agree on a night target for the wolves.",
+                        prompt_text="狼人阵营需要协商今晚的击杀目标。",
                     )
                 )
 
@@ -366,7 +366,7 @@ class WerewolfDemoProtocolDefinition:
                             audience_agent_ids=seer_agents,
                             input_schema=self._schema_with_candidates("inspect_target", seer_targets),
                             target_scope={"candidate_agent_ids": seer_targets},
-                            prompt_text="Choose one member to inspect before dawn.",
+                            prompt_text="请选择一名成员进行查验。",
                         )
                     )
 
@@ -381,7 +381,7 @@ class WerewolfDemoProtocolDefinition:
                         audience_agent_ids=healer_agents,
                         input_schema=self._schema_with_candidates("save_target", alive_agent_ids),
                         target_scope={"candidate_agent_ids": alive_agent_ids},
-                        prompt_text="Choose one member to protect tonight.",
+                        prompt_text="请选择今晚要保护的成员。",
                     )
                 )
 
@@ -392,8 +392,8 @@ class WerewolfDemoProtocolDefinition:
                         phase_name="night",
                         channel_slug="system-broadcast",
                         visibility="system",
-                        headline="Night resolved immediately",
-                        body="No active night roles remained, so the protocol is moving to dawn.",
+                        headline="夜晚直接结算",
+                        body="当前没有需要执行的夜间角色动作，流程直接进入天亮播报。",
                         metadata={"message_kind": "phase_event"},
                     )
                 )
@@ -410,8 +410,8 @@ class WerewolfDemoProtocolDefinition:
                     phase_name="day_announcement",
                     channel_slug="system-broadcast",
                     visibility="system",
-                    headline=f"Dawn of Day {day}",
-                    body="The coordinator is announcing the public night resolution.",
+                    headline=f"第 {day} 天天亮",
+                    body="主持人正在公布夜晚的公开结算结果。",
                     metadata={"message_kind": "phase_event"},
                 )
             ]
@@ -423,8 +423,8 @@ class WerewolfDemoProtocolDefinition:
                             phase_name="day_announcement",
                             channel_slug="public-main",
                             visibility="public",
-                            headline=f"{agent_id} did not survive the night",
-                            body="The room resumes under visible public pressure.",
+                            headline=f"{agent_id} 在夜晚被淘汰",
+                            body="房间在公开压力下继续推进。",
                             metadata={"message_kind": "verdict"},
                         )
                     )
@@ -435,8 +435,8 @@ class WerewolfDemoProtocolDefinition:
                         phase_name="day_announcement",
                         channel_slug="public-main",
                         visibility="public",
-                        headline="No overnight elimination",
-                        body="Dawn breaks without a visible casualty.",
+                        headline="夜晚无人出局",
+                        body="天亮后没有出现公开淘汰结果。",
                         metadata={"message_kind": "verdict"},
                     )
                 )
@@ -446,8 +446,8 @@ class WerewolfDemoProtocolDefinition:
                     phase_name="day_announcement",
                     channel_slug="system-broadcast",
                     visibility="system",
-                    headline="Announcement complete",
-                    body="The protocol is moving into sequential public speeches.",
+                    headline="播报结束",
+                    body="流程即将进入白天依次发言阶段。",
                     metadata={"message_kind": "phase_event"},
                 )
             )
@@ -468,8 +468,8 @@ class WerewolfDemoProtocolDefinition:
                         phase_name="day_speeches",
                         channel_slug="system-broadcast",
                         visibility="system",
-                        headline="Public speech round opened",
-                        body="Alive members now speak one at a time on the public stage.",
+                        headline="公开发言开启",
+                        body="仍存活的成员将依次在公共舞台发言。",
                         metadata={"message_kind": "phase_event"},
                     )
                 )
@@ -481,8 +481,8 @@ class WerewolfDemoProtocolDefinition:
                         phase_name="day_speeches",
                         channel_slug="system-broadcast",
                         visibility="system",
-                        headline="Speech round complete",
-                        body="The room is moving into public voting.",
+                        headline="发言结束",
+                        body="房间即将进入公开投票阶段。",
                         metadata={"message_kind": "phase_event"},
                     )
                 )
@@ -496,8 +496,8 @@ class WerewolfDemoProtocolDefinition:
                     channel_slug="public-main",
                     visibility="public",
                     actor_agent_id=speaker_agent_id,
-                    headline=f"{speaker_agent_id} has the floor",
-                    body="A single public speaking turn is now open.",
+                    headline=f"{speaker_agent_id} 开始发言",
+                    body="当前轮到该成员在公共舞台发言。",
                     metadata={"message_kind": "turn_event"},
                 )
             )
@@ -509,7 +509,7 @@ class WerewolfDemoProtocolDefinition:
                 allowed_actor_agent_ids=[speaker_agent_id],
                 audience_agent_ids=alive_agent_ids,
                 input_schema=self.action_schemas["speak"],
-                prompt_text=f"{speaker_agent_id} should make a concise public statement.",
+                prompt_text=f"请 {speaker_agent_id} 进行简短的公开发言。",
                 metadata={"speaker_agent_id": speaker_agent_id},
             )
             return PhasePlan(
@@ -525,8 +525,8 @@ class WerewolfDemoProtocolDefinition:
                     phase_name="voting",
                     channel_slug="system-broadcast",
                     visibility="system",
-                    headline="Voting opened",
-                    body="All alive members must submit a public vote target.",
+                    headline="投票开启",
+                    body="所有存活成员都需要提交公开投票目标。",
                     metadata={"message_kind": "phase_event"},
                 )
             ]
@@ -543,7 +543,7 @@ class WerewolfDemoProtocolDefinition:
                         [candidate for candidate in alive_agent_ids if candidate != agent_id],
                     ),
                     target_scope={"candidate_agent_ids": [candidate for candidate in alive_agent_ids if candidate != agent_id]},
-                    prompt_text=f"{agent_id} must choose a public vote target.",
+                    prompt_text=f"请 {agent_id} 提交本轮公开投票目标。",
                     metadata={"voter_agent_id": agent_id},
                 )
                 for agent_id in alive_agent_ids
@@ -556,8 +556,8 @@ class WerewolfDemoProtocolDefinition:
                         phase_name="voting",
                         channel_slug="system-broadcast",
                         visibility="system",
-                        headline="Voting skipped",
-                        body="Only one living member remains, so the protocol is moving to completion.",
+                        headline="跳过投票",
+                        body="当前仅剩一名存活成员，流程将直接进入结算。",
                         metadata={"message_kind": "phase_event"},
                     )
                 )
@@ -565,7 +565,7 @@ class WerewolfDemoProtocolDefinition:
             return PhasePlan(snapshots=snapshots, action_requests=requests)
 
         if run.current_phase == "game_over":
-            winner = state.get("winner") or "no one"
+            winner = state.get("winner") or "无人"
             return PhasePlan(
                 snapshots=[
                     SnapshotBlueprint(
@@ -573,8 +573,8 @@ class WerewolfDemoProtocolDefinition:
                         phase_name="game_over",
                         channel_slug="system-broadcast",
                         visibility="system",
-                        headline="Protocol complete",
-                        body="The coordinator is finalizing the run and publishing the result.",
+                        headline="协作结算",
+                        body="主持人正在完成本轮结算并公布结果。",
                         metadata={"message_kind": "phase_event"},
                     ),
                     SnapshotBlueprint(
@@ -582,8 +582,8 @@ class WerewolfDemoProtocolDefinition:
                         phase_name="game_over",
                         channel_slug="public-main",
                         visibility="public",
-                        headline=f"Winner: {winner}",
-                        body="The demonstration protocol has reached its terminal condition.",
+                        headline=f"胜者：{winner}",
+                        body="本轮演示协议已经达到终局条件。",
                         metadata={"message_kind": "verdict", "winner": winner},
                     ),
                 ],
@@ -645,8 +645,8 @@ class WerewolfDemoProtocolDefinition:
                 phase_name="night",
                 channel_slug="system-broadcast",
                 visibility="system",
-                headline="Night actions resolved",
-                body="Private night coordination has been reduced into the next public state.",
+                headline="夜晚动作已结算",
+                body="秘密行动已经被结算为下一步的公开状态。",
                 metadata={"message_kind": "phase_event"},
             )
         ]
@@ -661,8 +661,8 @@ class WerewolfDemoProtocolDefinition:
                     actor_agent_id=inspect_submission.actor_agent_id,
                     visibility="direct",
                     audience_agent_ids=[inspect_submission.actor_agent_id],
-                    headline="Inspection result",
-                    body=f"{inspect_target} is aligned as {inspected_role}.",
+                    headline="查验结果",
+                    body=f"{inspect_target} 的身份阵营是 {inspected_role}。",
                     metadata={"message_kind": "result"},
                 )
             )
@@ -676,8 +676,8 @@ class WerewolfDemoProtocolDefinition:
                     actor_agent_id=save_submission.actor_agent_id,
                     visibility="direct",
                     audience_agent_ids=[save_submission.actor_agent_id],
-                    headline="Protection locked",
-                    body=f"Protection was aimed at {save_target or 'no one'}.",
+                    headline="保护结果",
+                    body=f"本轮保护目标为：{save_target or '无人'}。",
                     metadata={"message_kind": "result"},
                 )
             )
@@ -728,8 +728,8 @@ class WerewolfDemoProtocolDefinition:
                     channel_slug="public-main",
                     actor_agent_id=speaker_agent_id,
                     visibility="public",
-                    headline=f"{speaker_agent_id} spoke to the room",
-                    body=speech_content or f"{speaker_agent_id} yielded the floor without speaking.",
+                    headline=f"{speaker_agent_id} 完成发言",
+                    body=speech_content or f"{speaker_agent_id} 放弃了本轮发言。",
                     metadata={"message_kind": "speech"},
                 )
             )
@@ -742,8 +742,8 @@ class WerewolfDemoProtocolDefinition:
                     phase_name="day_speeches",
                     channel_slug="system-broadcast",
                     visibility="system",
-                    headline="Public speeches complete",
-                    body="All living members have spoken. Voting will begin next.",
+                    headline="发言环节完成",
+                    body="所有存活成员都已发言，接下来进入投票。",
                     metadata={"message_kind": "phase_event"},
                 )
             )
@@ -762,8 +762,8 @@ class WerewolfDemoProtocolDefinition:
                 channel_slug="public-main",
                 actor_agent_id=next_speaker,
                 visibility="public",
-                headline=f"{next_speaker} has the floor",
-                body="The next public speaker is now active.",
+                headline=f"{next_speaker} 获得发言权",
+                body="下一位公开发言成员已经激活。",
                 metadata={"message_kind": "turn_event"},
             )
         )
@@ -778,7 +778,7 @@ class WerewolfDemoProtocolDefinition:
                     allowed_actor_agent_ids=[next_speaker],
                     audience_agent_ids=alive_agent_ids,
                     input_schema=self.action_schemas["speak"],
-                    prompt_text=f"{next_speaker} should make a concise public statement.",
+                    prompt_text=f"请 {next_speaker} 进行简短的公开发言。",
                     metadata={"speaker_agent_id": next_speaker},
                 )
             ],
@@ -824,9 +824,9 @@ class WerewolfDemoProtocolDefinition:
 
         winner = self._resolve_winner(next_alive_agent_ids, roles)
         body = (
-            f"{top_target} was eliminated by public vote."
+            f"{top_target} 被公开投票淘汰。"
             if top_target
-            else "The vote ended in a tie, so no one was eliminated."
+            else "本轮投票平票，因此无人被淘汰。"
         )
         snapshots = [
             SnapshotBlueprint(
@@ -834,7 +834,7 @@ class WerewolfDemoProtocolDefinition:
                 phase_name="voting",
                 channel_slug="public-main",
                 visibility="public",
-                headline="Voting resolved",
+                headline="投票已结算",
                 body=body,
                 metadata={"message_kind": "verdict", "vote_tally": vote_tally},
             )

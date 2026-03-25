@@ -82,11 +82,136 @@ function toTimestamp(value?: string | null): number {
   return value ? Date.parse(value) : 0;
 }
 
+function renderPhaseLabel(phase_name: string) {
+  const labels: Record<string, string> = {
+    setup: "准备阶段",
+    night: "夜晚阶段",
+    day_announcement: "白天播报",
+    day_speeches: "白天发言",
+    voting: "投票阶段",
+    game_over: "结算阶段",
+  };
+  return labels[phase_name] || phase_name.replaceAll("_", " ");
+}
+
+function renderEventTypeLabel(event_type: string) {
+  const labels: Record<string, string> = {
+    phase_started: "阶段开始",
+    turn_opened: "轮次开启",
+    action_requested: "动作请求",
+    action_submitted: "动作已提交",
+    channel_message: "频道消息",
+    phase_resolved: "阶段结算",
+    verdict: "裁决",
+    run_completed: "协作完成",
+    run_paused: "协作暂停",
+    run_resumed: "协作恢复",
+    room_state: "房间状态",
+  };
+  return labels[event_type] || event_type.replaceAll("_", " ");
+}
+
 function renderStatusLabel(status: string) {
   if (status === "running") return "运行中";
   if (status === "paused") return "已暂停";
   if (status === "completed") return "已完成";
   return "已终止";
+}
+
+function renderChannelVisibilityLabel(visibility: string) {
+  const labels: Record<string, string> = {
+    public: "公开",
+    scoped: "受限",
+    direct: "私密",
+    system: "系统",
+  };
+  return labels[visibility] || visibility;
+}
+
+function renderRoleLabel(role: string) {
+  const labels: Record<string, string> = {
+    wolf: "狼人",
+    seer: "预言家",
+    healer: "守护者",
+    villager: "平民",
+    member: "成员",
+  };
+  return labels[role] || role;
+}
+
+function renderSeatStatusLabel(status: "pending" | "submitted" | "idle", is_alive: boolean, is_eliminated: boolean) {
+  if (!is_alive && is_eliminated) {
+    return "已出局";
+  }
+  if (!is_alive) {
+    return "待命";
+  }
+  if (status === "pending") {
+    return "待提交";
+  }
+  if (status === "submitted") {
+    return "已提交";
+  }
+  return "空闲";
+}
+
+function renderDefinitionLabel(slug: string) {
+  if (slug === "werewolf_demo") {
+    return "狼人杀演示协议";
+  }
+  return slug;
+}
+
+function renderDefinitionDescription(slug: string, fallback: string) {
+  if (slug === "werewolf_demo") {
+    return "这是一个用于验证 protocol room 内核的演示协议，包含公开舞台、系统广播、私密频道、阶段推进和结构化动作。";
+  }
+  return fallback;
+}
+
+function renderActionLabel(action_type: string) {
+  const labels: Record<string, string> = {
+    kill_target: "击杀目标",
+    inspect_target: "查验目标",
+    save_target: "保护目标",
+    speak: "公开发言",
+    vote_target: "投票目标",
+    signal_ready: "准备完成",
+  };
+  return labels[action_type] || action_type.replaceAll("_", " ");
+}
+
+function renderWinnerLabel(winner: string) {
+  const labels: Record<string, string> = {
+    wolves: "狼人阵营",
+    villagers: "村民阵营",
+  };
+  return labels[winner] || winner;
+}
+
+function renderChannelName(slug: string, fallback: string) {
+  const labels: Record<string, string> = {
+    "public-main": "公共舞台",
+    "system-broadcast": "系统广播",
+    "wolves-den": "狼人密聊",
+  };
+  if (slug.startsWith("direct-")) {
+    const owner = slug.replace("direct-", "");
+    return `私密频道 · ${owner}`;
+  }
+  return labels[slug] || fallback;
+}
+
+function renderChannelTopic(slug: string, fallback: string) {
+  const labels: Record<string, string> = {
+    "public-main": "所有成员都能看到的公开协作舞台",
+    "system-broadcast": "主持人和系统裁决广播区",
+    "wolves-den": "仅狼人阵营可见的秘密协作频道",
+  };
+  if (slug.startsWith("direct-")) {
+    return "仅当前成员可见的私密行动频道";
+  }
+  return labels[slug] || fallback;
 }
 
 function renderChannelIcon(channel_type: string) {
@@ -221,7 +346,7 @@ export function ProtocolRoomShell({
   const handle_create_run = async () => {
     await on_create_run({
       definition_slug: "werewolf_demo",
-      title: room.room.name ? `${room.room.name} · Protocol Run` : "Protocol Run",
+      title: room.room.name ? `${room.room.name} · 协议协作` : "协议协作",
     });
   };
 
@@ -258,7 +383,7 @@ export function ProtocolRoomShell({
     await handle_control("inject_message", {
       channel_id: inject_channel_id,
       content: inject_message.trim(),
-      headline: "Moderator note",
+      headline: "主持人注入消息",
     });
     set_inject_message("");
   };
@@ -272,10 +397,10 @@ export function ProtocolRoomShell({
         <header className="relative z-10 flex flex-col gap-4 border-b border-white/55 pb-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-slate-700/52">
-                <span className="neo-pill rounded-full px-3 py-1">Protocol Room</span>
-                <span>{room.room.room_type === "room" ? "Multi-member" : "DM"}</span>
+                <span className="neo-pill rounded-full px-3 py-1">协议房间</span>
+                <span>{room.room.room_type === "room" ? "多人协作" : "单聊"}</span>
                 {detail ? <span>{renderStatusLabel(detail.run.status)}</span> : null}
-                <span>{ws_state === "connected" ? "Live" : "Polling fallback"}</span>
+                <span>{ws_state === "connected" ? "实时同步" : "轮询回退"}</span>
               </div>
             <h1 className="mt-3 text-[30px] font-black tracking-[-0.05em] text-slate-950/92">
               {room.room.name || room.room.id}
@@ -301,7 +426,7 @@ export function ProtocolRoomShell({
                 type="button"
               >
                 <Sparkles className="h-4 w-4" />
-                启动 Demo Run
+                启动演示协作
               </button>
             ) : null}
           </div>
@@ -332,10 +457,10 @@ export function ProtocolRoomShell({
                         <p className="text-sm font-semibold text-slate-950/90">
                           {member.member_agent_id}
                         </p>
-                        <p className="mt-1 text-xs text-slate-700/52">Ready for protocol assignment</p>
+                        <p className="mt-1 text-xs text-slate-700/52">等待加入协议协作</p>
                       </div>
                       <div className="rounded-full bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-700/58">
-                        Member
+                        成员
                       </div>
                     </div>
                   ))}
@@ -354,7 +479,7 @@ export function ProtocolRoomShell({
                 </h2>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-700/62">
                   启动后会生成公共舞台、系统广播、私密频道、阶段时间线和结构化动作卡。
-                  当前实现默认接入 `werewolf_demo`，它只是验证内核的示例协议。
+                  当前默认接入 `狼人杀演示协议`，它只是用来验证这套协议协作内核。
                 </p>
               </div>
               <div className="mt-6 flex flex-wrap gap-3">
@@ -364,11 +489,11 @@ export function ProtocolRoomShell({
                   type="button"
                 >
                   <Play className="h-4 w-4" />
-                  启动 Demo Run
+                  启动演示协作
                 </button>
                 <div className="neo-card-flat flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.15em] text-slate-700/56">
                   <Eye className="h-3.5 w-3.5" />
-                  Room-first, protocol-driven
+                  房间优先，协议驱动
                 </div>
               </div>
             </div>
@@ -379,10 +504,10 @@ export function ProtocolRoomShell({
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700/48">
-                    Viewpoint
+                    当前视角
                   </p>
                   <p className="mt-1 text-sm font-semibold text-slate-950/88">
-                    {viewer_agent_id || "Observer"}
+                    {viewer_agent_id || "观察者"}
                   </p>
                 </div>
                 <select
@@ -390,7 +515,7 @@ export function ProtocolRoomShell({
                   onChange={(event) => on_set_viewer(event.target.value || null)}
                   value={viewer_agent_id ?? ""}
                 >
-                  <option value="">Observer</option>
+                  <option value="">观察者</option>
                   {room_agent_members.map((member) => (
                     <option key={member.id} value={member.member_agent_id ?? ""}>
                       {member.member_agent_id}
@@ -401,7 +526,7 @@ export function ProtocolRoomShell({
 
               <div className="mt-5">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700/48">
-                  Seats
+                  成员席位
                 </p>
                 <div className="mt-3 space-y-3">
                   {room_agent_members.map((member) => {
@@ -426,13 +551,14 @@ export function ProtocolRoomShell({
                             </p>
                             <div className="mt-2 flex flex-wrap gap-2">
                               <span className="rounded-full bg-white/78 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-700/60">
-                                {role}
+                                {renderRoleLabel(role)}
                               </span>
                               <span className="rounded-full bg-white/70 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-700/60">
-                                {is_alive ? "alive" : is_eliminated ? "out" : "idle"}
-                              </span>
-                              <span className="rounded-full bg-white/70 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-700/60">
-                                {member_request_status.get(agent_id) || "idle"}
+                                {renderSeatStatusLabel(
+                                  member_request_status.get(agent_id) || "idle",
+                                  is_alive,
+                                  is_eliminated,
+                                )}
                               </span>
                             </div>
                           </div>
@@ -451,10 +577,10 @@ export function ProtocolRoomShell({
               <div className="mt-5 min-h-0 flex-1">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700/48">
-                    Channels
+                    协作频道
                   </p>
                   <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-700/40">
-                    {detail.channels.length} total
+                    共 {detail.channels.length} 个
                   </span>
                 </div>
                 <div className="mt-3 space-y-2 overflow-y-auto pr-1 scrollbar-hide">
@@ -480,12 +606,12 @@ export function ProtocolRoomShell({
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <p className="truncate text-sm font-semibold text-slate-950/90">
-                              {channel.channel.name}
+                              {renderChannelName(channel.channel.slug, channel.channel.name)}
                             </p>
                             {!is_visible ? <Lock className="h-3.5 w-3.5 text-slate-500" /> : null}
                           </div>
                           <p className="mt-1 text-xs leading-5 text-slate-700/56">
-                            {channel.channel.topic}
+                            {renderChannelTopic(channel.channel.slug, channel.channel.topic)}
                           </p>
                         </div>
                       </button>
@@ -500,7 +626,7 @@ export function ProtocolRoomShell({
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/55 pb-3">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700/48">
-                      Stage Timeline
+                      舞台时间线
                     </p>
                     <h2 className="mt-1 text-lg font-black tracking-[-0.04em] text-slate-950/90">
                       {detail.run.title || detail.definition.name}
@@ -519,7 +645,7 @@ export function ProtocolRoomShell({
                       ))}
                     </select>
                     <div className="neo-card-flat rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700/58">
-                      {detail.run.current_phase}
+                      {renderPhaseLabel(detail.run.current_phase)}
                     </div>
                   </div>
                 </div>
@@ -543,18 +669,18 @@ export function ProtocolRoomShell({
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-700/48">
-                                <span>{snapshot.event_type}</span>
-                                <span>{snapshot.phase_name}</span>
+                                <span>{renderEventTypeLabel(snapshot.event_type)}</span>
+                                <span>{renderPhaseLabel(snapshot.phase_name)}</span>
                                 <span>{relative_time}</span>
-                                {snapshot.metadata?.redacted ? <span>restricted</span> : null}
+                                {snapshot.metadata?.redacted ? <span>受限</span> : null}
                               </div>
                               <h3 className="mt-2 text-sm font-semibold text-slate-950/90">
-                                {snapshot.metadata?.redacted ? "Restricted coordination event" : snapshot.headline || snapshot.event_type}
+                                {snapshot.metadata?.redacted ? "受限协作事件" : snapshot.headline || renderEventTypeLabel(snapshot.event_type)}
                               </h3>
                               <p className="mt-2 text-sm leading-6 text-slate-700/66">
                                 {snapshot.metadata?.redacted
-                                  ? "A private or scoped event occurred in a channel outside the current viewpoint."
-                                  : snapshot.body || "No additional description."}
+                                  ? "当前视角之外的私密或受限频道发生了一条协作事件。"
+                                  : snapshot.body || "暂无更多说明。"}
                               </p>
                             </div>
                           </div>
@@ -569,15 +695,15 @@ export function ProtocolRoomShell({
                 <div className="flex items-center justify-between gap-3 border-b border-white/55 pb-3">
                   <div>
                     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700/48">
-                      Channel Feed
+                      频道动态
                     </p>
                     <h3 className="mt-1 text-base font-black tracking-[-0.04em] text-slate-950/90">
-                      {selected_channel?.channel.name || "No channel selected"}
+                      {selected_channel ? renderChannelName(selected_channel.channel.slug, selected_channel.channel.name) : "未选择频道"}
                     </h3>
                   </div>
                   {selected_channel ? (
                     <div className="neo-card-flat rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700/56">
-                      {selected_channel.channel.visibility}
+                      {renderChannelVisibilityLabel(selected_channel.channel.visibility)}
                     </div>
                   ) : null}
                 </div>
@@ -597,7 +723,7 @@ export function ProtocolRoomShell({
                         >
                           <div className="flex items-center justify-between gap-3">
                             <p className="text-sm font-semibold text-slate-950/90">
-                              {snapshot.metadata?.redacted ? "Restricted event" : snapshot.headline || snapshot.event_type}
+                              {snapshot.metadata?.redacted ? "受限事件" : snapshot.headline || renderEventTypeLabel(snapshot.event_type)}
                             </p>
                             <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-700/48">
                               {formatRelativeTime(toTimestamp(snapshot.created_at))}
@@ -605,8 +731,8 @@ export function ProtocolRoomShell({
                           </div>
                           <p className="mt-2 text-sm leading-6 text-slate-700/64">
                             {snapshot.metadata?.redacted
-                              ? "This event exists on the stage but its payload is hidden for the current viewpoint."
-                              : snapshot.body || "No channel body."}
+                              ? "这条事件真实存在，但当前视角下它的具体内容被隐藏了。"
+                              : snapshot.body || "暂无频道正文。"}
                           </p>
                         </div>
                       ))}
@@ -623,15 +749,15 @@ export function ProtocolRoomShell({
             <aside className="neo-card flex min-h-0 flex-col rounded-[28px] p-4">
               <div className="border-b border-white/55 pb-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700/48">
-                  Control Tower
+                  控制台
                 </p>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
                   <div className="rounded-[22px] border border-white/60 bg-white/40 px-4 py-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-700/48">
-                      Current Phase
+                      当前阶段
                     </p>
                     <p className="mt-2 text-lg font-black tracking-[-0.04em] text-slate-950/90">
-                      {detail.run.current_phase}
+                      {renderPhaseLabel(detail.run.current_phase)}
                     </p>
                     <p className="mt-1 text-xs text-slate-700/54">
                       {renderStatusLabel(detail.run.status)}
@@ -639,35 +765,35 @@ export function ProtocolRoomShell({
                   </div>
                   <div className="rounded-[22px] border border-white/60 bg-white/40 px-4 py-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-700/48">
-                      Pending Requests
+                      待处理动作
                     </p>
                     <p className="mt-2 text-lg font-black tracking-[-0.04em] text-slate-950/90">
                       {pending_current_phase_requests.length}
                     </p>
                     <p className="mt-1 text-xs text-slate-700/54">
-                      Current phase blockers
+                      当前阶段的阻塞项
                     </p>
                   </div>
                   <div className="rounded-[22px] border border-white/60 bg-white/40 px-4 py-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-700/48">
-                      Day / Winner
+                      天数 / 胜者
                     </p>
                     <p className="mt-2 text-lg font-black tracking-[-0.04em] text-slate-950/90">
-                      Day {detail.run.state?.day ?? 1}
+                      第 {detail.run.state?.day ?? 1} 天
                     </p>
                     <p className="mt-1 text-xs text-slate-700/54">
-                      {detail.run.state?.winner ? `Winner: ${detail.run.state.winner}` : "No winner yet"}
+                      {detail.run.state?.winner ? `胜者：${renderWinnerLabel(detail.run.state.winner)}` : "当前还没有胜者"}
                     </p>
                   </div>
                   <div className="rounded-[22px] border border-white/60 bg-white/40 px-4 py-3">
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-700/48">
-                      Sync Mode
+                      同步模式
                     </p>
                     <p className="mt-2 text-lg font-black tracking-[-0.04em] text-slate-950/90">
-                      {ws_state === "connected" ? "Live" : "Fallback"}
+                      {ws_state === "connected" ? "实时" : "回退"}
                     </p>
                     <p className="mt-1 text-xs text-slate-700/54">
-                      {ws_state === "connected" ? "Realtime room events" : "Polling every 4 seconds"}
+                      {ws_state === "connected" ? "通过房间事件实时刷新" : "每 4 秒轮询一次"}
                     </p>
                   </div>
                 </div>
@@ -705,15 +831,15 @@ export function ProtocolRoomShell({
                   <select
                     className="neo-inset w-full rounded-[18px] px-3 py-2.5 text-sm text-slate-900/86 outline-none"
                     onChange={(event) => set_force_phase_name(event.target.value)}
-                    value={force_phase_name}
-                  >
-                    <option value="">选择要强制进入的 phase</option>
-                    {remaining_phases.map((phase_name) => (
-                      <option key={phase_name} value={phase_name}>
-                        {phase_name}
-                      </option>
-                    ))}
-                  </select>
+                      value={force_phase_name}
+                    >
+                      <option value="">选择要强制进入的阶段</option>
+                      {remaining_phases.map((phase_name) => (
+                        <option key={phase_name} value={phase_name}>
+                          {renderPhaseLabel(phase_name)}
+                        </option>
+                      ))}
+                    </select>
                 </div>
               </div>
 
@@ -722,14 +848,14 @@ export function ProtocolRoomShell({
                   <section className="rounded-[24px] border border-white/60 bg-white/40 px-4 py-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700/48">
-                        Ruleset
+                        协议规则
                       </p>
                       <div className="rounded-full bg-white/74 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-700/56">
-                        {detail.definition.slug}
+                        {renderDefinitionLabel(detail.definition.slug)}
                       </div>
                     </div>
                     <p className="mt-3 text-sm leading-6 text-slate-700/64">
-                      {detail.definition.description}
+                      {renderDefinitionDescription(detail.definition.slug, detail.definition.description)}
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {detail.definition.phases.map((phase_name) => (
@@ -742,7 +868,7 @@ export function ProtocolRoomShell({
                               : "bg-white/74 text-slate-700/60",
                           )}
                         >
-                          {phase_name}
+                          {renderPhaseLabel(phase_name)}
                         </span>
                       ))}
                     </div>
@@ -751,10 +877,10 @@ export function ProtocolRoomShell({
                   <section>
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700/48">
-                        Action Desk
+                        动作面板
                       </p>
                       <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-700/40">
-                        {pending_requests.length} open
+                        {pending_requests.length} 个待处理
                       </span>
                     </div>
 
@@ -769,14 +895,14 @@ export function ProtocolRoomShell({
                             <div className="flex items-start justify-between gap-3">
                               <div>
                                 <p className="text-sm font-semibold text-slate-950/90">
-                                  {request.action_type}
+                                  {renderActionLabel(request.action_type)}
                                 </p>
                                 <p className="mt-1 text-xs uppercase tracking-[0.14em] text-slate-700/46">
-                                  {request.phase_name}
+                                  {renderPhaseLabel(request.phase_name)}
                                 </p>
                               </div>
                               <div className="rounded-full bg-white/74 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-700/56">
-                                pending
+                                待处理
                               </div>
                             </div>
                             {request.prompt_text ? (
@@ -788,7 +914,7 @@ export function ProtocolRoomShell({
                             {actor_options.length ? (
                               <div className="mt-3">
                                 <label className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-700/48">
-                                  Actor
+                                  执行成员
                                 </label>
                                 <select
                                   className="neo-inset mt-1.5 w-full rounded-[16px] px-3 py-2 text-sm text-slate-900/86 outline-none"
@@ -879,7 +1005,7 @@ export function ProtocolRoomShell({
                                 type="button"
                               >
                                 <Zap className="h-4 w-4" />
-                                Override
+                                强制覆盖
                               </button>
                             </div>
                           </div>
@@ -897,10 +1023,10 @@ export function ProtocolRoomShell({
                   <section className="rounded-[24px] border border-white/60 bg-white/40 px-4 py-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700/48">
-                        Inject Message
+                        注入消息
                       </p>
                       <div className="rounded-full bg-white/74 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-700/56">
-                        moderator
+                        主持人
                       </div>
                     </div>
                     <div className="mt-3">
@@ -912,7 +1038,7 @@ export function ProtocolRoomShell({
                         <option value="">选择频道</option>
                         {detail.channels.map((channel) => (
                           <option key={channel.channel.id} value={channel.channel.id}>
-                            {channel.channel.name}
+                            {renderChannelName(channel.channel.slug, channel.channel.name)}
                           </option>
                         ))}
                       </select>
@@ -937,25 +1063,25 @@ export function ProtocolRoomShell({
                   <section className="rounded-[24px] border border-white/60 bg-white/40 px-4 py-4">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700/48">
-                        Last Resolution
+                        最近结算
                       </p>
                       <TimerReset className="h-4 w-4 text-slate-600/60" />
                     </div>
                     <div className="mt-3 space-y-3 text-sm leading-6 text-slate-700/64">
                       <div>
-                        <p className="font-semibold text-slate-950/84">Night</p>
+                        <p className="font-semibold text-slate-950/84">夜晚</p>
                         <p>
                           {detail.run.state?.last_night_result?.deaths?.length
-                            ? `Deaths: ${detail.run.state.last_night_result.deaths.join(", ")}`
-                            : "No visible night elimination yet."}
+                            ? `淘汰成员：${detail.run.state.last_night_result.deaths.join(", ")}`
+                            : "当前还没有可见的夜晚淘汰结果。"}
                         </p>
                       </div>
                       <div>
-                        <p className="font-semibold text-slate-950/84">Vote</p>
+                        <p className="font-semibold text-slate-950/84">投票</p>
                         <p>
                           {detail.run.state?.last_vote_result?.target
-                            ? `Eliminated by vote: ${detail.run.state.last_vote_result.target}`
-                            : "No completed public vote yet."}
+                            ? `投票淘汰：${detail.run.state.last_vote_result.target}`
+                            : "当前还没有完成的公开投票。"}
                         </p>
                       </div>
                     </div>
