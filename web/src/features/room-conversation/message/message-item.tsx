@@ -16,6 +16,7 @@ import { MessageStats } from "./message-stats";
 import { ToolBlock } from "./block/tool-block";
 
 interface MessageItemProps {
+  compact?: boolean;
   current_agent_name?: string | null;
   round_id: string;
   messages: Message[];
@@ -33,6 +34,7 @@ interface MessageItemProps {
 
 export function MessageItem(
   {
+    compact = false,
     current_agent_name,
     round_id,
     messages,
@@ -257,19 +259,26 @@ export function MessageItem(
 
   return (
     <div ref={roundRef}
-      className={cn("w-full min-w-0 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300", class_name)}>
+      className={cn(
+        "w-full min-w-0 animate-in fade-in slide-in-from-bottom-2 duration-300",
+        compact ? "space-y-2.5" : "space-y-3",
+        class_name,
+      )}>
 
       {/* ═══════════════════════ 用户消息 ═══════════════════════ */}
       {userMessage && (
-        <div className="w-full px-1 sm:px-4">
-          <div className="mx-auto w-full max-w-[980px]">
+        <div className={cn("w-full", compact ? "px-0.5" : "px-1 sm:px-4")}>
+          <div className={cn("mx-auto w-full", compact ? "max-w-full" : "max-w-[980px]")}>
             <div className="group flex min-w-0 items-end justify-end gap-3">
               <div className={cn(
-                "radius-shell-lg relative min-w-0 max-w-[78%] overflow-hidden transition-all duration-300",
-                "workspace-card px-4 sm:px-5"
+                "radius-shell-lg relative min-w-0 overflow-hidden transition-all duration-300 workspace-card",
+                compact ? "max-w-[86%] px-3.5" : "max-w-[78%] px-4 sm:px-5",
               )}>
                 {/* 头部 */}
-                <div className="flex h-10 items-center justify-end gap-2 border-b border-white/18">
+                <div className={cn(
+                  "flex items-center justify-end gap-2 border-b border-white/18",
+                  compact ? "h-8" : "h-10",
+                )}>
                   <div className="flex-1" />
 
                   {/* 操作按钮 */}
@@ -311,8 +320,11 @@ export function MessageItem(
                 </div>
 
                 {/* 内容 */}
-                <div className="py-4">
-                  <p className="text-sm leading-relaxed text-right whitespace-pre-wrap text-slate-900/86 [overflow-wrap:anywhere]">
+                <div className={cn(compact ? "py-3" : "py-4")}>
+                  <p className={cn(
+                    "text-right whitespace-pre-wrap text-slate-900/86 [overflow-wrap:anywhere]",
+                    compact ? "text-[13px] leading-6" : "text-sm leading-relaxed",
+                  )}>
                     {userContent}
                   </p>
                 </div>
@@ -325,9 +337,9 @@ export function MessageItem(
       {/* ═══════════════════════ 助手消息 ═══════════════════════ */}
       {/* 没有可见 assistant 内容时，仍渲染容器以提供删除/重试操作 */}
       {(!shouldHideAssistantContent || canOperateRound) && (
-        <div className="w-full px-1 sm:px-4">
-          <div className="mx-auto w-full max-w-[980px]">
-            <div className="group flex min-w-0 items-start gap-3">
+        <div className={cn("w-full", compact ? "px-0.5" : "px-1 sm:px-4")}>
+          <div className={cn("mx-auto w-full", compact ? "max-w-full" : "max-w-[980px]")}>
+            <div className={cn("group flex min-w-0 items-start", compact ? "gap-2" : "gap-3")}>
 
               <div className={cn(
                 "radius-shell-lg relative min-w-0 flex-1 overflow-hidden workspace-card transition-all duration-500",
@@ -342,7 +354,10 @@ export function MessageItem(
                 )}
 
                 {/* 优雅的头部栏 */}
-                <div className="flex min-w-0 h-10 items-center gap-2 border-b border-white/28 px-3 sm:px-4">
+                <div className={cn(
+                  "flex min-w-0 items-center gap-2 border-b border-white/28",
+                  compact ? "h-8 px-3" : "h-10 px-3 sm:px-4",
+                )}>
                   <div className="workspace-chip flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
                     <Terminal className="w-3 h-3 text-slate-800/70" />
                   </div>
@@ -364,7 +379,7 @@ export function MessageItem(
 
                 {/* 内容区 */}
                 <div className={cn(
-                  "min-w-0 p-4 text-sm leading-relaxed sm:p-5",
+                  compact ? "min-w-0 p-3.5 text-[13px] leading-6" : "min-w-0 p-4 text-sm leading-relaxed sm:p-5",
                   showCursor && "min-h-[60px]"
                 )}>
 

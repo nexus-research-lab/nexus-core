@@ -4,6 +4,7 @@ import { PendingPermission, PermissionDecisionPayload } from "@/types/permission
 
 interface RoomConversationFeedProps {
   bottom_anchor_ref: React.RefObject<HTMLDivElement | null>;
+  compact?: boolean;
   current_agent_name: string | null;
   is_last_round_pending_permission: PendingPermission | null;
   is_loading: boolean;
@@ -18,6 +19,7 @@ interface RoomConversationFeedProps {
 
 export function RoomConversationFeed({
   bottom_anchor_ref,
+  compact = false,
   current_agent_name,
   is_last_round_pending_permission,
   is_loading,
@@ -38,6 +40,7 @@ export function RoomConversationFeed({
         return (
           <MessageItem
             key={roundId}
+            compact={compact}
             current_agent_name={current_agent_name}
             round_id={roundId}
             messages={roundMessages}

@@ -27,9 +27,9 @@ export function useLauncherPageController() {
   const agent_conversation = useHomeAgentConversationController();
   const [search_params, set_search_params] = useSearchParams();
   const {
-    messages: app_conversation_messages,
-    clear_messages: clear_app_conversation,
-    submit_prompt: submit_app_prompt,
+    conversation_key: app_conversation_key,
+    set_conversation_key: set_app_conversation_key,
+    clear_conversation_key: clear_app_conversation_key,
   } = useAppConversationStore();
 
   const surface: LauncherSurface = search_params.get("surface") === "app" ? "app" : "launcher";
@@ -60,47 +60,37 @@ export function useLauncherPageController() {
     set_launcher_search({});
   }, [set_launcher_search]);
 
-  const submit_app_conversation = useCallback((next_prompt: string) => {
-    const trimmed_prompt = next_prompt.trim();
-    submit_app_prompt(trimmed_prompt);
-    set_app_conversation_draft("");
+  const clear_route_app_prompt = useCallback(() => {
     set_launcher_search({
       surface: "app",
       app_prompt: undefined,
     });
-  }, [set_launcher_search, submit_app_prompt]);
-
-  useEffect(() => {
-    if (!route_app_prompt) {
-      return;
-    }
-
-    // 路由里的 app_prompt 只作为一次性唤起参数，消费后立即落回唯一对话状态。
-    submit_app_prompt(route_app_prompt);
-    set_app_conversation_draft("");
-    set_launcher_search({ surface: "app" });
-  }, [route_app_prompt, set_launcher_search, submit_app_prompt]);
+  }, [set_launcher_search]);
 
   return useMemo(() => ({
     ...agent_conversation,
     surface,
+    route_app_prompt,
     is_app_conversation_open,
+    app_conversation_key,
     app_conversation_draft,
-    app_conversation_messages,
     open_app_conversation,
     close_app_conversation,
+    clear_route_app_prompt,
+    set_app_conversation_key,
+    clear_app_conversation_key,
     set_app_conversation_draft,
-    submit_app_conversation,
-    clear_app_conversation,
   }), [
     agent_conversation,
     surface,
+    route_app_prompt,
     is_app_conversation_open,
+    app_conversation_key,
     app_conversation_draft,
-    app_conversation_messages,
     open_app_conversation,
     close_app_conversation,
-    submit_app_conversation,
-    clear_app_conversation,
+    clear_route_app_prompt,
+    set_app_conversation_key,
+    clear_app_conversation_key,
   ]);
 }

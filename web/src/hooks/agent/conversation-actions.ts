@@ -25,11 +25,12 @@ export async function sendConversationMessage(
     set_messages,
     set_pending_permission,
   } = context;
+  const resolved_session_key = session_key || active_conversation_key_ref.current;
 
   if (!content.trim()) {
     return;
   }
-  if (!session_key) {
+  if (!resolved_session_key) {
     set_error('请先选择或创建会话');
     return;
   }
@@ -39,10 +40,10 @@ export async function sendConversationMessage(
   }
 
   const round_id = generateUuid();
-  active_conversation_key_ref.current = session_key;
+  active_conversation_key_ref.current = resolved_session_key;
   const userMessage: Message = {
     message_id: round_id,
-    session_key,
+    session_key: resolved_session_key,
     round_id,
     agent_id: agent_id || 'main',
     role: 'user',
@@ -58,7 +59,7 @@ export async function sendConversationMessage(
   ws_send({
     type: 'chat',
     content,
-    session_key,
+    session_key: resolved_session_key,
     agent_id: agent_id || 'main',
     round_id,
   });
@@ -73,12 +74,14 @@ export function stopConversationGeneration(context: AgentConversationActionConte
     session_key,
     ws_state,
     ws_send,
+    active_conversation_key_ref,
     messages,
     set_is_loading,
     set_pending_permission,
   } = context;
+  const resolved_session_key = session_key || active_conversation_key_ref.current;
 
-  if (!session_key || ws_state !== 'connected') {
+  if (!resolved_session_key || ws_state !== 'connected') {
     set_is_loading(false);
     return;
   }
@@ -89,7 +92,7 @@ export function stopConversationGeneration(context: AgentConversationActionConte
 
   ws_send({
     type: 'interrupt',
-    session_key,
+    session_key: resolved_session_key,
     agent_id: agent_id || 'main',
     round_id: latest_user_round_id,
   });
@@ -115,11 +118,12 @@ export function sendConversationPermissionResponse(
     set_error,
     set_pending_permission,
   } = context;
+  const resolved_session_key = session_key || active_conversation_key_ref.current;
 
   if (!pending_permission) {
     return;
   }
-  if (!session_key || active_conversation_key_ref.current !== session_key) {
+  if (!resolved_session_key || active_conversation_key_ref.current !== resolved_session_key) {
     set_pending_permission(null);
     return;
   }
@@ -131,7 +135,7 @@ export function sendConversationPermissionResponse(
   const response: WebSocketMessage = {
     type: 'permission_response',
     request_id: pending_permission.request_id,
-    session_key,
+    session_key: resolved_session_key,
     agent_id: agent_id || 'main',
     decision: payload.decision,
     message: payload.message || (payload.decision === 'deny' ? 'User denied permission' : ''),

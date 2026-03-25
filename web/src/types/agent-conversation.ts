@@ -23,9 +23,11 @@ export interface UseAgentConversationOptions {
 export interface UseAgentConversationReturn {
   messages: Message[];
   session_key: string | null;
+  ws_state: WebSocketState;
   is_loading: boolean;
   error: string | null;
   send_message: (content: string) => Promise<void>;
+  bind_conversation_key: (key: string | null) => void;
   start_conversation: () => void;
   load_conversation: (key: string) => Promise<void>;
   clear_conversation: () => void;
