@@ -1,18 +1,23 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { AppRouteBuilders } from "@/app/router/route-paths";
+import { useAgentConversation } from "@/hooks/agent";
 import { LauncherAppConversationPanel } from "@/features/launcher/launcher-app-conversation-panel";
 import { LauncherConsole } from "@/features/launcher/launcher-console";
 import { useLauncherPageController } from "@/hooks/use-launcher-page-controller";
+import { createConversation, deleteConversation } from "@/lib/agent-api";
 import { cn } from "@/lib/utils";
 import { AppStage } from "@/shared/ui/app-stage";
 import { AgentOptions } from "@/shared/ui/agent-options-dialog";
 import { AppLoadingScreen } from "@/shared/ui/app-loading-screen";
 import { useAgentStore } from "@/store/agent";
-import { useAppConversationStore } from "@/store/app-conversation";
 import { getConversationStoreSnapshot } from "@/store/conversation";
 import { AgentOptions as AgentConfigOptions } from "@/types/agent";
+import { UserMessage } from "@/types/message";
+
+const APP_AGENT_ID = "main";
+const APP_CONVERSATION_SEED_KEY = "launcher-app-main";
 
 function build_room_title_from_prompt(prompt: string | undefined) {
   const normalized_prompt = (prompt ?? "")
@@ -35,17 +40,128 @@ export function LauncherPage() {
   const navigate = useNavigate();
   const [should_bootstrap_room_after_create, set_should_bootstrap_room_after_create] = useState(false);
   const [pending_room_title, set_pending_room_title] = useState<string>("");
-  const push_app_message = useAppConversationStore((state) => state.push_app_message);
-  const latest_user_prompt = [...controller.app_conversation_messages]
-    .reverse()
-    .find((message) => message.role === "user")?.body;
+  const consumed_route_prompt_ref = useRef<string | null>(null);
+  const skip_app_conversation_load_ref = useRef<string | null>(null);
+  const hydrated_app_conversation_key_ref = useRef<string | null>(null);
+  const app_conversation = useAgentConversation({
+    agent_id: APP_AGENT_ID,
+  });
 
-  const handleSelectAgent = useCallback((agent_id: string) => {
+  useEffect(() => {
+    const next_conversation_key = controller.app_conversation_key;
+
+    if (!next_conversation_key) {
+      hydrated_app_conversation_key_ref.current = null;
+      app_conversation.bind_conversation_key(null);
+      return;
+    }
+
+    if (skip_app_conversation_load_ref.current === next_conversation_key) {
+      skip_app_conversation_load_ref.current = null;
+      hydrated_app_conversation_key_ref.current = next_conversation_key;
+      app_conversation.bind_conversation_key(next_conversation_key);
+      return;
+    }
+
+    if (!controller.is_app_conversation_open) {
+      return;
+    }
+
+    if (hydrated_app_conversation_key_ref.current === next_conversation_key) {
+      return;
+    }
+
+    hydrated_app_conversation_key_ref.current = next_conversation_key;
+    app_conversation.bind_conversation_key(next_conversation_key);
+    void app_conversation.load_conversation(next_conversation_key);
+  }, [
+    app_conversation,
+    controller.app_conversation_key,
+    controller.is_app_conversation_open,
+  ]);
+
+  const latest_user_prompt = useMemo(() => {
+    const latest_user_message = [...app_conversation.messages]
+      .reverse()
+      .find((message): message is UserMessage => message.role === "user");
+    return latest_user_message?.content ?? "";
+  }, [app_conversation.messages]);
+
+  const conversations_with_owners = useMemo(() => (
+    controller.conversations
+      .map((conversation) => ({
+        conversation,
+        owner: conversation.agent_id
+          ? controller.agents.find((agent) => agent.agent_id === conversation.agent_id) ?? null
+          : null,
+      }))
+      .sort((left, right) => right.conversation.last_activity_at - left.conversation.last_activity_at)
+  ), [controller.agents, controller.conversations]);
+
+  const ensure_app_conversation_key = useCallback(async () => {
+    if (controller.app_conversation_key) {
+      app_conversation.bind_conversation_key(controller.app_conversation_key);
+      return controller.app_conversation_key;
+    }
+
+    const existing_app_conversation = controller.conversations
+      .filter((conversation) => conversation.agent_id === APP_AGENT_ID)
+      .sort((left, right) => right.last_activity_at - left.last_activity_at)[0];
+
+    if (existing_app_conversation) {
+      controller.set_app_conversation_key(existing_app_conversation.session_key);
+      app_conversation.bind_conversation_key(existing_app_conversation.session_key);
+      return existing_app_conversation.session_key;
+    }
+
+    const created_conversation = await createConversation(APP_CONVERSATION_SEED_KEY, {
+      agent_id: APP_AGENT_ID,
+      title: "真格 App",
+    });
+    skip_app_conversation_load_ref.current = created_conversation.session_key;
+    controller.set_app_conversation_key(created_conversation.session_key);
+    app_conversation.bind_conversation_key(created_conversation.session_key);
+    return created_conversation.session_key;
+  }, [app_conversation, controller]);
+
+  const handle_submit_app_conversation = useCallback(async (next_prompt: string) => {
+    const trimmed_prompt = next_prompt.trim();
+    if (!trimmed_prompt) {
+      return;
+    }
+
+    const conversation_key = await ensure_app_conversation_key();
+    app_conversation.bind_conversation_key(conversation_key);
+    await app_conversation.send_message(trimmed_prompt);
+    controller.set_app_conversation_draft("");
+    controller.clear_route_app_prompt();
+  }, [app_conversation, controller, ensure_app_conversation_key]);
+
+  useEffect(() => {
+    if (app_conversation.ws_state !== "connected") {
+      return;
+    }
+    if (!controller.route_app_prompt) {
+      consumed_route_prompt_ref.current = null;
+      return;
+    }
+    if (consumed_route_prompt_ref.current === controller.route_app_prompt) {
+      return;
+    }
+    consumed_route_prompt_ref.current = controller.route_app_prompt;
+    void handle_submit_app_conversation(controller.route_app_prompt);
+  }, [
+    app_conversation.ws_state,
+    controller.route_app_prompt,
+    handle_submit_app_conversation,
+  ]);
+
+  const handle_select_agent = useCallback((agent_id: string) => {
     controller.handle_select_agent(agent_id);
     navigate(AppRouteBuilders.room(agent_id));
   }, [controller, navigate]);
 
-  const handleOpenConversation = useCallback((conversation_id: string, agent_id?: string) => {
+  const handle_open_conversation = useCallback((conversation_id: string, agent_id?: string) => {
     controller.handle_open_conversation_from_launcher(conversation_id, agent_id);
     const route_room_id = agent_id ?? controller.current_agent_id;
     if (route_room_id) {
@@ -53,56 +169,35 @@ export function LauncherPage() {
     }
   }, [controller, navigate]);
 
-  const handleOpenContactsPage = useCallback(() => {
+  const handle_open_contacts_page = useCallback(() => {
     navigate(AppRouteBuilders.contacts());
   }, [navigate]);
 
-  const handleOpenContactsPageFromApp = useCallback(() => {
-    push_app_message("正在打开 Contacts。");
-    handleOpenContactsPage();
-  }, [handleOpenContactsPage, push_app_message]);
-
-  const conversations_with_owners = controller.conversations
-    .map((conversation) => ({
-      conversation,
-      owner: conversation.agent_id
-        ? controller.agents.find((agent) => agent.agent_id === conversation.agent_id) ?? null
-        : null,
-    }))
-    .sort((left, right) => right.conversation.last_activity_at - left.conversation.last_activity_at);
-
-  const handleCreateRoom = useCallback(() => {
+  const handle_create_room = useCallback(() => {
     const next_room_title = build_room_title_from_prompt(latest_user_prompt);
-    push_app_message("我会先创建一个新的协作 room，并在完成后直接带你进入第一条对话。");
     set_pending_room_title(next_room_title);
     set_should_bootstrap_room_after_create(true);
     controller.handle_open_create_agent();
-  }, [controller, latest_user_prompt, push_app_message]);
+  }, [controller, latest_user_prompt]);
 
-  const handleCreateAgent = useCallback(() => {
+  const handle_create_agent = useCallback(() => {
     set_pending_room_title("");
     set_should_bootstrap_room_after_create(false);
     controller.handle_open_create_agent();
   }, [controller]);
 
-  const handleOpenConversationFromApp = useCallback((conversation_id: string, agent_id?: string) => {
-    const matched_conversation = conversations_with_owners.find(
-      ({ conversation }) => conversation.session_key === conversation_id,
-    );
-    const title = matched_conversation?.conversation.title || "最近协作";
-    push_app_message(`正在带你回到“${title}”，继续已有协作。`);
-    handleOpenConversation(conversation_id, agent_id);
-  }, [conversations_with_owners, handleOpenConversation, push_app_message]);
+  const handle_clear_app_conversation = useCallback(async () => {
+    if (controller.app_conversation_key) {
+      await deleteConversation(controller.app_conversation_key);
+    }
+    hydrated_app_conversation_key_ref.current = null;
+    skip_app_conversation_load_ref.current = null;
+    controller.clear_app_conversation_key();
+    app_conversation.clear_conversation();
+    controller.set_app_conversation_draft("");
+  }, [app_conversation, controller]);
 
-  const handleOpenAgentRoomFromApp = useCallback((agent_id: string) => {
-    const matched_agent = controller.agents.find((agent) => agent.agent_id === agent_id);
-    push_app_message(
-      `正在带你进入 ${matched_agent?.name ?? "目标成员"} 的协作 room。`,
-    );
-    handleSelectAgent(agent_id);
-  }, [controller.agents, handleSelectAgent, push_app_message]);
-
-  const handleSaveAgentOptions = useCallback(async (title: string, options: AgentConfigOptions) => {
+  const handle_save_agent_options = useCallback(async (title: string, options: AgentConfigOptions) => {
     const should_open_room_after_create = controller.dialog_mode === "create";
     await controller.handle_save_agent_options(title, options);
 
@@ -132,11 +227,10 @@ export function LauncherPage() {
       agent_id: next_agent_id,
     });
     conversation_store.set_current_conversation(next_conversation_id);
-    push_app_message(`新的协作 room 已创建完成，正在进入 ${title} 的第一条对话。`);
     set_pending_room_title("");
     set_should_bootstrap_room_after_create(false);
     navigate(AppRouteBuilders.room_conversation(next_agent_id, next_conversation_id));
-  }, [controller, navigate, push_app_message, should_bootstrap_room_after_create]);
+  }, [controller, navigate, should_bootstrap_room_after_create]);
 
   if (!controller.is_hydrated) {
     return <AppLoadingScreen />;
@@ -170,11 +264,11 @@ export function LauncherPage() {
             agents={controller.agents}
             conversations={controller.conversations}
             current_agent_id={controller.current_agent_id}
-            on_open_contacts_page={handleOpenContactsPage}
+            on_open_contacts_page={handle_open_contacts_page}
             on_open_app_conversation={controller.open_app_conversation}
-            on_select_agent={handleSelectAgent}
-            on_open_conversation={handleOpenConversation}
-            on_create_agent={handleCreateAgent}
+            on_select_agent={handle_select_agent}
+            on_open_conversation={handle_open_conversation}
+            on_create_agent={handle_create_agent}
             on_edit_agent={controller.handle_edit_agent}
             on_delete_agent={controller.handle_delete_agent}
             surface={controller.surface}
@@ -182,7 +276,7 @@ export function LauncherPage() {
         </div>
 
         {controller.is_app_conversation_open ? (
-          <div className="absolute inset-x-3 bottom-4 top-[96px] z-40 lg:static lg:inset-auto lg:block lg:w-[380px] lg:shrink-0 lg:pb-8 lg:pt-4">
+          <div className="absolute inset-x-3 bottom-4 top-[96px] z-40 lg:static lg:inset-auto lg:block lg:w-[420px] lg:shrink-0 lg:pb-8 lg:pt-4">
             <div
               className="launcher-app-panel-shell h-full"
               data-open={controller.is_app_conversation_open ? "true" : "false"}
@@ -190,18 +284,26 @@ export function LauncherPage() {
               <LauncherAppConversationPanel
                 agents={controller.agents}
                 app_conversation_draft={controller.app_conversation_draft}
-              app_conversation_messages={controller.app_conversation_messages}
-              conversations_with_owners={conversations_with_owners}
-              on_create_room={handleCreateRoom}
-              on_clear_conversation={controller.clear_app_conversation}
+                app_conversation_messages={app_conversation.messages}
+                conversations_with_owners={conversations_with_owners}
+                error={app_conversation.error}
+                is_loading={app_conversation.is_loading}
+                ws_state={app_conversation.ws_state}
+                on_create_room={handle_create_room}
+                on_clear_conversation={handle_clear_app_conversation}
                 on_change_draft={controller.set_app_conversation_draft}
                 on_close={controller.close_app_conversation}
-              on_open_agent_room={handleOpenAgentRoomFromApp}
-              on_open_conversation={handleOpenConversationFromApp}
-              on_open_contacts_page={handleOpenContactsPageFromApp}
-              on_submit={controller.submit_app_conversation}
-              suggested_room_title={build_room_title_from_prompt(latest_user_prompt)}
-            />
+                on_delete_round={app_conversation.delete_round}
+                on_open_agent_room={handle_select_agent}
+                on_open_conversation={handle_open_conversation}
+                on_open_contacts_page={handle_open_contacts_page}
+                on_permission_response={app_conversation.send_permission_response}
+                on_regenerate_round={app_conversation.regenerate}
+                on_stop_generation={app_conversation.stop_generation}
+                on_submit={handle_submit_app_conversation}
+                pending_permission={app_conversation.pending_permission}
+                suggested_room_title={build_room_title_from_prompt(latest_user_prompt)}
+              />
             </div>
           </div>
         ) : null}
@@ -215,7 +317,7 @@ export function LauncherPage() {
           set_should_bootstrap_room_after_create(false);
           controller.set_is_dialog_open(false);
         }}
-        on_save={handleSaveAgentOptions}
+        on_save={handle_save_agent_options}
         on_validate_name={controller.handle_validate_agent_name}
         initial_title={
           should_bootstrap_room_after_create

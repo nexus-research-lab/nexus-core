@@ -1,13 +1,5 @@
-export interface AppConversationMessage {
-  body: string;
-  created_at: number;
-  id: string;
-  role: "app" | "user";
-}
-
 export interface AppConversationState {
-  messages: AppConversationMessage[];
-  clear_messages: () => void;
-  push_app_message: (message: string) => void;
-  submit_prompt: (prompt: string) => void;
+  conversation_key: string | null;
+  set_conversation_key: (conversation_key: string | null) => void;
+  clear_conversation_key: () => void;
 }

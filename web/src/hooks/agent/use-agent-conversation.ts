@@ -161,6 +161,14 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
     clearAgentConversation(lifecycle_context);
   }, [lifecycle_context]);
 
+  const bind_conversation_key = useCallback((key: string | null) => {
+    active_conversation_key_ref.current = key;
+    set_session_key(key);
+    if (!key) {
+      set_pending_permission(null);
+    }
+  }, []);
+
   const reset_conversation = useCallback(() => {
     resetAgentConversation(lifecycle_context);
   }, [lifecycle_context]);
@@ -169,9 +177,11 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
     error,
     messages,
     session_key,
+    ws_state,
     is_loading,
     pending_permission,
     send_message,
+    bind_conversation_key,
     start_conversation,
     load_conversation,
     clear_conversation,
