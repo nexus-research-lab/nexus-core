@@ -59,7 +59,7 @@ export function RoomRouteEntry({
 
           <button
             className="workspace-card rounded-[24px] px-4 py-4 text-left transition hover:bg-white/20"
-            onClick={() => navigate(AppRouteBuilders.launcher_app("帮我整理一个新的协作 room"))}
+            onClick={() => navigate(AppRouteBuilders.launcher())}
             type="button"
           >
             <Sparkles className="h-5 w-5 text-slate-900/78" />
