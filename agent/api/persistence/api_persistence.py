@@ -7,25 +7,16 @@
 # 2026/3/19 00:34   Create
 # =====================================================
 
-"""持久化查询与回填 API。"""
+"""持久化查询 API。"""
 
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
 
 from agent.infra.server.common import resp
 from agent.service.persistence.persistence_service import persistence_service
 
 router = APIRouter(tags=["persistence"])
-
-
-class BackfillResponse(BaseModel):
-    """回填结果。"""
-
-    agents_synced: int = Field(..., description="同步的 Agent 数量")
-    sessions_synced: int = Field(..., description="同步的会话数量")
-    messages_synced: int = Field(..., description="同步的消息数量")
 
 
 @router.get("/persistence/agents")
@@ -73,10 +64,3 @@ async def get_persistent_session_rounds(session_id: str):
     rounds = await persistence_service.get_session_rounds(session_id=session_id)
     return resp.ok(resp.Resp(data=[item.model_dump(mode="json") for item in rounds]))
 
-
-@router.post("/persistence/backfill", response_model=BackfillResponse)
-async def backfill_persistence():
-    """执行一次旧数据到新库的回填。"""
-    result = await persistence_service.backfill()
-    payload = BackfillResponse(**result)
-    return resp.ok(resp.Resp(data=payload.model_dump(mode="json")))
