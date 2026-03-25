@@ -11,6 +11,8 @@
 
 from typing import List, Optional
 
+from sqlalchemy.exc import IntegrityError
+
 from agent.config.config import settings
 from agent.schema.model_agent import AAgent, ValidateAgentNameResponse
 from agent.schema.model_cost import AgentCostSummary
@@ -109,8 +111,12 @@ class AgentService:
             existing = await agent_persistence_service.get_agent_aggregate(agent.agent_id)
             aggregate = build_agent_aggregate_from_legacy(agent)
             if existing is None:
-                await agent_persistence_service.create_agent_aggregate(aggregate)
-                return
+                try:
+                    await agent_persistence_service.create_agent_aggregate(aggregate)
+                    return
+                except IntegrityError:
+                    # Agent 行已存在但聚合不完整（profile/runtime 缺失），回退到更新。
+                    pass
 
             await agent_persistence_service.update_agent_entity(
                 agent.agent_id,

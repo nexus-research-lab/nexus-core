@@ -20,12 +20,11 @@ from agent.schema.model_chat_persistence import (
     RoomAggregate,
     RoundRecord,
 )
-from agent.service.persistence.backfill_service import persistence_backfill_service
 from agent.service.persistence.query_service import persistence_query_service
 
 
 class PersistenceService:
-    """负责编排新持久化层查询与回填。"""
+    """负责编排新持久化层查询。"""
 
     async def list_agents(self) -> list[AgentAggregate]:
         """列出新库中的活跃 Agent。"""
@@ -62,16 +61,6 @@ class PersistenceService:
         """读取会话下的轮次索引。"""
         return await persistence_query_service.get_session_rounds(session_id)
 
-    async def backfill(self) -> dict[str, int]:
-        """执行一次旧数据回填。"""
-        agents_synced = await persistence_backfill_service.sync_all_agents()
-        sessions_synced = await persistence_backfill_service.sync_all_dm_sessions()
-        messages_synced = await persistence_backfill_service.sync_all_messages()
-        return {
-            "agents_synced": agents_synced,
-            "sessions_synced": sessions_synced,
-            "messages_synced": messages_synced,
-        }
 
 
 persistence_service = PersistenceService()
