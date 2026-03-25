@@ -1,7 +1,7 @@
 # !/usr/bin/env python
 # -*- coding: utf-8 -*-
 # =====================================================
-# @File   ：main_agent_orchestration_cli.py
+# @File   ：cli.py
 # @Date   ：2026/03/26 01:29
 # @Author ：leemysw
 # 2026/03/26 01:29   Create
@@ -18,10 +18,18 @@ import sys
 from pathlib import Path
 from typing import Any
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from agent.schema.model_main_agent_cli import (  # noqa: E402
+    AddRoomMemberCommand,
+    CreateAgentCommand,
+    CreateRoomCommand,
+    ListAgentsCommand,
+    ListRoomsCommand,
+    ValidateAgentNameCommand,
+)
 from agent.service.agent.main_agent_orchestration_service import (  # noqa: E402
     main_agent_orchestration_service,
 )
@@ -97,29 +105,43 @@ class MainAgentOrchestrationCli:
 
     async def _execute(self, args: argparse.Namespace) -> Any:
         if args.command == "list_agents":
+            command = ListAgentsCommand(include_main=args.include_main)
             return await main_agent_orchestration_service.list_agents(
-                include_main=args.include_main,
+                include_main=command.include_main,
             )
         if args.command == "validate_agent_name":
-            return await main_agent_orchestration_service.validate_agent_name(args.name)
+            command = ValidateAgentNameCommand(name=args.name)
+            return await main_agent_orchestration_service.validate_agent_name(command.name)
         if args.command == "create_agent":
+            command = CreateAgentCommand(name=args.name, model=args.model)
             return await main_agent_orchestration_service.create_agent(
-                name=args.name,
-                model=args.model,
+                name=command.name,
+                model=command.model,
             )
         if args.command == "list_rooms":
-            return await main_agent_orchestration_service.list_rooms(limit=args.limit)
+            command = ListRoomsCommand(limit=args.limit)
+            return await main_agent_orchestration_service.list_rooms(limit=command.limit)
         if args.command == "create_room":
-            return await main_agent_orchestration_service.create_room(
+            command = CreateRoomCommand(
                 agent_ids=self._parse_agent_ids(args.agent_ids),
                 name=args.name,
                 title=args.title,
                 description=args.description,
             )
+            return await main_agent_orchestration_service.create_room(
+                agent_ids=command.agent_ids,
+                name=command.name,
+                title=command.title,
+                description=command.description,
+            )
         if args.command == "add_room_member":
-            return await main_agent_orchestration_service.add_room_member(
+            command = AddRoomMemberCommand(
                 room_id=args.room_id,
                 agent_id=args.agent_id,
+            )
+            return await main_agent_orchestration_service.add_room_member(
+                room_id=command.room_id,
+                agent_id=command.agent_id,
             )
         raise ValueError(f"不支持的命令: {args.command}")
 
