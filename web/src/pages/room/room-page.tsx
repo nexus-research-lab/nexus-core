@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { AppRouteBuilders } from "@/app/router/route-paths";
+import { ProtocolRoomShell } from "@/features/protocol-room/protocol-room-shell";
 import { RoomWorkspaceShell } from "@/features/room-conversation/room-workspace-shell";
 import { RoomRouteEntry } from "@/features/room-conversation/room-route-entry";
 import { useRoomPageController } from "@/hooks/use-room-page-controller";
@@ -46,8 +47,35 @@ export function RoomPage() {
     }
   }, [controller, navigate, params.room_id]);
 
-  if (!controller.is_hydrated) {
+  if (!controller.is_hydrated || (params.room_id && !controller.is_checked)) {
     return <AppLoadingScreen />;
+  }
+
+  if (controller.is_protocol_room && controller.room) {
+    return (
+      <AppStage>
+        <ProtocolRoomShell
+          detail={controller.detail}
+          error={controller.error}
+          is_loading={controller.is_room_loading || controller.is_run_loading}
+          on_control={controller.handle_control}
+          on_create_run={controller.handle_create_run}
+          on_refresh={controller.handle_refresh}
+          on_select_channel={controller.handle_select_channel}
+          on_select_run={controller.handle_select_run}
+          on_set_viewer={controller.handle_set_viewer}
+          on_submit_action={controller.handle_submit_action}
+          pending_requests={controller.pending_requests}
+          room={controller.room}
+          room_agent_members={controller.room_agent_members}
+          runs={controller.runs}
+          selected_channel={controller.selected_channel}
+          selected_channel_events={controller.selected_channel_events}
+          selected_channel_id={controller.selected_channel_id}
+          viewer_agent_id={controller.viewer_agent_id}
+        />
+      </AppStage>
+    );
   }
 
   if (controller.current_agent) {

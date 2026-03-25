@@ -82,6 +82,9 @@ class Message(BaseModel):
     agent_id: str = Field(default="", description="Agent ID")
     round_id: str = Field(..., description="轮次 ID")
     session_id: Optional[str] = Field(default=None, description="SDK Session ID")
+    room_id: Optional[str] = Field(default=None, description="所属 room")
+    protocol_run_id: Optional[str] = Field(default=None, description="所属 protocol run")
+    channel_id: Optional[str] = Field(default=None, description="所属 channel")
     parent_id: Optional[str] = Field(default=None, description="父消息 ID")
     role: Literal["user", "assistant", "system", "result"] = Field(..., description="消息角色")
     timestamp: int = Field(default_factory=current_timestamp_ms, description="毫秒时间戳")
@@ -90,6 +93,12 @@ class Message(BaseModel):
     model: Optional[str] = Field(default=None, description="模型名称")
     usage: Optional[Usage] = Field(default=None, description="用量信息")
     is_complete: bool = Field(default=True, description="消息是否已完成")
+    visibility: Optional[Literal["public", "scoped", "direct", "system"]] = Field(
+        default=None,
+        description="消息可见性",
+    )
+    audience_agent_ids: list[str] = Field(default_factory=list, description="可见 audience")
+    message_kind: Optional[str] = Field(default=None, description="消息语义类型")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="系统元数据")
     subtype: Optional[Literal["success", "error", "interrupted"]] = Field(
         default=None,
@@ -135,6 +144,9 @@ class StreamMessage(BaseModel):
     agent_id: str = Field(default="", description="Agent ID")
     round_id: str = Field(..., description="轮次 ID")
     session_id: Optional[str] = Field(default=None, description="SDK Session ID")
+    room_id: Optional[str] = Field(default=None, description="所属 room")
+    protocol_run_id: Optional[str] = Field(default=None, description="所属 protocol run")
+    channel_id: Optional[str] = Field(default=None, description="所属 channel")
     type: Literal[
         "message_start",
         "content_block_start",
@@ -146,6 +158,12 @@ class StreamMessage(BaseModel):
     content_block: Optional[ContentBlock] = Field(default=None, description="内容块快照")
     message: Dict[str, Any] = Field(default_factory=dict, description="消息级别元数据")
     usage: Optional[Usage] = Field(default=None, description="用量信息")
+    visibility: Optional[Literal["public", "scoped", "direct", "system"]] = Field(
+        default=None,
+        description="消息可见性",
+    )
+    audience_agent_ids: list[str] = Field(default_factory=list, description="可见 audience")
+    message_kind: Optional[str] = Field(default=None, description="消息语义类型")
     timestamp: int = Field(default_factory=current_timestamp_ms, description="毫秒时间戳")
 
     model_config = {"extra": "allow"}
@@ -176,6 +194,15 @@ class EventMessage(BaseModel):
     session_key: Optional[str] = Field(default=None, description="会话路由键")
     agent_id: Optional[str] = Field(default=None, description="Agent ID")
     session_id: Optional[str] = Field(default=None, description="SDK Session ID")
+    room_id: Optional[str] = Field(default=None, description="所属 room")
+    protocol_run_id: Optional[str] = Field(default=None, description="所属 protocol run")
+    channel_id: Optional[str] = Field(default=None, description="所属 channel")
+    visibility: Optional[Literal["public", "scoped", "direct", "system"]] = Field(
+        default=None,
+        description="事件可见性",
+    )
+    audience_agent_ids: list[str] = Field(default_factory=list, description="可见 audience")
+    message_kind: Optional[str] = Field(default=None, description="消息语义类型")
     data: Dict[str, Any] = Field(default_factory=dict, description="事件载荷")
     timestamp: int = Field(default_factory=current_timestamp_ms, description="毫秒时间戳")
 

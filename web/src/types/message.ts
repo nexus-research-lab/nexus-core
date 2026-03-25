@@ -45,9 +45,15 @@ export interface BaseMessage {
   agent_id: string;
   round_id: string;
   session_id?: SessionId;
+  room_id?: string | null;
+  protocol_run_id?: string | null;
+  channel_id?: string | null;
   parent_id?: string;
   role: MessageRole;
   timestamp: number;
+  visibility?: 'public' | 'scoped' | 'direct' | 'system' | null;
+  audience_agent_ids?: string[];
+  message_kind?: string | null;
 }
 
 export interface UserMessage extends BaseMessage {
@@ -105,6 +111,9 @@ export interface StreamMessage {
   agent_id: string;
   round_id: string;
   session_id?: SessionId;
+  room_id?: string | null;
+  protocol_run_id?: string | null;
+  channel_id?: string | null;
   type: StreamMessageType;
   index?: number;
   content_block?: ContentBlock;
@@ -113,14 +122,38 @@ export interface StreamMessage {
     stop_reason?: AssistantMessage['stop_reason'];
   };
   usage?: Usage;
+  visibility?: 'public' | 'scoped' | 'direct' | 'system' | null;
+  audience_agent_ids?: string[];
+  message_kind?: string | null;
   timestamp: number;
 }
 
 export interface EventMessage {
-  event_type: 'message' | 'stream' | 'permission_request' | 'workspace_event' | 'pong' | 'error';
+  event_type:
+    | 'message'
+    | 'stream'
+    | 'permission_request'
+    | 'workspace_event'
+    | 'pong'
+    | 'error'
+    | 'room_state'
+    | 'phase_started'
+    | 'turn_opened'
+    | 'action_requested'
+    | 'action_submitted'
+    | 'phase_resolved'
+    | 'run_paused'
+    | 'run_resumed'
+    | 'run_completed';
   session_key?: string | null;
   agent_id?: string | null;
   session_id?: SessionId | null;
+  room_id?: string | null;
+  protocol_run_id?: string | null;
+  channel_id?: string | null;
+  visibility?: 'public' | 'scoped' | 'direct' | 'system' | null;
+  audience_agent_ids?: string[];
+  message_kind?: string | null;
   data: any;
   timestamp: number;
 }

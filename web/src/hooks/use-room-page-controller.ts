@@ -4,12 +4,14 @@ import { useEffect } from "react";
 
 import { useHomeAgentConversationController } from "@/hooks/use-home-agent-conversation-controller";
 import { useHomeWorkspaceController } from "@/hooks/use-home-workspace-controller";
+import { useProtocolRoomController } from "@/hooks/use-protocol-room-controller";
 import { RoomPageControllerOptions } from "@/types/route";
 
 export function useRoomPageController({
   room_id,
   conversation_id,
 }: RoomPageControllerOptions) {
+  const protocol_room = useProtocolRoomController({ room_id });
   const agent_conversation = useHomeAgentConversationController();
   const {
     agents,
@@ -32,6 +34,10 @@ export function useRoomPageController({
 
   useEffect(() => {
     if (!is_hydrated) {
+      return;
+    }
+
+    if (protocol_room.is_protocol_room) {
       return;
     }
 
@@ -68,10 +74,12 @@ export function useRoomPageController({
     handle_select_agent,
     handle_select_conversation,
     is_hydrated,
+    protocol_room.is_protocol_room,
     room_id,
   ]);
 
   return {
+    ...protocol_room,
     ...agent_conversation,
     ...workspace,
     current_agent,

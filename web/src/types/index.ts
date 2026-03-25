@@ -33,3 +33,5 @@ export * from './websocket';
 export * from './launcher';
 export * from './route';
 export * from './workspace';
+export * from './room';
+export * from './protocol-room';
