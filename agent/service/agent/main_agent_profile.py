@@ -19,7 +19,7 @@ class MainAgentProfile:
     """负责描述系统保留 main agent 的固定身份与默认运行参数。"""
 
     AGENT_ID = "main"
-    AGENT_NAME = "main"
+    AGENT_NAME = "nexus"
     ALLOWED_TOOLS = [
         "AskUserQuestion",
         "Bash",

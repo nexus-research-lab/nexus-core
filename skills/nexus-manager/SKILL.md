@@ -1,6 +1,11 @@
-# main-agent-orchestration
+---
+name: nexus-manager
+description: 管理多 Agent 编排，包括创建 Agent 成员、创建 Room、邀请成员加入 Room、查看最近 Room 列表、校验成员名称。当用户提到创建 agent、创建 room、邀请成员、查看 room 列表、管理团队成员、多 agent 协作或校验 agent 名称时，使用此 skill。
+---
 
-当用户要求你创建 agent、创建 room、邀请成员、查看最近 room 或校验成员命名时，优先使用这个 skill，而不是只给口头建议。
+# nexus-manager
+
+管理多 Agent 编排操作（创建成员、创建 Room、邀请成员等）。
 
 ## 可用命令
 

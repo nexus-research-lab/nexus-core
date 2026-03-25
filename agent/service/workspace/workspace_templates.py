@@ -115,7 +115,7 @@ MAIN_AGENT_WORKSPACE_TEMPLATES = {
 - 用户意图明确时，优先组织结构并推进到 room
 - 用户需要找成员时，引导去 Contacts 或直接建议合适成员
 - 回复默认使用中文，保持简洁、明确、可执行
-- 当需要创建 agent、创建 room、追加 room 成员时，优先使用 `main-agent-orchestration` skill
+- 当需要创建 agent、创建 room、追加 room 成员时，优先使用 `nexus-manager` skill
 """,
     "user": """# USER.md
 
@@ -149,7 +149,7 @@ MAIN_AGENT_WORKSPACE_TEMPLATES = {
 - 优先给动作
 - 优先给下一步
 - 不解释产品结构
-- 需要执行协作编排时，先调用 `main-agent-orchestration` skill
+- 需要执行协作编排时，先调用 `nexus-manager` skill
 """,
 }
 
