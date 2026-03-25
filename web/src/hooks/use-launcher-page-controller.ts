@@ -9,15 +9,22 @@ import { LauncherSearchParams } from "@/types/route";
 
 type LauncherSurface = NonNullable<LauncherSearchParams["surface"]>;
 
-function buildLauncherSearchParams(search_params: LauncherSearchParams) {
-  const next_search_params = new URLSearchParams();
+function buildLauncherSearchParams(
+  search_params: LauncherSearchParams,
+  current_search_params: URLSearchParams,
+) {
+  const next_search_params = new URLSearchParams(current_search_params);
 
   if (search_params.surface && search_params.surface !== "launcher") {
     next_search_params.set("surface", search_params.surface);
+  } else {
+    next_search_params.delete("surface");
   }
 
   if (search_params.app_prompt?.trim()) {
     next_search_params.set("app_prompt", search_params.app_prompt.trim());
+  } else {
+    next_search_params.delete("app_prompt");
   }
 
   return next_search_params;
@@ -40,11 +47,21 @@ export function useLauncherPageController() {
     set_app_conversation_draft(route_app_prompt);
   }, [route_app_prompt]);
 
+  useEffect(() => {
+    if (search_params.get("blobDebug") !== "1" || surface === "app") {
+      return;
+    }
+
+    const next_search_params = new URLSearchParams(search_params);
+    next_search_params.set("surface", "app");
+    set_search_params(next_search_params, { replace: true });
+  }, [search_params, set_search_params, surface]);
+
   const is_app_conversation_open = surface === "app";
 
   const set_launcher_search = useCallback((next_search: LauncherSearchParams) => {
-    set_search_params(buildLauncherSearchParams(next_search), { replace: true });
-  }, [set_search_params]);
+    set_search_params(buildLauncherSearchParams(next_search, search_params), { replace: true });
+  }, [search_params, set_search_params]);
 
   const open_app_conversation = useCallback((next_prompt?: string) => {
     const trimmed_prompt = next_prompt?.trim() ?? "";
