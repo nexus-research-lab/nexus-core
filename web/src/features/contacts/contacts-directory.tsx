@@ -1,4 +1,4 @@
-import { ArrowRight, Bot, Sparkles, Users } from "lucide-react";
+import { ArrowRight, Bot, Users } from "lucide-react";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -140,17 +140,6 @@ export function ContactsDirectory({
                 type="button"
               >
                 <p className="text-sm font-semibold text-slate-950/86">发起 1v1 协作</p>
-              </button>
-
-              <button
-                className="workspace-card rounded-[24px] px-4 py-4 text-left transition hover:bg-white/20"
-                onClick={() => navigate(AppRouteBuilders.launcher_app(`帮我组织和 ${selected_agent.name} 的协作`))}
-                type="button"
-              >
-                <p className="flex items-center gap-2 text-sm font-semibold text-slate-950/86">
-                  <Sparkles className="h-4 w-4" />
-                  交给Nexus
-                </p>
               </button>
             </div>
           </>
