@@ -34,10 +34,11 @@ from agent.utils.logger import logger
 class InteractivePermissionStrategy(PermissionStrategy):
     """交互式权限策略。"""
 
+    _permission_requests: Dict[str, PendingPermissionRequest] = {}
+    _permission_responses: Dict[str, Dict[str, Any]] = {}
+
     def __init__(self, sender: MessageSender):
         self.sender = sender
-        self._permission_requests: Dict[str, PendingPermissionRequest] = {}
-        self._permission_responses: Dict[str, Dict[str, Any]] = {}
         self._is_closed = False
 
     async def request_permission(
@@ -61,7 +62,7 @@ class InteractivePermissionStrategy(PermissionStrategy):
             event=asyncio.Event(),
             expires_at=PermissionRequestPresenter.build_expiry(timeout_seconds),
         )
-        self._permission_requests[request_id] = pending_request
+        self.__class__._permission_requests[request_id] = pending_request
 
         suggestion_updates = PermissionUpdateCodec.serialize_updates(
             context.suggestions if context else None
@@ -90,7 +91,7 @@ class InteractivePermissionStrategy(PermissionStrategy):
 
         try:
             await asyncio.wait_for(pending_request.event.wait(), timeout=timeout_seconds)
-            response = self._permission_responses.get(request_id, {})
+            response = self.__class__._permission_responses.get(request_id, {})
             return self._build_permission_result(tool_name, input_data, response)
         except asyncio.TimeoutError:
             logger.warning(f"⏰ 权限请求超时: {tool_name}")
@@ -101,7 +102,7 @@ class InteractivePermissionStrategy(PermissionStrategy):
     def handle_permission_response(self, message: Dict[str, Any]) -> bool:
         """处理前端权限响应。"""
         request_id = message.get("request_id")
-        if not request_id or self._is_closed:
+        if not request_id:
             return False
 
         response_data = {
@@ -118,31 +119,29 @@ class InteractivePermissionStrategy(PermissionStrategy):
         if isinstance(updated_permissions, list) and updated_permissions:
             response_data["updated_permissions"] = updated_permissions
 
-        self._permission_responses[request_id] = response_data
-        pending_request = self._permission_requests.get(request_id)
+        self.__class__._permission_responses[request_id] = response_data
+        pending_request = self.__class__._permission_requests.get(request_id)
         if pending_request:
             pending_request.event.set()
             return True
         return False
 
     def close(self) -> None:
-        """关闭权限策略并唤醒所有等待请求。"""
+        """关闭当前连接的权限策略。
+
+        这里不再直接拒绝所有等待中的请求。
+        AskUserQuestion/权限确认在前端已经展示后，用户可能在 WebSocket 重连后才提交回答，
+        因此请求需要继续保留到超时或真正收到响应。
+        """
         if self._is_closed:
             return
 
         self._is_closed = True
-        for request_id, pending_request in list(self._permission_requests.items()):
-            self._permission_responses[request_id] = {
-                "decision": "deny",
-                "message": "Permission channel closed",
-                "interrupt": True,
-            }
-            pending_request.event.set()
 
     def _cleanup_request(self, request_id: str) -> None:
         """清理单个权限请求。"""
-        self._permission_requests.pop(request_id, None)
-        self._permission_responses.pop(request_id, None)
+        self.__class__._permission_requests.pop(request_id, None)
+        self.__class__._permission_responses.pop(request_id, None)
 
     def _build_permission_result(
             self,
@@ -161,8 +160,11 @@ class InteractivePermissionStrategy(PermissionStrategy):
                 questions = input_data.get("questions", [])
                 answers = {}
                 for answer in user_answers:
-                    question_idx = answer.get("questionIndex", 0)
-                    selected_options = answer.get("selectedOptions", [])
+                    question_idx = answer.get("question_index", answer.get("questionIndex", 0))
+                    selected_options = answer.get(
+                        "selected_options",
+                        answer.get("selectedOptions", []),
+                    )
                     if 0 <= question_idx < len(questions):
                         question_text = questions[question_idx].get("question", "")
                         answers[question_text] = ", ".join(selected_options)
