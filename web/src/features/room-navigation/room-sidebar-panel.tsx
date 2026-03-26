@@ -45,6 +45,8 @@ interface RoomSidebarPanelProps {
   agent: Agent;
   room_name: string;
   room_type: string;
+  show_conversations?: boolean;
+  show_members?: boolean;
   current_agent_id: string | null;
   conversations: Conversation[];
   current_conversation_id: string | null;
@@ -107,6 +109,8 @@ export function RoomSidebarPanel({
   agent,
   room_name,
   room_type,
+  show_conversations = true,
+  show_members = true,
   current_agent_id,
   conversations,
   current_conversation_id,
@@ -531,6 +535,7 @@ export function RoomSidebarPanel({
           contextualFiles={contextual_files}
           conversations={conversations}
           current_conversation_id={current_conversation_id}
+          show_conversations={show_conversations}
           file_explorer_content={
             directory_tree.length === 0 ? (
               <div className="workspace-card rounded-[22px] px-3 py-4 text-sm text-slate-700/58">
@@ -552,15 +557,17 @@ export function RoomSidebarPanel({
           on_toggle_file_explorer={() => setShowFileExplorer((current) => !current)}
         />
 
-        <RoomMembersSection
-          available_agents={available_room_agents}
-          can_manage_members={room_type === "room"}
-          current_agent_id={current_agent_id}
-          members={visible_agents}
-          on_add_member={on_add_room_member}
-          on_remove_member={on_remove_room_member}
-          on_select_agent={on_select_agent}
-        />
+        {show_members ? (
+          <RoomMembersSection
+            available_agents={available_room_agents}
+            can_manage_members={room_type === "room"}
+            current_agent_id={current_agent_id}
+            members={visible_agents}
+            on_add_member={on_add_room_member}
+            on_remove_member={on_remove_room_member}
+            on_select_agent={on_select_agent}
+          />
+        ) : null}
       </div>
 
       <PromptDialog

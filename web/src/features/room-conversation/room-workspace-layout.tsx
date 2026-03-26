@@ -13,9 +13,14 @@ import {
 import { cn } from "@/lib/utils";
 import { Agent } from "@/types/agent";
 import { Conversation, ConversationSnapshotPayload } from "@/types/conversation";
+import { RoomSurfaceTabKey } from "@/types/room-surface";
 import { TodoItem } from "@/types/todo";
 
+import { RoomAgentAboutView } from "./room-agent-about-view";
 import { RoomChatPanel } from "./room-chat-panel";
+import { RoomConversationHeader } from "./room-conversation-header";
+import { RoomConversationHistoryView } from "./room-conversation-history-view";
+import { RoomWorkspaceView } from "./room-workspace-view";
 
 interface RoomWorkspaceLayoutProps {
   current_agent: Agent;
@@ -28,12 +33,14 @@ interface RoomWorkspaceLayoutProps {
   current_conversation_id: string | null;
   current_room_conversations: Conversation[];
   active_workspace_path: string | null;
+  active_surface_tab: RoomSurfaceTabKey;
   is_editor_open: boolean;
   editor_width_percent: number;
   is_resizing_editor: boolean;
   is_conversation_busy: boolean;
   current_todos: TodoItem[];
   workspace_split_ref: RefObject<HTMLElement | null>;
+  on_change_surface_tab: (tab: RoomSurfaceTabKey) => void;
   on_select_agent: (agent_id: string) => void;
   on_open_directory: () => void;
   on_edit_agent: (agent_id: string) => void;
@@ -63,12 +70,14 @@ export function RoomWorkspaceLayout({
   current_conversation_id,
   current_room_conversations,
   active_workspace_path,
+  active_surface_tab,
   is_editor_open,
   editor_width_percent,
   is_resizing_editor,
   is_conversation_busy,
   current_todos,
   workspace_split_ref,
+  on_change_surface_tab,
   on_select_agent,
   on_open_directory,
   on_edit_agent,
@@ -86,6 +95,9 @@ export function RoomWorkspaceLayout({
   on_todos_change,
   on_conversation_snapshot_change,
 }: RoomWorkspaceLayoutProps) {
+  const show_members = current_room_type !== "dm";
+  const show_detail_panel = !is_editor_open && active_surface_tab === "chat";
+
   return (
     <div className={cn("flex min-h-0 min-w-0 flex-1", HOME_WORKSPACE_MAIN_GAP_CLASS)}>
       <div className="hidden lg:flex lg:min-h-0 lg:shrink-0 lg:border-r lg:workspace-divider">
@@ -99,6 +111,8 @@ export function RoomWorkspaceLayout({
           current_conversation_id={current_conversation_id}
           room_name={current_room_title}
           room_type={current_room_type}
+          show_conversations={false}
+          show_members={show_members}
           on_add_room_member={on_add_room_member}
           on_create_conversation={on_create_conversation}
           on_delete_conversation={on_delete_conversation}
@@ -130,24 +144,64 @@ export function RoomWorkspaceLayout({
         />
 
         <div className={cn(HOME_CHAT_PANEL_CLASS, !is_editor_open && "min-[1280px]:border-r min-[1280px]:workspace-divider")}>
-          <div className="min-h-0 min-w-0 flex-1">
-            <RoomChatPanel
-              agent_id={current_agent.agent_id}
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+            <RoomConversationHeader
+              active_tab={active_surface_tab}
               current_agent_name={current_agent.name}
+              current_conversation_id={current_conversation_id}
+              current_conversation_title={current_conversation?.title ?? null}
               current_room_title={current_room_title}
-              on_conversation_snapshot_change={on_conversation_snapshot_change}
-              on_create_conversation={on_create_conversation}
-              on_loading_change={on_loading_change}
-              on_open_workspace_file={on_open_workspace_file}
-              on_todos_change={on_todos_change}
-              session_key={current_conversation?.session_key ?? null}
-              session_title={current_conversation?.title ?? null}
+              current_room_type={current_room_type}
+              is_loading={is_conversation_busy}
+              member_count={room_members.length}
+              on_change_tab={on_change_surface_tab}
             />
+
+            <div className="min-h-0 min-w-0 flex-1">
+              {active_surface_tab === "chat" ? (
+                <RoomChatPanel
+                  agent_id={current_agent.agent_id}
+                  current_agent_name={current_agent.name}
+                  current_room_title={current_room_title}
+                  hide_header
+                  on_conversation_snapshot_change={on_conversation_snapshot_change}
+                  on_create_conversation={on_create_conversation}
+                  on_loading_change={on_loading_change}
+                  on_open_workspace_file={on_open_workspace_file}
+                  on_todos_change={on_todos_change}
+                  session_key={current_conversation?.session_key ?? null}
+                  session_title={current_conversation?.title ?? null}
+                />
+              ) : null}
+
+              {active_surface_tab === "history" ? (
+                <RoomConversationHistoryView
+                  conversations={current_room_conversations}
+                  current_conversation_id={current_conversation_id}
+                  current_room_type={current_room_type}
+                  on_create_conversation={on_create_conversation}
+                  on_delete_conversation={on_delete_conversation}
+                  on_select_conversation={on_select_conversation}
+                />
+              ) : null}
+
+              {active_surface_tab === "workspace" ? (
+                <RoomWorkspaceView
+                  active_workspace_path={active_workspace_path}
+                  agent_id={current_agent.agent_id}
+                  on_open_workspace_file={on_open_workspace_file}
+                />
+              ) : null}
+
+              {active_surface_tab === "about" && current_room_type === "dm" ? (
+                <RoomAgentAboutView agent={current_agent} />
+              ) : null}
+            </div>
           </div>
         </div>
       </section>
 
-      {!is_editor_open ? (
+      {show_detail_panel ? (
         <div className={HOME_AGENT_INSPECTOR_WRAPPER_CLASS}>
           <RoomContextPanel
             active_conversation={current_conversation}

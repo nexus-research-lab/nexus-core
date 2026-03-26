@@ -1,10 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { HOME_WORKSPACE_SECTION_GAP_CLASS } from "@/lib/home-layout";
 import { cn } from "@/lib/utils";
 import { Agent } from "@/types/agent";
 import { Conversation, ConversationSnapshotPayload } from "@/types/conversation";
+import { RoomSurfaceTabKey } from "@/types/room-surface";
 import { TodoItem } from "@/types/todo";
 
 import { RoomMobileWorkspace } from "./room-mobile-workspace";
@@ -80,6 +83,13 @@ export function RoomWorkspaceShell({
   on_conversation_snapshot_change,
 }: RoomWorkspaceShellProps) {
   const is_mobile = useMediaQuery("(max-width: 767px)");
+  const [active_surface_tab, set_active_surface_tab] = useState<RoomSurfaceTabKey>("chat");
+
+  useEffect(() => {
+    if (current_room_type !== "dm" && active_surface_tab === "about") {
+      set_active_surface_tab("chat");
+    }
+  }, [active_surface_tab, current_room_type]);
 
   if (is_mobile) {
     return (
@@ -103,6 +113,7 @@ export function RoomWorkspaceShell({
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         <RoomWorkspaceLayout
           active_workspace_path={active_workspace_path}
+          active_surface_tab={active_surface_tab}
           available_room_agents={available_room_agents}
           current_agent={current_agent}
           current_agent_id={current_agent_id}
@@ -118,6 +129,7 @@ export function RoomWorkspaceShell({
           is_resizing_editor={is_resizing_editor}
           is_conversation_busy={is_conversation_busy}
           on_add_room_member={on_add_room_member}
+          on_change_surface_tab={set_active_surface_tab}
           on_close_workspace_pane={on_close_workspace_pane}
           on_conversation_snapshot_change={on_conversation_snapshot_change}
           on_create_conversation={on_create_conversation}

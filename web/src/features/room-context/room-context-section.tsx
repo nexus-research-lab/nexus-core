@@ -8,6 +8,7 @@ import { ConfirmDialog, PromptDialog } from "@/shared/ui/confirm-dialog";
 
 interface RoomContextSectionProps {
   can_manage_conversations?: boolean;
+  show_conversations?: boolean;
   contextualFiles: WorkspaceFileEntry[];
   conversations: Conversation[];
   current_conversation_id: string | null;
@@ -27,6 +28,7 @@ interface RoomContextSectionProps {
 
 export function RoomContextSection({
                                      can_manage_conversations = true,
+                                     show_conversations = true,
                                      contextualFiles,
                                      conversations,
                                      current_conversation_id,
@@ -52,74 +54,78 @@ export function RoomContextSection({
   return (
     <>
       <section className="px-3 py-4">
-        <div className="mb-2 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700/50">
-            <MessageSquarePlus className="h-3.5 w-3.5"/>
-            Conversations
-          </div>
-          {can_manage_conversations ? (
-            <button
-              className="workspace-chip inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold text-slate-900/78"
-              onClick={() => set_is_create_dialog_open(true)}
-              type="button"
-            >
-              <MessageSquarePlus className="h-3.5 w-3.5"/>
-              新建
-            </button>
-          ) : null}
-        </div>
-
-        <div className="mt-3 space-y-1.5">
-          {conversations.map((conversation) => {
-            const isActive = conversation.session_key === current_conversation_id;
-            const can_delete = conversation.conversation_type === "topic";
-            return (
-              <div
-                key={conversation.session_key}
-                className={cn(
-                  "group cursor-pointer rounded-[16px] px-3 py-2 text-left transition-all duration-300",
-                  isActive
-                    ? "border border-white/28 bg-white/20 shadow-[0_12px_24px_rgba(111,126,162,0.08)]"
-                    : "border border-transparent hover:bg-white/12",
-                )}
-                onClick={() => on_select_conversation(conversation.session_key)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    on_select_conversation(conversation.session_key);
-                  }
-                }}
-                role="button"
-                tabIndex={0}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-[13px] font-semibold text-slate-900/84">
-                      {truncate(conversation.title || "未命名对话", 22)}
-                    </p>
-                    <p className="mt-1 text-[11px] text-slate-700/48">
-                      {formatRelativeTime(conversation.last_activity_at)} · {conversation.message_count ?? 0} 条
-                    </p>
-                  </div>
-
-                  {can_manage_conversations && can_delete ? (
-                    <button
-                      aria-label="删除对话"
-                      className="workspace-chip rounded-xl p-1.5 text-slate-700/54 opacity-0 transition-all group-hover:opacity-100 hover:text-destructive focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        set_pending_delete_conversation_id(conversation.session_key);
-                      }}
-                      type="button"
-                    >
-                      <Trash2 className="h-3.5 w-3.5"/>
-                    </button>
-                  ) : null}
-                </div>
+        {show_conversations ? (
+          <>
+            <div className="mb-2 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700/50">
+                <MessageSquarePlus className="h-3.5 w-3.5"/>
+                Conversations
               </div>
-            );
-          })}
-        </div>
+              {can_manage_conversations ? (
+                <button
+                  className="workspace-chip inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold text-slate-900/78"
+                  onClick={() => set_is_create_dialog_open(true)}
+                  type="button"
+                >
+                  <MessageSquarePlus className="h-3.5 w-3.5"/>
+                  新建
+                </button>
+              ) : null}
+            </div>
+
+            <div className="mt-3 space-y-1.5">
+              {conversations.map((conversation) => {
+                const isActive = conversation.session_key === current_conversation_id;
+                const can_delete = conversation.conversation_type === "topic";
+                return (
+                  <div
+                    key={conversation.session_key}
+                    className={cn(
+                      "group cursor-pointer rounded-[16px] px-3 py-2 text-left transition-all duration-300",
+                      isActive
+                        ? "border border-white/28 bg-white/20 shadow-[0_12px_24px_rgba(111,126,162,0.08)]"
+                        : "border border-transparent hover:bg-white/12",
+                    )}
+                    onClick={() => on_select_conversation(conversation.session_key)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        on_select_conversation(conversation.session_key);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-[13px] font-semibold text-slate-900/84">
+                          {truncate(conversation.title || "未命名对话", 22)}
+                        </p>
+                        <p className="mt-1 text-[11px] text-slate-700/48">
+                          {formatRelativeTime(conversation.last_activity_at)} · {conversation.message_count ?? 0} 条
+                        </p>
+                      </div>
+
+                      {can_manage_conversations && can_delete ? (
+                        <button
+                          aria-label="删除对话"
+                          className="workspace-chip rounded-xl p-1.5 text-slate-700/54 opacity-0 transition-all group-hover:opacity-100 hover:text-destructive focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            set_pending_delete_conversation_id(conversation.session_key);
+                          }}
+                          type="button"
+                        >
+                          <Trash2 className="h-3.5 w-3.5"/>
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        ) : null}
 
         {filesystem_error && (
           <div
@@ -128,7 +134,7 @@ export function RoomContextSection({
           </div>
         )}
 
-        <div className="mt-5 flex items-center justify-between">
+        <div className={show_conversations ? "mt-5 flex items-center justify-between" : "flex items-center justify-between"}>
           <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700/50">
             <BrainCircuit className="h-3.5 w-3.5"/>
             Context
