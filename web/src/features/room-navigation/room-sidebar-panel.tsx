@@ -242,7 +242,7 @@ export function RoomSidebarPanel({
       }
       seen.add(item.agent_id);
       return true;
-    }).slice(0, 5);
+    }).slice(0, 6);
   }, [agent, members]);
 
   useEffect(() => {
@@ -524,17 +524,7 @@ export function RoomSidebarPanel({
         on_rename_room={(name) => on_update_room({name})}
       />
 
-      <div className="soft-scrollbar flex-1 overflow-y-auto">
-        <RoomMembersSection
-          available_agents={available_room_agents}
-          can_manage_members={room_type === "room"}
-          current_agent_id={current_agent_id}
-          members={visible_agents}
-          on_add_member={on_add_room_member}
-          on_remove_member={on_remove_room_member}
-          on_select_agent={on_select_agent}
-        />
-
+      <div className="soft-scrollbar flex-1 overflow-y-auto px-1 pb-4">
         <RoomContextSection
           can_manage_conversations
           active_workspace_path={active_workspace_path}
@@ -560,6 +550,16 @@ export function RoomSidebarPanel({
           on_open_workspace_file={on_open_workspace_file}
           on_select_conversation={on_select_conversation}
           on_toggle_file_explorer={() => setShowFileExplorer((current) => !current)}
+        />
+
+        <RoomMembersSection
+          available_agents={available_room_agents}
+          can_manage_members={room_type === "room"}
+          current_agent_id={current_agent_id}
+          members={visible_agents}
+          on_add_member={on_add_room_member}
+          on_remove_member={on_remove_room_member}
+          on_select_agent={on_select_agent}
         />
       </div>
 
