@@ -5,7 +5,6 @@ import { HOME_WORKSPACE_SECTION_GAP_CLASS } from "@/lib/home-layout";
 import { cn } from "@/lib/utils";
 import { Agent } from "@/types/agent";
 import { Conversation, ConversationSnapshotPayload } from "@/types/conversation";
-import { AgentCostSummary, ConversationCostSummary } from "@/types/cost";
 import { TodoItem } from "@/types/todo";
 
 import { RoomMobileWorkspace } from "./room-mobile-workspace";
@@ -27,8 +26,6 @@ interface RoomWorkspaceShellProps {
   is_resizing_editor: boolean;
   is_conversation_busy: boolean;
   current_todos: TodoItem[];
-  conversation_cost_summary: ConversationCostSummary;
-  agent_cost_summary: AgentCostSummary;
   workspace_split_ref: React.RefObject<HTMLElement | null>;
   on_select_agent: (agent_id: string) => void;
   on_back_to_directory: () => void;
@@ -64,8 +61,6 @@ export function RoomWorkspaceShell({
   is_resizing_editor,
   is_conversation_busy,
   current_todos,
-  conversation_cost_summary,
-  agent_cost_summary,
   workspace_split_ref,
   on_select_agent,
   on_back_to_directory,
@@ -108,7 +103,6 @@ export function RoomWorkspaceShell({
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         <RoomWorkspaceLayout
           active_workspace_path={active_workspace_path}
-          agent_cost_summary={agent_cost_summary}
           available_room_agents={available_room_agents}
           current_agent={current_agent}
           current_agent_id={current_agent_id}
@@ -139,7 +133,6 @@ export function RoomWorkspaceShell({
           on_start_editor_resize={on_start_editor_resize}
           on_todos_change={on_todos_change}
           on_update_room={on_update_room}
-          conversation_cost_summary={conversation_cost_summary}
           workspace_split_ref={workspace_split_ref}
         />
       </div>

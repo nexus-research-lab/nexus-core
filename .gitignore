@@ -164,6 +164,7 @@ cython_debug/
 
 # projects
 uv.toml
+**/.DS_Store
 .claude
 cache
 docs

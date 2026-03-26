@@ -43,50 +43,50 @@ export function RoomMembersSection({
 
   return (
     <>
-      <section className="border-t workspace-divider px-2 py-5">
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700/56">
+      <section className="px-3 py-4">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700/50">
             <Bot className="h-3.5 w-3.5" />
-            伙伴
+            Members
           </div>
           {can_manage_members ? (
             <button
-              className="inline-flex items-center gap-1.5 rounded-full bg-[linear-gradient(135deg,rgba(174,163,255,0.18),rgba(255,255,255,0.82))] px-3 py-1.5 text-[11px] font-semibold text-slate-900/82 shadow-[0_10px_20px_rgba(133,119,255,0.10)]"
+              className="workspace-chip inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold text-slate-900/78"
               onClick={() => set_is_member_picker_open(true)}
               type="button"
             >
               <UserPlus className="h-3.5 w-3.5" />
-              添加成员
+              添加
             </button>
           ) : null}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {members.map((member) => {
             const is_current_agent = member.agent_id === current_agent_id;
             return (
               <button
                 key={member.agent_id}
                 className={cn(
-                  "group flex w-full items-center gap-3 rounded-[20px] px-3 py-3 text-left transition-all duration-300",
-                  is_current_agent ? "workspace-card-strong" : "workspace-card hover:-translate-y-0.5",
+                  "group flex w-full items-center gap-3 rounded-[16px] px-3 py-2 text-left transition-all duration-300",
+                  is_current_agent ? "bg-white/20" : "hover:bg-white/12",
                 )}
                 onClick={() => on_select_agent(member.agent_id)}
                 type="button"
               >
-                <div className="workspace-chip flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-slate-900/82">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/26 bg-white/16 text-[11px] font-bold text-slate-900/82">
                   {getInitials(member.name)}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-slate-900/84">
+                  <p className="truncate text-[13px] font-semibold text-slate-900/82">
                     {member.name}
                   </p>
-                  <p className="truncate text-[11px] text-slate-700/50">
-                    {is_current_agent ? "当前正在这个 room 中协作" : "当前已加入这个 room"}
+                  <p className="truncate text-[11px] text-slate-700/48">
+                    {is_current_agent ? "当前活跃" : "参与协作中"}
                   </p>
                 </div>
                 <span className={cn(
-                  "h-2.5 w-2.5 shrink-0 rounded-full",
+                  "h-2 w-2 shrink-0 rounded-full",
                   is_current_agent ? "bg-emerald-400" : "bg-slate-300",
                 )}/>
                 {can_manage_members ? (
@@ -106,6 +106,7 @@ export function RoomMembersSection({
             );
           })}
         </div>
+        <div className="mt-4 border-b workspace-divider" />
       </section>
 
       <RoomMemberPickerDialog

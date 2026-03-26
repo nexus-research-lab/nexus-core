@@ -95,7 +95,6 @@ export function RoomPage() {
       <AppStage>
         <RoomWorkspaceShell
           active_workspace_path={controller.active_workspace_path}
-          agent_cost_summary={controller.agent_cost_summary}
           available_room_agents={controller.available_room_agents}
           current_agent={controller.current_agent}
           current_agent_id={controller.current_agent_id}
@@ -126,7 +125,6 @@ export function RoomPage() {
           on_start_editor_resize={controller.handle_start_editor_resize}
           on_todos_change={controller.set_current_todos}
           on_update_room={controller.handle_update_room}
-          conversation_cost_summary={controller.conversation_cost_summary}
           workspace_split_ref={controller.workspace_split_ref}
         />
 

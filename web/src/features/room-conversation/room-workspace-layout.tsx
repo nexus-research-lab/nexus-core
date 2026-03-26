@@ -13,7 +13,6 @@ import {
 import { cn } from "@/lib/utils";
 import { Agent } from "@/types/agent";
 import { Conversation, ConversationSnapshotPayload } from "@/types/conversation";
-import { AgentCostSummary, ConversationCostSummary } from "@/types/cost";
 import { TodoItem } from "@/types/todo";
 
 import { RoomChatPanel } from "./room-chat-panel";
@@ -34,8 +33,6 @@ interface RoomWorkspaceLayoutProps {
   is_resizing_editor: boolean;
   is_conversation_busy: boolean;
   current_todos: TodoItem[];
-  conversation_cost_summary: ConversationCostSummary;
-  agent_cost_summary: AgentCostSummary;
   workspace_split_ref: RefObject<HTMLElement | null>;
   on_select_agent: (agent_id: string) => void;
   on_open_directory: () => void;
@@ -71,8 +68,6 @@ export function RoomWorkspaceLayout({
   is_resizing_editor,
   is_conversation_busy,
   current_todos,
-  conversation_cost_summary,
-  agent_cost_summary,
   workspace_split_ref,
   on_select_agent,
   on_open_directory,
@@ -157,10 +152,8 @@ export function RoomWorkspaceLayout({
           <RoomContextPanel
             active_conversation={current_conversation}
             agent={current_agent}
-            agent_cost_summary={agent_cost_summary}
             is_conversation_busy={is_conversation_busy}
             on_edit_agent={on_edit_agent}
-            conversation_cost_summary={conversation_cost_summary}
             room_conversations={current_room_conversations}
             room_members={room_members}
             room_name={current_room_title}
