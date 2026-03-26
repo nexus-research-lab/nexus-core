@@ -27,6 +27,7 @@ interface RoomChatPanelProps {
   on_todos_change?: (todos: TodoItem[]) => void;
   on_loading_change?: (is_loading: boolean) => void;
   on_conversation_snapshot_change?: (snapshot: ConversationSnapshotPayload) => void;
+  hide_header?: boolean;
 }
 
 const BOTTOM_THRESHOLD_PX = 80;
@@ -57,6 +58,7 @@ export function RoomChatPanel({
   on_todos_change,
   on_loading_change,
   on_conversation_snapshot_change,
+  hide_header = false,
 }: RoomChatPanelProps) {
   const is_mobile_layout = layout === "mobile";
   const scroll_ref = useRef<HTMLDivElement>(null);
@@ -273,13 +275,17 @@ export function RoomChatPanel({
         <RoomConversationEmptyState on_create_conversation={on_create_conversation ?? (() => {})} />
       ) : (
         <>
-          {!is_mobile_layout ? (
+          {!is_mobile_layout && !hide_header ? (
             <RoomConversationHeader
+              active_tab="chat"
               current_agent_name={current_agent_name ?? null}
               current_conversation_id={session_key}
+              current_room_type="room"
               current_room_title={current_room_title ?? null}
               current_conversation_title={session_title ?? null}
               is_loading={is_loading}
+              member_count={1}
+              on_change_tab={() => {}}
             />
           ) : null}
 
