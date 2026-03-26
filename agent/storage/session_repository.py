@@ -94,6 +94,7 @@ class SessionRepository:
             session_key=meta["session_key"],
             agent_id=meta.get("agent_id") or  settings.DEFAULT_AGENT_ID,
             session_id=meta.get("session_id"),
+            room_session_id=(meta.get("options") or {}).get("room_session_id"),
             channel_type=meta.get("channel_type") or "websocket",
             chat_type=meta.get("chat_type") or "dm",
             status=meta.get("status") or "active",

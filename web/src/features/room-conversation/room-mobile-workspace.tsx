@@ -16,7 +16,7 @@ interface RoomMobileWorkspaceProps {
   current_conversation_id: string | null;
   current_room_conversations: Conversation[];
   on_back_to_directory: () => void;
-  on_create_conversation: () => void;
+  on_create_conversation: (title?: string) => void | Promise<string | null>;
   on_select_conversation: (conversation_id: string) => void;
   on_loading_change: (is_loading: boolean) => void;
   on_conversation_snapshot_change: (snapshot: ConversationSnapshotPayload) => void;
@@ -29,6 +29,7 @@ export function RoomMobileWorkspace({
   current_conversation_id,
   current_room_conversations,
   on_back_to_directory,
+  on_create_conversation,
   on_select_conversation,
   on_loading_change,
   on_conversation_snapshot_change,
@@ -86,6 +87,7 @@ export function RoomMobileWorkspace({
           current_room_title={current_room_title}
           layout="mobile"
           on_conversation_snapshot_change={on_conversation_snapshot_change}
+          on_create_conversation={on_create_conversation}
           on_loading_change={on_loading_change}
           session_key={current_conversation_id}
           session_title={current_conversation?.title ?? null}

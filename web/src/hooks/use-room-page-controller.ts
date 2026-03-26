@@ -246,7 +246,7 @@ export function useRoomPageController({
   const current_conversation = useMemo(
     () =>
       conversations.find(
-        (conversation) => conversation.session_id === active_room_session?.id,
+        (conversation) => conversation.room_session_id === active_room_session?.id,
       ) ?? null,
     [active_room_session?.id, conversations],
   );

@@ -25,14 +25,15 @@ class SessionContextResolver:
 
     async def enrich_session(self, session_info: ASession) -> ASession:
         """为单个会话补齐 room 与 conversation 信息。"""
-        if not session_info.session_id:
+        room_session_id = session_info.room_session_id
+        if not room_session_id:
             return session_info
 
         async with self._db.session() as session:
             session_repository = SessionSqlRepository(session)
             conversation_repository = ConversationSqlRepository(session)
 
-            session_record = await session_repository.get(session_info.session_id)
+            session_record = await session_repository.get(room_session_id)
             if session_record is None:
                 return session_info
 
@@ -61,11 +62,12 @@ class SessionContextResolver:
             enriched_sessions: list[ASession] = []
 
             for session_info in sessions:
-                if not session_info.session_id:
+                room_session_id = session_info.room_session_id
+                if not room_session_id:
                     enriched_sessions.append(session_info)
                     continue
 
-                session_record = await session_repository.get(session_info.session_id)
+                session_record = await session_repository.get(room_session_id)
                 if session_record is None:
                     enriched_sessions.append(session_info)
                     continue

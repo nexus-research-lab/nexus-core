@@ -11,6 +11,14 @@ import {
 
 const AGENT_API_BASE_URL = getAgentApiBaseUrl();
 
+function normalizeConversationTitle(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const normalized_title = value.trim();
+  return normalized_title ? normalized_title : undefined;
+}
+
 export async function listRooms(limit = 50): Promise<RoomAggregate[]> {
   const response = await fetch(
     `${AGENT_API_BASE_URL}/rooms?limit=${encodeURIComponent(String(limit))}`,
@@ -95,13 +103,14 @@ export async function createRoomConversation(
   room_id: string,
   params: CreateRoomConversationParams = {},
 ): Promise<RoomContextAggregate> {
+  const normalized_title = normalizeConversationTitle(params.title);
   const response = await fetch(
     `${AGENT_API_BASE_URL}/rooms/${encodeURIComponent(room_id)}/conversations`,
     {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
-        title: params.title,
+        title: normalized_title,
       }),
     },
   );

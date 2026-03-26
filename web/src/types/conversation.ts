@@ -4,6 +4,7 @@ export interface Conversation {
   session_key: string;
   agent_id?: string;
   session_id: SessionId | null;
+  room_session_id?: string | null;
   room_id?: string | null;
   conversation_id?: string | null;
   conversation_type?: string;
@@ -19,6 +20,7 @@ export interface ApiConversation {
   session_key: string;
   agent_id: string;
   session_id: string | null;
+  room_session_id?: string | null;
   room_id?: string | null;
   conversation_id?: string | null;
   created_at: string;

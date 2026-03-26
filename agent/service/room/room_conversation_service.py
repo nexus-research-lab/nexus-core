@@ -24,6 +24,9 @@ from agent.service.repository.repository_service import persistence_service
 from agent.service.room.room_agent_runtime_factory import (
     room_agent_runtime_factory,
 )
+from agent.service.room.room_legacy_session_bridge import (
+    room_legacy_session_bridge,
+)
 from agent.storage.sqlite.conversation_sql_repository import ConversationSqlRepository
 from agent.storage.sqlite.room_sql_repository import RoomSqlRepository
 from agent.storage.sqlite.session_sql_repository import SessionSqlRepository
@@ -72,12 +75,14 @@ class RoomConversationService:
             )
             await session.commit()
 
-        return ConversationContextAggregate(
+        context = ConversationContextAggregate(
             room=room_aggregate.room,
             members=room_aggregate.members,
             conversation=created_conversation,
             sessions=created_sessions,
         )
+        await room_legacy_session_bridge.ensure_context(context)
+        return context
 
     async def update_room_conversation(
         self,
@@ -113,12 +118,14 @@ class RoomConversationService:
             sessions = await session_repository.list_by_conversation(conversation_id)
             await session.commit()
 
-        return ConversationContextAggregate(
+        context = ConversationContextAggregate(
             room=room_aggregate.room,
             members=room_aggregate.members,
             conversation=updated_conversation,
             sessions=sessions,
         )
+        await room_legacy_session_bridge.ensure_context(context)
+        return context
 
     async def delete_room_conversation(
         self,
@@ -129,6 +136,7 @@ class RoomConversationService:
         async with self._db.session() as session:
             room_repository = RoomSqlRepository(session)
             conversation_repository = ConversationSqlRepository(session)
+            session_repository = SessionSqlRepository(session)
 
             room_aggregate = await room_repository.get(room_id)
             if room_aggregate is None:
@@ -147,11 +155,16 @@ class RoomConversationService:
             if target_conversation.conversation_type != "topic":
                 raise ValueError("主对话不支持删除")
 
+            target_sessions = await session_repository.list_by_conversation(conversation_id)
             deleted = await conversation_repository.delete(conversation_id)
             if not deleted:
                 raise LookupError("Conversation not found")
             await session.commit()
 
+        await room_legacy_session_bridge.delete_sessions(
+            room_type=room_aggregate.room.room_type,
+            sessions=target_sessions,
+        )
         contexts = await persistence_service.get_room_contexts(room_id)
         if not contexts:
             raise LookupError("Room not found")

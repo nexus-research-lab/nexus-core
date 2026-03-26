@@ -21,7 +21,7 @@ interface RoomChatPanelProps {
   current_room_title?: string | null;
   session_key: string | null;
   session_title?: string | null;
-  on_create_conversation?: () => void;
+  on_create_conversation?: (title?: string) => void | Promise<string | null>;
   layout?: "desktop" | "mobile";
   on_open_workspace_file?: (path: string) => void;
   on_todos_change?: (todos: TodoItem[]) => void;
