@@ -30,8 +30,9 @@ interface AskUserQuestionCardProps {
 
 interface AskUserQuestionBlockProps {
   tool_use: ToolUseContent;
-  on_submit?: (tool_use_id: string, answers: UserQuestionAnswer[]) => void;
+  on_submit?: (tool_use_id: string, answers: UserQuestionAnswer[]) => boolean | Promise<boolean>;
   is_submitted?: boolean;
+  is_ready?: boolean;
 }
 
 // ==================== 子组件 ====================
@@ -225,6 +226,7 @@ export function AskUserQuestionBlock({
     tool_use,
     on_submit,
     is_submitted: initialSubmitted = false,
+    is_ready = true,
 }: AskUserQuestionBlockProps) {
     // 解析输入
     const input = tool_use.input as AskUserQuestionInput;
@@ -311,8 +313,8 @@ export function AskUserQuestionBlock({
     }, [customAnswers, questions, selections]);
 
     // 提交回答
-    const handleSubmit = useCallback(() => {
-        if (!canSubmit || isSubmitted) return;
+    const handleSubmit = useCallback(async () => {
+        if (!canSubmit || isSubmitted || !is_ready) return;
 
         const answers: UserQuestionAnswer[] = questions.map((_, index) => {
             const selectedOptions = Array.from(selections.get(index) || []);
@@ -327,10 +329,13 @@ export function AskUserQuestionBlock({
             };
         });
 
+        const submitted = await on_submit?.(tool_use.id, answers);
+        if (submitted === false) {
+            return;
+        }
         setIsSubmitted(true);
         setIsExpanded(false); // 提交后收起
-        on_submit?.(tool_use.id, answers);
-    }, [canSubmit, customAnswers, isSubmitted, questions, selections, tool_use.id, on_submit]);
+    }, [canSubmit, customAnswers, isSubmitted, is_ready, on_submit, questions, selections, tool_use.id]);
 
     // 计算已选数量
     const totalSelected = useMemo(() => {
@@ -453,18 +458,22 @@ export function AskUserQuestionBlock({
             {!isSubmitted && isExpanded && (
                 <div className="flex h-12 items-center justify-between border-t border-white/18 bg-white/14 px-4">
                     <span className="text-xs text-muted-foreground">
-                        {canSubmit ? '✓ 所有问题都已回应' : '每个问题至少回应一次'}
+                        {!is_ready
+                            ? '等待系统准备提问上下文'
+                            : canSubmit
+                                ? '✓ 所有问题都已回应'
+                                : '每个问题至少回应一次'}
                     </span>
 
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
-                            handleSubmit();
+                            void handleSubmit();
                         }}
-                        disabled={!canSubmit}
+                        disabled={!canSubmit || !is_ready}
                         className={cn(
                             "radius-shell-sm flex items-center gap-2 px-4 py-1.5 text-xs font-medium transition-all duration-200",
-                            canSubmit
+                            canSubmit && is_ready
                                 ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_14px_24px_rgba(133,119,255,0.18)]"
                                 : "neo-pill text-muted-foreground cursor-not-allowed"
                         )}
