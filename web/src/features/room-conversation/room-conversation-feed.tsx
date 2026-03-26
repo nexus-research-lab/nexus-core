@@ -12,7 +12,7 @@ interface RoomConversationFeedProps {
   message_groups: Map<string, Message[]>;
   on_delete_round: (round_id: string) => Promise<void>;
   on_open_workspace_file?: (path: string) => void;
-  on_permission_response: (payload: PermissionDecisionPayload) => void;
+  on_permission_response: (payload: PermissionDecisionPayload) => boolean;
   on_regenerate_round?: (round_id: string) => Promise<void>;
   round_ids: string[];
 }

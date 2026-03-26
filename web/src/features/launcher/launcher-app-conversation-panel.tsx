@@ -40,7 +40,7 @@ interface LauncherAppConversationPanelProps {
   on_open_agent_room: (agent_id: string) => void;
   on_open_conversation: (conversation_id: string, agent_id?: string) => void;
   on_open_contacts_page: () => void;
-  on_permission_response: (payload: PermissionDecisionPayload) => void;
+  on_permission_response: (payload: PermissionDecisionPayload) => boolean;
   on_regenerate_round: (round_id: string) => Promise<void>;
   on_stop_generation: () => void;
   on_submit: (next_prompt: string) => void;

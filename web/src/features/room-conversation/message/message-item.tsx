@@ -23,7 +23,7 @@ interface MessageItemProps {
   is_last_round?: boolean;
   is_loading?: boolean;
   pending_permission?: PendingPermission | null;
-  on_permission_response?: (payload: PermissionDecisionPayload) => void;
+  on_permission_response?: (payload: PermissionDecisionPayload) => boolean;
   hidden_tool_names?: string[];
   on_delete?: (round_id: string) => Promise<void>;
   on_regenerate?: (round_id: string) => Promise<void>;
