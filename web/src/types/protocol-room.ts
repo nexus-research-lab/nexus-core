@@ -158,7 +158,8 @@ export type ProtocolRunControlOperation =
   | "inject_message"
   | "force_transition"
   | "override_action"
-  | "terminate_run";
+  | "terminate_run"
+  | "set_local_player";
 
 export interface ProtocolRunControlParams {
   operation: ProtocolRunControlOperation;
@@ -170,4 +171,3 @@ export interface ProtocolRoomViewModel {
   runs: ProtocolRunListItem[];
   detail: ProtocolRunDetail | null;
 }
-

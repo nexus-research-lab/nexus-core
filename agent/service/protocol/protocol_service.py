@@ -29,6 +29,7 @@ from agent.schema.model_protocol import (
     RunStateSnapshotRecord,
 )
 from agent.service.agent.main_agent_profile import MainAgentProfile
+from agent.service.protocol.protocol_auto_player import protocol_auto_player
 from agent.service.protocol.protocol_definition import (
     ActionRequestBlueprint,
     PhasePlan,
@@ -110,6 +111,7 @@ class ProtocolRoomService:
                     coordinator_agent_id=MainAgentProfile.AGENT_ID,
                     run_config={
                         "definition_slug": definition_slug,
+                        "local_player_agent_id": (run_config or {}).get("local_player_agent_id") or member_agent_ids[0],
                         **(run_config or {}),
                     },
                     state=initial_state,
@@ -200,6 +202,13 @@ class ProtocolRoomService:
                 run,
                 channel_map,
                 initial_active_phase,
+            )
+            run = await self._drive_auto_participants(
+                protocol_repository,
+                definition,
+                room.members,
+                run,
+                channel_map,
             )
             await session.commit()
 
@@ -301,7 +310,7 @@ class ProtocolRoomService:
             channels = await protocol_repository.list_channels_by_run(run.id)
             channel_map = {aggregate.channel.slug: aggregate for aggregate in channels}
 
-            await self._apply_submission(
+            run = await self._apply_submission(
                 protocol_repository=protocol_repository,
                 definition=definition,
                 room_members=room.members,
@@ -312,6 +321,13 @@ class ProtocolRoomService:
                 actor_agent_id=actor_agent_id,
                 actor_user_id=actor_user_id,
                 submission_status="submitted",
+            )
+            run = await self._drive_auto_participants(
+                protocol_repository,
+                definition,
+                room.members,
+                run,
+                channel_map,
             )
             await session.commit()
 
@@ -382,6 +398,13 @@ class ProtocolRoomService:
                             body="The coordinator resumed protocol progression.",
                             metadata={"message_kind": "phase_event"},
                         ),
+                        channel_map,
+                    )
+                    run = await self._drive_auto_participants(
+                        protocol_repository,
+                        definition,
+                        room.members,
+                        run,
                         channel_map,
                     )
 
@@ -456,6 +479,13 @@ class ProtocolRoomService:
                     channel_map,
                     next_phase,
                 )
+                run = await self._drive_auto_participants(
+                    protocol_repository,
+                    definition,
+                    room.members,
+                    run,
+                    channel_map,
+                )
 
             elif operation == "override_action":
                 request_id = str(payload.get("request_id") or "").strip()
@@ -464,7 +494,7 @@ class ProtocolRoomService:
                 request = await protocol_repository.get_action_request(request_id)
                 if request is None or request.protocol_run_id != run_id:
                     raise LookupError("Action request not found")
-                await self._apply_submission(
+                run = await self._apply_submission(
                     protocol_repository=protocol_repository,
                     definition=definition,
                     room_members=room.members,
@@ -476,6 +506,25 @@ class ProtocolRoomService:
                     actor_user_id=_LOCAL_USER_ID,
                     submission_status="overridden",
                 )
+                run = await self._drive_auto_participants(
+                    protocol_repository,
+                    definition,
+                    room.members,
+                    run,
+                    channel_map,
+                )
+
+            elif operation == "set_local_player":
+                local_player_agent_id = str(payload.get("agent_id") or "").strip() or None
+                run = run.model_copy(
+                    update={
+                        "run_config": {
+                            **run.run_config,
+                            "local_player_agent_id": local_player_agent_id,
+                        }
+                    }
+                )
+                run = await protocol_repository.update_run(run)
 
             elif operation == "terminate_run":
                 run = run.model_copy(
@@ -509,6 +558,55 @@ class ProtocolRoomService:
             headline="Protocol control applied",
         )
         return detail
+
+    async def _drive_auto_participants(
+        self,
+        protocol_repository: ProtocolSqlRepository,
+        definition: ProtocolDefinition,
+        room_members: list[MemberRecord],
+        run: ProtocolRunRecord,
+        channel_map: dict[str, ChannelAggregate],
+    ) -> ProtocolRunRecord:
+        """自动推进非本地玩家的动作。"""
+        current_run = run
+        guard = 0
+
+        while current_run.status == "running" and guard < 64:
+            requests = await protocol_repository.list_action_requests(current_run.id)
+            pending_requests = [
+                item
+                for item in requests
+                if item.phase_name == current_run.current_phase and item.status == "pending"
+            ]
+            if not pending_requests:
+                break
+
+            progressed = False
+            for request in pending_requests:
+                actor_agent_id = protocol_auto_player.select_actor(current_run, request)
+                if not actor_agent_id:
+                    continue
+                payload = protocol_auto_player.build_payload(current_run, request, actor_agent_id)
+                current_run = await self._apply_submission(
+                    protocol_repository=protocol_repository,
+                    definition=definition,
+                    room_members=room_members,
+                    run=current_run,
+                    channel_map=channel_map,
+                    request=request,
+                    payload=payload,
+                    actor_agent_id=actor_agent_id,
+                    actor_user_id=None,
+                    submission_status="submitted",
+                )
+                progressed = True
+                break
+
+            if not progressed:
+                break
+            guard += 1
+
+        return current_run
 
     async def _apply_submission(
         self,

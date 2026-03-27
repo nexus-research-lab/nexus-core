@@ -137,6 +137,16 @@ export function useProtocolRoomController({ room_id }: UseProtocolRoomController
   }, [active_run_id, is_protocol_room, load_run_detail, viewer_agent_id]);
 
   useEffect(() => {
+    if (!detail || viewer_agent_id) {
+      return;
+    }
+    const local_player_agent_id = String(detail.run.run_config?.local_player_agent_id || "").trim();
+    if (local_player_agent_id) {
+      set_viewer_agent_id(local_player_agent_id);
+    }
+  }, [detail, viewer_agent_id]);
+
+  useEffect(() => {
     if (
       !is_protocol_room
       || !active_run_id
@@ -226,7 +236,26 @@ export function useProtocolRoomController({ room_id }: UseProtocolRoomController
 
   const handle_set_viewer = useCallback((agent_id: string | null) => {
     set_viewer_agent_id(agent_id);
-  }, []);
+    if (!active_run_id) {
+      return;
+    }
+    void controlProtocolRun(active_run_id, {
+      operation: "set_local_player",
+      payload: {
+        agent_id,
+      },
+    }).then((next_detail) => {
+      set_detail(next_detail);
+      set_runs((prev) => prev.map((item) => (
+        item.run.id === next_detail.run.id
+          ? { run: next_detail.run, definition: next_detail.definition }
+          : item
+      )));
+      set_error(null);
+    }).catch((set_viewer_error) => {
+      set_error(set_viewer_error instanceof Error ? set_viewer_error.message : "切换当前视角失败");
+    });
+  }, [active_run_id]);
 
   const handle_submit_action = useCallback(async (
     request_id: string,

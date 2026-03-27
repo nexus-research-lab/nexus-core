@@ -35,7 +35,7 @@ class SubmitProtocolActionRequest(BaseModel):
 
 
 class ControlProtocolRunRequest(BaseModel):
-    operation: Literal["pause", "resume", "inject_message", "force_transition", "override_action", "terminate_run"] = Field(..., description="控制操作")
+    operation: Literal["pause", "resume", "inject_message", "force_transition", "override_action", "terminate_run", "set_local_player"] = Field(..., description="控制操作")
     payload: dict[str, Any] = Field(default_factory=dict, description="控制参数")
 
 
