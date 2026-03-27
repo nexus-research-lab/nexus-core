@@ -54,7 +54,7 @@ class AAgent(BaseModel):
     """Agent 模型 — 一个 Agent = 一个工作区"""
     agent_id: str = Field(..., description="Agent 唯一标识")
     name: str = Field(..., description="显示名称")
-    workspace_path: str = Field(default="", description="工作区路径（系统托管: ~/.nexus-core/workspace/<agent_name_slug>）")
+    workspace_path: str = Field(default="", description="工作区路径（系统托管: ~/.nexus/workspace/<agent_name_slug>）")
     options: AgentOptions = Field(default_factory=AgentOptions, description="Agent 配置")
     created_at: datetime = Field(default_factory=datetime.now, description="创建时间")
     status: str = Field(default="active", description="状态: active/archived")

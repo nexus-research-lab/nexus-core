@@ -1,5 +1,5 @@
 {
-  "repo": "nexus-research-lab/nexus-core",
+  "repo": "nexus-research-lab/nexus",
   "mainBranch": "main",
   "checkInterval": "15m",
   "autoMerge": {

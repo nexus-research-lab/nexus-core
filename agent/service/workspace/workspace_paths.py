@@ -19,5 +19,5 @@ def get_workspace_base_path() -> Path:
 
     workspace_path = getattr(settings, "WORKSPACE_PATH", None)
     if not workspace_path:
-        workspace_path = os.path.join(Path.home(), ".nexus-core", "workspace")
+        workspace_path = os.path.join(Path.home(), ".nexus", "workspace")
     return Path(workspace_path).expanduser()

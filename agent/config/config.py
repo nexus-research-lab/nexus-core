@@ -71,7 +71,7 @@ class Settings(BaseSettings):
     DEFAULT_CACHE_TTL_DAYS: int = 7
 
     # 数据库配置
-    DATABASE_URL: str = "sqlite+aiosqlite:///./cache/data/data.db"
+    DATABASE_URL: str = "sqlite+aiosqlite:///~/.nexus/data/nexus.db"
 
     # Key
     ANTHROPIC_AUTH_TOKEN: str = ""
@@ -97,7 +97,7 @@ class Settings(BaseSettings):
     # =====================================================
     # Workspace 配置
     # =====================================================
-    WORKSPACE_PATH: str = ""  # 为空时使用 ~/.nexus-core/workspace
+    WORKSPACE_PATH: str = ""  # 为空时使用 ~/.nexus/workspace
     BASE_SYSTEM_PROMPT: str = ""
     MAIN_AGENT_MODEL: str = ""
     MAIN_AGENT_SYSTEM_PROMPT: str = ""

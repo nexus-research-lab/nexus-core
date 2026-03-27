@@ -1,46 +1,34 @@
-# Repository Guidelines
+# AGENTS.md
 
-## Project Structure & Module Organization
-`agent/` contains the FastAPI backend, WebSocket flow, session management, and persistence. Key sub-modules: `api/` (routes), `service/` (business logic: agent, channels, chat, message, permission, persistence, room, session, workspace), `infra/` (database, cacher, http_client, server), `schema/` (Pydantic models), `storage/` (repositories), `config/`, `utils/`.  
-`web/` is the Next.js frontend (`src/components`, `src/hooks`, `src/lib`, `src/store`).  
-`alembic/` stores database migrations; keep schema changes and migration files in the same PR.  
-`tests/` currently holds integration-style scripts and runtime logs (for example, interrupt/session behavior).  
-`docs/` includes architecture and feature guides; update docs when behavior or API contracts change.
+This file provides guidance to agents when working with code in this repository.
 
-## Build, Test, and Development Commands
-- `make install`: install backend (`agent/requirements.txt`) and frontend dependencies.
-- `make dev`: run backend (`python main.py`) and frontend (`cd web && npm run dev`) together.
-- `make run-backend` / `make run-web`: run one side only.
-- `alembic upgrade head`: apply latest DB migrations.
-- `cd web && npm run build`: production frontend build.
-- `cd web && npm run lint`: frontend lint check.
-- `python -m py_compile agent/...`: fast backend syntax smoke check.
-- `cd web && npx tsc --noEmit`: TypeScript type check.
+## Build & Validation Commands
+- `make dev` — start backend (port 8010) + frontend (port 3000) concurrently
+- `make check` — runs `check-backend` + `lint-web` + `typecheck-web` (the full pre-PR validation suite)
+- `make check-backend` — `py_compile` on all `agent/**/*.py` via `rg --files`
+- `cd web && npx tsc --noEmit` — TypeScript type check
+- `cd web && npm run lint` — ESLint on `src/**/*.{ts,tsx}`
+- `make db-init` — run Alembic migrations (auto-detects `.venv` / system Python)
+- `make install` — installs backend deps (prefers `.venv`, then `uv`, then `pip`) + `npm install` in `web/`
 
-## Coding Style & Naming Conventions
-Python: follow Google Python style, object-oriented design, and use Chinese comments for non-trivial logic. Use `snake_case` for functions/files and `PascalCase` for classes.  
-Python files should stay small: hard limit `300` lines per file, target `100-200` lines, and prefer `one file one class`. Split oversized files proactively instead of continuing to append logic.  
-TypeScript/React: components in `PascalCase`, hooks in `useXxx` style, and keep message/session types centralized under `web/src/types`.  
-Prefer small, composable handlers/processors over monolithic functions.
+## Critical Conventions
+- **Python file size hard limit: 300 lines**, target 100–200. One class per file. Split proactively.
+- **Chinese comments** required for non-trivial logic blocks.
+- All API routes live under prefix `/agent/v1/...` (set in [`config.py`](agent/config/config.py:47)).
+- Settings use `pydantic-settings` with `case_sensitive=True` and `extra="allow"` — env vars must match field names exactly.
+- Pydantic models must extend [`AModel`](agent/infra/schemas/model_cython.py:23) (not raw `BaseModel`) to handle CyFunction detection.
+- API responses use [`resp.ok()`](agent/infra/server/common/base_resp.py:22) / [`resp.fail()`](agent/infra/server/common/base_resp.py:23) pattern from `agent.infra.server.common`.
+- Exceptions extend [`ServerException`](agent/infra/server/common/base_exception.py:14) with a `.resp` attribute mapping to HTTP response.
+- Use [`@exception_to_base_error`](agent/infra/server/common/base_error_warp.py:21) decorator to auto-wrap service-layer exceptions.
+- ID generation uses custom [Snowflake](agent/utils/snowflake.py) (not UUID).
 
-## Testing Guidelines
-This repository mainly uses integration-style validation instead of heavy unit coverage.  
-Primary checks before PR:
-- backend compile smoke check (`py_compile`);
-- frontend type/lint checks (`tsc`, `eslint`);
-- targeted manual flow test for chat/interrupt/session history.  
-Add new tests under `tests/` with `test_<feature>.py` naming.
+## Architecture Flow
+- Entry: [`main.py`](main.py) → [`agent/app.py`](agent/app.py) (FastAPI app with lifespan)
+- Lifespan registers message channels (WebSocket, Discord, Telegram) via [`ChannelRegister`](agent/service/channels/channel_register.py:26)
+- WebSocket messages routed through [`ChannelDispatcher`](agent/service/channels/ws/dispatcher.py:23) → handler chain (interrupt, permission, ping, error)
+- Chat processing: [`ChatService`](agent/service/chat/chat_service.py) → [`ChatMessageProcessor`](agent/service/message/chat_message_processor.py:30) → Claude Agent SDK
+- Storage dual-layer: file-based JSON/JSONL in [`agent/storage/`](agent/storage/) + SQLite via SQLAlchemy in [`agent/storage/sqlite/`](agent/storage/sqlite/)
+- Frontend: React 19 + Vite 7 + Zustand stores. Path alias `@/` → `web/src/`. WebSocket client in [`lib/websocket/`](web/src/lib/websocket/).
 
-## Commit & Pull Request Guidelines
-History favors emoji-prefixed Conventional-style subjects (for example, `:sparkles:`, `:bug:`, `:recycle:`, `:memo:`) with concise Chinese summaries.  
-One complete requirement should be delivered as one commit; avoid mixing unrelated changes in the same commit.  
-When behavior, API contract, or collaboration rules change, update `CHANGELOG.md` in the same delivery if the change is user-visible or affects follow-up work.  
-PRs should include:
-- problem statement and scope;
-- key file/path changes;
-- commands run for validation;
-- screenshots for UI changes and sample logs for message/session pipeline updates;
-- migration/environment notes when applicable.
-
-## Security & Configuration Tips
-Copy env templates (`env.example`, `web/env.example`) and keep secrets local. Never commit API keys, local `.env` files, or debug logs containing sensitive data.
+## Commit Style
+Emoji-prefixed Conventional commits with Chinese summaries (e.g., `:sparkles: 添加新功能`). Update `CHANGELOG.md` for user-visible changes.

@@ -76,7 +76,7 @@ RUN echo '#!/bin/bash\n\
 /opt/app/init-db.sh\n\
 \n\
 # 启动应用\n\
-exec nexus-core' > /opt/app/entrypoint.sh
+exec nexus' > /opt/app/entrypoint.sh
 
 # 复制初始化脚本和 Alembic 配置
 COPY ./deploy/init-db.sh /opt/app/init-db.sh

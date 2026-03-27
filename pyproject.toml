@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "nexus-core"
+name = "nexus"
 dynamic = ["version", "dependencies"]
 description = "Production-Ready AI Agent Development Framework"
 authors = [{ name = "leemysw" }]
@@ -29,4 +29,4 @@ dependencies = { file = ["agent/requirements.txt"] }
 version = { attr = "agent.__version__" }
 
 [project.scripts]
-nexus-core = "agent.cli:main"
+nexus = "agent.cli:main"

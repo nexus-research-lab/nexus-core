@@ -169,3 +169,4 @@ cache
 uv.toml
 **/.DS_Store
 .claude
+.kilocode

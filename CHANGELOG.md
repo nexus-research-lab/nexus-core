@@ -82,7 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 2026-03-13
 
 ### Docs
-- 新增 `docs/nexus-core-technical-doc.md`，补充项目技术架构、核心链路与技术交流提纲。
+- 新增 `docs/nexus-technical-doc.md`，补充项目技术架构、核心链路与技术交流提纲。
 
 ## 2026-03-12
 

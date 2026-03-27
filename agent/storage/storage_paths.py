@@ -28,7 +28,7 @@ class FileStoragePaths:
     INTERNAL_DIR_NAME = ".agents"
 
     def __init__(self) -> None:
-        self.home_root = Path.home() / ".nexus-core"
+        self.home_root = Path.home() / ".nexus"
         self.workspace_base = get_workspace_base_path()
 
     def ensure_directories(self) -> None:

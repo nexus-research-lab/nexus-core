@@ -371,7 +371,7 @@ export function AgentOptions(
                   <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">工作区策略</h3>
                   <div className="neo-card-flat radius-shell-md space-y-1 p-4 text-sm text-muted-foreground">
                     <p>工作目录由系统自动托管，不再支持手动输入。</p>
-                    <p>目录规则：`~/.nexus-core/workspace/&lt;agent_name_slug&gt;`。</p>
+                    <p>目录规则：`~/.nexus/workspace/&lt;agent_name_slug&gt;`。</p>
                     <p>首次创建时会自动初始化 `AGENTS.md`、`MEMORY.md` 等模板。</p>
                   </div>
                   <div className="space-y-2">

@@ -803,7 +803,7 @@ wheels = [
 ]
 
 [[package]]
-name = "nexus-core"
+name = "nexus"
 source = { editable = "." }
 dependencies = [
     { name = "claude-agent-sdk" },

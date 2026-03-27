@@ -7,11 +7,11 @@ x-logging:
 
 
 services:
-  nexus-core:
+  nexus:
     build:
       context: ..
       dockerfile: deploy/Dockerfile
-    image: ${IMAGE:-nexus-core}:app-${TAG}
+    image: ${IMAGE:-nexus}:app-${TAG}
     restart: always
     environment:
       - TZ=Asia/Shanghai
@@ -36,7 +36,7 @@ services:
         - VITE_WS_URL=ws://localhost/agent/v1/chat/ws
         - VITE_API_URL=http://localhost/agent/v1
         - VITE_DEFAULT_MODEL=glm-5
-    image: ${IMAGE:-nexus-core}:web-${TAG}
+    image: ${IMAGE:-nexus}:web-${TAG}
     restart: always
     environment:
       - TZ=Asia/Shanghai
@@ -46,7 +46,7 @@ services:
       - /usr/share/zoneinfo/Asia/Shanghai:/etc/localtime:ro
     logging: *default-logging
     depends_on:
-      - nexus-core
+      - nexus
 
 
   # Nginx 反向代理
@@ -64,7 +64,7 @@ services:
       - "80:80"
       - "443:443"
     depends_on:
-      - nexus-core
+      - nexus
       - web
     logging: *default-logging
 

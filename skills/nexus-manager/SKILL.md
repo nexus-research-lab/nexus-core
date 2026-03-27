@@ -79,7 +79,7 @@ python3 "{project_root}/agent/cli.py" add_room_member --room_id "abc123" --agent
 
 ## Workspace 规则
 
-每个成员创建后自动分配独立工作空间，位于 `~/.nexus-core/workspace/<agent_slug>/`。
+每个成员创建后自动分配独立工作空间，位于 `~/.nexus/workspace/<agent_slug>/`。
 
 ### 目录结构
 

@@ -134,7 +134,7 @@ make stop
 ## 存储
 
 - SQLite：结构化元数据
-- `~/.nexus-core/workspace/`：workspace 根目录
+- `~/.nexus/workspace/`：workspace 根目录
 - `<workspace>/.agents/`：Agent 运行态、Session、消息日志、成本账本
 
 每个 Agent 初始化时会创建：
@@ -159,6 +159,6 @@ make stop
 
 ## 文档
 
-- 技术文档：`docs/nexus-core-technical-doc.md`
+- 技术文档：`docs/nexus-technical-doc.md`
 - 前端说明：`web/README.md`
 - 变更记录：`CHANGELOG.md`

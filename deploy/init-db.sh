@@ -6,8 +6,8 @@ set -e
 echo "Initializing database..."
 
 # 设置变量
-DB_DIR="cache/data"
-DB_FILE="${DB_DIR}/nexus-core.db"
+DB_DIR="${HOME}/.nexus/data"
+DB_FILE="${DB_DIR}/nexus.db"
 ALEMBIC_INI="alembic.ini"
 
 # 创建数据库目录
@@ -15,7 +15,7 @@ mkdir -p "${DB_DIR}"
 
 # 确保 alembic.ini 中的 URL 是正确的
 if [ -f "${ALEMBIC_INI}" ]; then
-    sed -i "s|sqlalchemy.url = .*|sqlalchemy.url = sqlite+aiosqlite:///${DB_DIR}/nexus-core.db|g" "${ALEMBIC_INI}"
+    sed -i "s|sqlalchemy.url = .*|sqlalchemy.url = sqlite+aiosqlite:///${DB_DIR}/nexus.db|g" "${ALEMBIC_INI}"
 fi
 
 # 检查数据库文件是否存在
@@ -48,7 +48,7 @@ else
     fi
 
     # 确保 alembic.ini 中的 URL 是正确的（再次设置）
-    sed -i "s|sqlalchemy.url = .*|sqlalchemy.url = sqlite+aiosqlite:///${DB_DIR}/nexus-core.db|g" "${ALEMBIC_INI}"
+    sed -i "s|sqlalchemy.url = .*|sqlalchemy.url = sqlite+aiosqlite:///${DB_DIR}/nexus.db|g" "${ALEMBIC_INI}"
 
     # 检查是否已经有迁移文件
     if [ ! -d "alembic/versions" ] || [ -z "$(ls -A alembic/versions)" ]; then

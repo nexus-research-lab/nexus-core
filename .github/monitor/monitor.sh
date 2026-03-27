@@ -1,5 +1,5 @@
 #!/bin/bash
-# GitHub PR & Branch Monitor for nexus-core
+# GitHub PR & Branch Monitor for nexus
 
 set -euo pipefail
 

@@ -86,10 +86,10 @@ build: ## Build Docker images
 	TAG=$(TAG) docker compose -f deploy/docker-compose.yml build
 
 build-backend: ## Build backend Docker image
-	docker build --progress=plain -f deploy/Dockerfile -t leemysw/nexus-core:app-$(TAG) .
+	docker build --progress=plain -f deploy/Dockerfile -t leemysw/nexus:app-$(TAG) .
 
 build-web: ## Build frontend Docker image
-	docker build --progress=plain -f web/Dockerfile -t leemysw/nexus-core:web-$(TAG) ./web
+	docker build --progress=plain -f web/Dockerfile -t leemysw/nexus:web-$(TAG) ./web
 
 start: ## Start all services with Docker
 	@if ! docker network inspect net >/dev/null 2>&1; then \
