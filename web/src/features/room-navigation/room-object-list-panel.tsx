@@ -4,15 +4,14 @@ import { useMemo, useState } from "react";
 import {
   Clock3,
   MessageCircleMore,
-  Pencil,
   Trash2,
-  Users,
   Waypoints,
 } from "lucide-react";
 
-import { HOME_WORKSPACE_OBJECT_LIST_WIDTH_CLASS } from "@/lib/home-layout";
 import { cn, formatRelativeTime, truncate } from "@/lib/utils";
 import { ConfirmDialog, PromptDialog } from "@/shared/ui/confirm-dialog";
+import { WorkspaceSidebarItem } from "@/shared/ui/workspace-sidebar-item";
+import { WorkspaceSidebarShell } from "@/shared/ui/workspace-sidebar-shell";
 import { Agent } from "@/types/agent";
 import { Conversation } from "@/types/conversation";
 import { RoomAggregate } from "@/types/room";
@@ -101,85 +100,50 @@ export function RoomObjectListPanel({
 
   return (
     <>
-      <aside className={cn(
-        "home-glass-panel radius-shell-xl hidden min-h-0 shrink-0 overflow-hidden lg:flex lg:flex-col",
-        HOME_WORKSPACE_OBJECT_LIST_WIDTH_CLASS,
-      )}>
-        <div className="border-b workspace-divider px-4 pb-3 pt-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="mt-1 flex items-center gap-2">
-                <p className="text-[16px] font-black tracking-[-0.04em] text-slate-950/92">
-                  {active_space === "dm" ? "Direct Messages" : "Rooms"}
-                </p>
-              </div>
-            </div>
+      <WorkspaceSidebarShell
+        empty_state={!room_items.length ? (
+          <div className="workspace-card rounded-[18px] px-4 py-4 text-sm leading-6 text-slate-700/60">
+            {active_space === "dm"
+              ? "还没有可打开的直接协作。"
+              : "还没有可切换的协作空间。"}
           </div>
-
-          {active_space === "room" ? (
-            <div className="mt-2 flex items-center gap-2">
-              <button
-                className="workspace-chip inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-slate-700/72 transition hover:text-slate-950"
-                onClick={() => set_is_delete_dialog_open(true)}
-                type="button"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                删除
-              </button>
-            </div>
-          ) : null}
-        </div>
-
-        <div className="soft-scrollbar min-h-0 flex-1 overflow-y-auto px-2 py-3">
-          <div className="space-y-1.5">
-            {room_items.map((room) => {
-              const is_active = room.room_id === current_room_id;
-              return (
-                <button
-                  key={room.room_id}
-                  className={cn(
-                    "group flex w-full items-start gap-3 rounded-[18px] px-3 py-3 text-left transition-all duration-300",
-                    is_active
-                      ? "workspace-card-strong border-white/24 shadow-[0_18px_30px_rgba(102,112,145,0.12)]"
-                      : "workspace-card border-transparent hover:bg-white/34",
-                  )}
-                  onClick={() => on_open_room(room.room_id)}
-                  type="button"
-                >
-                  <div className="workspace-chip mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-900/72">
-                    {active_space === "dm" ? (
-                      <MessageCircleMore className="h-3.5 w-3.5" />
-                    ) : (
-                      <Waypoints className="h-3.5 w-3.5" />
-                    )}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] font-semibold text-slate-950/88">
-                      {truncate(room.room_name, 22)}
-                    </p>
-                    <p className="mt-0.5 text-[11px] text-slate-700/54">{room.room_subtitle}</p>
-                    <div className="mt-1.5 flex items-center gap-2 text-[10px] text-slate-700/44">
-                      <Clock3 className="h-3.5 w-3.5" />
-                      <span>
-                        {room.last_activity_at > 0 ? formatRelativeTime(room.last_activity_at) : "刚刚创建"}
-                      </span>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-
-            {!room_items.length ? (
-              <div className="workspace-card rounded-[18px] px-4 py-4 text-sm leading-6 text-slate-700/60">
-                {active_space === "dm"
-                  ? "还没有可打开的直接协作。"
-                  : "还没有可切换的协作空间。"}
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </aside>
+        ) : null}
+        header_action={active_space === "room" ? (
+          <button
+            className="workspace-chip inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-slate-700/72 transition hover:text-slate-950"
+            onClick={() => set_is_delete_dialog_open(true)}
+            type="button"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            删除
+          </button>
+        ) : null}
+        title={active_space === "dm" ? "Direct Messages" : "Rooms"}
+      >
+        {room_items.map((room) => {
+          const is_active = room.room_id === current_room_id;
+          return (
+            <WorkspaceSidebarItem
+              key={room.room_id}
+              icon={active_space === "dm"
+                ? <MessageCircleMore className="h-3.5 w-3.5" />
+                : <Waypoints className="h-3.5 w-3.5" />}
+              is_active={is_active}
+              meta={(
+                <div className="flex items-center gap-2 text-[10px] text-slate-700/44">
+                  <Clock3 className="h-3.5 w-3.5" />
+                  <span>
+                    {room.last_activity_at > 0 ? formatRelativeTime(room.last_activity_at) : "刚刚创建"}
+                  </span>
+                </div>
+              )}
+              on_click={() => on_open_room(room.room_id)}
+              subtitle={room.room_subtitle}
+              title={truncate(room.room_name, 22)}
+            />
+          );
+        })}
+      </WorkspaceSidebarShell>
 
       <PromptDialog
         default_value={current_room_title}

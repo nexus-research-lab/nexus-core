@@ -6,6 +6,8 @@ import { AppRouteBuilders } from "@/app/router/route-paths";
 import { getRoomContexts, listRooms } from "@/lib/room-api";
 import { AppLoadingScreen } from "@/shared/ui/app-loading-screen";
 import { AppStage } from "@/shared/ui/app-stage";
+import { WorkspaceEmptyState } from "@/shared/ui/workspace-empty-state";
+import { WorkspacePageFrame } from "@/shared/ui/workspace-page-frame";
 import { RoomAggregate } from "@/types/room";
 
 function sort_rooms_desc(rooms: RoomAggregate[]) {
@@ -90,37 +92,33 @@ export function RoomsPage() {
 
   return (
     <AppStage active_rail_item="rooms">
-      <div className="relative flex min-h-0 flex-1 items-center justify-center px-4 py-6 sm:px-6">
-        <section className="workspace-card max-w-xl rounded-[32px] px-6 py-6 text-center sm:px-8">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[20px] bg-white/12 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)]">
-            <Waypoints className="h-6 w-6 text-slate-900/78" />
-          </div>
-          <h1 className="mt-5 text-[28px] font-black tracking-[-0.05em] text-slate-950/90">
-            Rooms
-          </h1>
-          <p className="mt-3 text-sm leading-6 text-slate-700/60">
-            当前还没有可恢复的多人协作。你可以先从首页描述任务，让 Nexus 帮你组织新的协作空间。
-          </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <button
-              className="workspace-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-slate-900/82"
-              onClick={() => navigate(AppRouteBuilders.launcher_app())}
-              type="button"
-            >
-              <Sparkles className="h-4 w-4" />
-              打开 Nexus
-            </button>
-            <button
-              className="workspace-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-slate-900/82"
-              onClick={() => navigate(AppRouteBuilders.launcher())}
-              type="button"
-            >
-              回到首页
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          </div>
-        </section>
-      </div>
+      <WorkspacePageFrame>
+        <WorkspaceEmptyState
+          actions={(
+            <>
+              <button
+                className="workspace-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-slate-900/82"
+                onClick={() => navigate(AppRouteBuilders.launcher_app())}
+                type="button"
+              >
+                <Sparkles className="h-4 w-4" />
+                打开 Nexus
+              </button>
+              <button
+                className="workspace-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-slate-900/82"
+                onClick={() => navigate(AppRouteBuilders.launcher())}
+                type="button"
+              >
+                回到首页
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </>
+          )}
+          description="当前还没有可恢复的多人协作。你可以先从首页描述任务，让 Nexus 帮你组织新的协作空间。"
+          icon={<Waypoints className="h-6 w-6 text-slate-900/78" />}
+          title="Rooms"
+        />
+      </WorkspacePageFrame>
     </AppStage>
   );
 }

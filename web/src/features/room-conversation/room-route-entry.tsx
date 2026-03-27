@@ -2,6 +2,7 @@ import { ArrowRight, MessageSquare, Sparkles, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { AppRouteBuilders } from "@/app/router/route-paths";
+import { WorkspaceActionBar, WorkspaceActionCard } from "@/shared/ui/workspace-action-bar";
 import { Agent } from "@/types/agent";
 import { Conversation } from "@/types/conversation";
 
@@ -32,40 +33,25 @@ export function RoomRouteEntry({
           {room_agent ? room_agent.name : "这个协作空间还没有对应成员"}
         </h2>
 
-        <div className="mt-6 grid gap-3 md:grid-cols-3">
-          <button
-            className="workspace-card rounded-[24px] px-4 py-4 text-left transition hover:bg-white/20"
-            onClick={() => navigate(AppRouteBuilders.launcher())}
-            type="button"
-          >
-            <MessageSquare className="h-5 w-5 text-slate-900/78" />
-            <p className="mt-3 text-sm font-semibold text-slate-950/86">回到 launcher</p>
-            <p className="mt-1 text-xs leading-5 text-slate-700/58">
-              从首页继续最近对话，或重新开始一次协作。
-            </p>
-          </button>
-
-          <button
-            className="workspace-card rounded-[24px] px-4 py-4 text-left transition hover:bg-white/20"
-            onClick={() => navigate(AppRouteBuilders.contacts())}
-            type="button"
-          >
-            <Users className="h-5 w-5 text-slate-900/78" />
-            <p className="mt-3 text-sm font-semibold text-slate-950/86">浏览成员</p>
-            <p className="mt-1 text-xs leading-5 text-slate-700/58">
-              去 Contacts 选择合适成员，重新发起 1v1 或多人协作。
-            </p>
-          </button>
-
-          <button
-            className="workspace-card rounded-[24px] px-4 py-4 text-left transition hover:bg-white/20"
-            onClick={() => navigate(AppRouteBuilders.launcher())}
-            type="button"
-          >
-            <Sparkles className="h-5 w-5 text-slate-900/78" />
-            <p className="mt-3 text-sm font-semibold text-slate-950/86">交给Nexus</p>
-          </button>
-        </div>
+        <WorkspaceActionBar variant="cards">
+          <WorkspaceActionCard
+            description="从首页继续最近对话，或重新开始一次协作。"
+            icon={<MessageSquare className="h-5 w-5 text-slate-900/78" />}
+            on_click={() => navigate(AppRouteBuilders.launcher())}
+            title="回到 launcher"
+          />
+          <WorkspaceActionCard
+            description="去 Contacts 选择合适成员，重新发起 1v1 或多人协作。"
+            icon={<Users className="h-5 w-5 text-slate-900/78" />}
+            on_click={() => navigate(AppRouteBuilders.contacts())}
+            title="浏览成员"
+          />
+          <WorkspaceActionCard
+            icon={<Sparkles className="h-5 w-5 text-slate-900/78" />}
+            on_click={() => navigate(AppRouteBuilders.launcher())}
+            title="交给Nexus"
+          />
+        </WorkspaceActionBar>
       </section>
 
       <aside className="workspace-card rounded-[30px] px-6 py-6">

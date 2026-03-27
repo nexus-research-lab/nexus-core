@@ -6,11 +6,12 @@ import { RoomContextPanel } from "@/features/room-context/room-context-panel";
 import { RoomEditorPanel } from "@/features/room-context/room-editor-panel";
 import { RoomObjectListPanel } from "@/features/room-navigation/room-object-list-panel";
 import {
-  HOME_AGENT_INSPECTOR_WRAPPER_CLASS,
   HOME_CHAT_PANEL_CLASS,
   HOME_WORKSPACE_MAIN_GAP_CLASS,
 } from "@/lib/home-layout";
 import { cn } from "@/lib/utils";
+import { WorkspaceCanvasShell } from "@/shared/ui/workspace-canvas-shell";
+import { WorkspaceInspectorShell } from "@/shared/ui/workspace-inspector-shell";
 import { Agent } from "@/types/agent";
 import { Conversation, ConversationSnapshotPayload } from "@/types/conversation";
 import { RoomAggregate } from "@/types/room";
@@ -103,10 +104,6 @@ export function RoomWorkspaceLayout({
   on_conversation_snapshot_change,
 }: RoomWorkspaceLayoutProps) {
   const show_detail_panel = !is_editor_open && active_surface_tab === "chat";
-  const main_panel_radius_class = show_detail_panel
-    ? "rounded-l-[32px] rounded-r-[24px]"
-    : "radius-shell-xl";
-
   return (
     <div className={cn("flex min-h-0 min-w-0 flex-1 gap-2 lg:gap-2.5 xl:gap-3")}>
       <RoomObjectListPanel
@@ -141,12 +138,12 @@ export function RoomWorkspaceLayout({
           width_percent={editor_width_percent}
         />
 
-        <div
-          className={cn(
+        <WorkspaceCanvasShell
+          class_name={cn(
             HOME_CHAT_PANEL_CLASS,
-            "overflow-hidden border border-white/28 bg-[linear-gradient(180deg,rgba(252,253,255,0.94),rgba(245,247,251,0.92))] shadow-[inset_1px_1px_0_rgba(255,255,255,0.40),0_18px_34px_rgba(77,91,124,0.06)] backdrop-blur-[16px]",
-            main_panel_radius_class,
+            "shadow-[inset_1px_1px_0_rgba(255,255,255,0.40),0_18px_34px_rgba(77,91,124,0.06)]",
           )}
+          is_joined_with_inspector={show_detail_panel}
         >
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             <RoomConversationHeader
@@ -203,16 +200,11 @@ export function RoomWorkspaceLayout({
               ) : null}
             </div>
           </div>
-        </div>
+        </WorkspaceCanvasShell>
       </section>
 
       {show_detail_panel ? (
-        <div
-          className={cn(
-            HOME_AGENT_INSPECTOR_WRAPPER_CLASS,
-            "overflow-hidden rounded-r-[32px] rounded-l-[24px] border-l home-glass-divider bg-[linear-gradient(180deg,rgba(248,251,255,0.16),rgba(223,233,250,0.10))] backdrop-blur-[22px]",
-          )}
-        >
+        <WorkspaceInspectorShell>
           <RoomContextPanel
             active_conversation={current_conversation}
             agent={current_agent}
@@ -229,7 +221,7 @@ export function RoomWorkspaceLayout({
             room_name={current_room_title}
             todos={current_todos}
           />
-        </div>
+        </WorkspaceInspectorShell>
       ) : null}
     </div>
   );

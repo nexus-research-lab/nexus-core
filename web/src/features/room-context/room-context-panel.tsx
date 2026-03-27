@@ -3,8 +3,8 @@
 import { Bot, Trash2, UserPlus } from "lucide-react";
 import { useState } from "react";
 
-import { HOME_AGENT_INSPECTOR_WIDTH_CLASS } from "@/lib/home-layout";
 import { ConfirmDialog } from "@/shared/ui/confirm-dialog";
+import { WorkspaceInspectorSection } from "@/shared/ui/workspace-inspector-section";
 import { Agent } from "@/types/agent";
 import { Conversation } from "@/types/conversation";
 import { TodoItem } from "@/types/todo";
@@ -57,66 +57,63 @@ export function RoomContextPanel({
 
   return (
     <>
-      <aside className={`flex min-h-0 flex-col bg-transparent ${HOME_AGENT_INSPECTOR_WIDTH_CLASS}`}>
-        <div className="flex-1 overflow-y-auto scrollbar-hide">
-          {current_room_type === "room" ? (
-            <section className="border-b workspace-divider px-4 py-4">
-              <div className="mb-3 flex items-center justify-between gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700/56">
-                <div className="flex items-center gap-2">
-                  <Bot className="h-3.5 w-3.5" />
-                  Members
-                </div>
-                <button
-                  className="home-glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-slate-900/78"
-                  onClick={() => set_is_member_picker_open(true)}
-                  type="button"
-                >
-                  <UserPlus className="h-3.5 w-3.5" />
-                  添加
-                </button>
-              </div>
-
-              <div className="space-y-1.5">
-                {room_members.map((member) => {
-                  const is_active = member.agent_id === current_agent_id;
-                  return (
+      <>
+        {current_room_type === "room" ? (
+          <WorkspaceInspectorSection
+            action={(
+              <button
+                className="home-glass-pill inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold text-slate-900/78"
+                onClick={() => set_is_member_picker_open(true)}
+                type="button"
+              >
+                <UserPlus className="h-3.5 w-3.5" />
+                添加
+              </button>
+            )}
+            icon={Bot}
+            title="Members"
+          >
+            <div className="space-y-1.5">
+              {room_members.map((member) => {
+                const is_active = member.agent_id === current_agent_id;
+                return (
+                  <button
+                    key={member.agent_id}
+                    className={`group flex w-full items-center gap-3 rounded-[16px] px-3 py-2 text-left transition-all duration-300 ${
+                      is_active ? "bg-white/14" : "hover:bg-white/10"
+                    }`}
+                    onClick={() => on_select_agent(member.agent_id)}
+                    type="button"
+                  >
+                    <div className="home-glass-pill flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-900/76">
+                      {member.name.slice(0, 2).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] font-semibold text-slate-900/82">
+                        {member.name}
+                      </p>
+                      <p className="truncate text-[11px] text-slate-700/48">
+                        {is_active ? "当前活跃" : "参与协作中"}
+                      </p>
+                    </div>
+                    <span className={`h-2 w-2 shrink-0 rounded-full ${is_active ? "bg-emerald-400" : "bg-slate-300"}`} />
                     <button
-                      key={member.agent_id}
-                      className={`group flex w-full items-center gap-3 rounded-[16px] px-3 py-2 text-left transition-all duration-300 ${
-                        is_active ? "bg-white/14" : "hover:bg-white/10"
-                      }`}
-                      onClick={() => on_select_agent(member.agent_id)}
+                      aria-label={`移除 ${member.name}`}
+                      className="rounded-xl p-1.5 text-slate-700/54 opacity-0 transition-all group-hover:opacity-100 hover:bg-white/10 hover:text-destructive"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        set_pending_remove_agent_id(member.agent_id);
+                      }}
                       type="button"
                     >
-                      <div className="home-glass-pill flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-900/76">
-                        {member.name.slice(0, 2).toUpperCase()}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[13px] font-semibold text-slate-900/82">
-                          {member.name}
-                        </p>
-                        <p className="truncate text-[11px] text-slate-700/48">
-                          {is_active ? "当前活跃" : "参与协作中"}
-                        </p>
-                      </div>
-                      <span className={`h-2 w-2 shrink-0 rounded-full ${is_active ? "bg-emerald-400" : "bg-slate-300"}`} />
-                      <button
-                        aria-label={`移除 ${member.name}`}
-                        className="rounded-xl p-1.5 text-slate-700/54 opacity-0 transition-all group-hover:opacity-100 hover:bg-white/10 hover:text-destructive"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          set_pending_remove_agent_id(member.agent_id);
-                        }}
-                        type="button"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
+                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
-                  );
-                })}
-              </div>
-            </section>
-          ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          </WorkspaceInspectorSection>
+        ) : null}
 
         <RoomMemberSummaryCard
           agent={agent}
@@ -132,8 +129,7 @@ export function RoomContextPanel({
         />
 
         <RoomProgressSection todos={todos} />
-        </div>
-      </aside>
+      </>
 
       <RoomMemberPickerDialog
         agents={available_room_agents}

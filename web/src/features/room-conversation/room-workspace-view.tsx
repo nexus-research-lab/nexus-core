@@ -3,6 +3,7 @@
 import { FileText, FolderTree } from "lucide-react";
 import { useMemo } from "react";
 
+import { WorkspaceSurfaceView } from "@/shared/ui/workspace-surface-view";
 import { useWorkspaceFilesStore } from "@/store/workspace-files";
 
 interface RoomWorkspaceViewProps {
@@ -23,20 +24,7 @@ export function RoomWorkspaceView({
   );
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent">
-      <div className="border-b workspace-divider px-5 py-2.5 xl:px-6">
-        <div className="mx-auto w-full max-w-[760px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-700/44">
-            Workspace
-          </p>
-          <h2 className="mt-1 text-[16px] font-black tracking-[-0.04em] text-slate-950/88">
-            共享资源
-          </h2>
-        </div>
-      </div>
-
-      <div className="soft-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-5 xl:px-6">
-        <div className="mx-auto w-full max-w-[760px]">
+    <WorkspaceSurfaceView eyebrow="Workspace" title="共享资源">
         {visible_files.length ? (
           <div className="space-y-2">
             {visible_files.map((file) => {
@@ -72,8 +60,6 @@ export function RoomWorkspaceView({
             在左侧 Context 中创建或打开文件后，这里会成为当前协作的资源视图。
           </div>
         )}
-        </div>
-      </div>
-    </div>
+    </WorkspaceSurfaceView>
   );
 }

@@ -6,8 +6,9 @@ import { RoomWorkspaceShell } from "@/features/room-conversation/room-workspace-
 import { RoomRouteEntry } from "@/features/room-conversation/room-route-entry";
 import { useRoomPageController } from "@/hooks/use-room-page-controller";
 import { AgentOptions } from "@/shared/ui/agent-options-dialog";
-import { AppStage } from "@/shared/ui/app-stage";
 import { AppLoadingScreen } from "@/shared/ui/app-loading-screen";
+import { AppStage } from "@/shared/ui/app-stage";
+import { WorkspacePageFrame } from "@/shared/ui/workspace-page-frame";
 import { RoomRouteParams } from "@/types/route";
 
 export function RoomPage() {
@@ -112,7 +113,11 @@ export function RoomPage() {
         dm_href={controller.current_room_type === "dm" ? current_conversation_route : undefined}
         room_href={controller.current_room_type === "room" ? current_conversation_route : undefined}
       >
-        <section className="relative flex min-h-0 flex-1 overflow-hidden rounded-[34px] border border-white/28 bg-[linear-gradient(180deg,rgba(248,248,252,0.96),rgba(239,241,247,0.94))] shadow-[0_24px_80px_rgba(102,112,145,0.14)]">
+        <WorkspacePageFrame
+          content_padding_class_name="p-0"
+          panel_class_name="rounded-[34px] border border-white/28 bg-[linear-gradient(180deg,rgba(248,248,252,0.96),rgba(239,241,247,0.94))] shadow-[0_24px_80px_rgba(102,112,145,0.14)]"
+          use_default_panel_style={false}
+        >
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,208,168,0.18),transparent_24%),radial-gradient(circle_at_bottom,rgba(154,224,184,0.16),transparent_26%)]" />
           <div className="relative flex min-h-0 flex-1">
             <RoomWorkspaceShell
@@ -154,7 +159,7 @@ export function RoomPage() {
               workspace_split_ref={controller.workspace_split_ref}
             />
           </div>
-        </section>
+        </WorkspacePageFrame>
 
         <AgentOptions
           mode={controller.dialog_mode}
@@ -171,16 +176,14 @@ export function RoomPage() {
 
   return (
     <AppStage active_rail_item="rooms">
-      <div className="relative flex min-h-0 flex-1 flex-col px-4 py-4 sm:px-6 sm:py-6">
-        <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[30px] p-4 sm:p-6">
-          <RoomRouteEntry
-            agents={controller.agents}
-            conversations={controller.conversations}
-            conversation_id={params.conversation_id}
-            room_id={params.room_id}
-          />
-        </section>
-      </div>
+      <WorkspacePageFrame>
+        <RoomRouteEntry
+          agents={controller.agents}
+          conversations={controller.conversations}
+          conversation_id={params.conversation_id}
+          room_id={params.room_id}
+        />
+      </WorkspacePageFrame>
     </AppStage>
   );
 }

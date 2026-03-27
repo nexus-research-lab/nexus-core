@@ -1,241 +1,257 @@
-import { ArrowRight, Bot, Clock3, MessageCircleMore, Sparkles, Users } from "lucide-react";
+"use client";
+
+import {
+  Grid2X2,
+  List,
+  Search,
+  Users,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { AppRouteBuilders } from "@/app/router/route-paths";
-import { HOME_WORKSPACE_OBJECT_LIST_WIDTH_CLASS } from "@/lib/home-layout";
-import { cn, formatRelativeTime } from "@/lib/utils";
+import { WorkspaceCanvasShell } from "@/shared/ui/workspace-canvas-shell";
+import { WorkspaceSurfaceHeader } from "@/shared/ui/workspace-surface-header";
 import { Agent } from "@/types/agent";
 import { Conversation } from "@/types/conversation";
+
+import { ContactsAgentCard } from "./contacts-agent-card";
+import {
+  ContactsFilterKey,
+  get_contacts_agent_conversations,
+  get_contacts_agent_description,
+  get_contacts_model_label,
+  get_contacts_runtime_label,
+  get_contacts_runtime_status,
+  matches_contacts_filter,
+  matches_contacts_search,
+} from "./contacts-directory-helpers";
+import { ContactsFilterSidebar } from "./contacts-filter-sidebar";
+import { ContactsProfilePanel } from "./contacts-profile-panel";
 
 interface ContactsDirectoryProps {
   agents: Agent[];
   conversations: Conversation[];
   on_open_direct_room: (agent_id: string) => void;
+  on_create_agent: () => void;
+  on_edit_agent: (agent_id: string) => void;
+  on_delete_agent: (agent_id: string) => void;
   selected_agent_id?: string;
 }
 
-function formatModelName(agent: Agent): string {
-  return agent.options.model || "inherit";
+function get_status_class_name(status: string): string {
+  if (status === "协作中") {
+    return "bg-emerald-100 text-emerald-700";
+  }
+  if (status === "待命") {
+    return "bg-slate-200 text-slate-700";
+  }
+  return "bg-sky-100 text-sky-700";
 }
 
 export function ContactsDirectory({
   agents,
   conversations,
   on_open_direct_room,
+  on_create_agent,
+  on_edit_agent,
+  on_delete_agent,
   selected_agent_id,
 }: ContactsDirectoryProps) {
   const navigate = useNavigate();
-  const [active_tab, set_active_tab] = useState<"about" | "history">("about");
+  const [active_filter, set_active_filter] = useState<ContactsFilterKey>("all");
+  const [search_query, set_search_query] = useState("");
+  const [view_mode, set_view_mode] = useState<"grid" | "list">("grid");
 
   const conversations_by_agent = useMemo(() => {
     const grouped = new Map<string, Conversation[]>();
-    conversations.forEach((conversation) => {
-      const agent_id = conversation.agent_id;
-      if (!agent_id) {
-        return;
-      }
-      const current_group = grouped.get(agent_id) ?? [];
-      current_group.push(conversation);
-      grouped.set(agent_id, current_group);
+    agents.forEach((agent) => {
+      grouped.set(agent.agent_id, get_contacts_agent_conversations(conversations, agent.agent_id));
     });
     return grouped;
-  }, [conversations]);
+  }, [agents, conversations]);
 
   const selected_agent =
     agents.find((agent) => agent.agent_id === selected_agent_id) ?? agents[0] ?? null;
+
+  const filtered_agents = useMemo(() => (
+    agents.filter((agent) => {
+      const agent_conversations = conversations_by_agent.get(agent.agent_id) ?? [];
+      return (
+        matches_contacts_filter(agent, agent_conversations, active_filter) &&
+        matches_contacts_search(agent, search_query)
+      );
+    })
+  ), [active_filter, agents, conversations_by_agent, search_query]);
+
   const selected_agent_conversations = selected_agent
-    ? [...(conversations_by_agent.get(selected_agent.agent_id) ?? [])].sort(
-        (left, right) => right.last_activity_at - left.last_activity_at,
-      )
+    ? conversations_by_agent.get(selected_agent.agent_id) ?? []
     : [];
 
+  const filter_sections = useMemo(() => {
+    const build_count = (filter: ContactsFilterKey) => agents.filter((agent) => (
+      matches_contacts_filter(agent, conversations_by_agent.get(agent.agent_id) ?? [], filter)
+    )).length;
+
+    return [
+      {
+        title: "Main Directory",
+        items: [
+          { key: "all" as const, label: "All Agents", count: build_count("all") },
+          { key: "recent" as const, label: "Recent", count: build_count("recent") },
+        ],
+      },
+      {
+        title: "By Status",
+        items: [
+          { key: "running" as const, label: "Running", count: build_count("running"), dot_class_name: "bg-emerald-300" },
+          { key: "active" as const, label: "Active", count: build_count("active"), dot_class_name: "bg-sky-300" },
+          { key: "idle" as const, label: "Idle", count: build_count("idle"), dot_class_name: "bg-slate-400" },
+        ],
+      },
+      {
+        title: "By Capability",
+        items: [
+          { key: "skills_on" as const, label: "Skills On", count: build_count("skills_on"), dot_class_name: "bg-violet-300" },
+          { key: "skills_off" as const, label: "Skills Off", count: build_count("skills_off"), dot_class_name: "bg-amber-300" },
+        ],
+      },
+    ];
+  }, [agents, conversations_by_agent]);
+
+  const header_trailing = (
+    <>
+      <label className="home-glass-input hidden items-center gap-2 rounded-full px-4 py-2.5 text-sm text-slate-700/62 xl:flex">
+        <Search className="h-4 w-4" />
+        <input
+          className="w-[220px] bg-transparent text-sm text-slate-950/86 outline-none placeholder:text-slate-500"
+          onChange={(event) => set_search_query(event.target.value)}
+          placeholder="搜索成员、模型或路径"
+          value={search_query}
+        />
+      </label>
+
+      <div className="hidden items-center gap-2 lg:flex">
+        <button
+          className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl border transition ${
+            view_mode === "grid"
+              ? "workspace-card-strong text-slate-950"
+              : "workspace-chip text-slate-700/60 hover:text-slate-950"
+          }`}
+          onClick={() => set_view_mode("grid")}
+          type="button"
+        >
+          <Grid2X2 className="h-4 w-4" />
+        </button>
+        <button
+          className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl border transition ${
+            view_mode === "list"
+              ? "workspace-card-strong text-slate-950"
+              : "workspace-chip text-slate-700/60 hover:text-slate-950"
+          }`}
+          onClick={() => set_view_mode("list")}
+          type="button"
+        >
+          <List className="h-4 w-4" />
+        </button>
+      </div>
+
+      <button
+        className="workspace-chip inline-flex items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold text-slate-900/82 transition hover:text-slate-950"
+        onClick={on_create_agent}
+        type="button"
+      >
+        新建成员
+      </button>
+    </>
+  );
+
   return (
-    <div className="flex min-h-0 flex-1 overflow-hidden">
-      <aside className={cn(
-        "hidden min-h-0 shrink-0 border-r border-white/18 bg-white/8 lg:flex lg:flex-col",
-        HOME_WORKSPACE_OBJECT_LIST_WIDTH_CLASS,
-      )}>
-        <div className="px-4 pb-4 pt-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-700/44">
-            Contacts
-          </p>
-          <p className="mt-1 text-[20px] font-black tracking-[-0.04em] text-slate-950/90">
-            成员网络
-          </p>
-          <p className="mt-1 text-[12px] text-slate-700/54">
-            {agents.length} 个成员
-          </p>
-        </div>
+    <div className="flex min-h-0 min-w-0 flex-1 gap-2 lg:gap-2.5 xl:gap-3">
+      <ContactsFilterSidebar
+        active_filter={active_filter}
+        on_change_filter={set_active_filter}
+        on_create_agent={on_create_agent}
+        sections={filter_sections}
+        total_count={agents.length}
+      />
 
-        <div className="soft-scrollbar min-h-0 flex-1 overflow-y-auto px-2 pb-4">
-          <div className="space-y-1.5">
-            {agents.map((agent) => {
-              const room_conversations = conversations_by_agent.get(agent.agent_id) ?? [];
-              const is_active = selected_agent?.agent_id === agent.agent_id;
+      <WorkspaceCanvasShell is_joined_with_inspector>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <WorkspaceSurfaceHeader
+            badge="CONTACTS"
+            leading={<Users className="h-4 w-4 text-slate-800/72" />}
+            subtitle={(
+              <span className="truncate">
+                {filtered_agents.length} / {agents.length} 个成员可见 · 浏览、筛选并发起 1v1 协作
+              </span>
+            )}
+            title="成员目录"
+            trailing={header_trailing}
+          />
 
-              return (
-                <button
-                  key={agent.agent_id}
-                  className={cn(
-                    "group flex w-full items-start gap-3 rounded-[18px] px-3 py-3 text-left transition-all duration-300",
-                    is_active
-                      ? "border border-white/28 bg-white/20 shadow-[0_14px_24px_rgba(111,126,162,0.08)]"
-                      : "border border-transparent hover:bg-white/12",
-                  )}
-                  onClick={() => navigate(AppRouteBuilders.contact_profile(agent.agent_id))}
-                  type="button"
-                >
-                  <div className="workspace-chip mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-900/76">
-                    <Bot className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-slate-950/86">
-                      {agent.name}
-                    </p>
-                    <p className="mt-1 text-[12px] text-slate-700/56">
-                      {formatModelName(agent)}
-                    </p>
-                    <div className="mt-2 flex items-center gap-2 text-[11px] text-slate-700/48">
-                      <Clock3 className="h-3.5 w-3.5" />
-                      <span>{room_conversations.length} 条历史协作</span>
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
+          <div className="soft-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-5 xl:px-6">
+            {filtered_agents.length ? (
+              <div className={
+                view_mode === "grid"
+                  ? "grid gap-5 xl:grid-cols-2 2xl:grid-cols-3"
+                  : "space-y-4"
+              }>
+                {filtered_agents.map((agent) => {
+                  const runtime_status = get_contacts_runtime_status(agent);
+                  const status_label = get_contacts_runtime_label(runtime_status);
+                  const status_class_name = get_status_class_name(status_label);
+                  const is_selected = selected_agent?.agent_id === agent.agent_id;
 
-            {!agents.length ? (
-              <div className="workspace-card rounded-[22px] px-4 py-4 text-sm leading-6 text-slate-700/60">
-                当前还没有可浏览的成员。先从首页创建第一个成员。
+                  return (
+                    <ContactsAgentCard
+                      key={agent.agent_id}
+                      description={get_contacts_agent_description(agent)}
+                      is_selected={is_selected}
+                      model_label={get_contacts_model_label(agent)}
+                      name={agent.name}
+                      on_open_profile={() => navigate(AppRouteBuilders.contact_profile(agent.agent_id))}
+                      on_open_room={() => on_open_direct_room(agent.agent_id)}
+                      status_class_name={status_class_name}
+                      status_label={status_label}
+                    />
+                  );
+                })}
               </div>
-            ) : null}
+            ) : (
+              <div className="workspace-card flex min-h-[420px] items-center justify-center rounded-[28px] px-8 text-center">
+                <div>
+                  <p className="text-[22px] font-bold tracking-[-0.04em] text-slate-950/90">没有符合条件的成员</p>
+                  <p className="mt-3 text-sm leading-7 text-slate-700/60">
+                    换一个筛选条件，或者直接创建一个新的成员继续配置。
+                  </p>
+                  <button
+                    className="workspace-chip mt-6 inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold text-slate-900/84 transition hover:text-slate-950"
+                    onClick={on_create_agent}
+                    type="button"
+                  >
+                    新建成员
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-      </aside>
+      </WorkspaceCanvasShell>
 
-      <section className="flex min-h-0 min-w-0 flex-1 flex-col">
-        {selected_agent ? (
-          <>
-            <div className="border-b workspace-divider px-6 py-4 xl:px-8">
-              <div className="flex min-w-0 items-center justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-[22px] font-black tracking-[-0.04em] text-slate-950/90">
-                    {selected_agent.name}
-                  </div>
-                  <div className="mt-1 flex items-center gap-2 text-[12px] text-slate-700/52">
-                    <Users className="h-3.5 w-3.5 shrink-0" />
-                    <span className="truncate">
-                      {selected_agent.options.skills_enabled ? "技能已启用" : "技能未启用"} · {formatModelName(selected_agent)}
-                    </span>
-                  </div>
-                </div>
-
-                <button
-                  className="workspace-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold text-slate-900/82"
-                  onClick={() => on_open_direct_room(selected_agent.agent_id)}
-                  type="button"
-                >
-                  发起 1v1 协作
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </button>
-              </div>
-
-              <div className="mt-4 flex items-center gap-1">
-                <button
-                  className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-semibold transition-all ${
-                    active_tab === "about"
-                      ? "bg-white/22 text-slate-950 shadow-[0_10px_20px_rgba(111,126,162,0.08)]"
-                      : "text-slate-700/56 hover:bg-white/12 hover:text-slate-950"
-                  }`}
-                  onClick={() => set_active_tab("about")}
-                  type="button"
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  About
-                </button>
-                <button
-                  className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[12px] font-semibold transition-all ${
-                    active_tab === "history"
-                      ? "bg-white/22 text-slate-950 shadow-[0_10px_20px_rgba(111,126,162,0.08)]"
-                      : "text-slate-700/56 hover:bg-white/12 hover:text-slate-950"
-                  }`}
-                  onClick={() => set_active_tab("history")}
-                  type="button"
-                >
-                  <MessageCircleMore className="h-3.5 w-3.5" />
-                  History
-                </button>
-              </div>
-            </div>
-
-            <div className="soft-scrollbar min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 xl:px-8">
-              {active_tab === "about" ? (
-                <div className="workspace-card max-w-3xl rounded-[26px] px-5 py-5">
-                  <p className="text-xl font-semibold text-slate-950/88">{selected_agent.name}</p>
-                  <p className="mt-2 text-sm text-slate-700/58">{formatModelName(selected_agent)}</p>
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-[18px] border border-white/18 bg-white/10 px-4 py-4">
-                      <p className="text-[11px] uppercase tracking-[0.12em] text-slate-700/46">
-                        历史协作
-                      </p>
-                      <p className="mt-2 text-sm font-semibold text-slate-950/84">
-                        {selected_agent_conversations.length} 条
-                      </p>
-                    </div>
-                    <div className="rounded-[18px] border border-white/18 bg-white/10 px-4 py-4">
-                      <p className="text-[11px] uppercase tracking-[0.12em] text-slate-700/46">
-                        技能状态
-                      </p>
-                      <p className="mt-2 text-sm font-semibold text-slate-950/84">
-                        {selected_agent.options.skills_enabled ? "已启用" : "未启用"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="max-w-3xl space-y-2">
-                  {selected_agent_conversations.length ? (
-                    selected_agent_conversations.map((conversation) => (
-                      <button
-                        key={conversation.session_key}
-                        className="flex w-full items-start gap-4 rounded-[20px] border border-white/16 bg-white/8 px-4 py-4 text-left transition-all duration-300 hover:bg-white/12"
-                        onClick={() => on_open_direct_room(selected_agent.agent_id)}
-                        type="button"
-                      >
-                        <div className="workspace-chip flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-900/76">
-                          <MessageCircleMore className="h-4 w-4" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-slate-950/86">
-                            {conversation.title?.trim() || "未命名对话"}
-                          </p>
-                          <div className="mt-2 flex items-center gap-2 text-[12px] text-slate-700/52">
-                            <Clock3 className="h-3.5 w-3.5" />
-                            <span>{formatRelativeTime(conversation.last_activity_at)}</span>
-                            <span>·</span>
-                            <span>{conversation.message_count ?? 0} 条消息</span>
-                          </div>
-                        </div>
-                      </button>
-                    ))
-                  ) : (
-                    <div className="workspace-card rounded-[24px] px-4 py-4 text-sm leading-6 text-slate-700/60">
-                      这个成员还没有可回看的历史协作。
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </>
-        ) : (
-          <div className="flex min-h-0 flex-1 items-center justify-center px-6 py-6">
-            <div className="workspace-card max-w-xl rounded-[24px] px-5 py-5 text-sm leading-6 text-slate-700/60">
-              当前还没有成员资料可展示。先创建一个成员，Contacts 才会成为真正的成员网络页。
-            </div>
-          </div>
-        )}
-      </section>
+      <ContactsProfilePanel
+        agent={selected_agent}
+        conversations={selected_agent_conversations}
+        on_delete_agent={on_delete_agent}
+        on_edit_agent={on_edit_agent}
+        on_open_room={on_open_direct_room}
+        status_class_name={selected_agent ? get_status_class_name(
+          get_contacts_runtime_label(get_contacts_runtime_status(selected_agent)),
+        ) : "bg-slate-400/14 text-slate-300"}
+        status_label={selected_agent
+          ? get_contacts_runtime_label(get_contacts_runtime_status(selected_agent))
+          : "未选择"}
+      />
     </div>
   );
 }

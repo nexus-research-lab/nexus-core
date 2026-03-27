@@ -6,6 +6,8 @@ import { AppRouteBuilders } from "@/app/router/route-paths";
 import { listRooms, getRoomContexts } from "@/lib/room-api";
 import { AppLoadingScreen } from "@/shared/ui/app-loading-screen";
 import { AppStage } from "@/shared/ui/app-stage";
+import { WorkspaceEmptyState } from "@/shared/ui/workspace-empty-state";
+import { WorkspacePageFrame } from "@/shared/ui/workspace-page-frame";
 import { RoomAggregate } from "@/types/room";
 
 function sort_rooms_desc(rooms: RoomAggregate[]) {
@@ -90,37 +92,33 @@ export function DmsPage() {
 
   return (
     <AppStage active_rail_item="dms">
-      <div className="relative flex min-h-0 flex-1 items-center justify-center px-4 py-6 sm:px-6">
-        <section className="workspace-card max-w-xl rounded-[32px] px-6 py-6 text-center sm:px-8">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-[20px] bg-white/12 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)]">
-            <MessageCircleMore className="h-6 w-6 text-slate-900/78" />
-          </div>
-          <h1 className="mt-5 text-[28px] font-black tracking-[-0.05em] text-slate-950/90">
-            Direct Messages
-          </h1>
-          <p className="mt-3 text-sm leading-6 text-slate-700/60">
-            当前还没有可恢复的 1v1 协作。先去成员网络选择成员，或者从首页唤起新的系统协作。
-          </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <button
-              className="workspace-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-slate-900/82"
-              onClick={() => navigate(AppRouteBuilders.contacts())}
-              type="button"
-            >
-              <Users className="h-4 w-4" />
-              成员网络
-            </button>
-            <button
-              className="workspace-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-slate-900/82"
-              onClick={() => navigate(AppRouteBuilders.launcher())}
-              type="button"
-            >
-              回到首页
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          </div>
-        </section>
-      </div>
+      <WorkspacePageFrame>
+        <WorkspaceEmptyState
+          actions={(
+            <>
+              <button
+                className="workspace-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-slate-900/82"
+                onClick={() => navigate(AppRouteBuilders.contacts())}
+                type="button"
+              >
+                <Users className="h-4 w-4" />
+                成员网络
+              </button>
+              <button
+                className="workspace-chip inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-slate-900/82"
+                onClick={() => navigate(AppRouteBuilders.launcher())}
+                type="button"
+              >
+                回到首页
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </>
+          )}
+          description="当前还没有可恢复的 1v1 协作。先去成员网络选择成员，或者从首页唤起新的系统协作。"
+          icon={<MessageCircleMore className="h-6 w-6 text-slate-900/78" />}
+          title="Direct Messages"
+        />
+      </WorkspacePageFrame>
     </AppStage>
   );
 }
