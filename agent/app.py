@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from agent.api.common import common_router
 from agent.api.router import api_router
 from agent.config.config import settings
 from agent.service.channels.channel_register import ChannelRegister
@@ -91,7 +92,7 @@ def create_app() -> FastAPI:
         openapi_url=f"/openapi.json" if settings.ENABLE_SWAGGER_DOC else None,
         docs_url=f"/docs" if settings.ENABLE_SWAGGER_DOC else None,
         redoc_url=f"/redoc" if settings.ENABLE_SWAGGER_DOC else None,
-        routes=api_router.routes,
+        routes=[*common_router.routes, *api_router.routes],
 
     )
 
