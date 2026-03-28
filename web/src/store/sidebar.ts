@@ -1,0 +1,108 @@
+/**
+ * 侧边栏状态 Store
+ *
+ * 管理双面板侧边栏的 Tab 激活、面板条目高亮、折叠模式等状态。
+ * 参考 Slack 双面板设计：左侧窄栏（Tab 选择）+ 右侧宽面板（Tab 内容）。
+ */
+
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+
+/** 侧边栏 Tab 类型 */
+export type SidebarTabKey =
+  | "home"
+  | "dms"
+  | "activity"
+  | "capabilities"
+  | "contacts";
+
+/** 侧边栏折叠模式 */
+export type SidebarCollapseMode =
+  | "full"          // 全展开：窄栏 88px + 宽面板 240px
+  | "narrow-only"   // 仅窄栏：88px
+  | "icon-only"     // 纯图标：56px
+  | "collapsed";    // 全收起：0px
+
+interface SidebarState {
+  /** 当前激活的 Tab */
+  active_tab: SidebarTabKey;
+  /** 宽面板中当前高亮的条目 ID（Room/DM/Agent/Skill） */
+  active_panel_item_id: string | null;
+  /** 折叠模式 */
+  collapse_mode: SidebarCollapseMode;
+  /** 宽面板各 Section 的折叠状态 */
+  collapsed_sections: Record<string, boolean>;
+  /** 导航来源 Tab（用于 DM 对话页判断激活 Tab） */
+  navigated_from_tab: SidebarTabKey | null;
+}
+
+interface SidebarActions {
+  set_active_tab: (tab: SidebarTabKey) => void;
+  set_active_panel_item: (id: string | null) => void;
+  set_collapse_mode: (mode: SidebarCollapseMode) => void;
+  toggle_section: (section_id: string) => void;
+  set_navigated_from_tab: (tab: SidebarTabKey | null) => void;
+}
+
+/**
+ * 根据路由路径推导激活的 Tab
+ * 用于 URL 直接访问时自动设置正确的 Tab
+ */
+export function derive_tab_from_path(pathname: string): SidebarTabKey {
+  if (pathname.startsWith("/dms")) return "dms";
+  if (pathname.startsWith("/activity")) return "activity";
+  if (
+    pathname.startsWith("/skills") ||
+    pathname.startsWith("/connectors") ||
+    pathname.startsWith("/scheduled-tasks") ||
+    pathname.startsWith("/channels") ||
+    pathname.startsWith("/pairings")
+  ) return "capabilities";
+  if (pathname.startsWith("/contacts")) return "contacts";
+  // /app、/rooms、以及默认情况都归到 home
+  return "home";
+}
+
+export const useSidebarStore = create<SidebarState & SidebarActions>()(
+  persist(
+    (set) => ({
+      active_tab: "home",
+      active_panel_item_id: null,
+      collapse_mode: "full" as SidebarCollapseMode,
+      collapsed_sections: {},
+      navigated_from_tab: null,
+
+      set_active_tab: (tab) => set({ active_tab: tab }),
+
+      set_active_panel_item: (id) => set({ active_panel_item_id: id }),
+
+      set_collapse_mode: (mode) => set({ collapse_mode: mode }),
+
+      toggle_section: (section_id) =>
+        set((state) => ({
+          collapsed_sections: {
+            ...state.collapsed_sections,
+            [section_id]: !state.collapsed_sections[section_id],
+          },
+        })),
+
+      set_navigated_from_tab: (tab) => {
+        set({ navigated_from_tab: tab });
+        // 5 秒后自动清除，避免后续浏览器前进/后退误判
+        if (tab) {
+          setTimeout(() => {
+            set({ navigated_from_tab: null });
+          }, 5000);
+        }
+      },
+    }),
+    {
+      name: "nexus-sidebar",
+      // 只持久化折叠相关状态，其余随路由推导
+      partialize: (state) => ({
+        collapse_mode: state.collapse_mode,
+        collapsed_sections: state.collapsed_sections,
+      }),
+    },
+  ),
+);

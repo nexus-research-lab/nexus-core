@@ -163,10 +163,10 @@ cython_debug/
 .idea/
 
 # projects
-docs
 logs
 cache
 uv.toml
 **/.DS_Store
 .claude
+.agents
 .kilocode
