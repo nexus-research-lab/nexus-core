@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bot, Check, ChevronDown, ChevronRight, Copy, Edit2, User, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAssistantContentMerge } from "@/hooks/use-assistant-content-merge";
 import { ContentBlock, Message, ResultMessage } from "@/types/message";
 import { PendingPermission, PermissionDecisionPayload } from "@/types/permission";
 import { ContentRenderer } from "./content-renderer";
@@ -55,100 +56,21 @@ export function MessageItem(
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isProcessExpanded, setIsProcessExpanded] = useState(false);
 
-  // 分离消息
-  const { userMessage, assistantMessages, resultMessage } = useMemo(() => {
-    const user = messages.find(m => m.role === 'user');
-    const result = messages.find(m => m.role === 'result') as ResultMessage | undefined;
-    const assistant = messages.filter(m => m.role === 'assistant');
-    return { userMessage: user, assistantMessages: assistant, resultMessage: result };
-  }, [messages]);
-
-  const streamingAssistantMessageId = useMemo(() => {
-    if (!is_last_round || !is_loading) {
-      return null;
-    }
-
-    for (let index = assistantMessages.length - 1; index >= 0; index -= 1) {
-      const message = assistantMessages[index];
-      if (message.is_complete === false) {
-        return message.message_id;
-      }
-    }
-
-    return null;
-  }, [assistantMessages, is_last_round, is_loading]);
-
-  // 合并并去重 assistant 内容
-  const { mergedContent, streamingBlockIndexes } = useMemo(() => {
-    const allBlocks: ContentBlock[] = [];
-    const nextStreamingBlockIndexes = new Set<number>();
-    const seenToolIds = new Set<string>();
-
-    for (const msg of assistantMessages) {
-      if (!Array.isArray(msg.content)) continue;
-      const isStreamingMessage = msg.message_id === streamingAssistantMessageId;
-      const streamingContentIndex = isStreamingMessage
-        ? findLastStreamableBlockIndex(msg.content)
-        : -1;
-
-      msg.content.forEach((block, blockIndex) => {
-        if (!block) {
-          return;
-        }
-        if (block.type === 'tool_use' && block.id) {
-          if (seenToolIds.has(block.id)) return;
-          seenToolIds.add(block.id);
-        }
-        if (block.type === 'tool_result' && block.tool_use_id) {
-          if (seenToolIds.has(`result_${block.tool_use_id}`)) return;
-          seenToolIds.add(`result_${block.tool_use_id}`);
-        }
-
-        const nextIndex = allBlocks.length;
-        allBlocks.push(block);
-        if (isStreamingMessage && blockIndex === streamingContentIndex) {
-          nextStreamingBlockIndexes.add(nextIndex);
-        }
-      });
-    }
-    return {
-      mergedContent: allBlocks,
-      streamingBlockIndexes: nextStreamingBlockIndexes,
-    };
-  }, [assistantMessages, streamingAssistantMessageId]);
-
-  const visibleAssistantTextContent = useMemo(() => {
-    return mergedContent.filter((block) => (
-      block.type === "text" && Boolean(block.text.trim())
-    ));
-  }, [mergedContent]);
-
-  const assistantTextStreamingIndexes = useMemo(() => {
-    const nextIndexes = new Set<number>();
-    let textIndex = 0;
-
-    mergedContent.forEach((block, index) => {
-      if (block.type === "text" && Boolean(block.text.trim())) {
-        if (streamingBlockIndexes.has(index)) {
-          nextIndexes.add(textIndex);
-        }
-        textIndex += 1;
-      }
-    });
-
-    return nextIndexes;
-  }, [mergedContent, streamingBlockIndexes]);
-
-  // 获取纯文本内容用于复制
-  const assistantTextContent = useMemo(() => {
-    const texts: string[] = [];
-    for (const block of visibleAssistantTextContent) {
-      if (block.type === "text" && block.text) {
-        texts.push(block.text);
-      }
-    }
-    return texts.join("\n\n");
-  }, [visibleAssistantTextContent]);
+  // 分离消息 + 合并内容
+  const {
+    userMessage,
+    assistantMessages,
+    resultMessage,
+    mergedContent,
+    streamingBlockIndexes,
+    visibleAssistantTextContent,
+    assistantTextStreamingIndexes,
+    assistantTextContent,
+  } = useAssistantContentMerge({
+    messages,
+    is_last_round,
+    is_loading,
+  });
 
   // 元数据
   const firstAssistant = assistantMessages[0];
@@ -176,7 +98,7 @@ export function MessageItem(
   // 状态
   const hasFinalAnswer = !!resultMessage;
   const userContent = useMemo(() => {
-    if (!userMessage) return '';
+    if (!userMessage || userMessage.role !== 'user') return '';
     return typeof userMessage.content === 'string' ? userMessage.content : '';
   }, [userMessage]);
 
@@ -571,17 +493,3 @@ export function MessageItem(
 }
 
 export default MessageItem;
-
-function findLastStreamableBlockIndex(blocks: ContentBlock[]): number {
-  for (let index = blocks.length - 1; index >= 0; index -= 1) {
-    const block = blocks[index];
-    if (!block) {
-      continue;
-    }
-    if (block.type === 'text' || block.type === 'thinking') {
-      return index;
-    }
-  }
-
-  return -1;
-}
