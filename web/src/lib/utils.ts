@@ -9,6 +9,7 @@
 
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { prepareWithSegments } from '@chenglou/pretext';
 
 // ==================== 样式工具 ====================
 
@@ -66,9 +67,23 @@ export function formatCost(usd: number): string {
 // ==================== 文本工具 ====================
 
 /**
- * 截断文本
+ * 截断文本（grapheme-aware，正确处理 CJK、emoji、ZWJ 序列）
+ *
+ * text.substring(0, N) 按 UTF-16 code unit 截，会把 emoji（surrogate pair）
+ * 或 ZWJ 序列切成乱码。pretext prepareWithSegments 返回 grapheme cluster 数组，
+ * 按 grapheme 数截断才是语言学上正确的做法。
  */
 export function truncate(text: string, maxLength: number): string {
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + '...';
+  // Fast path: ASCII-only，code unit 数 == grapheme 数，直接跳过 pretext
+  if (text.length <= maxLength && !/[\uD800-\uDFFF\u0300-\u036F]/.test(text)) return text;
+  try {
+    const prepared = prepareWithSegments(text, '');
+    const graphemes = prepared.segments;
+    if (graphemes.length <= maxLength) return text;
+    return graphemes.slice(0, maxLength).join('') + '…';
+  } catch {
+    // fallback to substring if pretext fails
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '…';
+  }
 }

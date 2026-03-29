@@ -5,6 +5,7 @@ import { FileText, Image as ImageIcon, Paperclip, Send, StopCircle, X } from "lu
 
 import { cn } from "@/lib/utils";
 import { LoadingOrb } from "@/shared/ui/loading-orb";
+import { useTextareaHeight } from "@/hooks/use-textarea-height";
 
 interface AttachmentFile {
   id: string;
@@ -44,12 +45,8 @@ const RoomComposerPanelView = memo(({
   const textarea_ref = useRef<HTMLTextAreaElement>(null);
   const file_input_ref = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (textarea_ref.current) {
-      textarea_ref.current.style.height = "auto";
-      textarea_ref.current.style.height = `${Math.min(textarea_ref.current.scrollHeight, 128)}px`;
-    }
-  }, [input]);
+  // Pretext-based auto-height: no scrollHeight reflow
+  useTextareaHeight(textarea_ref, input, { minHeight: 24, maxHeight: 128, lineHeight: 24, paddingY: 0 });
 
   useEffect(() => {
     if (textarea_ref.current && !disabled) {
@@ -280,7 +277,6 @@ const RoomComposerPanelView = memo(({
                 onKeyDown={handle_key_down}
                 placeholder={placeholder}
                 rows={1}
-                style={{ fieldSizing: "content" }}
                 value={input}
               />
             </div>

@@ -24,6 +24,7 @@ import {
 import { RoomConversationFeed } from "@/features/room-conversation/room-conversation-feed";
 import { RoomScrollToLatestButton } from "@/features/room-conversation/room-scroll-to-latest-button";
 import { cn, formatRelativeTime } from "@/lib/utils";
+import { useTextareaHeight } from "@/hooks/use-textarea-height";
 import { Agent } from "@/types/agent";
 import { Message, UserMessage } from "@/types/message";
 import { PendingPermission, PermissionDecisionPayload } from "@/types/permission";
@@ -282,15 +283,8 @@ export function LauncherAppConversationPanel({
     scroll_to_bottom(is_loading ? "auto" : "smooth");
   }, [app_conversation_messages, is_loading, scroll_to_bottom, update_follow_state]);
 
-  useEffect(() => {
-    const textarea = textarea_ref.current;
-    if (!textarea) {
-      return;
-    }
-
-    textarea.style.height = "0px";
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 144)}px`;
-  }, [app_conversation_draft]);
+  // Pretext-based auto-height: no scrollHeight reflow
+  useTextareaHeight(textarea_ref, app_conversation_draft, { minHeight: 28, maxHeight: 144, lineHeight: 24 });
 
   const handle_submit = useCallback(() => {
     if (!can_send_message) {
