@@ -2,9 +2,7 @@
 
 import { Puzzle, Upload } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 
-import { AppRouteBuilders } from "@/app/router/route-paths";
 import { getAgentSkillsApi, getAvailableSkillsApi } from "@/lib/skill-api";
 import { getAgents } from "@/lib/agent-manage-api";
 import { WorkspacePillButton } from "@/shared/ui/workspace-pill-button";
@@ -13,16 +11,18 @@ import { WorkspaceSurfaceHeader } from "@/shared/ui/workspace-surface-header";
 import { Agent } from "@/types/agent";
 import { SkillInfo, AgentSkillEntry } from "@/types/skill";
 
+import { SkillDetailDialog } from "./skill-detail-dialog";
 import { SkillsCard } from "./skills-card";
 
 /** Skills 全宽卡片网格 — Accio 风格 */
 export function SkillsDirectory() {
-  const navigate = useNavigate();
   const [skills, set_skills] = useState<SkillInfo[]>([]);
   const [agents, set_agents] = useState<Agent[]>([]);
   const [agent_skills_map, set_agent_skills_map] = useState<Map<string, AgentSkillEntry[]>>(new Map());
   const [search_query, set_search_query] = useState("");
   const [loading, set_loading] = useState(true);
+  // 弹窗状态：选中的 skill 名称
+  const [selected_skill, set_selected_skill] = useState<string | null>(null);
 
   const load_data = useCallback(async () => {
     try {
@@ -148,7 +148,7 @@ export function SkillsDirectory() {
                 installed={is_skill_installed(skill.name)}
                 locked={is_skill_locked(skill.name)}
                 name={skill.name}
-                on_select={() => navigate(AppRouteBuilders.skill_detail(skill.name))}
+                on_select={() => set_selected_skill(skill.name)}
                 tags={skill.tags}
               />
             ))}
@@ -166,6 +166,15 @@ export function SkillsDirectory() {
           </div>
         )}
       </div>
+
+      {/* Skill 详情弹窗 */}
+      {selected_skill && (
+        <SkillDetailDialog
+          is_open={!!selected_skill}
+          on_close={() => set_selected_skill(null)}
+          skill_name={selected_skill}
+        />
+      )}
     </div>
   );
 }

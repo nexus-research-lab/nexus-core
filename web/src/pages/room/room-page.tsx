@@ -2,12 +2,12 @@ import { useCallback, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { AppRouteBuilders } from "@/app/router/route-paths";
+import { Loader2 } from "lucide-react";
+
 import { RoomWorkspaceShell } from "@/features/room-conversation/room-workspace-shell";
 import { RoomRouteEntry } from "@/features/room-conversation/room-route-entry";
 import { useRoomPageController } from "@/hooks/use-room-page-controller";
 import { AgentOptions } from "@/shared/ui/agent-options";
-import { AppLoadingScreen } from "@/shared/ui/app-loading-screen";
-import { AppStage } from "@/shared/ui/app-stage";
 import { WorkspacePageFrame } from "@/shared/ui/workspace-page-frame";
 import { RoomRouteParams } from "@/types/route";
 
@@ -82,13 +82,23 @@ export function RoomPage() {
     params.room_id,
   ]);
 
+  // 加载中 — 内联 loading，AppStage 由路由布局层提供
   if (!controller.is_hydrated) {
-    return <AppLoadingScreen />;
+    return (
+      <WorkspacePageFrame content_padding_class_name="p-0" use_default_panel_style={false}>
+        <div className="flex min-h-0 flex-1 items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-6 w-6 animate-spin text-slate-400/60" />
+            <span className="text-sm text-slate-400/60">加载对话...</span>
+          </div>
+        </div>
+      </WorkspacePageFrame>
+    );
   }
 
   if (controller.current_room && controller.current_agent) {
     return (
-      <AppStage>
+      <>
         <WorkspacePageFrame
           content_padding_class_name="p-0"
           use_default_panel_style={false}
@@ -139,20 +149,18 @@ export function RoomPage() {
           initial_title={controller.dialog_initial_title}
           initial_options={controller.dialog_initial_options}
         />
-      </AppStage>
+      </>
     );
   }
 
   return (
-    <AppStage>
-      <WorkspacePageFrame>
-        <RoomRouteEntry
-          agents={controller.agents}
-          conversations={controller.conversations}
-          conversation_id={params.conversation_id}
-          room_id={params.room_id}
-        />
-      </WorkspacePageFrame>
-    </AppStage>
+    <WorkspacePageFrame>
+      <RoomRouteEntry
+        agents={controller.agents}
+        conversations={controller.conversations}
+        conversation_id={params.conversation_id}
+        room_id={params.room_id}
+      />
+    </WorkspacePageFrame>
   );
 }

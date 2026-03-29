@@ -139,7 +139,7 @@ export function CapabilitiesPanelContent() {
                 "text-slate-600 transition-all duration-150 hover:bg-white/30 hover:text-slate-800",
               )}
               onClick={() =>
-                navigate(AppRouteBuilders.skill_detail(skill.name))
+                navigate(AppRouteBuilders.skills())
               }
               type="button"
             >

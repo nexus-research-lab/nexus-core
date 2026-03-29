@@ -8,7 +8,6 @@
 import { useState } from "react";
 import { Clock, Plus } from "lucide-react";
 
-import { AppStage } from "@/shared/ui/app-stage";
 import { WorkspacePageFrame } from "@/shared/ui/workspace-page-frame";
 
 import { CreateTaskDialog } from "./create-task-dialog";
@@ -17,8 +16,7 @@ export function ScheduledTasksPage() {
   const [is_dialog_open, set_is_dialog_open] = useState(false);
 
   return (
-    <AppStage>
-      <WorkspacePageFrame>
+    <WorkspacePageFrame>
         {/* 页面头部 */}
         <div className="flex items-center justify-between pb-6">
           <div className="flex items-center gap-3">
@@ -62,7 +60,6 @@ export function ScheduledTasksPage() {
           is_open={is_dialog_open}
           on_close={() => set_is_dialog_open(false)}
         />
-      </WorkspacePageFrame>
-    </AppStage>
+    </WorkspacePageFrame>
   );
 }

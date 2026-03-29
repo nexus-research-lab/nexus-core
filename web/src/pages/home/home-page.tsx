@@ -23,7 +23,6 @@ import { useNavigate } from "react-router-dom";
 import { AppRouteBuilders } from "@/app/router/route-paths";
 import { listRooms } from "@/lib/room-api";
 import { cn, formatRelativeTime } from "@/lib/utils";
-import { AppStage } from "@/shared/ui/app-stage";
 import { WorkspacePageFrame } from "@/shared/ui/workspace-page-frame";
 import { WorkspacePillButton } from "@/shared/ui/workspace-pill-button";
 import { WorkspaceSurfaceHeader } from "@/shared/ui/workspace-surface-header";
@@ -170,8 +169,7 @@ export function HomePage() {
   );
 
   return (
-    <AppStage>
-      <WorkspacePageFrame content_padding_class_name="p-0">
+    <WorkspacePageFrame content_padding_class_name="p-0">
         {/* 页面头部 */}
         <WorkspaceSurfaceHeader
           badge="HOME"
@@ -270,7 +268,6 @@ export function HomePage() {
             </div>
           )}
         </div>
-      </WorkspacePageFrame>
-    </AppStage>
+    </WorkspacePageFrame>
   );
 }

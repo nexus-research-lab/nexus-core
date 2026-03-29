@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 
 import { AppRouteBuilders } from "@/app/router/route-paths";
 import { ContactsDirectory } from "@/features/contacts/contacts-directory";
 import { validateAgentNameApi } from "@/lib/agent-manage-api";
 import { ensureDirectRoom } from "@/lib/room-api";
-import { AppStage } from "@/shared/ui/app-stage";
-import { AppLoadingScreen } from "@/shared/ui/app-loading-screen";
 import { AgentOptions } from "@/shared/ui/agent-options";
 import { ConfirmDialog } from "@/shared/ui/confirm-dialog";
 import { WorkspacePageFrame } from "@/shared/ui/workspace-page-frame";
@@ -141,12 +140,22 @@ export function ContactsPage() {
     void load_conversations_from_server();
   }, [load_agents_from_server, load_conversations_from_server]);
 
+  // 加载中 — 内联 loading，AppStage 由路由布局层提供
   if (loading && !agents.length) {
-    return <AppLoadingScreen />;
+    return (
+      <WorkspacePageFrame content_padding_class_name="p-0">
+        <div className="flex min-h-0 flex-1 items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-6 w-6 animate-spin text-slate-400/60" />
+            <span className="text-sm text-slate-400/60">加载成员...</span>
+          </div>
+        </div>
+      </WorkspacePageFrame>
+    );
   }
 
   return (
-    <AppStage>
+    <>
       <WorkspacePageFrame content_padding_class_name="p-0">
         <ContactsDirectory
           agents={agents}
@@ -179,6 +188,6 @@ export function ContactsPage() {
         title="删除成员"
         variant="danger"
       />
-    </AppStage>
+    </>
   );
 }

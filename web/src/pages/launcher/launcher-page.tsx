@@ -9,7 +9,6 @@ import { useLauncherPageController } from "@/hooks/use-launcher-page-controller"
 import { createConversation, deleteConversation } from "@/lib/agent-api";
 import { createRoom, ensureDirectRoom } from "@/lib/room-api";
 import { cn } from "@/lib/utils";
-import { AppStage } from "@/shared/ui/app-stage";
 import { AgentOptions } from "@/shared/ui/agent-options";
 import { AppLoadingScreen } from "@/shared/ui/app-loading-screen";
 import { useAgentStore } from "@/store/agent";
@@ -270,9 +269,7 @@ export function LauncherPage() {
   }
 
   return (
-    <AppStage
-      show_sidebar={false}
-    >
+    <>
       <div className="relative flex min-h-0 flex-1 gap-1 overflow-hidden">
         <div
           className={cn(
@@ -360,6 +357,6 @@ export function LauncherPage() {
         }
         initial_options={controller.dialog_initial_options}
       />
-    </AppStage>
+    </>
   );
 }

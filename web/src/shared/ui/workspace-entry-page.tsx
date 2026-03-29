@@ -2,8 +2,6 @@
 
 import { ReactNode } from "react";
 
-import { AppStage } from "@/shared/ui/app-stage";
-
 import { WorkspaceEmptyState } from "./workspace-empty-state";
 import { WorkspacePageFrame } from "./workspace-page-frame";
 
@@ -14,6 +12,7 @@ interface WorkspaceEntryPageProps {
   actions?: ReactNode;
 }
 
+/** 通用空状态入口页 — AppStage 由路由布局层提供 */
 export function WorkspaceEntryPage({
   icon,
   title,
@@ -21,15 +20,13 @@ export function WorkspaceEntryPage({
   actions,
 }: WorkspaceEntryPageProps) {
   return (
-    <AppStage>
-      <WorkspacePageFrame>
-        <WorkspaceEmptyState
-          actions={actions}
-          description={description}
-          icon={icon}
-          title={title}
-        />
-      </WorkspacePageFrame>
-    </AppStage>
+    <WorkspacePageFrame>
+      <WorkspaceEmptyState
+        actions={actions}
+        description={description}
+        icon={icon}
+        title={title}
+      />
+    </WorkspacePageFrame>
   );
 }
