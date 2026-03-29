@@ -46,6 +46,9 @@ class AgentManager:
         self,
         name: str,
         options: Optional[AgentOptions] = None,
+        avatar: Optional[str] = None,
+        description: Optional[str] = None,
+        vibe_tags: Optional[list[str]] = None,
     ) -> Optional[AAgent]:
         """创建 Agent，自动初始化 workspace 目录"""
         validation = await self.validate_agent_name(name)
@@ -67,6 +70,9 @@ class AgentManager:
             name=normalized_name,
             workspace_path=resolved_path_str,
             options=options_dict,
+            avatar=avatar,
+            description=description,
+            vibe_tags=vibe_tags,
         )
         if not created_id:
             return None
@@ -92,6 +98,9 @@ class AgentManager:
         agent_id: str,
         name: Optional[str] = None,
         options: Optional[AgentOptions] = None,
+        avatar: Optional[str] = None,
+        description: Optional[str] = None,
+        vibe_tags: Optional[list[str]] = None,
     ) -> bool:
         """更新 Agent 配置"""
         existing = await agent_repository.get_agent(agent_id)
@@ -112,6 +121,9 @@ class AgentManager:
             agent_id,
             name=normalized_name,
             options=options_dict,
+            avatar=avatar,
+            description=description,
+            vibe_tags=vibe_tags,
         )
         if not updated:
             return False

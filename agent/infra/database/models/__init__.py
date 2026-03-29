@@ -9,6 +9,7 @@
 
 """数据库 ORM 模型集合。"""
 
+from agent.infra.database.models.activity_event import ActivityEvent
 from agent.infra.database.models.agent import Agent
 from agent.infra.database.models.contact import Contact
 from agent.infra.database.models.conversation import Conversation
@@ -21,6 +22,7 @@ from agent.infra.database.models.runtime import Runtime
 from agent.infra.database.models.session import Session
 
 __all__ = [
+    "ActivityEvent",
     "Agent",
     "Profile",
     "Runtime",
@@ -38,6 +40,7 @@ __all__ = [
 def load_models() -> tuple[type, ...]:
     """显式加载所有 ORM 模型，确保 Base.metadata 完整。"""
     return (
+        ActivityEvent,
         Agent,
         Profile,
         Runtime,

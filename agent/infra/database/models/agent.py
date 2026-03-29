@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String, Text, CheckConstraint
+from sqlalchemy import JSON, String, Text, CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from agent.infra.database.async_sqlalchemy import Base
@@ -45,6 +45,14 @@ class Agent(TimestampMixin, Base):
     definition: Mapped[str] = mapped_column(Text, default="", nullable=False)
     status: Mapped[str] = mapped_column(String(32), default="active", nullable=False)
     workspace_path: Mapped[str] = mapped_column(String(512), nullable=False)
+
+    # 身份标识字段
+    avatar: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, comment="头像标识（emoji 或图标名称）",
+    )
+    vibe_tags: Mapped[list | None] = mapped_column(
+        JSON, nullable=True, comment="氛围标签列表",
+    )
 
     profile: Mapped["Profile"] = relationship(
         back_populates="agent",

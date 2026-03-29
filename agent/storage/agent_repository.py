@@ -44,9 +44,21 @@ class AgentRepository:
         name: str,
         workspace_path: str,
         options: Optional[Dict] = None,
+        avatar: Optional[str] = None,
+        description: Optional[str] = None,
+        vibe_tags: Optional[list] = None,
     ) -> Optional[str]:
         """创建 Agent，返回 agent_id。"""
         await self._ensure_ready()
+        # 将身份标识字段注入 options 以便 mapper 统一处理
+        merged = dict(options) if options else {}
+        if avatar is not None:
+            merged["avatar"] = avatar
+        if description is not None:
+            merged["description"] = description
+        if vibe_tags is not None:
+            merged["vibe_tags"] = vibe_tags
+
         async with self._db.session() as session:
             repository = AgentSqlRepository(session)
             if await repository.get(agent_id):
@@ -57,7 +69,7 @@ class AgentRepository:
                 agent_id=agent_id,
                 name=name,
                 workspace_path=workspace_path,
-                options=options,
+                options=merged,
                 status="active",
             )
             await repository.create(payload)
@@ -100,6 +112,9 @@ class AgentRepository:
         agent_id: str,
         name: Optional[str] = None,
         options: Optional[Dict] = None,
+        avatar: Optional[str] = None,
+        description: Optional[str] = None,
+        vibe_tags: Optional[list] = None,
     ) -> bool:
         """更新 Agent 基础信息与运行参数。"""
         await self._ensure_ready()
@@ -108,12 +123,21 @@ class AgentRepository:
             return False
 
         merged_options = AgentSqlMapper.merge_options(aggregate, options)
+
+        # 构造 Agent 主表更新字段（含身份标识）
+        agent_fields: Dict = {}
+        if name is not None:
+            agent_fields["name"] = name
+        if avatar is not None:
+            agent_fields["avatar"] = avatar
+        if description is not None:
+            agent_fields["description"] = description
+        if vibe_tags is not None:
+            agent_fields["vibe_tags"] = vibe_tags
+
         async with self._db.session() as session:
             repository = AgentSqlRepository(session)
-            updated = await repository.update_agent_fields(
-                agent_id,
-                name=name,
-            )
+            updated = await repository.update_agent_fields(agent_id, **agent_fields)
             if updated is None:
                 return False
 

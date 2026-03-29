@@ -30,11 +30,21 @@ class AgentService:
             agents = [a for a in agents if not MainAgentProfile.is_main_agent(a.agent_id)]
         return agents
 
-    async def create_agent(self, name: str, options) -> AAgent:
+    async def create_agent(
+        self,
+        name: str,
+        options,
+        avatar: Optional[str] = None,
+        description: Optional[str] = None,
+        vibe_tags: Optional[list[str]] = None,
+    ) -> AAgent:
         """创建 Agent。"""
         agent = await agent_manager.create_agent(
             name=name,
             options=options,
+            avatar=avatar,
+            description=description,
+            vibe_tags=vibe_tags,
         )
         if not agent:
             raise RuntimeError("Failed to create agent")
@@ -47,13 +57,24 @@ class AgentService:
             raise LookupError("Agent not found")
         return agent
 
-    async def update_agent(self, agent_id: str, name: Optional[str], options) -> AAgent:
+    async def update_agent(
+        self,
+        agent_id: str,
+        name: Optional[str],
+        options,
+        avatar: Optional[str] = None,
+        description: Optional[str] = None,
+        vibe_tags: Optional[list[str]] = None,
+    ) -> AAgent:
         """更新 Agent 配置并刷新活跃会话。"""
         await self.get_agent(agent_id)
         success = await agent_manager.update_agent(
             agent_id=agent_id,
             name=name,
             options=options,
+            avatar=avatar,
+            description=description,
+            vibe_tags=vibe_tags,
         )
         if not success:
             raise RuntimeError("Failed to update agent")

@@ -59,6 +59,11 @@ class AAgent(BaseModel):
     created_at: datetime = Field(default_factory=datetime.now, description="创建时间")
     status: str = Field(default="active", description="状态: active/archived")
 
+    # 身份标识字段（Identity Tab）
+    avatar: Optional[str] = Field(default=None, description="头像标识（emoji 或图标名称）")
+    description: Optional[str] = Field(default=None, description="Agent 描述文本")
+    vibe_tags: Optional[list[str]] = Field(default=None, description="氛围标签列表")
+
     model_config = {"from_attributes": True}
 
 
@@ -70,12 +75,20 @@ class CreateAgentRequest(BaseModel):
     """创建 Agent 请求"""
     name: str = Field(..., description="Agent 名称")
     options: Optional[AgentOptions] = Field(default=None, description="初始配置")
+    # 身份标识字段
+    avatar: Optional[str] = Field(default=None, description="头像标识（emoji 或图标名称）")
+    description: Optional[str] = Field(default=None, description="Agent 描述文本")
+    vibe_tags: Optional[list[str]] = Field(default=None, description="氛围标签列表")
 
 
 class UpdateAgentRequest(BaseModel):
     """更新 Agent 请求"""
     name: Optional[str] = Field(default=None, description="名称")
     options: Optional[AgentOptions] = Field(default=None, description="配置")
+    # 身份标识字段
+    avatar: Optional[str] = Field(default=None, description="头像标识（emoji 或图标名称）")
+    description: Optional[str] = Field(default=None, description="Agent 描述文本")
+    vibe_tags: Optional[list[str]] = Field(default=None, description="氛围标签列表")
 
 
 class ValidateAgentNameResponse(BaseModel):

@@ -44,15 +44,21 @@ class AgentSqlMapper:
         from agent.service.agent.agent_name_policy import AgentNamePolicy
 
         normalized_options = options or {}
+        # 从 options 中提取身份标识字段（avatar / description / vibe_tags）
+        avatar = normalized_options.pop("avatar", None)
+        description = normalized_options.pop("description", None) or ""
+        vibe_tags = normalized_options.pop("vibe_tags", None)
         return CreateAgentAggregate(
             agent=AgentRecord(
                 id=agent_id,
                 slug=AgentNamePolicy.build_workspace_dir_name(name),
                 name=name,
-                description="",
+                description=description,
                 definition="",
                 status=status,
                 workspace_path=str(Path(workspace_path).expanduser()),
+                avatar=avatar,
+                vibe_tags=vibe_tags,
                 created_at=created_at,
             ),
             profile=ProfileRecord(
@@ -114,6 +120,10 @@ class AgentSqlMapper:
             options=cls.runtime_record_to_options(aggregate.runtime),
             created_at=aggregate.agent.created_at or datetime.now(),
             status=aggregate.agent.status,
+            # 身份标识字段
+            avatar=aggregate.agent.avatar,
+            description=aggregate.agent.description or None,
+            vibe_tags=aggregate.agent.vibe_tags,
         )
 
     @classmethod

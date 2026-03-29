@@ -33,6 +33,9 @@ class AgentRecord(PersistenceModel):
     definition: str = Field(default="", description="核心定义")
     status: str = Field(default="active", description="状态")
     workspace_path: str = Field(..., description="工作区路径")
+    # 身份标识字段
+    avatar: Optional[str] = Field(default=None, description="头像标识（emoji 或图标名称）")
+    vibe_tags: Optional[list] = Field(default=None, description="氛围标签列表")
     created_at: Optional[datetime] = Field(default=None, description="创建时间")
     updated_at: Optional[datetime] = Field(default=None, description="更新时间")
 

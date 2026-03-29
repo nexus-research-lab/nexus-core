@@ -42,6 +42,9 @@ async def create_agent(request: CreateAgentRequest):
         agent = await agent_service.create_agent(
             name=request.name,
             options=request.options,
+            avatar=request.avatar,
+            description=request.description,
+            vibe_tags=request.vibe_tags,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -69,6 +72,9 @@ async def update_agent(agent_id: str, request: UpdateAgentRequest):
             agent_id=agent_id,
             name=request.name,
             options=request.options,
+            avatar=request.avatar,
+            description=request.description,
+            vibe_tags=request.vibe_tags,
         )
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
