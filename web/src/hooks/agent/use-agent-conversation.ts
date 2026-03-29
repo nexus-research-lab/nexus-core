@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from 'react';
 import { getAgentWsUrl } from '@/config/options';
 import { useWebSocket } from '@/lib/websocket';
 import { useWorkspaceLiveStore } from '@/store/workspace-live';
@@ -16,6 +16,7 @@ import {
   resetAgentConversation,
   startAgentConversation,
 } from './conversation-lifecycle';
+import { applyStreamMessage } from './message-helpers';
 import { handleAgentConversationWebSocketMessage } from './websocket-event-handler';
 import {
   deleteConversationRound,
@@ -37,6 +38,43 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
 
   const active_conversation_key_ref = useRef<string | null>(null);
   const load_request_id_ref = useRef(0);
+
+  // ── Stream batching ──────────────────────────────────────────────────────
+  // WebSocket fires on every token (~50-100/sec during streaming).
+  // Each token previously called set_messages + set_is_loading = 2 React renders.
+  // At 100 tokens/sec that's 200 renders/sec and full CPU saturation.
+  //
+  // Fix: accumulate stream payloads within an animation frame, flush them all
+  // in one setState per frame (≤60 flushes/sec regardless of token rate).
+  // startTransition marks the update as non-urgent so React can interrupt it
+  // if a higher-priority update (e.g. user keypress) arrives.
+  const stream_buffer_ref = useRef<import('@/types').StreamMessage[]>([]);
+  const stream_raf_ref = useRef<number | null>(null);
+
+  const flush_stream_buffer = useCallback(() => {
+    stream_raf_ref.current = null;
+    const payloads = stream_buffer_ref.current;
+    if (payloads.length === 0) return;
+    stream_buffer_ref.current = [];
+
+    startTransition(() => {
+      set_messages((prev) => {
+        let next = prev;
+        for (const payload of payloads) {
+          next = applyStreamMessage(next, payload);
+        }
+        return next;
+      });
+      set_is_loading(true);
+    });
+  }, []);
+
+  const enqueue_stream_payload = useCallback((payload: import('@/types').StreamMessage) => {
+    stream_buffer_ref.current.push(payload);
+    if (stream_raf_ref.current === null) {
+      stream_raf_ref.current = requestAnimationFrame(flush_stream_buffer);
+    }
+  }, [flush_stream_buffer]);
   const lifecycle_context: AgentConversationLifecycleContext = useMemo(() => ({
     active_conversation_key_ref,
     load_request_id_ref,
@@ -63,8 +101,19 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
       set_is_loading,
       set_messages,
       set_pending_permission,
+      enqueue_stream_payload,
     });
-  }, [apply_workspace_event, is_current_session_event]);
+  }, [apply_workspace_event, is_current_session_event, enqueue_stream_payload]);
+
+  // Cancel any pending rAF flush on unmount to prevent setState after unmount
+  useEffect(() => {
+    return () => {
+      if (stream_raf_ref.current !== null) {
+        cancelAnimationFrame(stream_raf_ref.current);
+        stream_raf_ref.current = null;
+      }
+    };
+  }, []);
 
   const has_connected_ref = useRef(false);
 

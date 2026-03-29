@@ -8,6 +8,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+// Module-level timer so we can cancel it before creating a new one.
+// Avoids stacking multiple timeouts when set_navigated_from_tab is called rapidly.
+let _navigated_from_tab_timer: ReturnType<typeof setTimeout> | null = null;
+
 /** 侧边栏 Tab 类型 */
 export type SidebarTabKey =
   | "home"
@@ -108,7 +112,11 @@ export const useSidebarStore = create<SidebarState & SidebarActions>()(
         set({ navigated_from_tab: tab });
         // 5 秒后自动清除，避免后续浏览器前进/后退误判
         if (tab) {
-          setTimeout(() => {
+          if (_navigated_from_tab_timer !== null) {
+            clearTimeout(_navigated_from_tab_timer);
+          }
+          _navigated_from_tab_timer = setTimeout(() => {
+            _navigated_from_tab_timer = null;
             set({ navigated_from_tab: null });
           }, 5000);
         }

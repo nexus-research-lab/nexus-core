@@ -15,6 +15,7 @@ export function handleAgentConversationWebSocketMessage({
   set_is_loading,
   set_messages,
   set_pending_permission,
+  enqueue_stream_payload,
 }: HandleAgentConversationWebSocketMessageParams): void {
   const event = backend_message as EventMessage;
   const incoming_session_key = event.session_key || null;
@@ -65,8 +66,14 @@ export function handleAgentConversationWebSocketMessage({
       return;
     }
 
-    set_messages((prev) => applyStreamMessage(prev, payload));
-    set_is_loading(true);
+    // Route to rAF batch buffer when available (≤60 flushes/sec),
+    // otherwise fall back to direct update (e.g. during tests).
+    if (enqueue_stream_payload) {
+      enqueue_stream_payload(payload);
+    } else {
+      set_messages((prev) => applyStreamMessage(prev, payload));
+      set_is_loading(true);
+    }
     return;
   }
 

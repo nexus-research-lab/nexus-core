@@ -9,7 +9,7 @@
 
 import { Dispatch, RefObject, SetStateAction } from 'react';
 
-import { Message } from '@/types';
+import { Message, StreamMessage } from '@/types';
 import { PendingPermission, PermissionDecisionPayload } from '@/types/permission';
 import { WebSocketMessage, WebSocketState } from '@/types/websocket';
 import { WorkspaceEventPayload } from '@/types/workspace-live';
@@ -78,4 +78,6 @@ export interface HandleAgentConversationWebSocketMessageParams {
   set_is_loading: Dispatch<SetStateAction<boolean>>;
   set_messages: Dispatch<SetStateAction<Message[]>>;
   set_pending_permission: Dispatch<SetStateAction<PendingPermission | null>>;
+  /** Enqueue a stream payload into the rAF batch buffer instead of calling set_messages directly */
+  enqueue_stream_payload?: (payload: StreamMessage) => void;
 }

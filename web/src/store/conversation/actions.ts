@@ -110,20 +110,28 @@ export const syncConversationSnapshotAction = (
   patch: Partial<Pick<Conversation, 'message_count' | 'last_activity_at' | 'session_id'>>
 ): void => {
   set((state) => {
-    const updated_conversations = state.conversations.map((conversation) =>
-      conversation.session_key === key
-        ? {
-          ...conversation,
-          ...patch,
-        }
-        : conversation
-    );
+    // Avoid O(N log N) sort on every stream token.
+    // The list is already sorted; only reorder if last_activity_at changed.
+    const idx = state.conversations.findIndex((c) => c.session_key === key);
+    if (idx === -1) return { error: null };
 
-    updated_conversations.sort((left, right) => right.last_activity_at - left.last_activity_at);
-    return {
-      conversations: updated_conversations,
-      error: null,
-    };
+    const patched: Conversation = { ...state.conversations[idx], ...patch };
+    const activity_changed =
+      patch.last_activity_at !== undefined &&
+      patch.last_activity_at !== state.conversations[idx].last_activity_at;
+
+    let updated_conversations: Conversation[];
+    if (activity_changed) {
+      updated_conversations = [
+        patched,
+        ...state.conversations.slice(0, idx),
+        ...state.conversations.slice(idx + 1),
+      ];
+    } else {
+      updated_conversations = state.conversations.map((c, i) => (i === idx ? patched : c));
+    }
+
+    return { conversations: updated_conversations, error: null };
   });
 };
 
