@@ -238,6 +238,7 @@ export function RoomChatPanel({
             <RoomConversationFeed
               bottom_anchor_ref={bottom_anchor_ref}
               feed_ref={feed_ref}
+              scroll_ref={scroll_ref}
               current_agent_name={current_agent_name ?? null}
               is_last_round_pending_permission={pending_permission}
               is_loading={is_loading}
