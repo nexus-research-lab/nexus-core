@@ -9,7 +9,9 @@
     "lint": "eslint \"src/**/*.{ts,tsx}\" vite.config.ts eslint.config.mjs"
   },
   "dependencies": {
+    "@chenglou/pretext": "^0.0.3",
     "@lottiefiles/dotlottie-react": "^0.18.7",
+    "@tanstack/react-virtual": "^3.13.23",
     "@types/matter-js": "^0.20.2",
     "@types/react-syntax-highlighter": "^15.5.13",
     "clsx": "^2.1.1",
