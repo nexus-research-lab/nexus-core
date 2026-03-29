@@ -100,7 +100,7 @@ export function ContactsDirectory({
             className="workspace-card flex cursor-pointer flex-col items-center justify-center rounded-[26px] border border-dashed border-slate-300/40 px-6 py-8 text-center transition-all hover:border-slate-400/50 hover:bg-white/34"
             onClick={on_create_agent}
           >
-            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/24 bg-white/16 backdrop-blur-sm">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/44 bg-white/64">
               <Plus className="h-7 w-7 text-slate-600" />
             </div>
             <p className="mt-4 text-[18px] font-bold tracking-[-0.03em] text-slate-950/80">

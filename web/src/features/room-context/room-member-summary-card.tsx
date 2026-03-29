@@ -16,7 +16,7 @@ export function RoomMemberSummaryCard({
 }: RoomMemberSummaryCardProps) {
   return (
     <section className="border-b workspace-divider px-4 py-4 min-w-[240px]">
-      <div className="rounded-[24px] bg-[linear-gradient(180deg,rgba(255,255,255,0.16),rgba(255,255,255,0.08))] px-4 py-4 ring-1 ring-white/12 backdrop-blur-[16px]">
+      <div className="rounded-[24px] bg-[linear-gradient(180deg,rgba(255,255,255,0.72),rgba(240,244,255,0.60))] px-4 py-4 ring-1 ring-white/40">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700/50">

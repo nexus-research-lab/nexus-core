@@ -31,7 +31,7 @@ export function ContactsAgentCard({
       onClick={on_open_profile}
     >
       {/* 居中头像 */}
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-white/24 bg-white/16 backdrop-blur-sm">
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-white/44 bg-white/64">
         <Bot className="h-7 w-7 text-slate-900/88" />
       </div>
 

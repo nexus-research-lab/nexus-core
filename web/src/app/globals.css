@@ -313,7 +313,7 @@
       inset -1px -1px 0 rgba(156, 176, 214, 0.16),
       0 26px 54px rgba(77, 91, 124, 0.12),
       0 4px 14px rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(26px) saturate(125%);
+    backdrop-filter: blur(14px) saturate(115%);
   }
 
   .home-glass-panel-strong {
@@ -328,7 +328,7 @@
       inset -1px -1px 0 rgba(156, 176, 214, 0.18),
       0 30px 68px rgba(76, 88, 120, 0.14),
       0 6px 16px rgba(255, 255, 255, 0.10);
-    backdrop-filter: blur(28px) saturate(128%);
+    backdrop-filter: blur(16px) saturate(118%);
   }
 
   .home-glass-card {
@@ -340,7 +340,7 @@
       inset 1px 1px 0 rgba(255, 255, 255, 0.42),
       inset -1px -1px 0 rgba(166, 181, 214, 0.14),
       0 20px 36px rgba(76, 88, 120, 0.08);
-    backdrop-filter: blur(22px) saturate(122%);
+    backdrop-filter: blur(12px) saturate(112%);
   }
 
   .home-glass-card-strong {
@@ -352,7 +352,7 @@
       inset 1px 1px 0 rgba(255, 255, 255, 0.48),
       inset -1px -1px 0 rgba(166, 181, 214, 0.14),
       0 22px 40px rgba(76, 88, 120, 0.10);
-    backdrop-filter: blur(24px) saturate(125%);
+    backdrop-filter: blur(14px) saturate(115%);
   }
 
   .home-glass-pill {
@@ -364,7 +364,7 @@
       inset 1px 1px 0 rgba(255, 255, 255, 0.5),
       inset -1px -1px 0 rgba(164, 180, 211, 0.16),
       0 16px 26px rgba(78, 92, 126, 0.08);
-    backdrop-filter: blur(18px) saturate(120%);
+    backdrop-filter: blur(10px) saturate(112%);
   }
 
   .home-glass-input {
@@ -376,7 +376,7 @@
       inset 1px 1px 0 rgba(255, 255, 255, 0.5),
       inset -1px -1px 0 rgba(164, 180, 211, 0.16),
       0 18px 30px rgba(78, 92, 126, 0.08);
-    backdrop-filter: blur(22px) saturate(120%);
+    backdrop-filter: blur(12px) saturate(112%);
   }
 
   .home-glass-divider {
@@ -404,7 +404,7 @@
       inset -1px -1px 0 rgba(156, 176, 214, 0.06),
       0 20px 44px rgba(77, 91, 124, 0.06),
       0 4px 12px rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(22px) saturate(112%);
+    backdrop-filter: blur(12px) saturate(108%);
   }
 
   .workspace-divider {
@@ -413,26 +413,24 @@
 
   .workspace-card {
     background:
-      radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.22), transparent 26%),
-      linear-gradient(180deg, rgba(246, 249, 255, 0.18), rgba(223, 233, 250, 0.12));
-    border: 1px solid rgba(255, 255, 255, 0.30);
+      radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.28), transparent 26%),
+      linear-gradient(180deg, rgba(246, 249, 255, 0.82), rgba(236, 242, 255, 0.74));
+    border: 1px solid rgba(255, 255, 255, 0.52);
     box-shadow:
-      inset 1px 1px 0 rgba(255, 255, 255, 0.38),
+      inset 1px 1px 0 rgba(255, 255, 255, 0.62),
       inset -1px -1px 0 rgba(166, 181, 214, 0.10),
-      0 16px 32px rgba(76, 88, 120, 0.06);
-    backdrop-filter: blur(20px) saturate(116%);
+      0 4px 12px rgba(76, 88, 120, 0.06);
   }
 
   .workspace-card-strong {
     background:
-      radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.26), transparent 26%),
-      linear-gradient(180deg, rgba(248, 251, 255, 0.24), rgba(224, 235, 252, 0.16));
-    border: 1px solid rgba(255, 255, 255, 0.36);
+      radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.32), transparent 26%),
+      linear-gradient(180deg, rgba(248, 251, 255, 0.88), rgba(238, 244, 255, 0.80));
+    border: 1px solid rgba(255, 255, 255, 0.58);
     box-shadow:
-      inset 1px 1px 0 rgba(255, 255, 255, 0.44),
+      inset 1px 1px 0 rgba(255, 255, 255, 0.68),
       inset -1px -1px 0 rgba(166, 181, 214, 0.12),
-      0 20px 38px rgba(76, 88, 120, 0.08);
-    backdrop-filter: blur(22px) saturate(120%);
+      0 6px 16px rgba(76, 88, 120, 0.08);
   }
 
   /* 模态对话框面板 — 不使用 backdrop-filter，避免在暗色遮罩上模糊出脏色 */
@@ -520,23 +518,21 @@
 
   .workspace-chip {
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(245, 243, 239, 0.74));
-    border: 1px solid rgba(255, 255, 255, 0.36);
+      linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(245, 243, 239, 0.82));
+    border: 1px solid rgba(255, 255, 255, 0.52);
     box-shadow:
-      inset 1px 1px 0 rgba(255, 255, 255, 0.6),
-      0 8px 18px rgba(110, 117, 142, 0.08);
-    backdrop-filter: blur(14px) saturate(108%);
+      inset 1px 1px 0 rgba(255, 255, 255, 0.72),
+      0 2px 6px rgba(110, 117, 142, 0.06);
   }
 
   .workspace-input-shell {
     background:
-      radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.34), transparent 26%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(248, 246, 242, 0.62));
-    border: 1px solid rgba(255, 255, 255, 0.34);
+      radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.38), transparent 26%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(248, 246, 242, 0.80));
+    border: 1px solid rgba(255, 255, 255, 0.48);
     box-shadow:
-      inset 1px 1px 0 rgba(255, 255, 255, 0.62),
-      0 18px 32px rgba(110, 117, 142, 0.08);
-    backdrop-filter: blur(18px) saturate(112%);
+      inset 1px 1px 0 rgba(255, 255, 255, 0.72),
+      0 4px 16px rgba(110, 117, 142, 0.06);
   }
 
   .launcher-surface-left {

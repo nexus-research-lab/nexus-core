@@ -134,7 +134,7 @@ export function RoomEditorPanel({
   return (
     <section
       className={cn(
-        "relative flex min-h-0 min-w-0 shrink-0 flex-col overflow-hidden transition-[width,opacity,transform,border-color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[width,opacity,transform]",
+        "relative flex min-h-0 min-w-0 shrink-0 flex-col overflow-hidden transition-[width,opacity,transform,border-color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
         embedded ? "border-l workspace-divider shadow-none" : "workspace-card radius-shell-lg",
         is_open ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-3 opacity-0",
         embedded && !is_open && "border-l-transparent",

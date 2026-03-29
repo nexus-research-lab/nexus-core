@@ -176,7 +176,7 @@ export function RoomChatPanel({
 
       {error && error.includes("服务器") ? (
         <div className="absolute left-1/2 top-4 z-50 max-w-md -translate-x-1/2">
-          <div className="rounded-2xl border border-destructive/20 bg-destructive/8 p-3 backdrop-blur-sm">
+          <div className="rounded-2xl border border-destructive/20 bg-destructive/8 p-3">
             <div className="flex items-start gap-3">
               <svg className="mt-0.5 h-5 w-5 shrink-0 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path

@@ -37,7 +37,7 @@ export function SkillsCard({
       onClick={on_select}
     >
       {/* 居中图标 */}
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-white/24 bg-white/16 backdrop-blur-sm">
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-white/44 bg-white/64">
         {locked ? (
           <Lock className="h-6 w-6 text-slate-600/72" />
         ) : (
@@ -61,7 +61,7 @@ export function SkillsCard({
           {tags.slice(0, 3).map((tag) => (
             <span
               key={tag}
-              className="inline-flex rounded-full border border-white/20 bg-white/16 px-2 py-0.5 text-[10px] font-semibold text-slate-500 backdrop-blur-sm"
+              className="inline-flex rounded-full border border-white/40 bg-white/60 px-2 py-0.5 text-[10px] font-semibold text-slate-500"
             >
               {tag}
             </span>

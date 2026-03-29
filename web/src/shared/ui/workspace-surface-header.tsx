@@ -35,11 +35,11 @@ export function WorkspaceSurfaceHeader<TTabKey extends string>({
   class_name,
 }: WorkspaceSurfaceHeaderProps<TTabKey>) {
   return (
-    <div className={cn("z-10 overflow-hidden border-b workspace-divider bg-white/10 backdrop-blur-md", class_name)}>
+    <div className={cn("z-10 overflow-hidden border-b workspace-divider bg-white/60", class_name)}>
       <div className="flex min-w-0 items-center justify-between gap-4 px-5 py-3 xl:px-6">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           {leading ? (
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/16 text-slate-700 shadow-sm backdrop-blur-sm">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/40 bg-white/60 text-slate-700 shadow-sm">
               {leading}
             </div>
           ) : null}
@@ -50,7 +50,7 @@ export function WorkspaceSurfaceHeader<TTabKey extends string>({
                 {title}
               </div>
               {badge ? (
-                <span className="inline-flex rounded-full border border-white/24 bg-white/16 px-2 py-0.5 text-[10px] font-semibold text-slate-600 backdrop-blur-sm">
+                <span className="inline-flex rounded-full border border-white/40 bg-white/56 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
                   {badge}
                 </span>
               ) : null}
