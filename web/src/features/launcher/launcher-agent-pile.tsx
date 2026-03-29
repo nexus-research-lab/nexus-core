@@ -300,6 +300,14 @@ export function AgentPile({
       previousTime = time;
       Engine.update(engine, delta || 1000 / 60);
 
+      // 检测所有动态 body 是否均已休眠；若是则停止 rAF，等待外部事件唤醒。
+      // 必须至少有一个动态 body 才能判定"全部 sleep"，否则 tokens 还没 add 进来就会提前退出。
+      const dynamicBodies = engine.world.bodies.filter((b) => !b.isStatic);
+      const allAsleep =
+        dynamicBodies.length > 0 &&
+        dynamicBodies.every((b) => (b as Matter.Body & { isSleeping?: boolean }).isSleeping);
+
+      let anyDirty = false;
       configs.forEach((config) => {
         const ref = tokenRefs.current[config.key];
         const body = bodyMap.get(config.key);
@@ -312,22 +320,26 @@ export function AgentPile({
         const nextTransform = `translate3d(${Math.round((body.position.x - config.size / 2) * 10) / 10}px, ${Math.round((body.position.y - config.size / 2) * 10) / 10}px, 0) rotate(${Math.round(body.angle * 1000) / 1000}rad)`;
         const previousRender = renderCache.get(config.key);
 
-        if (!previousRender || previousRender.opacity !== nextOpacity) {
-          ref.style.opacity = nextOpacity;
-        }
-        if (!previousRender || previousRender.zIndex !== nextZIndex) {
-          ref.style.zIndex = nextZIndex;
-        }
-        if (!previousRender || previousRender.transform !== nextTransform) {
-          ref.style.transform = nextTransform;
-        }
+        const changed =
+          !previousRender ||
+          previousRender.opacity !== nextOpacity ||
+          previousRender.zIndex !== nextZIndex ||
+          previousRender.transform !== nextTransform;
 
-        renderCache.set(config.key, {
-          opacity: nextOpacity,
-          transform: nextTransform,
-          zIndex: nextZIndex,
-        });
+        if (changed) {
+          anyDirty = true;
+          ref.style.opacity = nextOpacity;
+          ref.style.zIndex = nextZIndex;
+          ref.style.transform = nextTransform;
+          renderCache.set(config.key, { opacity: nextOpacity, transform: nextTransform, zIndex: nextZIndex });
+        }
       });
+
+      if (allAsleep && !anyDirty) {
+        // 全部静止 — 停止循环，节省 CPU。交互事件（click/hover）通过 startAnimation 重启。
+        animationFrame = 0;
+        return;
+      }
 
       animationFrame = window.requestAnimationFrame(update);
     };
