@@ -227,18 +227,18 @@ export function AgentOptions({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="home-glass-panel radius-shell-xl flex h-[85vh] w-full max-w-5xl flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="modal-dialog-surface radius-shell-xl flex h-[85vh] w-full max-w-5xl flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         {/* 头部 */}
-        <div className="flex items-center justify-between border-b border-white/22 px-6 py-5">
+        <div className="flex items-center justify-between border-b modal-divider px-6 py-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/30 bg-white/16 text-primary">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl modal-card text-primary">
               <Settings className="h-4 w-4" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold tracking-tight text-foreground">
+              <h2 className="text-lg font-semibold tracking-tight text-slate-800">
                 {mode === "create" ? "创建 Agent" : "Agent 设置"}
               </h2>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-slate-500">
                 {mode === "create"
                   ? "配置 Agent 能力与行为策略"
                   : `正在编辑: ${title}`}
@@ -248,7 +248,7 @@ export function AgentOptions({
           <button
             aria-label="关闭对话框"
             onClick={on_close}
-            className="rounded-xl border border-white/24 bg-white/12 p-2 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-white/20 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/50"
+            className="modal-btn-secondary rounded-xl p-2 text-slate-400 transition-colors hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-primary/50"
           >
             <X className="h-5 w-5" />
           </button>
@@ -316,10 +316,10 @@ export function AgentOptions({
         </div>
 
         {/* 底部按钮 */}
-        <div className="flex items-center justify-end gap-3 border-t border-white/22 px-6 py-5">
+        <div className="flex items-center justify-end gap-3 border-t modal-divider px-6 py-5">
           <button
             onClick={on_close}
-            className="rounded-xl border border-white/24 bg-white/12 px-5 py-2.5 text-sm font-medium backdrop-blur-sm transition-colors hover:bg-white/20 hover:text-accent"
+            className="modal-btn-secondary rounded-xl px-5 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:text-slate-800"
           >
             取消
           </button>
@@ -327,10 +327,10 @@ export function AgentOptions({
             onClick={handleSave}
             disabled={!canSave}
             className={cn(
-              "rounded-xl px-5 py-2.5 text-sm font-medium transition-colors",
+              "rounded-xl px-5 py-2.5 text-sm font-medium transition-all",
               canSave
-                ? "bg-primary text-primary-foreground shadow-[0_18px_34px_rgba(133,119,255,0.2)] hover:bg-primary/90"
-                : "border border-white/24 bg-white/12 cursor-not-allowed text-muted-foreground backdrop-blur-sm"
+                ? "bg-primary text-primary-foreground shadow-[0_8px_24px_rgba(133,119,255,0.25)] hover:bg-primary/90 hover:shadow-[0_12px_32px_rgba(133,119,255,0.3)]"
+                : "modal-card cursor-not-allowed text-slate-400"
             )}
           >
             {mode === "create" ? "创建 Agent" : "保存更改"}

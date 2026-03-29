@@ -31,13 +31,13 @@ export function AgentOptionsPreview({
     AVAILABLE_MODELS.find((m) => m.value === model)?.label ?? model;
 
   return (
-    <div className="flex w-80 flex-col border-l border-white/22 bg-white/6 p-4">
-      <h4 className="mb-4 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+    <div className="flex w-80 flex-col border-l modal-divider modal-preview-surface p-4">
+      <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
         Live Preview
       </h4>
 
       {/* Agent 卡片预览 */}
-      <div className="workspace-card radius-shell-md flex flex-col items-center gap-3 p-6">
+      <div className="modal-card radius-shell-md flex flex-col items-center gap-3 p-6">
         {/* 头像 */}
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
           <User className="h-8 w-8" />
@@ -74,7 +74,7 @@ export function AgentOptionsPreview({
         )}
 
         {/* 分隔线 */}
-        <div className="my-1 w-full border-t border-white/30" />
+        <div className="my-1 w-full border-t modal-divider" />
 
         {/* 元信息 */}
         <div className="w-full space-y-2 text-xs text-muted-foreground">

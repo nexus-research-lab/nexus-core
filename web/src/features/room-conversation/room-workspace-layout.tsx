@@ -103,25 +103,16 @@ export function RoomWorkspaceLayout({
   const show_detail_panel = is_detail_panel_open && !is_editor_open && active_surface_tab === "chat";
 
   return (
-    <div className={cn("flex min-h-0 min-w-0 flex-1 gap-2 lg:gap-2.5 xl:gap-3")}>
+    <div className={cn("flex min-h-0 min-w-0 flex-1 gap-2")}>
       {/* 主内容区：编辑器 + 对话区 */}
       <section
         ref={workspace_split_ref}
         className={cn(
-          "flex min-h-0 min-w-0 flex-1 gap-3",
+          "flex min-h-0 min-w-0 flex-1",
+          is_editor_open && "gap-2",
           is_resizing_editor && "cursor-col-resize select-none",
         )}
       >
-        <RoomEditorPanel
-          agent_id={current_agent.agent_id}
-          class_name="hidden lg:flex"
-          is_open={is_editor_open}
-          on_close={on_close_workspace_pane}
-          on_resize_start={on_start_editor_resize}
-          path={active_workspace_path}
-          width_percent={editor_width_percent}
-        />
-
         <WorkspaceCanvasShell
           class_name={HOME_CHAT_PANEL_CLASS}
           is_joined_with_inspector={show_detail_panel}
@@ -187,6 +178,16 @@ export function RoomWorkspaceLayout({
             </div>
           </div>
         </WorkspaceCanvasShell>
+
+        <RoomEditorPanel
+          agent_id={current_agent.agent_id}
+          class_name="hidden lg:flex"
+          is_open={is_editor_open}
+          on_close={on_close_workspace_pane}
+          on_resize_start={on_start_editor_resize}
+          path={active_workspace_path}
+          width_percent={editor_width_percent}
+        />
       </section>
 
       {/* 右侧可折叠详情面板 */}

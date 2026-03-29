@@ -44,11 +44,11 @@ export function AgentOptionsSkillsTab({
     <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
       {/* 技能启用开关 */}
       <div className="space-y-4">
-        <h3 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+        <h3 className="text-[11px] font-semibold text-slate-600">
           Agent Skills
         </h3>
 
-        <div className="workspace-card radius-shell-md flex items-center justify-between p-4 transition-all hover:border-primary/20">
+        <div className="modal-card radius-shell-md flex items-center justify-between p-4 transition-all hover:border-primary/20">
           <div className="flex-1">
             <label className="flex items-center gap-2 text-sm font-medium leading-none">
               启用技能系统
@@ -78,7 +78,7 @@ export function AgentOptionsSkillsTab({
 
       {/* 设置来源选择 */}
       <div className="space-y-4">
-        <h3 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+        <h3 className="text-[11px] font-semibold text-slate-600">
           设置加载来源
         </h3>
 
@@ -108,8 +108,8 @@ export function AgentOptionsSkillsTab({
                 className={cn(
                   "radius-shell-md flex items-center justify-between p-4 transition-all duration-200",
                   isEnabled
-                    ? "workspace-card-strong bg-primary/5"
-                    : "workspace-card hover:border-primary/20"
+                    ? "modal-card-active bg-primary/5 ring-1 ring-primary/20"
+                    : "modal-card hover:border-primary/20"
                 )}
               >
                 <div className="mr-4 flex-1">
@@ -133,7 +133,7 @@ export function AgentOptionsSkillsTab({
                     onChange={() => onToggleSettingSource(item.key)}
                     className="peer sr-only"
                   />
-                  <div className="h-6 w-11 rounded-full bg-muted peer peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20 after:absolute after:left-[2px] after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white dark:bg-gray-700 dark:border-gray-600" />
+                  <div className="h-6 w-11 rounded-full bg-slate-200/80 peer peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20 after:absolute after:left-[2px] after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-white/60 after:bg-white after:shadow-sm after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
                 </label>
               </div>
             );

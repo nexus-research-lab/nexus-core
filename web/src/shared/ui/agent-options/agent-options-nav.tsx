@@ -36,7 +36,7 @@ interface AgentOptionsNavProps {
 /** 左侧图标导航栏组件 */
 export function AgentOptionsNav({ activeTab, onTabChange }: AgentOptionsNavProps) {
   return (
-    <div className="flex w-16 flex-col items-center gap-1 border-r border-white/22 bg-white/8 py-4">
+    <div className="flex w-16 flex-col items-center gap-1 border-r modal-divider modal-nav-surface py-4">
       {NAV_ITEMS.map((item) => {
         const Icon = item.icon;
         const isActive = activeTab === item.key;
@@ -46,15 +46,15 @@ export function AgentOptionsNav({ activeTab, onTabChange }: AgentOptionsNavProps
             onClick={() => onTabChange(item.key)}
             title={item.label}
             className={cn(
-              "relative flex h-10 w-10 items-center justify-center rounded-lg transition-all duration-200",
+              "relative flex h-10 w-10 items-center justify-center rounded-[14px] transition-all duration-200",
               isActive
-                ? "text-primary bg-primary/10"
-                : "text-muted-foreground hover:bg-white/25 hover:text-foreground"
+                ? "modal-card-active text-primary shadow-sm ring-1 ring-primary/20"
+                : "text-slate-400 hover:bg-slate-100/60 hover:text-slate-700"
             )}
           >
-            {/* 左边框高亮指示器 */}
+            {/* 选中态左侧指示条 */}
             {isActive && (
-              <div className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-r-full bg-primary" />
+              <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary" />
             )}
             <Icon className="h-4 w-4" />
           </button>

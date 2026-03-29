@@ -75,7 +75,7 @@ export function AgentOptionsAdvancedTab({
     <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
       {/* 权限模式 */}
       <div className="space-y-4">
-        <h3 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+        <h3 className="text-[11px] font-semibold text-slate-600">
           权限控制
         </h3>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -86,8 +86,8 @@ export function AgentOptionsAdvancedTab({
               className={cn(
                 "radius-shell-md relative p-4 text-left transition-all duration-200",
                 permissionMode === pm.value
-                  ? "workspace-card-strong bg-primary/5 ring-1 ring-primary/40"
-                  : "workspace-card hover:border-primary/30"
+                  ? "modal-card-active bg-primary/5 ring-1 ring-primary/30"
+                  : "modal-card hover:border-primary/20"
               )}
             >
               <div className="mb-2 flex items-center justify-between">
@@ -134,10 +134,10 @@ export function AgentOptionsAdvancedTab({
       {/* 预先授权工具 */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+          <h3 className="text-[11px] font-semibold text-slate-600">
             工具授权
           </h3>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-[11px] text-slate-400">
             已启用 {allowedTools.length} 个工具
           </span>
         </div>
@@ -179,8 +179,8 @@ export function AgentOptionsAdvancedTab({
                 className={cn(
                   "radius-shell-md flex items-center justify-between p-4 transition-all duration-200",
                   isChecked
-                    ? "workspace-card-strong bg-primary/5"
-                    : "workspace-card hover:border-primary/20"
+                    ? "modal-card-active bg-primary/5 ring-1 ring-primary/20"
+                    : "modal-card hover:border-primary/20"
                 )}
               >
                 <div className="mr-4 flex-1">
@@ -204,7 +204,7 @@ export function AgentOptionsAdvancedTab({
                     onChange={() => onToggleTool(tool.name, "allowed")}
                     className="peer sr-only"
                   />
-                  <div className="h-6 w-11 rounded-full bg-muted peer peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20 after:absolute after:left-[2px] after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white dark:bg-gray-700 dark:border-gray-600" />
+                  <div className="h-6 w-11 rounded-full bg-slate-200/80 peer peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20 after:absolute after:left-[2px] after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-white/60 after:bg-white after:shadow-sm after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
                 </label>
               </div>
             );

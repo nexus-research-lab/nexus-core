@@ -15,7 +15,7 @@ export function RoomMemberSummaryCard({
   on_edit_agent,
 }: RoomMemberSummaryCardProps) {
   return (
-    <section className="border-b workspace-divider px-4 py-4">
+    <section className="border-b workspace-divider px-4 py-4 min-w-[240px]">
       <div className="rounded-[24px] bg-[linear-gradient(180deg,rgba(255,255,255,0.16),rgba(255,255,255,0.08))] px-4 py-4 ring-1 ring-white/12 backdrop-blur-[16px]">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -24,9 +24,6 @@ export function RoomMemberSummaryCard({
             </p>
             <p className="mt-1 text-[28px] font-black tracking-[-0.05em] text-slate-950/90">
               {agent.name}
-            </p>
-            <p className="mt-1 text-[12px] text-slate-700/54">
-              当前正在推进这条协作
             </p>
           </div>
 

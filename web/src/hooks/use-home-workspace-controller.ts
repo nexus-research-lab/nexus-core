@@ -216,7 +216,7 @@ export function useHomeWorkspaceController({
       }
 
       const bounds = container.getBoundingClientRect();
-      const nextPercent = ((event.clientX - bounds.left) / bounds.width) * 100;
+      const nextPercent = ((bounds.right - event.clientX) / bounds.width) * 100;
       setEditorWidthPercent(clampHomeEditorWidthPercent(nextPercent));
     };
 

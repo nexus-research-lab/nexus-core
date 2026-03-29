@@ -166,7 +166,7 @@ export function RoomEditorPanel({
           {!embedded ? (
             <button
               aria-label="调整编辑器宽度"
-              className="absolute -right-3 top-0 z-20 flex h-full w-6 cursor-col-resize items-center justify-center text-muted-foreground/60 transition-colors hover:text-primary"
+              className="absolute -left-3 top-0 z-20 flex h-full w-6 cursor-col-resize items-center justify-center text-muted-foreground/60 transition-colors hover:text-primary"
               onMouseDown={on_resize_start}
               type="button"
             >
