@@ -34,6 +34,28 @@ export const useWorkspaceLiveStore = create<WorkspaceLiveStoreState>()((set) => 
     const nextUpdatedAt = Date.parse(event.timestamp) || Date.now();
 
     set((state) => {
+      if (event.type === 'file_deleted') {
+        const { [key]: _, ...restFileStates } = state.file_states;
+        return {
+          recent_events: [
+            {
+              id: `${key}:${event.type}:${event.version}:${nextUpdatedAt}`,
+              event_type: event.type,
+              agent_id: event.agent_id,
+              path: event.path,
+              status: 'deleted' as const,
+              version: event.version,
+              source: event.source,
+              live_content: null,
+              diff_stats: null,
+              updated_at: nextUpdatedAt,
+            },
+            ...state.recent_events,
+          ].slice(0, 24),
+          file_states: restFileStates,
+        };
+      }
+
       const nextLiveContent = resolveLiveContent(state.file_states[key]?.live_content, event);
 
       return {

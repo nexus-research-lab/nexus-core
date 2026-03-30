@@ -14,7 +14,7 @@ export interface WorkspaceDiffStats {
 }
 
 export interface WorkspaceLiveEvent {
-  type: 'file_write_start' | 'file_write_delta' | 'file_write_end';
+  type: 'file_write_start' | 'file_write_delta' | 'file_write_end' | 'file_deleted';
   agent_id: string;
   path: string;
   version: number;
@@ -32,7 +32,7 @@ export type WorkspaceEventPayload = WorkspaceLiveEvent;
 export interface WorkspaceLiveFileState {
   agent_id: string;
   path: string;
-  status: 'idle' | 'writing' | 'updated';
+  status: 'idle' | 'writing' | 'updated' | 'deleted';
   version: number;
   source: WorkspaceLiveEvent['source'];
   live_content?: string | null;
