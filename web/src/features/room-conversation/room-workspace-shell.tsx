@@ -9,6 +9,7 @@ import { Agent } from "@/types/agent";
 import { Conversation, ConversationSnapshotPayload } from "@/types/conversation";
 import { RoomSurfaceTabKey } from "@/types/room-surface";
 import { TodoItem } from "@/types/todo";
+import { UpdateRoomParams } from "@/types/room";
 
 import { RoomMobileWorkspace } from "./room-mobile-workspace";
 import { RoomWorkspaceLayout } from "./room-workspace-layout";
@@ -17,10 +18,11 @@ interface RoomWorkspaceShellProps {
   current_agent: Agent;
   current_agent_id: string | null;
   current_room_type: string;
+  room_id: string | null;
+  room_description: string;
   room_members: Agent[];
   available_room_agents: Agent[];
   current_room_title: string;
-  current_room_id: string | null;
   current_conversation: Conversation | null;
   current_conversation_id: string | null;
   current_room_conversations: Conversation[];
@@ -39,6 +41,8 @@ interface RoomWorkspaceShellProps {
   on_delete_conversation: (conversation_id: string) => Promise<string | null>;
   on_add_room_member: (agent_id: string) => Promise<void>;
   on_remove_room_member: (agent_id: string) => Promise<void>;
+  on_update_room: (room_id: string, params: UpdateRoomParams) => Promise<void>;
+  on_delete_room: () => Promise<void>;
   on_open_workspace_file: (path: string | null) => void;
   on_close_workspace_pane: () => void;
   on_start_editor_resize: () => void;
@@ -51,6 +55,8 @@ export function RoomWorkspaceShell({
   current_agent,
   current_agent_id,
   current_room_type,
+  room_id,
+  room_description,
   room_members,
   available_room_agents,
   current_room_title,
@@ -73,6 +79,8 @@ export function RoomWorkspaceShell({
   on_delete_conversation,
   on_add_room_member,
   on_remove_room_member,
+  on_update_room,
+  on_delete_room,
   on_open_workspace_file,
   on_close_workspace_pane,
   on_start_editor_resize,
@@ -146,6 +154,9 @@ export function RoomWorkspaceShell({
           on_loading_change={on_loading_change}
           on_open_workspace_file={on_open_workspace_file}
           on_remove_room_member={on_remove_room_member}
+          on_update_room={on_update_room}
+          on_delete_room={on_delete_room}
+          on_create_conversation={on_create_conversation}
           on_select_agent={on_select_agent}
           on_select_conversation={handle_select_conversation_in_shell}
           on_start_editor_resize={on_start_editor_resize}

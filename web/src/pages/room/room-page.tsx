@@ -59,6 +59,11 @@ export function RoomPage() {
     return null;
   }, [controller, navigate, params.room_id]);
 
+  const handleDeleteRoom = useCallback(async () => {
+    await controller.handle_delete_room();
+    navigate(AppRouteBuilders.launcher());
+  }, [controller, navigate]);
+
   useEffect(() => {
     if (
       controller.is_hydrated &&
@@ -109,8 +114,9 @@ export function RoomPage() {
               available_room_agents={controller.available_room_agents}
               current_agent={controller.current_agent}
               current_agent_id={controller.current_agent_id}
-              current_room_id={controller.current_room?.id ?? null}
+              current_room_id={controller.route_room_id}
               current_room_type={controller.current_room_type}
+              room_description={controller.current_room_description}
               room_members={controller.room_members}
               current_room_title={controller.current_room_title}
               current_room_conversations={controller.current_room_conversations}
@@ -130,6 +136,10 @@ export function RoomPage() {
               on_create_conversation={handleCreateConversation}
               on_open_workspace_file={controller.handle_open_workspace_file}
               on_remove_room_member={controller.handle_remove_room_member}
+              on_update_room={controller.handle_update_room}
+              on_delete_room={handleDeleteRoom}
+              on_update_room={controller.handle_update_room}
+              on_delete_room={controller.handle_delete_room}
               on_select_agent={handleSelectAgent}
               on_select_conversation={handleSelectConversation}
               on_conversation_snapshot_change={controller.handle_conversation_snapshot_change}

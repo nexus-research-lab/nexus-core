@@ -441,7 +441,7 @@ export function LauncherAppConversationPanel({
                     round_ids={round_ids}
                   />
                 ) : (
-                  <div className="flex h-full min-h-[320px] flex-col justify-between gap-4 px-1 pb-1 pt-2">
+                  <div className="flex h-full min-h-80 flex-col justify-between gap-4 px-1 pb-1 pt-2">
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700/44">
                         Ready
@@ -663,7 +663,7 @@ export function LauncherAppConversationPanel({
               <div className="flex min-w-0 items-end gap-3">
                 <textarea
                   ref={textarea_ref}
-                  className="max-h-36 min-h-[28px] flex-1 resize-none overflow-y-auto bg-transparent text-sm leading-6 text-slate-900/84 outline-none placeholder:text-slate-700/42"
+                  className="max-h-36 min-h-7 flex-1 resize-none overflow-y-auto bg-transparent text-sm leading-6 text-slate-900/84 outline-none placeholder:text-slate-700/42"
                   onChange={(event) => on_change_draft(event.target.value)}
                   onKeyDown={(event) => {
                     if (active_tab !== "chat") {

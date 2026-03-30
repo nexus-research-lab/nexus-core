@@ -10,6 +10,7 @@ import {
   History,
   Info,
   MessageSquare,
+  MessageSquarePlus,
   PanelRight,
 } from "lucide-react";
 
@@ -35,6 +36,7 @@ interface RoomConversationHeaderProps {
   active_tab: RoomSurfaceTabKey;
   on_change_tab: (tab: RoomSurfaceTabKey) => void;
   on_select_conversation: (conversation_id: string) => void;
+  on_create_conversation?: (title?: string) => Promise<string | null>;
   on_toggle_detail_panel: () => void;
 }
 
@@ -52,18 +54,32 @@ function ConversationSwitcher({
   conversations,
   current_conversation_id,
   on_select_conversation,
+  on_create_conversation,
 }: {
   conversations: Conversation[];
   current_conversation_id: string | null;
   on_select_conversation: (conversation_id: string) => void;
+  on_create_conversation?: (title?: string) => Promise<string | null>;
 }) {
   const [is_open, set_is_open] = useState(false);
+  const [is_creating, set_is_creating] = useState(false);
   const trigger_ref = useRef<HTMLButtonElement>(null);
 
   // 当前对话标题
   const current_title =
     conversations.find((c) => c.session_key === current_conversation_id)?.title
     ?? "选择对话";
+
+  const handle_create = async () => {
+    if (!on_create_conversation || is_creating) return;
+    set_is_creating(true);
+    set_is_open(false);
+    try {
+      await on_create_conversation();
+    } finally {
+      set_is_creating(false);
+    }
+  };
 
   return (
     <div className="relative">
@@ -91,33 +107,53 @@ function ConversationSwitcher({
           {/* 下拉菜单 */}
           <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-xl border border-slate-200/60 bg-white/95 py-1 shadow-lg backdrop-blur-md">
             {conversations.length > 0 ? (
-              conversations.map((conversation) => {
-                const is_active = conversation.session_key === current_conversation_id;
-                return (
+              <>
+                {conversations.map((conversation) => {
+                  const is_active = conversation.session_key === current_conversation_id;
+                  return (
+                    <button
+                      key={conversation.session_key}
+                      className={cn(
+                        "flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] transition-colors",
+                        is_active
+                          ? "bg-slate-100/80 font-semibold text-slate-900"
+                          : "text-slate-600 hover:bg-slate-50",
+                      )}
+                      onClick={() => {
+                        on_select_conversation(conversation.session_key);
+                        set_is_open(false);
+                      }}
+                      type="button"
+                    >
+                      <MessageSquare className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                      <span className="min-w-0 flex-1 truncate">
+                        {conversation.title || "未命名对话"}
+                      </span>
+                      {is_active ? (
+                        <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                      ) : null}
+                    </button>
+                  );
+                })}
+                {/* 分隔线 */}
+                {on_create_conversation && (
+                  <div className="mx-3 my-1 border-t border-slate-200/60" />
+                )}
+                {/* 新建对话按钮 */}
+                {on_create_conversation && (
                   <button
-                    key={conversation.session_key}
-                    className={cn(
-                      "flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] transition-colors",
-                      is_active
-                        ? "bg-slate-100/80 font-semibold text-slate-900"
-                        : "text-slate-600 hover:bg-slate-50",
-                    )}
-                    onClick={() => {
-                      on_select_conversation(conversation.session_key);
-                      set_is_open(false);
-                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] font-medium text-emerald-600 hover:bg-emerald-50/80 transition-colors disabled:opacity-60"
+                    disabled={is_creating}
+                    onClick={handle_create}
                     type="button"
                   >
-                    <MessageSquare className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                    <span className="min-w-0 flex-1 truncate">
-                      {conversation.title || "未命名对话"}
+                    <MessageSquarePlus className={cn("h-3.5 w-3.5 shrink-0", is_creating && "animate-spin")} />
+                    <span className="min-w-0 flex-1">
+                      {is_creating ? "创建中..." : "新建对话"}
                     </span>
-                    {is_active ? (
-                      <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-                    ) : null}
                   </button>
-                );
-              })
+                )}
+              </>
             ) : (
               <div className="px-3 py-2 text-[11px] text-slate-400">暂无对话</div>
             )}
@@ -164,7 +200,7 @@ function MemberAvatarStack({
         {visible_members.map((member) => (
           <div
             key={member.agent_id}
-            className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-gradient-to-b from-slate-100 to-slate-200 text-[8px] font-bold text-slate-700 shadow-sm"
+            className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-linear-to-b from-slate-100 to-slate-200 text-[8px] font-bold text-slate-700 shadow-sm"
             title={member.name}
           >
             {getInitials(member.name)}
@@ -234,6 +270,7 @@ const RoomConversationHeaderView = memo(({
       conversations={conversations}
       current_conversation_id={current_conversation_id}
       on_select_conversation={on_select_conversation}
+      on_create_conversation={on_create_conversation}
     />
   );
 

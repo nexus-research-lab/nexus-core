@@ -460,6 +460,28 @@ export function useRoomPageController({
     await load_conversations_from_server();
   }, [load_conversations_from_server, refresh_room_contexts, refresh_rooms, room_id]);
 
+  const handle_open_conversation_from_launcher = useCallback((conversation_id: string, agent_id?: string) => {
+    // 从 conversation_id 查找对应的 conversation 对象
+    const target_conversation = conversations.find(
+      (conversation) => conversation.session_key === conversation_id
+    );
+
+    if (!target_conversation) {
+      return;
+    }
+
+    // 如果指定了 agent_id，优先使用
+    // 否则使用 conversation 的 agent_id
+    const target_agent_id = agent_id ?? target_conversation.agent_id ?? null;
+
+    if (target_agent_id && room_member_agents.some((agent) => agent.agent_id === target_agent_id)) {
+      set_selected_member_agent_id(target_agent_id);
+    } else if (room_member_agents.length > 0) {
+      // 如果指定的 agent 不在当前 room 中，默认选择第一个
+      set_selected_member_agent_id(room_member_agents[0].agent_id);
+    }
+  }, [conversations, room_member_agents]);
+
   const is_hydrated = is_bootstrapped && !is_room_loading;
 
   // Memoize the return object so consumers wrapped in React.memo don't
@@ -498,7 +520,7 @@ export function useRoomPageController({
     handle_create_conversation,
     handle_save_agent_options,
     handle_validate_agent_name,
-    handle_open_conversation_from_launcher: () => {},
+    handle_open_conversation_from_launcher,
     handle_conversation_snapshot_change,
     handle_delete_conversation,
     handle_update_room,
@@ -517,8 +539,8 @@ export function useRoomPageController({
     handle_open_create_agent, handle_edit_agent, handle_select_agent,
     handle_select_conversation, handle_back_to_directory, handle_delete_agent,
     handle_create_conversation, handle_save_agent_options, handle_validate_agent_name,
-    handle_conversation_snapshot_change, handle_delete_conversation,
-    handle_update_room, handle_delete_room, handle_add_room_member,
-    handle_remove_room_member, conversation_id, room_id, workspace,
+    handle_open_conversation_from_launcher, handle_conversation_snapshot_change,
+    handle_delete_conversation, handle_update_room, handle_delete_room,
+    handle_add_room_member, handle_remove_room_member, conversation_id, room_id, workspace,
   ]);
 }

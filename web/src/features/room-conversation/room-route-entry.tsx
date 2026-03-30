@@ -56,12 +56,12 @@ export function RoomRouteEntry({
 
       <aside className="workspace-card rounded-[30px] px-6 py-6">
         <div className="mt-4 grid gap-3">
-          <div className="workspace-card rounded-[24px] px-4 py-4">
+          <div className="workspace-card rounded-3xl px-4 py-4">
             <p className="text-[11px] uppercase tracking-[0.12em] text-slate-700/46">Room</p>
             <p className="mt-1 text-sm font-semibold text-slate-950/86">{room_id ?? "-"}</p>
           </div>
 
-          <div className="workspace-card rounded-[24px] px-4 py-4">
+          <div className="workspace-card rounded-3xl px-4 py-4">
             <p className="text-[11px] uppercase tracking-[0.12em] text-slate-700/46">
               Conversation
             </p>
@@ -69,7 +69,7 @@ export function RoomRouteEntry({
           </div>
 
           {recent_room_conversations.length ? (
-            <div className="workspace-card rounded-[24px] px-4 py-4">
+            <div className="workspace-card rounded-3xl px-4 py-4">
               <p className="text-[11px] uppercase tracking-[0.12em] text-slate-700/46">Recent</p>
               <div className="mt-3 space-y-2">
                 {recent_room_conversations.map((conversation) => (

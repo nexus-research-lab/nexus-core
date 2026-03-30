@@ -248,13 +248,13 @@ export function SidebarNarrowRail() {
             {/* More 弹出菜单 */}
             {is_more_open ? (
               <div className="absolute bottom-0 left-full z-50 ml-2 w-48 animate-in fade-in slide-in-from-left-2 duration-150">
-                <div className="home-glass-panel rounded-[16px] p-1.5 shadow-[0_16px_40px_rgba(102,112,145,0.20)]">
+                <div className="home-glass-panel rounded-2xl p-1.5 shadow-[0_16px_40px_rgba(102,112,145,0.20)]">
                   {/* 内部导航项 */}
                   {MORE_MENU_ITEMS.map((item) => {
                     const Icon = item.icon;
                     return (
                       <button
-                        className="flex w-full items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-white/40 hover:text-slate-900"
+                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-white/40 hover:text-slate-900"
                         key={item.key}
                         onClick={() => handle_menu_item_click(item)}
                         type="button"
@@ -273,7 +273,7 @@ export function SidebarNarrowRail() {
                     const Icon = item.icon;
                     return (
                       <button
-                        className="flex w-full items-center gap-2.5 rounded-[12px] px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-white/40 hover:text-slate-900"
+                        className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-slate-700 transition-colors hover:bg-white/40 hover:text-slate-900"
                         key={item.key}
                         onClick={() => handle_menu_item_click(item)}
                         type="button"

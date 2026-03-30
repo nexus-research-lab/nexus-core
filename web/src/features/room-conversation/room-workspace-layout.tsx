@@ -14,6 +14,7 @@ import { Agent } from "@/types/agent";
 import { Conversation, ConversationSnapshotPayload } from "@/types/conversation";
 import { RoomSurfaceTabKey } from "@/types/room-surface";
 import { TodoItem } from "@/types/todo";
+import { UpdateRoomParams } from "@/types/room";
 
 import { RoomAgentAboutView } from "./room-agent-about-view";
 import { RoomChatPanel } from "./room-chat-panel";
@@ -25,6 +26,8 @@ interface RoomWorkspaceLayoutProps {
   current_agent: Agent;
   current_agent_id: string | null;
   current_room_type: string;
+  room_id: string | null;
+  room_description: string;
   room_members: Agent[];
   available_room_agents: Agent[];
   current_room_title: string;
@@ -47,6 +50,8 @@ interface RoomWorkspaceLayoutProps {
   on_delete_conversation: (conversation_id: string) => Promise<string | null>;
   on_add_room_member: (agent_id: string) => Promise<void>;
   on_remove_room_member: (agent_id: string) => Promise<void>;
+  on_update_room: (room_id: string, params: UpdateRoomParams) => Promise<void>;
+  on_delete_room: () => Promise<void>;
   on_open_workspace_file: (path: string | null) => void;
   on_close_workspace_pane: () => void;
   on_start_editor_resize: () => void;
@@ -67,6 +72,8 @@ export function RoomWorkspaceLayout({
   current_agent,
   current_agent_id,
   current_room_type,
+  room_id,
+  room_description,
   room_members,
   available_room_agents,
   current_room_title,
@@ -89,6 +96,8 @@ export function RoomWorkspaceLayout({
   on_delete_conversation,
   on_add_room_member,
   on_remove_room_member,
+  on_update_room,
+  on_delete_room,
   on_open_workspace_file,
   on_close_workspace_pane,
   on_start_editor_resize,
@@ -132,6 +141,7 @@ export function RoomWorkspaceLayout({
               member_count={room_members.length}
               on_change_tab={on_change_surface_tab}
               on_select_conversation={on_select_conversation}
+              on_create_conversation={on_create_conversation}
               on_toggle_detail_panel={() => set_is_detail_panel_open((prev) => !prev)}
               room_members={room_members}
             />
@@ -199,14 +209,18 @@ export function RoomWorkspaceLayout({
             available_room_agents={available_room_agents}
             current_agent_id={current_agent_id}
             current_room_type={current_room_type}
+            room_id={room_id}
+            room_name={current_room_title}
+            room_description={room_description}
             is_conversation_busy={is_conversation_busy}
             on_add_room_member={on_add_room_member}
             on_edit_agent={on_edit_agent}
             on_remove_room_member={on_remove_room_member}
+            on_update_room={on_update_room}
+            on_delete_room={on_delete_room}
             on_select_agent={on_select_agent}
             room_conversations={current_room_conversations}
             room_members={room_members}
-            room_name={current_room_title}
             todos={current_todos}
           />
         </WorkspaceInspectorShell>

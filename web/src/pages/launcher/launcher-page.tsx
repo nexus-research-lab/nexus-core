@@ -288,7 +288,7 @@ export function LauncherPage() {
           className={cn(
             "launcher-surface-left min-w-0 flex-1",
             controller.is_app_conversation_open &&
-              "lg:max-w-[calc(100%-430px)] lg:scale-[0.985] lg:opacity-[0.96]",
+            "lg:max-w-[calc(100%-430px)] lg:scale-[0.985] lg:opacity-[0.96]",
           )}
           data-surface={controller.surface}
           onClick={() => controller.is_app_conversation_open && controller.close_app_conversation()}
@@ -307,7 +307,7 @@ export function LauncherPage() {
         </div>
 
         {controller.is_app_conversation_open ? (
-          <div className="absolute inset-x-3 bottom-4 top-[96px] z-40 lg:static lg:inset-auto lg:block lg:w-[420px] lg:shrink-0 lg:pb-8">
+          <div className="absolute inset-x-3 bottom-4 top-24 z-40 lg:static lg:inset-auto lg:block lg:w-[420px] lg:shrink-0 lg:pb-8">
             <div
               className="launcher-app-panel-shell h-full"
               data-open={controller.is_app_conversation_open ? "true" : "false"}

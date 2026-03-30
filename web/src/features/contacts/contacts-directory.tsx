@@ -126,7 +126,7 @@ export function ContactsDirectory({
 
         {/* Task Generated 空状态 */}
         {active_tab === "task_generated" && (
-          <div className="workspace-card mt-6 flex min-h-[320px] items-center justify-center rounded-[28px] px-8 text-center">
+          <div className="workspace-card mt-6 flex min-h-80 items-center justify-center rounded-[28px] px-8 text-center">
             <div>
               <p className="text-[22px] font-bold tracking-[-0.04em] text-slate-950/90">
                 暂无任务生成的成员

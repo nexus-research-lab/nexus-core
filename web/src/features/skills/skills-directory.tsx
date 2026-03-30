@@ -136,7 +136,7 @@ export function SkillsDirectory() {
       {/* 卡片网格区域 */}
       <div className="soft-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-5 xl:px-6">
         {loading ? (
-          <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500/60">
+          <div className="flex min-h-80 items-center justify-center text-sm text-slate-500/60">
             加载中...
           </div>
         ) : filtered_skills.length ? (
@@ -154,7 +154,7 @@ export function SkillsDirectory() {
             ))}
           </div>
         ) : (
-          <div className="workspace-card flex min-h-[320px] items-center justify-center rounded-[28px] px-8 text-center">
+          <div className="workspace-card flex min-h-80 items-center justify-center rounded-[28px] px-8 text-center">
             <div>
               <p className="text-[22px] font-bold tracking-[-0.04em] text-slate-950/90">
                 没有符合条件的技能

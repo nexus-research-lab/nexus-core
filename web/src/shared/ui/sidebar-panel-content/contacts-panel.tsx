@@ -87,7 +87,7 @@ export const ContactsPanelContent = memo(function ContactsPanelContent() {
               >
                 {/* 头像 + 状态指示器 */}
                 <div className="relative">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-b from-slate-100 to-slate-200 text-[10px] font-bold text-slate-600">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-linear-to-b from-slate-100 to-slate-200 text-[10px] font-bold text-slate-600">
                     {avatar_letter}
                   </div>
                   {/* 在线状态圆点 */}

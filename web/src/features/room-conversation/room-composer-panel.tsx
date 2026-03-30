@@ -257,7 +257,7 @@ const RoomComposerPanelView = memo(({
               <textarea
                 ref={textarea_ref}
                 className={cn(
-                  "multiline-cursor min-h-[24px] max-h-[128px] w-full resize-none bg-transparent text-[15px] leading-6 text-slate-900 outline-none",
+                  "multiline-cursor min-h-6 max-h-32 w-full resize-none bg-transparent text-[15px] leading-6 text-slate-900 outline-none",
                   "placeholder:text-slate-400",
                   "disabled:cursor-not-allowed disabled:opacity-50",
                   "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
@@ -326,7 +326,7 @@ const RoomComposerPanelView = memo(({
                   disabled={is_input_empty || disabled || is_over_limit}
                   onClick={handle_send}
                 >
-                  <div className="absolute inset-0 translate-x-[-100%] bg-gradient-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover:translate-x-[100%]" />
+                  <div className="absolute inset-0 translate-x-full bg-linear-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
                   <Send size={16} className="relative z-10" />
                 </button>
               )}

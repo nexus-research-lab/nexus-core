@@ -128,7 +128,7 @@ export const DmsPanelContent = memo(function DmsPanelContent() {
                 type="button"
               >
                 {/* Agent 头像 */}
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-slate-100 to-slate-200 text-[11px] font-bold text-slate-600">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-b from-slate-100 to-slate-200 text-[11px] font-bold text-slate-600">
                   {avatar}
                 </div>
 

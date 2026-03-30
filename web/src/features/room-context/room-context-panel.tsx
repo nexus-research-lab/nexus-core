@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, Trash2, UserPlus } from "lucide-react";
+import { Bot, Settings, Trash2, UserPlus } from "lucide-react";
 import { useState } from "react";
 
 import { ConfirmDialog } from "@/shared/ui/confirm-dialog";
@@ -9,18 +9,22 @@ import { WorkspacePillButton } from "@/shared/ui/workspace-pill-button";
 import { Agent } from "@/types/agent";
 import { Conversation } from "@/types/conversation";
 import { TodoItem } from "@/types/todo";
+import { UpdateRoomParams } from "@/types/room";
 
 import { RoomCollaborationStatusSection } from "./room-collaboration-status-section";
 import { RoomMemberSummaryCard } from "./room-member-summary-card";
 import { RoomMemberPickerDialog } from "../room-members/room-member-picker-dialog";
 import { RoomProgressSection } from "./room-progress-section";
+import { RoomSettingsPanel } from "../room-conversation/room-settings-panel";
 
 interface RoomContextPanelProps {
   agent: Agent;
   available_room_agents: Agent[];
   current_agent_id: string | null;
   current_room_type: string;
+  room_id: string | null;
   room_name: string;
+  room_description: string;
   room_members: Agent[];
   room_conversations: Conversation[];
   active_conversation: Conversation | null;
@@ -29,6 +33,8 @@ interface RoomContextPanelProps {
   on_add_room_member: (agent_id: string) => Promise<void>;
   on_edit_agent: (agent_id: string) => void;
   on_remove_room_member: (agent_id: string) => Promise<void>;
+  on_update_room: (room_id: string, params: UpdateRoomParams) => Promise<void>;
+  on_delete_room: () => Promise<void>;
   on_select_agent: (agent_id: string) => void;
 }
 
@@ -37,7 +43,9 @@ export function RoomContextPanel({
   available_room_agents,
   current_agent_id,
   current_room_type,
+  room_id,
   room_name,
+  room_description,
   room_members,
   room_conversations,
   active_conversation,
@@ -46,9 +54,12 @@ export function RoomContextPanel({
   on_add_room_member,
   on_edit_agent,
   on_remove_room_member,
+  on_update_room,
+  on_delete_room,
   on_select_agent,
 }: RoomContextPanelProps) {
   const [is_member_picker_open, set_is_member_picker_open] = useState(false);
+  const [is_settings_open, set_is_settings_open] = useState(false);
   const [pending_remove_agent_id, set_pending_remove_agent_id] = useState<string | null>(null);
   const runtime_status = is_conversation_busy ? "Running" : active_conversation?.is_active === false ? "Idle" : "Active";
   const localized_runtime_status =
@@ -56,19 +67,38 @@ export function RoomContextPanel({
   const pending_remove_agent =
     room_members.find((member) => member.agent_id === pending_remove_agent_id) ?? null;
 
+  const handle_update_room = async (room_id: string, params: UpdateRoomParams) => {
+    await on_update_room(room_id, params);
+    set_is_settings_open(false);
+  };
+
+  const handle_delete_room = async () => {
+    await on_delete_room();
+    set_is_settings_open(false);
+  };
+
   return (
     <>
       <>
         {current_room_type === "room" ? (
           <WorkspaceInspectorSection
             action={(
-              <WorkspacePillButton
-                onClick={() => set_is_member_picker_open(true)}
-                size="sm"
-              >
-                <UserPlus className="h-3.5 w-3.5" />
-                添加
-              </WorkspacePillButton>
+              <div className="flex gap-1.5">
+                <WorkspacePillButton
+                  onClick={() => set_is_settings_open(true)}
+                  size="sm"
+                  variant="default"
+                >
+                  <Settings className="h-3.5 w-3.5" />
+                </WorkspacePillButton>
+                <WorkspacePillButton
+                  onClick={() => set_is_member_picker_open(true)}
+                  size="sm"
+                >
+                  <UserPlus className="h-3.5 w-3.5" />
+                  添加
+                </WorkspacePillButton>
+              </div>
             )}
             icon={Bot}
             title="Members"
@@ -139,6 +169,16 @@ export function RoomContextPanel({
           void on_add_room_member(agent_id);
           set_is_member_picker_open(false);
         }}
+      />
+
+      <RoomSettingsPanel
+        is_open={is_settings_open}
+        room_id={room_id}
+        room_name={room_name}
+        room_description={room_description}
+        on_update_room={handle_update_room}
+        on_delete_room={handle_delete_room}
+        on_close={() => set_is_settings_open(false)}
       />
 
       <ConfirmDialog
