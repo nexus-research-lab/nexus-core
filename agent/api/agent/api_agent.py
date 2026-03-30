@@ -7,22 +7,15 @@
 # 2026/3/13 14:36   Create
 # =====================================================
 
-"""Agent API。"""
+"""Agent CRUD + 会话/成本 API。"""
 
 from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException
 
-from agent.schema.model_agent import AAgent, AgentSkillEntry, CreateAgentRequest, \
-    CreateWorkspaceEntryRequest, InstallSkillRequest, \
-    RenameWorkspaceEntryRequest, SkillInfo, UpdateAgentRequest, \
-    UpdateWorkspaceFileRequest, WorkspaceEntryMutationResponse, \
-    WorkspaceEntryRenameResponse, WorkspaceFileContentResponse, \
-    WorkspaceFileEntry
+from agent.schema.model_agent import AAgent, CreateAgentRequest, UpdateAgentRequest
 from agent.schema.model_cost import AgentCostSummary
 from agent.service.agent.agent_service import agent_service
-from agent.service.workspace.skill_service import skill_service
-from agent.service.workspace.workspace_service import workspace_service
 from agent.infra.server.common import resp
 
 router = APIRouter(tags=["agent"])
@@ -122,148 +115,3 @@ async def get_agent_cost_summary(agent_id: str):
     except LookupError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return resp.ok(resp.Resp(data=summary.model_dump(mode="json")))
-
-
-@router.get("/agents/{agent_id}/workspace/files")
-async def get_workspace_files(agent_id: str):
-    """获取 Agent workspace 文件列表。"""
-    try:
-        files = await workspace_service.get_workspace_files(agent_id)
-    except LookupError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    data = [WorkspaceFileEntry(**item).model_dump() for item in files]
-    return resp.ok(resp.Resp(data=data))
-
-
-@router.get("/agents/{agent_id}/workspace/file", response_model=WorkspaceFileContentResponse)
-async def get_workspace_file(agent_id: str, path: str):
-    """读取 Agent workspace 文件内容。"""
-    try:
-        content = await workspace_service.get_workspace_file(agent_id, path)
-    except LookupError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-    data = WorkspaceFileContentResponse(path=path, content=content).model_dump()
-    return resp.ok(resp.Resp(data=data))
-
-
-@router.put("/agents/{agent_id}/workspace/file")
-async def update_workspace_file(agent_id: str, request: UpdateWorkspaceFileRequest):
-    """更新 Agent workspace 文件内容。"""
-    try:
-        saved_path = await workspace_service.update_workspace_file(
-            agent_id=agent_id,
-            path=request.path,
-            content=request.content,
-        )
-    except LookupError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-    data = WorkspaceFileContentResponse(path=saved_path, content=request.content).model_dump()
-    return resp.ok(resp.Resp(data=data))
-
-
-@router.post("/agents/{agent_id}/workspace/entry", response_model=WorkspaceEntryMutationResponse)
-async def create_workspace_entry(agent_id: str, request: CreateWorkspaceEntryRequest):
-    """创建 Agent workspace 条目。"""
-    try:
-        created_path = await workspace_service.create_workspace_entry(
-            agent_id=agent_id,
-            path=request.path,
-            entry_type=request.entry_type,
-            content=request.content,
-        )
-    except LookupError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except FileExistsError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return resp.ok(resp.Resp(data=WorkspaceEntryMutationResponse(path=created_path).model_dump()))
-
-
-@router.patch("/agents/{agent_id}/workspace/entry", response_model=WorkspaceEntryRenameResponse)
-async def rename_workspace_entry(agent_id: str, request: RenameWorkspaceEntryRequest):
-    """重命名 Agent workspace 条目。"""
-    try:
-        old_path, new_path = await workspace_service.rename_workspace_entry(
-            agent_id=agent_id,
-            path=request.path,
-            new_path=request.new_path,
-        )
-    except LookupError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except FileExistsError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-    data = WorkspaceEntryRenameResponse(path=old_path, new_path=new_path).model_dump()
-    return resp.ok(resp.Resp(data=data))
-
-
-@router.delete("/agents/{agent_id}/workspace/entry", response_model=WorkspaceEntryMutationResponse)
-async def delete_workspace_entry(agent_id: str, path: str):
-    """删除 Agent workspace 条目。"""
-    try:
-        deleted_path = await workspace_service.delete_workspace_entry(agent_id, path)
-    except LookupError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return resp.ok(resp.Resp(data=WorkspaceEntryMutationResponse(path=deleted_path).model_dump()))
-
-
-# =====================================================
-# Skill API
-# =====================================================
-
-@router.get("/skills", response_model=List[SkillInfo])
-async def get_available_skills():
-    """获取所有可用 Skill 清单。"""
-    skills = skill_service.get_all_skills()
-    return resp.ok(resp.Resp(data=[s.model_dump() for s in skills]))
-
-
-@router.get("/agents/{agent_id}/skills", response_model=List[AgentSkillEntry])
-async def get_agent_skills(agent_id: str):
-    """获取 Agent 的 Skill 列表（含安装状态）。"""
-    try:
-        skills = await skill_service.get_agent_skills(agent_id)
-    except LookupError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return resp.ok(resp.Resp(data=[s.model_dump() for s in skills]))
-
-
-@router.post("/agents/{agent_id}/skills")
-async def install_agent_skill(agent_id: str, request: InstallSkillRequest):
-    """为 Agent 安装 Skill。"""
-    try:
-        entry = await skill_service.install_skill(agent_id, request.skill_name)
-    except LookupError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return resp.ok(resp.Resp(data=entry.model_dump()))
-
-
-@router.delete("/agents/{agent_id}/skills/{skill_name}")
-async def uninstall_agent_skill(agent_id: str, skill_name: str):
-    """从 Agent 卸载 Skill。"""
-    try:
-        await skill_service.uninstall_skill(agent_id, skill_name)
-    except LookupError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return resp.ok(resp.Resp(data={"success": True}))
