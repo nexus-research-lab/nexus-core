@@ -21,8 +21,8 @@ import {
   HeroInputShell,
   HeroSidePanelShell,
 } from "@/features/launcher/launcher-glass-shell";
-import { RoomConversationFeed } from "@/features/room-conversation/room-conversation-feed";
-import { RoomScrollToLatestButton } from "@/features/room-conversation/room-scroll-to-latest-button";
+import { ConversationFeed } from "@/features/conversation-shared/conversation-feed";
+import { ScrollToLatestButton } from "@/features/conversation-shared/scroll-to-latest-button";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { useTextareaHeight } from "@/hooks/use-textarea-height";
 import { Agent } from "@/types/agent";
@@ -427,7 +427,7 @@ export function LauncherAppConversationPanel({
                 onScroll={update_follow_state}
               >
                 {app_conversation_messages.length ? (
-                  <RoomConversationFeed
+                  <ConversationFeed
                     bottom_anchor_ref={bottom_anchor_ref}
                     compact
                     current_agent_name="Nexus"
@@ -500,7 +500,7 @@ export function LauncherAppConversationPanel({
               </div>
 
               {show_scroll_to_bottom ? (
-                <RoomScrollToLatestButton
+                <ScrollToLatestButton
                   is_loading={is_loading}
                   is_mobile_layout={true}
                   on_click={() => scroll_to_bottom("smooth")}

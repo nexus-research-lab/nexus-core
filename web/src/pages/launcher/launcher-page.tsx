@@ -9,8 +9,8 @@ import { useLauncherPageController } from "@/hooks/use-launcher-page-controller"
 import { createConversation, deleteConversation } from "@/lib/agent-api";
 import { createRoom, ensureDirectRoom } from "@/lib/room-api";
 import { cn } from "@/lib/utils";
-import { AgentOptions } from "@/shared/ui/agent-options";
-import { AppLoadingScreen } from "@/shared/ui/app-loading-screen";
+import { AgentOptions } from "@/shared/ui/dialog/agent-options";
+import { AppLoadingScreen } from "@/shared/ui/layout/app-loading-screen";
 import { useAgentStore } from "@/store/agent";
 import { AgentOptions as AgentConfigOptions } from "@/types/agent";
 import { DEFAULT_AGENT_ID } from "@/config/options";
