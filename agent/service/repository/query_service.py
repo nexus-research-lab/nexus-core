@@ -26,8 +26,8 @@ from agent.service.repository.agent_repository_service import agent_persistence_
 from agent.service.repository.conversation_repository_service import (
     conversation_persistence_service,
 )
-from agent.storage.sqlite.room_sql_repository import RoomSqlRepository
-from agent.storage.sqlite.message_sql_repository import MessageSqlRepository
+from agent.infra.database.repositories.room_sql_repository import RoomSqlRepository
+from agent.infra.database.repositories.message_sql_repository import MessageSqlRepository
 from agent.infra.database.get_db import get_db
 
 

@@ -1,0 +1,416 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""Room 聊天服务 — 处理 Room 内的 @mention 消息分发。
+
+与 ChatService（DM 单 Agent）不同，RoomChatService 负责：
+1. 解析消息中的 @Agent 提及
+2. 预分配每个 Agent 回复的 message_id，通过 chat_ack 立即告知前端
+3. 所有 Agent 并发执行（asyncio.gather），互不阻塞
+4. 所有消息存储在共享的 room session_key 下
+"""
+
+import asyncio
+import uuid
+from typing import Any, Dict, List, Optional, Tuple
+
+from agent.infra.database.get_db import get_db
+from agent.infra.database.repositories.session_sql_repository import SessionSqlRepository
+from agent.schema.model_message import Message, build_error_event, EventMessage
+from agent.service.agent.agent_manager import AgentManager
+from agent.service.agent.agent_runtime import agent_runtime
+from agent.service.channels.message_sender import MessageSender
+from agent.service.message.chat_message_processor import ChatMessageProcessor
+from agent.service.permission.strategy.permission_strategy import PermissionStrategy
+from agent.service.room.room_message_store import room_message_store
+from agent.service.room.room_session_keys import (
+    build_room_agent_session_key,
+    build_room_shared_session_key,
+)
+from agent.service.session.session_manager import session_manager
+from agent.utils.logger import logger
+from agent.utils.mention_parser import resolve_mention_agent_ids
+
+def build_room_session_key(conversation_id: str) -> str:
+    """构建 Room 共享 session_key。"""
+    return build_room_shared_session_key(conversation_id)
+
+
+class RoomChatService:
+    """Room 内的多 Agent 对话编排。"""
+
+    def __init__(
+        self,
+        sender: MessageSender,
+        permission_strategy: PermissionStrategy,
+    ) -> None:
+        self._sender = sender
+        self._permission_strategy = permission_strategy
+        self._db = get_db("async_sqlite")
+
+    async def handle_room_message_with_task(
+        self,
+        message: Dict[str, Any],
+        chat_tasks: Dict[str, Any],
+    ) -> None:
+        """处理 Room 消息入口 — 管理异步任务。"""
+        conversation_id = message.get("conversation_id", "")
+        room_session_key = message.get("session_key", "")
+
+        if not room_session_key:
+            room_session_key = build_room_session_key(conversation_id)
+            message["session_key"] = room_session_key
+
+        # 取消该 Room 会话下的旧整体任务
+        task_key = f"room:{room_session_key}"
+        if task_key in chat_tasks and not chat_tasks[task_key].done():
+            logger.info(f"⚠️ 取消旧 room chat 任务: {task_key}")
+            chat_tasks[task_key].cancel()
+
+        task = asyncio.create_task(self._handle_room_message(message, chat_tasks))
+        chat_tasks[task_key] = task
+        task.add_done_callback(
+            lambda t: self._on_task_done(task_key, t)
+        )
+
+    async def _handle_room_message(self, message: Dict[str, Any], chat_tasks: Dict[str, Any]) -> None:
+        """处理 Room 消息核心逻辑。"""
+        room_id = message.get("room_id", "")
+        conversation_id = message.get("conversation_id", "")
+        content = message.get("content", "")
+        round_id = message.get("round_id", str(uuid.uuid4()))
+        req_id = message.get("req_id", round_id)
+        room_session_key = message["session_key"]
+
+        if not conversation_id:
+            await self._send_error(room_session_key, "conversation_id is required")
+            return
+
+        # 1. 构建 Room 成员的 name→id 映射
+        try:
+            agent_name_to_id = await self._build_room_member_map(room_id, conversation_id)
+        except ValueError as exc:
+            await self._send_error(room_session_key, str(exc))
+            return
+        if not agent_name_to_id:
+            await self._send_error(room_session_key, "Room has no agent members")
+            return
+
+        # 2. 解析 @mention — 确定要回复的 Agent
+        target_agent_ids = resolve_mention_agent_ids(content, agent_name_to_id)
+
+        # 没有 @任何人 → 只保存用户消息，不触发回复
+        if not target_agent_ids:
+            await self._save_user_message_only(room_session_key, content, round_id)
+            user_msg = Message(
+                message_id=round_id,
+                session_key=room_session_key,
+                agent_id="",
+                round_id=round_id,
+                role="user",
+                content=content,
+            )
+            await self._sender.send(user_msg)
+            hint_msg = Message(
+                message_id=str(uuid.uuid4()),
+                session_key=room_session_key,
+                agent_id="",
+                round_id=round_id,
+                role="result",
+                subtype="info",
+                result="请使用 @AgentName 指定要对话的成员",
+            )
+            await room_message_store.save_message(hint_msg)
+            await self._sender.send(hint_msg)
+            return
+
+        # 3. 保存用户消息
+        user_msg = Message(
+            message_id=round_id,
+            session_key=room_session_key,
+            agent_id="",
+            round_id=round_id,
+            role="user",
+            content=content,
+        )
+        await room_message_store.save_message(user_msg)
+
+        # 4. 预分配每个 Agent 的 message_id，构建 pending 列表
+        #    task_key 格式: room:{session_key}:{msg_id} (精确到单条消息)
+        pending: List[Dict[str, str]] = []
+        agent_dispatch_params: List[Tuple[str, str, str]] = []  # (agent_id, agent_round_id, msg_id)
+
+        multi_agent = len(target_agent_ids) > 1
+        for agent_id in target_agent_ids:
+            agent_round_id = f"{round_id}:{agent_id}" if multi_agent else round_id
+            msg_id = str(uuid.uuid4())
+            pending.append({"agent_id": agent_id, "msg_id": msg_id})
+            agent_dispatch_params.append((agent_id, agent_round_id, msg_id))
+
+        # 5. 立即下发 chat_ack，前端据此渲染占位气泡
+        await self._sender.send_event_message(EventMessage(
+            event_type="chat_ack",
+            session_key=room_session_key,
+            data={
+                "req_id": req_id,
+                "round_id": round_id,
+                "pending": pending,
+            },
+        ))
+
+        # 6. 注册 per-msg_id task，并发执行所有 Agent
+        async def _run_agent(agent_id: str, agent_round_id: str, msg_id: str) -> None:
+            agent_task_key = f"room:{room_session_key}:{msg_id}"
+            task = asyncio.current_task()
+            if task:
+                chat_tasks[agent_task_key] = task
+            try:
+                await self._dispatch_to_agent(
+                    room_session_key=room_session_key,
+                    conversation_id=conversation_id,
+                    agent_id=agent_id,
+                    content=content,
+                    round_id=agent_round_id,
+                    msg_id=msg_id,
+                )
+            except asyncio.CancelledError:
+                logger.info(f"🛑 Room agent 任务被取消: {agent_task_key}")
+                await self._sender.send_event_message(EventMessage(
+                    event_type="stream_cancelled",
+                    session_key=room_session_key,
+                    agent_id=agent_id,
+                    data={"msg_id": msg_id, "agent_id": agent_id},
+                ))
+                raise
+            finally:
+                chat_tasks.pop(agent_task_key, None)
+
+        agent_coroutines = [
+            _run_agent(agent_id, agent_round_id, msg_id)
+            for agent_id, agent_round_id, msg_id in agent_dispatch_params
+        ]
+        results = await asyncio.gather(*agent_coroutines, return_exceptions=True)
+
+        # 记录异常（已取消的不算错误）
+        for i, result in enumerate(results):
+            if isinstance(result, Exception) and not isinstance(result, asyncio.CancelledError):
+                agent_id = agent_dispatch_params[i][0]
+                logger.error(f"❌ Room agent 异常: agent={agent_id}, error={result}")
+
+    async def _dispatch_to_agent(
+        self,
+        room_session_key: str,
+        conversation_id: str,
+        agent_id: str,
+        content: str,
+        round_id: str,
+        msg_id: str,
+    ) -> None:
+        """向单个 Agent 发起对话并流式返回结果。"""
+        room_session = await self._get_room_session(conversation_id, agent_id)
+        if room_session is None:
+            await self._send_error(
+                room_session_key,
+                f"Room session 不存在: conversation={conversation_id}, agent={agent_id}",
+                agent_id=agent_id,
+            )
+            return
+
+        sdk_session_key = build_room_agent_session_key(
+            conversation_id=conversation_id,
+            agent_id=agent_id,
+        )
+
+        try:
+            client = await agent_runtime.get_or_create_client(
+                session_key=sdk_session_key,
+                agent_id=agent_id,
+                permission_strategy=self._permission_strategy,
+                resume_session_id=room_session.sdk_session_id or "",
+                resolved_agent_id=agent_id,
+            )
+        except Exception as exc:
+            logger.error(f"❌ Room: 获取 agent client 失败: {agent_id}, {exc}")
+            await self._send_error(
+                room_session_key,
+                f"Agent {agent_id} 连接失败: {exc}",
+                agent_id=agent_id,
+            )
+            return
+
+        async with session_manager.get_lock(sdk_session_key):
+            logger.info(
+                f"📨 Room dispatch: agent={agent_id}, "
+                f"round={round_id}, msg_id={msg_id}, conversation={conversation_id}"
+            )
+
+            # 通知前端：该 Agent 开始生成
+            await self._sender.send_event_message(EventMessage(
+                event_type="stream_start",
+                session_key=room_session_key,
+                agent_id=agent_id,
+                data={"msg_id": msg_id, "agent_id": agent_id, "round_id": round_id},
+            ))
+
+            await client.query(content)
+
+            processor = ChatMessageProcessor(
+                session_key=room_session_key,
+                query=content,
+                round_id=round_id,
+                agent_id=agent_id,
+                session_id=room_session.sdk_session_id,
+                assistant_message_id=msg_id,
+                persist_message=self._build_room_persist_callback(
+                    room_session_id=room_session.id,
+                    cost_session_key=sdk_session_key,
+                ),
+                register_session=self._build_room_register_callback(
+                    room_session_id=room_session.id,
+                    sdk_session_key=sdk_session_key,
+                ),
+            )
+            processor._is_user_message_saved = True
+
+            async for response_msg in client.receive_messages():
+                processed = await processor.process_messages(response_msg)
+                for msg in processed:
+                    await self._sender.send(msg)
+                if processor.subtype in ("success", "error"):
+                    break
+
+            # 通知前端：该 Agent 生成结束
+            await self._sender.send_event_message(EventMessage(
+                event_type="stream_end",
+                session_key=room_session_key,
+                agent_id=agent_id,
+                data={"msg_id": msg_id, "agent_id": agent_id, "round_id": round_id},
+            ))
+
+            logger.info(
+                f"✅ Room agent done: agent={agent_id}, "
+                f"messages={processor.message_count}"
+            )
+
+    async def _build_room_member_map(
+        self,
+        room_id: str,
+        conversation_id: str,
+    ) -> Dict[str, str]:
+        """构建 Room 成员 name → agent_id 映射。"""
+        from agent.infra.database.get_db import get_db
+        from agent.infra.database.repositories.room_sql_repository import (
+            RoomSqlRepository,
+        )
+
+        if room_id:
+            try:
+                db = get_db("async_sqlite")
+                async with db.session() as session:
+                    repo = RoomSqlRepository(session)
+                    room_agg = await repo.get(room_id)
+                    if room_agg:
+                        agent_ids = [
+                            m.member_agent_id
+                            for m in room_agg.members
+                            if m.member_type == "agent" and m.member_agent_id
+                        ]
+                        agents = await AgentManager.get_all_agents()
+                        return {
+                            a.name: a.agent_id
+                            for a in agents
+                            if a.agent_id in agent_ids
+                        }
+            except Exception as exc:
+                logger.warning(f"⚠️ 查询 Room 成员失败: {exc}")
+
+        raise ValueError(f"无法获取 Room 成员列表: room_id={room_id!r}")
+
+    async def _save_user_message_only(
+        self,
+        session_key: str,
+        content: str,
+        round_id: str,
+    ) -> None:
+        """仅保存用户消息（无 Agent 回复时）。"""
+        user_msg = Message(
+            message_id=round_id,
+            session_key=session_key,
+            agent_id="",
+            round_id=round_id,
+            role="user",
+            content=content,
+        )
+        await room_message_store.save_message(user_msg)
+
+    async def _send_error(
+        self,
+        session_key: str,
+        error_message: str,
+        agent_id: str = "",
+    ) -> None:
+        """发送错误事件给前端。"""
+        await self._sender.send_event_message(
+            build_error_event(
+                error_type="room_error",
+                message=error_message,
+                session_key=session_key,
+                agent_id=agent_id,
+            )
+        )
+
+    @staticmethod
+    def _on_task_done(task_key: str, task: asyncio.Task) -> None:
+        """任务完成回调。"""
+        if task.cancelled():
+            logger.info(f"🛑 Room 任务被取消: {task_key}")
+        elif task.exception():
+            logger.error(
+                f"❌ Room 任务异常: {task_key}, error={task.exception()}"
+            )
+        else:
+            logger.debug(f"✅ Room 任务完成: {task_key}")
+
+    async def _get_room_session(
+        self,
+        conversation_id: str,
+        agent_id: str,
+    ):
+        """读取 Room 成员的主会话。"""
+        async with self._db.session() as session:
+            repository = SessionSqlRepository(session)
+            return await repository.get_primary(
+                conversation_id=conversation_id,
+                agent_id=agent_id,
+            )
+
+    @staticmethod
+    def _build_room_persist_callback(
+        room_session_id: str,
+        cost_session_key: str,
+    ):
+        """构建 Room 消息落库回调。"""
+
+        async def _persist(message: Message) -> None:
+            await room_message_store.save_message(
+                message=message,
+                room_session_id=room_session_id,
+                cost_session_key=cost_session_key,
+            )
+
+        return _persist
+
+    @staticmethod
+    def _build_room_register_callback(
+        room_session_id: str,
+        sdk_session_key: str,
+    ):
+        """构建 Room SDK session 注册回调。"""
+
+        async def _register(_: str, sdk_session_id: str) -> None:
+            await room_message_store.register_sdk_session(
+                room_session_id=room_session_id,
+                sdk_session_key=sdk_session_key,
+                sdk_session_id=sdk_session_id,
+            )
+
+        return _register

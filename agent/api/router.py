@@ -4,7 +4,7 @@
 # @File   ：router
 # @Date   ：2024/1/22 23:22
 # @Author ：leemysw
-
+#
 # 2024/1/22 23:22   Create
 # =====================================================
 
@@ -13,33 +13,41 @@ from fastapi import APIRouter, Depends
 from agent.api.agent.api_agent import router as agent_router
 from agent.api.agent.api_agent_workspace import router as agent_workspace_router
 from agent.api.agent.api_agent_skill import router as agent_skill_router
-from agent.api.chat_ws.websocket_server import router as websocket_router
+from agent.api.chat.websocket_server import router as websocket_router
 from agent.api.common import common_router
 from agent.api.repository.api_persistence import router as persistence_router
 from agent.api.room.api_room import router as room_router
 from agent.api.session.api_session import router as session_router
+from agent.api.activity.api_activity import router as activity_router
+from agent.api.launcher.api_launcher import router as launcher_router
 from agent.config.config import settings
 from agent.infra.server.common.base_depends import extract_request_id
 
 api_router = APIRouter(dependencies=[Depends(extract_request_id)], prefix=settings.API_PREFIX)
 
-# Include the websocket router
+# Include websocket router
 if settings.WEBSOCKET_ENABLED:
     api_router.include_router(websocket_router, prefix="/v1")
 
-# Include the agent router
+# Include to agent router
 api_router.include_router(agent_router, prefix="/v1")
 api_router.include_router(agent_workspace_router, prefix="/v1")
 api_router.include_router(agent_skill_router, prefix="/v1")
 
-# Include the session router
+# Include to session router
 api_router.include_router(session_router, prefix="/v1")
 
-# Include the room router
+# Include to room router
 api_router.include_router(room_router, prefix="/v1")
 
-# Include the persistence router
+# Include to persistence router
 api_router.include_router(persistence_router, prefix="/v1")
 
-# Include the common router (health check, etc.)
+# Include to activity router
+api_router.include_router(activity_router, prefix="/v1")
+
+# Include to launcher router
+api_router.include_router(launcher_router, prefix="/v1")
+
+# Include to common router (health check, etc.)
 api_router.include_router(common_router)

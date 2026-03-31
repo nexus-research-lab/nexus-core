@@ -21,8 +21,9 @@
 from typing import Dict, List, Optional
 
 from agent.config.config import settings
-from agent.storage.cost_repository import cost_repository
-from agent.storage.session_repository import session_repository
+from agent.service.session.cost_repository import cost_repository
+from agent.service.session.session_repository import session_repository
+from agent.service.session.session_router import parse_session_key
 from agent.schema.model_message import Message
 from agent.schema.model_session import ASession
 from agent.utils.logger import logger
@@ -51,8 +52,11 @@ class MessageHistoryStore:
             options: Optional[Dict] = None,
     ) -> Optional[ASession]:
         """创建新会话并返回"""
+        parsed = parse_session_key(session_key)
+        agent_id = parsed.get("agent_id") or settings.DEFAULT_AGENT_ID
         success = await session_repository.create_session(
             session_key=session_key,
+            agent_id=agent_id,
             channel_type=channel_type,
             chat_type=chat_type,
             title=title or "New Chat",

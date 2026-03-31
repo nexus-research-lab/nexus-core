@@ -16,7 +16,7 @@ from typing import Optional
 
 from agent.schema.model_agent import ValidateAgentNameResponse
 from agent.service.workspace.workspace_paths import get_workspace_base_path
-from agent.storage.agent_repository import agent_repository
+from agent.service.agent.agent_repository import agent_repository
 
 
 class AgentNamePolicy:

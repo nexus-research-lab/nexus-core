@@ -21,9 +21,9 @@ from agent.schema.model_chat_persistence import (
     RoomRecord,
     SessionRecord,
 )
-from agent.storage.sqlite.conversation_sql_repository import ConversationSqlRepository
-from agent.storage.sqlite.room_sql_repository import RoomSqlRepository
-from agent.storage.sqlite.session_sql_repository import SessionSqlRepository
+from agent.infra.database.repositories.conversation_sql_repository import ConversationSqlRepository
+from agent.infra.database.repositories.room_sql_repository import RoomSqlRepository
+from agent.infra.database.repositories.session_sql_repository import SessionSqlRepository
 
 
 class ConversationPersistenceService:

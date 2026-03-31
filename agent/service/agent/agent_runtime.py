@@ -29,6 +29,8 @@ class AgentRuntime:
         session_key: str,
         agent_id: str,
         permission_strategy: PermissionStrategy,
+        resume_session_id: str | None = None,
+        resolved_agent_id: str | None = None,
     ) -> ClaudeSDKClient:
         """按需获取或创建 SDK client。"""
         client = await session_manager.get_session(session_key)
@@ -36,9 +38,11 @@ class AgentRuntime:
             logger.debug(f"♻️ 复用现有 session: {session_key}")
             return client
 
-        existing_session = await session_store.get_session_info(session_key)
-        session_id = existing_session.session_id if existing_session else None
-        real_agent_id = existing_session.agent_id if existing_session else agent_id
+        existing_session = None
+        if resume_session_id is None or resolved_agent_id is None:
+            existing_session = await session_store.get_session_info(session_key)
+        session_id = resume_session_id or (existing_session.session_id if existing_session else None)
+        real_agent_id = resolved_agent_id or (existing_session.agent_id if existing_session else agent_id)
 
         try:
             sdk_options = await agent_manager.build_sdk_options(real_agent_id)

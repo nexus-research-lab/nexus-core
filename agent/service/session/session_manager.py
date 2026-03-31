@@ -87,11 +87,15 @@ class SessionManager:
     async def refresh_agent_sessions(self, agent_id: str) -> int:
         """刷新指定 Agent 的活跃会话。"""
         sessions = await session_store.get_all_sessions()
-        target_keys = [
+        target_keys = {
             session.session_key
             for session in sessions
             if session.agent_id == agent_id and session.session_key in self._sessions
-        ]
+        }
+        for session_key in list(self._sessions.keys()):
+            parsed = parse_session_key(session_key)
+            if parsed.get("agent_id") == agent_id:
+                target_keys.add(session_key)
 
         refreshed_count = 0
         for session_key in target_keys:
@@ -126,10 +130,14 @@ class SessionManager:
         logger.info(f"🧹 Agent 活跃会话清理完成: agent={agent_id}, count={removed_count}")
         return removed_count
 
-    async def register_sdk_session(self, session_key: str, session_id: str) -> None:
-        """注册 session_key 与 SDK session_id 的映射。"""
+    async def register_session_mapping(self, session_key: str, session_id: str) -> None:
+        """仅记录 session_key 与 SDK session_id 的内存映射。"""
         self._key_sdk_map[session_key] = session_id
         self._sdk_key_map[session_id] = session_key
+
+    async def register_sdk_session(self, session_key: str, session_id: str) -> None:
+        """注册 session_key 与 SDK session_id 的映射。"""
+        await self.register_session_mapping(session_key=session_key, session_id=session_id)
 
         try:
             await session_store.update_session(session_key=session_key, session_id=session_id)

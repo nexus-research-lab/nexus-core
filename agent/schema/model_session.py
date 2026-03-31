@@ -18,7 +18,7 @@
 [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -37,8 +37,14 @@ class ASession(BaseModel):
     channel_type: str = Field(default="websocket", description="通道类型")
     chat_type: str = Field(default="dm", description="会话类型")
     status: str = Field(default="active", description="会话状态")
-    created_at: datetime = Field(default_factory=datetime.now, description="创建时间")
-    last_activity: datetime = Field(default_factory=datetime.now, description="最后活动时间")
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="创建时间",
+    )
+    last_activity: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="最后活动时间",
+    )
     title: Optional[str] = Field(default=None, description="会话标题")
     message_count: int = Field(0, description="消息数量")
     options: Optional[dict] = Field(default=None, description="会话元数据")

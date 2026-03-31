@@ -15,6 +15,8 @@ import hashlib
 import json
 from typing import Optional
 
+from agent.service.activity.activity_event_service import activity_event_service
+
 from agent.infra.database.get_db import get_db
 from agent.schema.model_agent_persistence import (
     AgentAggregate,
@@ -38,12 +40,13 @@ from agent.service.repository.agent_repository_service import (
     agent_persistence_service,
 )
 from agent.service.repository.repository_service import persistence_service
-from agent.service.room.room_legacy_session_bridge import (
-    room_legacy_session_bridge,
+from agent.service.room.room_message_store import room_message_store
+from agent.service.room.room_session_keys import (
+    build_room_agent_session_key,
 )
-from agent.storage.sqlite.conversation_sql_repository import ConversationSqlRepository
-from agent.storage.sqlite.room_sql_repository import RoomSqlRepository
-from agent.storage.sqlite.session_sql_repository import SessionSqlRepository
+from agent.infra.database.repositories.conversation_sql_repository import ConversationSqlRepository
+from agent.infra.database.repositories.room_sql_repository import RoomSqlRepository
+from agent.infra.database.repositories.session_sql_repository import SessionSqlRepository
 from agent.utils.utils import random_uuid
 
 _LOCAL_USER_ID = "local-user"
@@ -72,13 +75,31 @@ class RoomService:
             raise LookupError("Room not found")
         return room
 
+    async def get_or_create_dm_room(self, agent_id: str) -> ConversationContextAggregate:
+        """获取或创建与指定 Agent 的 DM room 上下文。"""
+        rooms = await persistence_service.list_rooms(limit=500)
+        for room_agg in rooms:
+            if room_agg.room.room_type != "dm":
+                continue
+            agent_ids = [
+                m.member_agent_id
+                for m in room_agg.members
+                if m.member_type == "agent" and m.member_agent_id
+            ]
+            if agent_ids == [agent_id] or set(agent_ids) == {agent_id}:
+                contexts = await persistence_service.get_room_contexts(room_agg.room.id)
+                if contexts:
+                    return contexts[0]
+
+        # 不存在则创建
+        context = await self.create_room(agent_ids=[agent_id])
+        return context
+
     async def get_room_contexts(self, room_id: str) -> list[ConversationContextAggregate]:
         """读取房间上下文。"""
         contexts = await persistence_service.get_room_contexts(room_id)
         if not contexts:
             raise LookupError("Room not found")
-        for context in contexts:
-            await room_legacy_session_bridge.ensure_context(context)
         return contexts
 
     async def update_room(
@@ -123,7 +144,6 @@ class RoomService:
         if not contexts:
             raise LookupError("Room not found")
         context = self._pick_context_by_conversation(contexts, main_conversation.id)
-        await room_legacy_session_bridge.ensure_context(context)
         return context
 
     async def create_room(
@@ -182,7 +202,14 @@ class RoomService:
             conversation=created_conversation,
             sessions=sessions,
         )
-        await room_legacy_session_bridge.ensure_context(context)
+
+        # 创建 Room 创建 Activity 事件
+        await activity_event_service.create_room_created_event(
+            room_id=room_id,
+            room_name=room_name,
+            agent_ids=normalized_agent_ids,
+        )
+
         return context
 
     async def add_agent_member(
@@ -269,18 +296,14 @@ class RoomService:
                 if session.conversation_id == main_conversation.id
             ],
         )
-        for conversation in conversations:
-            await room_legacy_session_bridge.ensure_sessions(
-                room_type=room_aggregate.room.room_type,
-                room_id=room_aggregate.room.id,
-                conversation_id=conversation.id,
-                title=conversation.title or room_aggregate.room.name or "未命名对话",
-                sessions=[
-                    session
-                    for session in created_sessions
-                    if session.conversation_id == conversation.id
-                ],
-            )
+
+        # 广播成员变更事件
+        from agent.service.channels.ws.ws_connection_registry import ws_connection_registry
+        from agent.schema.model_message import EventMessage
+        await ws_connection_registry.broadcast(EventMessage(
+            event_type="room_member_added",
+            data={"room_id": room_id, "agent_id": agent_id},
+        ))
         return context
 
     async def remove_agent_member(
@@ -335,10 +358,16 @@ class RoomService:
 
             await session.commit()
 
-        await room_legacy_session_bridge.delete_sessions(
-            room_type=room_aggregate.room.room_type,
-            sessions=removed_sessions,
-        )
+        # 同时清理 SDK client（in-memory）
+        from agent.service.session.session_manager import session_manager as sdk_session_manager
+        for sql_session in removed_sessions:
+            sdk_key = build_room_agent_session_key(
+                conversation_id=sql_session.conversation_id,
+                agent_id=agent_id,
+                room_type=room_aggregate.room.room_type,
+            )
+            sdk_session_manager.remove_session(sdk_key)
+
         contexts = await persistence_service.get_room_contexts(room_id)
         if not contexts:
             raise LookupError("Room not found")
@@ -349,10 +378,22 @@ class RoomService:
         context.sessions = [
             session for session in context.sessions if session.agent_id != agent_id
         ]
+
+        # 广播成员变更事件
+        from agent.service.channels.ws.ws_connection_registry import ws_connection_registry
+        from agent.schema.model_message import EventMessage
+        await ws_connection_registry.broadcast(EventMessage(
+            event_type="room_member_removed",
+            data={"room_id": room_id, "agent_id": agent_id},
+        ))
         return context
 
     async def delete_room(self, room_id: str) -> None:
         """删除房间。"""
+        from agent.service.session.session_manager import session_manager as sdk_session_manager
+        from agent.service.channels.ws.ws_connection_registry import ws_connection_registry
+        from agent.schema.model_message import EventMessage
+
         contexts = await persistence_service.get_room_contexts(room_id)
         if not contexts:
             raise LookupError("Room not found")
@@ -362,11 +403,23 @@ class RoomService:
             if not deleted:
                 raise LookupError("Room not found")
             await session.commit()
+
+        # 清理 Room 正文与 SDK client
         for context in contexts:
-            await room_legacy_session_bridge.delete_sessions(
-                room_type=context.room.room_type,
-                sessions=context.sessions,
-            )
+            await room_message_store.delete_conversation(context.conversation.id)
+            for sql_session in context.sessions:
+                sdk_key = build_room_agent_session_key(
+                    conversation_id=sql_session.conversation_id,
+                    agent_id=sql_session.agent_id,
+                    room_type=context.room.room_type,
+                )
+                sdk_session_manager.remove_session(sdk_key)
+
+        # 广播删除事件给所有连接的前端
+        await ws_connection_registry.broadcast(EventMessage(
+            event_type="room_deleted",
+            data={"room_id": room_id},
+        ))
 
     def _normalize_agent_ids(self, agent_ids: list[str]) -> list[str]:
         """去重并保持输入顺序。"""

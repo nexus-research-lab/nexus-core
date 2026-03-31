@@ -9,16 +9,15 @@
 
 """Agent 生命周期管理器。"""
 
-from pathlib import Path
 from typing import List, Optional
 
-from agent.service.agent.agent_prompt_builder import AgentPromptBuilder
-from agent.service.agent.agent_name_policy import AgentNamePolicy
-from agent.service.agent.main_agent_profile import MainAgentProfile
-from agent.service.agent.agent_workspace import AgentWorkspaceRegistry
 from agent.schema.model_agent import AAgent, AgentOptions, ValidateAgentNameResponse
+from agent.service.agent.agent_name_policy import AgentNamePolicy
+from agent.service.agent.agent_prompt_builder import AgentPromptBuilder
+from agent.service.agent.agent_repository import agent_repository
+from agent.service.agent.agent_workspace import AgentWorkspaceRegistry
+from agent.service.agent.main_agent_profile import MainAgentProfile
 from agent.service.session.session_manager import session_manager
-from agent.storage.agent_repository import agent_repository
 from agent.utils.logger import logger
 
 
@@ -31,9 +30,9 @@ class AgentManager:
         self._workspace_registry = AgentWorkspaceRegistry()
 
     async def validate_agent_name(
-        self,
-        name: str,
-        exclude_agent_id: Optional[str] = None,
+            self,
+            name: str,
+            exclude_agent_id: Optional[str] = None,
     ) -> ValidateAgentNameResponse:
         """校验 Agent 名称规则、重复性和目标 workspace 冲突。"""
         return await self._name_policy.validate_name(name, exclude_agent_id)
@@ -43,12 +42,12 @@ class AgentManager:
     # =====================================================
 
     async def create_agent(
-        self,
-        name: str,
-        options: Optional[AgentOptions] = None,
-        avatar: Optional[str] = None,
-        description: Optional[str] = None,
-        vibe_tags: Optional[list[str]] = None,
+            self,
+            name: str,
+            options: Optional[AgentOptions] = None,
+            avatar: Optional[str] = None,
+            description: Optional[str] = None,
+            vibe_tags: Optional[list[str]] = None,
     ) -> Optional[AAgent]:
         """创建 Agent，自动初始化 workspace 目录"""
         validation = await self.validate_agent_name(name)
@@ -85,22 +84,24 @@ class AgentManager:
         logger.info(f"✅ Agent 创建完成: {agent_id} ({normalized_name}), workspace={resolved_path_str}")
         return agent
 
-    async def get_agent(self, agent_id: str) -> Optional[AAgent]:
+    @staticmethod
+    async def get_agent(agent_id: str) -> Optional[AAgent]:
         """获取 Agent"""
         return await agent_repository.get_agent(agent_id)
 
-    async def get_all_agents(self) -> List[AAgent]:
+    @staticmethod
+    async def get_all_agents() -> List[AAgent]:
         """获取所有活跃 Agent"""
         return await agent_repository.get_all_agents()
 
     async def update_agent(
-        self,
-        agent_id: str,
-        name: Optional[str] = None,
-        options: Optional[AgentOptions] = None,
-        avatar: Optional[str] = None,
-        description: Optional[str] = None,
-        vibe_tags: Optional[list[str]] = None,
+            self,
+            agent_id: str,
+            name: Optional[str] = None,
+            options: Optional[AgentOptions] = None,
+            avatar: Optional[str] = None,
+            description: Optional[str] = None,
+            vibe_tags: Optional[list[str]] = None,
     ) -> bool:
         """更新 Agent 配置"""
         existing = await agent_repository.get_agent(agent_id)

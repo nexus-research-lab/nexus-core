@@ -13,8 +13,8 @@ from __future__ import annotations
 
 from agent.infra.database.get_db import get_db
 from agent.schema.model_session import ASession
-from agent.storage.sqlite.conversation_sql_repository import ConversationSqlRepository
-from agent.storage.sqlite.session_sql_repository import SessionSqlRepository
+from agent.infra.database.repositories.conversation_sql_repository import ConversationSqlRepository
+from agent.infra.database.repositories.session_sql_repository import SessionSqlRepository
 
 
 class SessionContextResolver:

@@ -24,12 +24,13 @@ from agent.service.repository.repository_service import persistence_service
 from agent.service.room.room_agent_runtime_factory import (
     room_agent_runtime_factory,
 )
-from agent.service.room.room_legacy_session_bridge import (
-    room_legacy_session_bridge,
+from agent.service.room.room_message_store import room_message_store
+from agent.service.room.room_session_keys import (
+    build_room_agent_session_key,
 )
-from agent.storage.sqlite.conversation_sql_repository import ConversationSqlRepository
-from agent.storage.sqlite.room_sql_repository import RoomSqlRepository
-from agent.storage.sqlite.session_sql_repository import SessionSqlRepository
+from agent.infra.database.repositories.conversation_sql_repository import ConversationSqlRepository
+from agent.infra.database.repositories.room_sql_repository import RoomSqlRepository
+from agent.infra.database.repositories.session_sql_repository import SessionSqlRepository
 from agent.utils.utils import random_uuid
 
 
@@ -81,7 +82,6 @@ class RoomConversationService:
             conversation=created_conversation,
             sessions=created_sessions,
         )
-        await room_legacy_session_bridge.ensure_context(context)
         return context
 
     async def update_room_conversation(
@@ -124,7 +124,6 @@ class RoomConversationService:
             conversation=updated_conversation,
             sessions=sessions,
         )
-        await room_legacy_session_bridge.ensure_context(context)
         return context
 
     async def delete_room_conversation(
@@ -161,10 +160,17 @@ class RoomConversationService:
                 raise LookupError("Conversation not found")
             await session.commit()
 
-        await room_legacy_session_bridge.delete_sessions(
-            room_type=room_aggregate.room.room_type,
-            sessions=target_sessions,
-        )
+        await room_message_store.delete_conversation(conversation_id)
+        from agent.service.session.session_manager import session_manager
+
+        for sql_session in target_sessions:
+            session_manager.remove_session(
+                build_room_agent_session_key(
+                    conversation_id=sql_session.conversation_id,
+                    agent_id=sql_session.agent_id,
+                    room_type=room_aggregate.room.room_type,
+                )
+            )
         contexts = await persistence_service.get_room_contexts(room_id)
         if not contexts:
             raise LookupError("Room not found")

@@ -14,7 +14,7 @@ from typing import Any, Dict, Optional
 from claude_agent_sdk import ClaudeSDKClient
 from agent.config.config import settings
 from agent.schema.model_agent import AAgent
-from agent.storage.agent_repository import agent_repository
+from agent.service.agent.agent_repository import agent_repository
 from agent.service.agent.agent_runtime import agent_runtime
 from agent.service.channels.message_sender import MessageSender
 from agent.schema.model_message import StreamMessage, Message

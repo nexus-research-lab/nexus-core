@@ -15,7 +15,7 @@ from typing import Optional
 
 from agent.infra.database.get_db import get_db
 from agent.schema.model_agent_persistence import AgentAggregate, CreateAgentAggregate
-from agent.storage.sqlite.agent_sql_repository import AgentSqlRepository
+from agent.infra.database.repositories.agent_sql_repository import AgentSqlRepository
 
 
 class AgentPersistenceService:

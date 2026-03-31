@@ -58,6 +58,18 @@ class UpdateRoomConversationRequest(BaseModel):
     title: Optional[str] = Field(default=None, description="对话标题")
 
 
+@router.get("/rooms/dm/{agent_id}")
+async def get_or_create_dm_room(agent_id: str):
+    """获取或创建与指定 Agent 的 DM room 上下文。"""
+    try:
+        context = await room_service.get_or_create_dm_room(agent_id=agent_id)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return resp.ok(resp.Resp(data=context.model_dump(mode="json")))
+
+
 @router.get("/rooms")
 async def list_rooms(limit: int = 20):
     """读取最近房间列表。"""

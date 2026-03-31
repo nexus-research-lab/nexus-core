@@ -16,7 +16,7 @@ from typing import Optional
 from agent.schema.model_agent import AgentSkillEntry, SkillInfo
 from agent.service.agent.main_agent_profile import MainAgentProfile
 from agent.service.workspace.workspace_skill_deployer import WorkspaceSkillDeployer
-from agent.storage.agent_repository import agent_repository
+from agent.service.agent.agent_repository import agent_repository
 from agent.utils.logger import logger
 
 
