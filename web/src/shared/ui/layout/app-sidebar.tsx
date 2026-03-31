@@ -12,8 +12,8 @@
 import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/store/sidebar";
 
-import { SidebarNarrowRail } from "./sidebar-narrow-rail";
-import { SidebarWidePanel } from "./sidebar-wide-panel";
+import { SidebarNarrowRail } from "@/shared/ui/sidebar/sidebar-narrow-rail";
+import { SidebarWidePanel } from "@/shared/ui/sidebar/sidebar-wide-panel";
 
 export function AppSidebar() {
   const collapse_mode = useSidebarStore((s) => s.collapse_mode);

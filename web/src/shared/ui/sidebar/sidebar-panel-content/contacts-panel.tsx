@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 
 import { AppRouteBuilders } from "@/app/router/route-paths";
 import { cn } from "@/lib/utils";
+import { CollapsibleSection } from "@/shared/ui/sidebar/collapsible-section";
 import { useAgentStore } from "@/store/agent";
 import { useSidebarStore } from "@/store/sidebar";
 
@@ -46,27 +47,15 @@ export const ContactsPanelContent = memo(function ContactsPanelContent() {
 
   return (
     <div className="flex flex-col gap-2">
-      {/* 头部：标题 + 成员数 + 新建按钮 */}
-      <div className="flex items-center justify-between px-2 py-1">
-        <div className="flex items-center gap-1.5">
-          <Users className="h-3.5 w-3.5 text-slate-500" />
-          <span className="text-[11px] font-semibold text-slate-600">
-            联系人
-          </span>
-          <span className="text-[10px] text-slate-400">{agents.length}</span>
-        </div>
-        <button
-          className="flex h-5 w-5 items-center justify-center rounded text-slate-400 transition-colors hover:bg-white/40 hover:text-slate-600"
-          onClick={handle_create}
-          title="新建成员"
-          type="button"
-        >
-          <Plus className="h-3.5 w-3.5" />
-        </button>
-      </div>
-
-      {/* Agent 列表 */}
-      <div className="flex flex-col gap-0.5">
+      <CollapsibleSection
+        action_icon={<Plus className="h-3.5 w-3.5" />}
+        action_title="新建成员"
+        count={agents.length}
+        icon={<Users className="h-3.5 w-3.5" />}
+        on_action={handle_create}
+        section_id="contacts-agents"
+        title="联系人"
+      >
         {agents.length > 0 ? (
           agents.map((agent) => {
             const is_active = active_item_id === agent.agent_id;
@@ -117,7 +106,7 @@ export const ContactsPanelContent = memo(function ContactsPanelContent() {
             <p className="text-[11px] text-slate-400">暂无成员</p>
           </div>
         )}
-      </div>
+      </CollapsibleSection>
     </div>
   );
 });

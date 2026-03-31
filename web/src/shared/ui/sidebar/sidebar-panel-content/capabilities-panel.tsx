@@ -10,8 +10,6 @@
 import {
   ArrowRight,
   Calendar,
-  ChevronDown,
-  ChevronRight,
   Link2,
   Puzzle,
   Radio,
@@ -23,73 +21,8 @@ import { useNavigate } from "react-router-dom";
 import { AppRouteBuilders } from "@/app/router/route-paths";
 import { getAvailableSkillsApi } from "@/lib/skill-api";
 import { cn } from "@/lib/utils";
-import { useSidebarStore } from "@/store/sidebar";
+import { CollapsibleSection } from "@/shared/ui/sidebar/collapsible-section";
 import { SkillInfo } from "@/types/skill";
-
-// ==================== 可折叠 Section ====================
-
-interface CapSectionProps {
-  section_id: string;
-  title: string;
-  count: number;
-  icon: React.ReactNode;
-  /** 点击 [→] 导航到全量页面 */
-  on_navigate?: () => void;
-  children: React.ReactNode;
-}
-
-function CapSection({
-  section_id,
-  title,
-  count,
-  icon,
-  on_navigate,
-  children,
-}: CapSectionProps) {
-  const is_collapsed = useSidebarStore(
-    (s) => s.collapsed_sections[section_id] ?? false,
-  );
-  const toggle = useSidebarStore((s) => s.toggle_section);
-
-  return (
-    <section className="border-b border-white/10 pb-1">
-      <div className="flex items-center gap-1 px-2 py-2">
-        <button
-          className="flex flex-1 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500 transition-colors hover:text-slate-700"
-          onClick={() => toggle(section_id)}
-          type="button"
-        >
-          {is_collapsed ? (
-            <ChevronRight className="h-3 w-3" />
-          ) : (
-            <ChevronDown className="h-3 w-3" />
-          )}
-          <span className="flex items-center gap-1.5">
-            {icon}
-            {title}
-          </span>
-          <span className="text-[10px] text-slate-400">{count}</span>
-        </button>
-
-        {/* 导航到全量页面按钮 */}
-        {on_navigate ? (
-          <button
-            className="flex h-5 w-5 items-center justify-center rounded text-slate-400 transition-colors hover:bg-white/40 hover:text-slate-600"
-            onClick={on_navigate}
-            title={`查看全部${title}`}
-            type="button"
-          >
-            <ArrowRight className="h-3 w-3" />
-          </button>
-        ) : null}
-      </div>
-
-      {!is_collapsed ? (
-        <div className="flex flex-col gap-0.5 pb-1">{children}</div>
-      ) : null}
-    </section>
-  );
-}
 
 // ==================== 空占位 ====================
 
@@ -123,10 +56,12 @@ export const CapabilitiesPanelContent = memo(function CapabilitiesPanelContent()
   return (
     <div className="flex flex-col gap-1">
       {/* Skills 分区 */}
-      <CapSection
+      <CollapsibleSection
+        action_icon={<ArrowRight className="h-3 w-3" />}
+        action_title="查看全部 Skills"
         count={skills.length}
         icon={<Puzzle className="h-3 w-3" />}
-        on_navigate={() => navigate(AppRouteBuilders.skills())}
+        on_action={() => navigate(AppRouteBuilders.skills())}
         section_id="cap-skills"
         title="Skills"
       >
@@ -163,47 +98,47 @@ export const CapabilitiesPanelContent = memo(function CapabilitiesPanelContent()
             查看全部 {skills.length} 个技能 →
           </button>
         ) : null}
-      </CapSection>
+      </CollapsibleSection>
 
       {/* Connectors 分区 */}
-      <CapSection
+      <CollapsibleSection
         count={0}
         icon={<Link2 className="h-3 w-3" />}
         section_id="cap-connectors"
         title="Connectors"
       >
         <EmptyPlaceholder text="暂无连接器" />
-      </CapSection>
+      </CollapsibleSection>
 
       {/* Scheduled Tasks 分区 */}
-      <CapSection
+      <CollapsibleSection
         count={0}
         icon={<Calendar className="h-3 w-3" />}
         section_id="cap-scheduled"
         title="Scheduled"
       >
         <EmptyPlaceholder text="暂无定时任务" />
-      </CapSection>
+      </CollapsibleSection>
 
       {/* Channels 分区 */}
-      <CapSection
+      <CollapsibleSection
         count={0}
         icon={<Radio className="h-3 w-3" />}
         section_id="cap-channels"
         title="Channels"
       >
         <EmptyPlaceholder text="暂无频道" />
-      </CapSection>
+      </CollapsibleSection>
 
       {/* Pairings 分区 */}
-      <CapSection
+      <CollapsibleSection
         count={0}
         icon={<Users2 className="h-3 w-3" />}
         section_id="cap-pairings"
         title="Pairings"
       >
         <EmptyPlaceholder text="暂无配对" />
-      </CapSection>
+      </CollapsibleSection>
     </div>
   );
 });

@@ -12,8 +12,6 @@
 
 import {
   Bot,
-  ChevronDown,
-  ChevronRight,
   Hash,
   MessageCircleMore,
   MoreHorizontal,
@@ -21,7 +19,6 @@ import {
   Plus,
   Star,
   Trash2,
-  Waypoints,
 } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -30,8 +27,9 @@ import { useNavigate } from "react-router-dom";
 import { AppRouteBuilders } from "@/app/router/route-paths";
 import { CreateRoomDialog } from "@/features/room-members/create-room-dialog";
 import { createRoom, deleteRoom, listRooms, updateRoom } from "@/lib/room-api";
-import { cn, formatRelativeTime } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { ConfirmDialog, PromptDialog } from "@/shared/ui/dialog/confirm-dialog";
+import { CollapsibleSection } from "@/shared/ui/sidebar/collapsible-section";
 import { useAgentStore } from "@/store/agent";
 import { useSidebarStore } from "@/store/sidebar";
 import { Agent } from "@/types/agent";
@@ -55,65 +53,6 @@ function load_starred_items(): StarredItem[] {
   } catch {
     return [];
   }
-}
-
-// ==================== 可折叠 Section 组件 ====================
-
-interface CollapsibleSectionProps {
-  section_id: string;
-  title: string;
-  count: number;
-  children: React.ReactNode;
-  /** 标题栏右侧操作按钮 */
-  on_action?: () => void;
-}
-
-/** 可折叠分区，折叠状态由 sidebar store 管理 */
-function CollapsibleSection({
-  section_id,
-  title,
-  count,
-  children,
-  on_action,
-}: CollapsibleSectionProps) {
-  const is_collapsed = useSidebarStore(
-    (s) => s.collapsed_sections[section_id] ?? false,
-  );
-  const toggle = useSidebarStore((s) => s.toggle_section);
-
-  return (
-    <section className="border-b border-white/10 pb-1">
-      <div className="group/section flex w-full items-center gap-1.5 px-2 py-2">
-        <button
-          className="flex flex-1 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500 transition-colors hover:text-slate-700"
-          onClick={() => toggle(section_id)}
-          type="button"
-        >
-          {is_collapsed ? (
-            <ChevronRight className="h-3 w-3" />
-          ) : (
-            <ChevronDown className="h-3 w-3" />
-          )}
-          <span className="flex-1 text-left">{title}</span>
-          <span className="text-[10px] text-slate-400">{count}</span>
-        </button>
-        {on_action ? (
-          <button
-            className="flex h-4 w-4 items-center justify-center rounded text-slate-400 opacity-0 transition-all hover:text-slate-700 group-hover/section:opacity-100"
-            onClick={(e) => { e.stopPropagation(); on_action(); }}
-            title="新建"
-            type="button"
-          >
-            <Plus className="h-3 w-3" />
-          </button>
-        ) : null}
-      </div>
-
-      {!is_collapsed ? (
-        <div className="flex flex-col gap-0.5 pb-1">{children}</div>
-      ) : null}
-    </section>
-  );
 }
 
 // ==================== 列表条目组件 ====================
@@ -367,6 +306,8 @@ export const HomePanelContent = memo(function HomePanelContent() {
 
       {/* Rooms 分区 — 带新建按钮 */}
       <CollapsibleSection
+        action_icon={<Plus className="h-3 w-3" />}
+        action_title="新建 Room"
         count={normal_rooms.length}
         on_action={handle_create_room}
         section_id="home-rooms"
