@@ -12,7 +12,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -21,6 +21,9 @@ class PersistenceModel(BaseModel):
     """持久化模型基类。"""
 
     model_config = {"from_attributes": True}
+
+
+MessageStatus = Literal["pending", "streaming", "completed", "cancelled", "error"]
 
 
 class MemberRecord(PersistenceModel):
@@ -99,6 +102,7 @@ class MessageRecord(PersistenceModel):
     sender_user_id: Optional[str] = Field(default=None, description="用户发送方")
     sender_agent_id: Optional[str] = Field(default=None, description="Agent 发送方")
     kind: str = Field(..., description="消息类型")
+    status: MessageStatus = Field(default="completed", description="消息状态")
     content_preview: Optional[str] = Field(default=None, description="预览内容")
     jsonl_path: str = Field(..., description="JSONL 路径")
     jsonl_offset: Optional[int] = Field(default=None, description="JSONL 偏移")

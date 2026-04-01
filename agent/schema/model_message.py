@@ -11,6 +11,7 @@
 
 from __future__ import annotations
 
+import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Literal, Optional, Union
 
@@ -20,6 +21,11 @@ from pydantic import BaseModel, Field, field_validator
 def current_timestamp_ms() -> int:
     """返回当前毫秒时间戳。"""
     return int(datetime.now(timezone.utc).timestamp() * 1000)
+
+
+def current_envelope_id() -> str:
+    """返回 envelope 唯一标识。"""
+    return str(uuid.uuid4())
 
 
 class TextContent(BaseModel):
@@ -79,6 +85,8 @@ class Message(BaseModel):
 
     message_id: str = Field(..., description="消息 ID")
     session_key: str = Field(..., description="会话路由键")
+    room_id: Optional[str] = Field(default=None, description="Room ID")
+    conversation_id: Optional[str] = Field(default=None, description="对话 ID")
     agent_id: str = Field(default="", description="Agent ID")
     round_id: str = Field(..., description="轮次 ID")
     session_id: Optional[str] = Field(default=None, description="SDK Session ID")
@@ -132,6 +140,8 @@ class StreamMessage(BaseModel):
 
     message_id: str = Field(..., description="目标消息 ID")
     session_key: str = Field(..., description="会话路由键")
+    room_id: Optional[str] = Field(default=None, description="Room ID")
+    conversation_id: Optional[str] = Field(default=None, description="对话 ID")
     agent_id: str = Field(default="", description="Agent ID")
     round_id: str = Field(..., description="轮次 ID")
     session_id: Optional[str] = Field(default=None, description="SDK Session ID")
@@ -172,14 +182,40 @@ class StreamMessage(BaseModel):
 class EventMessage(BaseModel):
     """事件消息。"""
 
+    envelope_id: str = Field(default_factory=current_envelope_id, description="Envelope ID")
+    protocol_version: int = Field(default=2, description="协议版本")
+    delivery_mode: Literal["durable", "ephemeral"] = Field(
+        default="durable",
+        description="投递模式",
+    )
     event_type: str = Field(..., description="事件类型")
     session_key: Optional[str] = Field(default=None, description="会话路由键")
+    room_id: Optional[str] = Field(default=None, description="Room ID")
+    room_seq: Optional[int] = Field(default=None, description="Room 内递增序号")
+    conversation_id: Optional[str] = Field(default=None, description="对话 ID")
     agent_id: Optional[str] = Field(default=None, description="Agent ID")
+    message_id: Optional[str] = Field(default=None, description="关联消息 ID")
     session_id: Optional[str] = Field(default=None, description="SDK Session ID")
+    caused_by: Optional[str] = Field(default=None, description="上游事件或轮次 ID")
     data: Dict[str, Any] = Field(default_factory=dict, description="事件载荷")
     timestamp: int = Field(default_factory=current_timestamp_ms, description="毫秒时间戳")
 
     model_config = {"extra": "allow"}
+
+
+def build_transport_event(message: Message | StreamMessage) -> EventMessage:
+    """将完整消息或流式消息包装为统一 Envelope。"""
+    event_type = "message" if isinstance(message, Message) else "stream"
+    return EventMessage(
+        event_type=event_type,
+        session_key=message.session_key,
+        room_id=message.room_id,
+        conversation_id=message.conversation_id,
+        agent_id=message.agent_id,
+        message_id=message.message_id,
+        session_id=message.session_id,
+        data=message.model_dump(mode="json", exclude_none=True),
+    )
 
 
 def parse_content_block(payload: Dict[str, Any]) -> ContentBlock:
@@ -211,16 +247,24 @@ def build_error_event(
     error_type: str,
     message: str,
     session_key: Optional[str] = None,
+    room_id: Optional[str] = None,
+    conversation_id: Optional[str] = None,
     agent_id: Optional[str] = None,
+    message_id: Optional[str] = None,
     session_id: Optional[str] = None,
+    caused_by: Optional[str] = None,
     details: Optional[Dict[str, Any]] = None,
 ) -> EventMessage:
     """构造统一错误事件。"""
     return EventMessage(
         event_type="error",
         session_key=session_key,
+        room_id=room_id,
+        conversation_id=conversation_id,
         agent_id=agent_id,
+        message_id=message_id,
         session_id=session_id,
+        caused_by=caused_by,
         data={
             "error_type": error_type,
             "message": message,

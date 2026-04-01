@@ -39,7 +39,12 @@ class Message(TimestampMixin, Base):
             "kind IN ('text', 'tool_call', 'tool_result', 'event', 'error')",
             name="ck_messages_kind",
         ),
+        CheckConstraint(
+            "status IN ('pending', 'streaming', 'completed', 'cancelled', 'error')",
+            name="ck_messages_status",
+        ),
         Index("idx_messages_conversation", "conversation_id", "created_at"),
+        Index("idx_messages_conversation_status", "conversation_id", "status", "created_at"),
         Index("idx_messages_session", "session_id", "created_at"),
     )
 
@@ -60,6 +65,7 @@ class Message(TimestampMixin, Base):
         ForeignKey("agents.id", ondelete="SET NULL"),
     )
     kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="completed")
     content_preview: Mapped[str | None] = mapped_column(Text)
     jsonl_path: Mapped[str] = mapped_column(String(512), nullable=False)
     jsonl_offset: Mapped[int | None] = mapped_column(Integer)

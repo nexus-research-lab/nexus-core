@@ -11,9 +11,10 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 
 from agent.infra.database.models.message import Message
 from agent.infra.database.models.round import Round
@@ -67,6 +68,73 @@ class MessageSqlRepository(BaseSqlRepository):
         )
         result = await self._session.execute(stmt)
         return [MessageRecord.model_validate(entity) for entity in result.scalars().all()]
+
+    async def get_message(self, message_id: str) -> Optional[MessageRecord]:
+        """按消息 ID 获取索引。"""
+        entity = await self._session.get(Message, message_id)
+        if entity is None:
+            return None
+        return MessageRecord.model_validate(entity)
+
+    async def list_completed_before(
+        self,
+        conversation_id: str,
+        before: datetime,
+        limit: int = 200,
+    ) -> list[MessageRecord]:
+        """查询指定时间前已完成的消息索引。"""
+        stmt = (
+            select(Message)
+            .where(
+                Message.conversation_id == conversation_id,
+                Message.status == "completed",
+                Message.created_at < before,
+            )
+            .order_by(Message.created_at.asc())
+            .limit(limit)
+        )
+        result = await self._session.execute(stmt)
+        return [MessageRecord.model_validate(entity) for entity in result.scalars().all()]
+
+    async def list_inflight_by_conversation_round(
+        self,
+        conversation_id: str,
+        root_round_id: str,
+        limit: int = 200,
+    ) -> list[MessageRecord]:
+        """查询指定用户轮次下仍未结束的消息索引。"""
+        stmt = (
+            select(Message)
+            .where(
+                Message.conversation_id == conversation_id,
+                Message.status.in_(("pending", "streaming")),
+                or_(
+                    Message.round_id == root_round_id,
+                    Message.round_id.like(f"{root_round_id}:%"),
+                ),
+            )
+            .order_by(Message.created_at.asc())
+            .limit(limit)
+        )
+        result = await self._session.execute(stmt)
+        return [MessageRecord.model_validate(entity) for entity in result.scalars().all()]
+
+    async def update_message_status(
+        self,
+        message_id: str,
+        status: str,
+        updated_at: Optional[datetime] = None,
+    ) -> Optional[MessageRecord]:
+        """仅更新消息状态，避免覆盖现有索引字段。"""
+        entity = await self._session.get(Message, message_id)
+        if entity is None:
+            return None
+        entity.status = status
+        if updated_at is not None:
+            entity.updated_at = updated_at
+        await self.flush()
+        await self.refresh(entity)
+        return MessageRecord.model_validate(entity)
 
     async def upsert_round(self, round_record: RoundRecord) -> RoundRecord:
         """创建或更新轮次索引。"""
