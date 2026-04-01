@@ -30,8 +30,8 @@ async def lifespan(app: FastAPI):
         logger.info("📁 使用 workspace 文件存储模式启动")
 
         # 显式初始化存储层（避免导入时产生文件系统副作用）
-        from agent.storage.session_repository import session_repository
-        from agent.storage.cost_repository import cost_repository
+        from agent.service.session.session_repository import session_repository
+        from agent.service.session.cost_repository import cost_repository
         session_repository.ensure_ready()
         cost_repository.ensure_ready()
 
@@ -108,7 +108,7 @@ def create_app() -> FastAPI:
     register_exception(app)
 
     # 请求拦截
-    register_hook(app)
+    # register_hook(app)
 
     return app
 

@@ -11,8 +11,6 @@
 
 from typing import List, Optional
 
-from agent.service.activity.activity_event_service import activity_event_service
-
 from agent.schema.model_agent import AAgent, ValidateAgentNameResponse
 from agent.schema.model_cost import AgentCostSummary
 from agent.schema.model_session import ASession
@@ -50,12 +48,6 @@ class AgentService:
         )
         if not agent:
             raise RuntimeError("Failed to create agent")
-
-        # 创建 Agent 创建 Activity 事件
-        await activity_event_service.create_agent_created_event(
-            agent_id=agent.agent_id,
-            agent_name=agent.name,
-        )
 
         return agent
 

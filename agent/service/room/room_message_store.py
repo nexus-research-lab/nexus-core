@@ -21,6 +21,7 @@ from agent.infra.database.repositories.conversation_sql_repository import (
     ConversationSqlRepository,
 )
 from agent.infra.database.repositories.message_sql_repository import MessageSqlRepository
+from agent.infra.database.repositories.room_sql_repository import RoomSqlRepository
 from agent.infra.database.repositories.session_sql_repository import SessionSqlRepository
 from agent.infra.file_store.json_store import JsonFileStore
 from agent.infra.file_store.storage_bootstrap import FileStorageBootstrap
@@ -243,7 +244,15 @@ class RoomMessageStore:
             )
 
         async with self._db.session() as session:
+            conversation_repository = ConversationSqlRepository(session)
             repository = MessageSqlRepository(session)
+            room_type = "room"
+            conversation = await conversation_repository.get(conversation_id)
+            if conversation and conversation.room_id:
+                room_repository = RoomSqlRepository(session)
+                room_aggregate = await room_repository.get(conversation.room_id)
+                if room_aggregate:
+                    room_type = room_aggregate.room.room_type
             await repository.delete_by_conversation_round(
                 conversation_id=conversation_id,
                 round_id=round_id,
@@ -260,6 +269,7 @@ class RoomMessageStore:
                 session_key=build_room_agent_session_key(
                     conversation_id=conversation_id,
                     agent_id=agent_id,
+                    room_type=room_type,
                 ),
                 round_id=round_id,
                 agent_id=agent_id,

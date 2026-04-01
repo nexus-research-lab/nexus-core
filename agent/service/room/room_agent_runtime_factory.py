@@ -78,7 +78,6 @@ class RoomAgentRuntimeFactory:
                 mcp_servers_json=json.dumps(options.get("mcp_servers") or {}, ensure_ascii=False),
                 max_turns=options.get("max_turns"),
                 max_thinking_tokens=options.get("max_thinking_tokens"),
-                skills_enabled=bool(options.get("skills_enabled", False)),
                 setting_sources_json=json.dumps(options.get("setting_sources") or [], ensure_ascii=False),
                 runtime_version=1,
             ),

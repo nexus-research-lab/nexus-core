@@ -11,18 +11,19 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import TYPE_CHECKING
 
-from agent.infra.database.models.activity_event import ActivityEventType
-from agent.infra.database.repositories.conversation_sql_repository import ConversationSqlRepository
 from agent.infra.database.get_db import get_db
+from agent.infra.database.repositories.conversation_sql_repository import ConversationSqlRepository
 from agent.infra.database.repositories.message_sql_repository import MessageSqlRepository
 from agent.infra.database.repositories.room_sql_repository import RoomSqlRepository
 from agent.infra.database.repositories.session_sql_repository import SessionSqlRepository
 from agent.schema.model_chat_persistence import MessageRecord
-from agent.schema.model_message import EventMessage, current_timestamp_ms
-from agent.service.activity.activity_event_service import activity_event_service
+from agent.schema.model_message import EventMessage, Message, current_timestamp_ms
 from agent.service.room.room_session_keys import build_room_agent_session_key
+from agent.service.session.session_repository import session_repository as file_session_repository
+from agent.service.session.session_store import session_store
 from agent.utils.logger import logger
 from agent.utils.utils import random_uuid
 
@@ -41,6 +42,11 @@ class RoomCollaborationService:
         """设置 WebSocket 发送器用于推送协作消息。"""
         self._websocket_sender = sender
 
+    @staticmethod
+    def _to_created_at(timestamp_ms: int) -> datetime:
+        """把毫秒时间戳转换为数据库使用的 naive 时间。"""
+        return datetime.fromtimestamp(timestamp_ms / 1000)
+
     async def handle_agent_message(
         self,
         room_id: str,
@@ -54,7 +60,6 @@ class RoomCollaborationService:
         1. 验证发送者是否是 Room 成员
         2. 保存消息到各 Agent 会话（作为系统消息）
         3. 通过 WebSocket 广播给所有在线的 Agent 会话
-        4. 创建 Activity 事件
 
         Args:
             room_id: Room ID
@@ -66,11 +71,19 @@ class RoomCollaborationService:
             room_repository = RoomSqlRepository(session)
             conversation_repository = ConversationSqlRepository(session)
             message_repository = MessageSqlRepository(session)
+            session_repository = SessionSqlRepository(session)
 
             # 1. 验证 Room 存在
             room_aggregate = await room_repository.get(room_id)
             if room_aggregate is None:
                 logger.warning(f"Room not found: {room_id}")
+                return
+
+            conversation = await conversation_repository.get(conversation_id)
+            if conversation is None or conversation.room_id != room_id:
+                logger.warning(
+                    f"Conversation {conversation_id} not found in room {room_id}"
+                )
                 return
 
             # 2. 验证发送者是否是 Room 成员
@@ -89,43 +102,92 @@ class RoomCollaborationService:
                 )
                 return
 
-            # 3. 为每个 Agent 会话保存消息（作为系统消息）
+            # 3. 为每个 Agent 会话保存消息（写入真实 session 日志 + SQL 索引）
+            room_sessions = await session_repository.list_by_conversation(conversation_id)
+            primary_session_by_agent = {
+                item.agent_id: item
+                for item in room_sessions
+                if item.is_primary
+            }
+            timestamp_ms = current_timestamp_ms()
+            created_at = self._to_created_at(timestamp_ms)
             for member in agent_members:
                 agent_id = member.member_agent_id
-                if agent_id == sender_agent_id:
-                    # 发送者会话保存为自己的消息
-                    agent_message = MessageRecord(
-                        id=random_uuid(),
+                if not agent_id:
+                    continue
+                room_session = primary_session_by_agent.get(agent_id)
+                if room_session is None:
+                    logger.warning(
+                        "Room collaboration skipped missing session: conversation=%s, agent=%s",
+                        conversation_id,
+                        agent_id,
+                    )
+                    continue
+                session_key = build_room_agent_session_key(
+                    conversation_id=conversation_id,
+                    agent_id=agent_id,
+                    room_type=room_aggregate.room.room_type,
+                )
+                await session_store.update_session(
+                    session_key=session_key,
+                    agent_id=agent_id,
+                    title=conversation.title or room_aggregate.room.name or "New Chat",
+                    options={"room_session_id": room_session.id},
+                )
+                message_id = random_uuid()
+                message_text = content if agent_id == sender_agent_id else f"@{sender_agent_id}: {content}"
+                message = Message(
+                    message_id=message_id,
+                    session_key=session_key,
+                    room_id=room_id,
+                    conversation_id=conversation_id,
+                    agent_id=agent_id,
+                    round_id=f"collab:{message_id}",
+                    role="assistant" if agent_id == sender_agent_id else "system",
+                    timestamp=timestamp_ms,
+                    content=message_text,
+                    metadata={
+                        "room_collaboration": True,
+                        "sender_agent_id": sender_agent_id,
+                    },
+                )
+                saved = await session_store.save_message(message)
+                if not saved:
+                    logger.warning(
+                        "Room collaboration failed to persist session log: conversation=%s, agent=%s",
+                        conversation_id,
+                        agent_id,
+                    )
+                    continue
+                log_path = file_session_repository._find_message_log_path(session_key)
+                if not log_path:
+                    logger.warning(
+                        "Room collaboration missing session log path: conversation=%s, agent=%s",
+                        conversation_id,
+                        agent_id,
+                    )
+                    continue
+                await message_repository.upsert_message(
+                    MessageRecord(
+                        id=message_id,
                         conversation_id=conversation_id,
-                        session_id=None,
-                        sender_type="agent",
+                        session_id=room_session.id,
+                        sender_type="agent" if agent_id == sender_agent_id else "system",
                         sender_agent_id=sender_agent_id,
-                        kind="text",
-                        content_preview=content[:200],
-                        jsonl_path=build_room_agent_session_key(
-                            conversation_id=conversation_id,
-                            agent_id=sender_agent_id,
-                        ),
+                        kind="text" if agent_id == sender_agent_id else "event",
+                        status="completed",
+                        content_preview=message_text[:200],
+                        jsonl_path=str(log_path),
                         jsonl_offset=None,
+                        round_id=message.round_id,
+                        created_at=created_at,
+                        updated_at=created_at,
                     )
-                    await message_repository.upsert_message(agent_message)
-                else:
-                    # 其他 Agent 会话保存为系统通知消息
-                    notification_message = MessageRecord(
-                        id=random_uuid(),
-                        conversation_id=conversation_id,
-                        session_id=None,
-                        sender_type="system",
-                        sender_agent_id=None,
-                        kind="event",
-                        content_preview=f"@{sender_agent_id}: {content}"[:200],
-                        jsonl_path=build_room_agent_session_key(
-                            conversation_id=conversation_id,
-                            agent_id=agent_id,
-                        ),
-                        jsonl_offset=None,
-                    )
-                    await message_repository.upsert_message(notification_message)
+                )
+                await session_repository.touch(
+                    room_session.id,
+                    last_activity_at=created_at,
+                )
 
             # 4. 广播消息到所有在线的 Agent 会话
             await self.broadcast_to_room_sessions(
@@ -138,20 +200,6 @@ class RoomCollaborationService:
                     "sender_agent_id": sender_agent_id,
                     "content": content,
                     "timestamp": 0,
-                },
-            )
-
-            # 5. 创建 Activity 事件
-            await activity_event_service.create_event(
-                event_type=ActivityEventType.ROOM_MESSAGE,
-                actor_type="agent",
-                actor_id=sender_agent_id,
-                target_type="room",
-                target_id=room_id,
-                summary=f"@{sender_agent_id} 在 {room_aggregate.room.name or 'Room'} 发送了消息",
-                metadata={
-                    "conversation_id": conversation_id,
-                    "content_preview": content[:100],
                 },
             )
 
@@ -203,6 +251,7 @@ class RoomCollaborationService:
                 session_key = build_room_agent_session_key(
                     conversation_id=conversation_id,
                     agent_id=session_record.agent_id,
+                    room_type=room_aggregate.room.room_type,
                 )
 
                 # 构建协作消息事件
@@ -259,6 +308,7 @@ class RoomCollaborationService:
                 build_room_agent_session_key(
                     conversation_id=conversation_id,
                     agent_id=session_record.agent_id,
+                    room_type=room_aggregate.room.room_type,
                 )
                 for session_record in sessions
             ]

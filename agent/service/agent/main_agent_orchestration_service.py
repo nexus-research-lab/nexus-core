@@ -16,7 +16,6 @@ from typing import Any, Optional
 from agent.schema.model_agent import AgentOptions
 from agent.service.agent.agent_service import agent_service
 from agent.service.room.room_service import room_service
-from agent.service.workspace.skill_service import skill_service
 from agent.service.workspace.workspace_service import workspace_service
 
 
@@ -35,7 +34,6 @@ class MainAgentOrchestrationService:
                 "status": agent.status,
                 "workspace_path": agent.workspace_path,
                 "model": agent.options.model,
-                "skills_enabled": agent.options.skills_enabled,
             })
 
         return agent_items
@@ -51,7 +49,6 @@ class MainAgentOrchestrationService:
             options=AgentOptions(
                 model=model,
                 permission_mode="default",
-                skills_enabled=True,
                 setting_sources=["user", "project", "local"],
             ),
         )
@@ -60,7 +57,6 @@ class MainAgentOrchestrationService:
             "name": created_agent.name,
             "workspace_path": created_agent.workspace_path,
             "model": created_agent.options.model,
-            "skills_enabled": created_agent.options.skills_enabled,
             "status": created_agent.status,
         }
 

@@ -22,7 +22,6 @@ from claude_agent_sdk import (
 
 from agent.service.channels.message_sender import MessageSender
 from agent.config.config import settings
-from agent.service.activity.conversation_audit_service import conversation_audit_service
 from agent.service.session.session_manager import session_manager
 from agent.service.permission.strategy.permission_strategy import PermissionStrategy
 from agent.schema.model_message import EventMessage
@@ -92,14 +91,6 @@ class InteractivePermissionStrategy(PermissionStrategy):
 
         try:
             await self.sender.send(permission_event)
-            await conversation_audit_service.record_permission_request(
-                session_key=session_key,
-                tool_name=tool_name,
-                route_context=route_context,
-                request_id=request_id,
-                tool_summary=PermissionRequestPresenter._summarize_input(tool_name, input_data),
-                expires_at=pending_request.expires_at,
-            )
         except Exception as exc:
             logger.warning(f"⚠️ 发送权限请求失败: tool={tool_name}, error={exc}")
             self._cleanup_request(request_id)
@@ -115,13 +106,6 @@ class InteractivePermissionStrategy(PermissionStrategy):
             return self._build_permission_result(tool_name, input_data, response)
         except asyncio.TimeoutError:
             logger.warning(f"⏰ 权限请求超时: {tool_name}")
-            await conversation_audit_service.record_permission_resolution(
-                session_key=session_key,
-                tool_name=tool_name,
-                decision="timeout",
-                route_context=route_context,
-                request_id=request_id,
-            )
             return PermissionResultDeny(message="Permission request timeout")
         finally:
             self._cleanup_request(request_id)
@@ -149,18 +133,6 @@ class InteractivePermissionStrategy(PermissionStrategy):
         self.__class__._permission_responses[request_id] = response_data
         pending_request = self.__class__._permission_requests.get(request_id)
         if pending_request:
-            route_context = self.__class__._session_routes.get(pending_request.session_key)
-            asyncio.create_task(
-                conversation_audit_service.record_permission_resolution(
-                    session_key=pending_request.session_key,
-                    tool_name=pending_request.tool_name,
-                    decision=str(response_data["decision"]),
-                    route_context=route_context,
-                    request_id=request_id,
-                    interrupt=bool(response_data["interrupt"]),
-                    message=str(response_data.get("message") or ""),
-                )
-            )
             pending_request.event.set()
             return True
         return False
@@ -204,18 +176,6 @@ class InteractivePermissionStrategy(PermissionStrategy):
                 "message": message,
                 "interrupt": True,
             }
-            route_context = self.__class__._session_routes.get(session_key)
-            asyncio.create_task(
-                conversation_audit_service.record_permission_resolution(
-                    session_key=session_key,
-                    tool_name=pending_request.tool_name,
-                    decision="cancelled",
-                    route_context=route_context,
-                    request_id=request_id,
-                    interrupt=True,
-                    message=message,
-                )
-            )
             pending_request.event.set()
             cancelled += 1
         return cancelled

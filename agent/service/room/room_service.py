@@ -15,8 +15,6 @@ import hashlib
 import json
 from typing import Optional
 
-from agent.service.activity.activity_event_service import activity_event_service
-
 from agent.infra.database.get_db import get_db
 from agent.schema.model_agent_persistence import (
     AgentAggregate,
@@ -202,14 +200,6 @@ class RoomService:
             conversation=created_conversation,
             sessions=sessions,
         )
-
-        # 创建 Room 创建 Activity 事件
-        await activity_event_service.create_room_created_event(
-            room_id=room_id,
-            room_name=room_name,
-            agent_ids=normalized_agent_ids,
-        )
-
         return context
 
     async def add_agent_member(
@@ -350,13 +340,17 @@ class RoomService:
 
             removed_sessions: list[SessionRecord] = []
             for conversation in conversations:
-                primary_session = await session_repository.get_primary(
+                session_records = await session_repository.list_by_conversation(
                     conversation_id=conversation.id,
-                    agent_id=agent_id,
                 )
-                if primary_session is not None:
-                    removed_sessions.append(primary_session)
-                    await session_repository.delete(primary_session.id)
+                target_sessions = [
+                    session_record
+                    for session_record in session_records
+                    if session_record.agent_id == agent_id
+                ]
+                for session_record in target_sessions:
+                    removed_sessions.append(session_record)
+                    await session_repository.delete(session_record.id)
 
             await session.commit()
 
@@ -488,7 +482,6 @@ class RoomService:
                 mcp_servers_json=json.dumps(options.get("mcp_servers") or {}, ensure_ascii=False),
                 max_turns=options.get("max_turns"),
                 max_thinking_tokens=options.get("max_thinking_tokens"),
-                skills_enabled=bool(options.get("skills_enabled", False)),
                 setting_sources_json=json.dumps(options.get("setting_sources") or [], ensure_ascii=False),
                 runtime_version=1,
             ),

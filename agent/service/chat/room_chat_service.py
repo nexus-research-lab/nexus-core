@@ -110,7 +110,7 @@ class RoomChatService:
 
         # 1. 构建 Room 成员的 name→id 映射
         try:
-            agent_name_to_id = await self._build_room_member_map(room_id, conversation_id)
+            agent_name_to_id, room_type = await self._build_room_member_map(room_id, conversation_id)
         except ValueError as exc:
             await self._send_error(
                 session_key=room_session_key,
@@ -208,18 +208,18 @@ class RoomChatService:
                 continue
             agent_round_id = f"{round_id}:{agent_id}" if multi_agent else round_id
             msg_id = str(uuid.uuid4())
+            await room_round_store.start_round(
+                session_id=room_session.id,
+                round_id=agent_round_id,
+                trigger_message_id=round_id,
+                started_at_ms=trigger_timestamp_ms,
+            )
             await room_message_store.create_pending_message(
                 message_id=msg_id,
                 session_key=room_session_key,
                 agent_id=agent_id,
                 round_id=agent_round_id,
                 room_session_id=room_session.id,
-            )
-            await room_round_store.start_round(
-                session_id=room_session.id,
-                round_id=agent_round_id,
-                trigger_message_id=round_id,
-                started_at_ms=trigger_timestamp_ms,
             )
             pending.append({"agent_id": agent_id, "msg_id": msg_id})
             agent_dispatch_params.append((agent_id, room_session, agent_round_id, msg_id))
@@ -264,6 +264,7 @@ class RoomChatService:
                     round_id=agent_round_id,
                     trigger_timestamp_ms=trigger_timestamp_ms,
                     msg_id=msg_id,
+                    room_type=room_type,
                 )
             except asyncio.CancelledError:
                 logger.info(f"🛑 Room agent 任务被取消: {agent_task_key}")
@@ -296,6 +297,7 @@ class RoomChatService:
                     round_id=agent_round_id,
                     msg_id=msg_id,
                     error_message=str(exc),
+                    room_type=room_type,
                 )
             finally:
                 chat_tasks.pop(agent_task_key, None)
@@ -324,11 +326,13 @@ class RoomChatService:
         round_id: str,
         trigger_timestamp_ms: int,
         msg_id: str,
+        room_type: str,
     ) -> None:
         """向单个 Agent 发起对话并流式返回结果。"""
         sdk_session_key = build_room_agent_session_key(
             conversation_id=conversation_id,
             agent_id=agent_id,
+            room_type=room_type,
         )
         async with session_manager.get_lock(sdk_session_key):
             # Room 使用“共享快照 + 私有 workspace”双轨上下文。
@@ -441,6 +445,7 @@ class RoomChatService:
         round_id: str,
         msg_id: str,
         error_message: str,
+        room_type: str,
     ) -> None:
         """为单个 Agent 写入错误终态，避免前端和 SQL 悬空。"""
         await room_message_store.mark_message_status(msg_id, "error")
@@ -468,6 +473,7 @@ class RoomChatService:
             cost_session_key=build_room_agent_session_key(
                 conversation_id=conversation_id,
                 agent_id=agent_id,
+                room_type=room_type,
             ),
         )
         await self._broadcast_room_message(room_id, result_message)
@@ -486,8 +492,8 @@ class RoomChatService:
         self,
         room_id: str,
         conversation_id: str,
-    ) -> Dict[str, str]:
-        """构建 Room 成员 name → agent_id 映射。"""
+    ) -> Tuple[Dict[str, str], str]:
+        """构建 Room 成员 name → agent_id 映射，并返回 room_type。"""
         from agent.infra.database.get_db import get_db
         from agent.infra.database.repositories.room_sql_repository import (
             RoomSqlRepository,
@@ -506,11 +512,14 @@ class RoomChatService:
                             if m.member_type == "agent" and m.member_agent_id
                         ]
                         agents = await AgentManager.get_all_agents()
-                        return {
-                            a.name: a.agent_id
-                            for a in agents
-                            if a.agent_id in agent_ids
-                        }
+                        return (
+                            {
+                                a.name: a.agent_id
+                                for a in agents
+                                if a.agent_id in agent_ids
+                            },
+                            room_agg.room.room_type,
+                        )
             except Exception as exc:
                 logger.warning(f"⚠️ 查询 Room 成员失败: {exc}")
 

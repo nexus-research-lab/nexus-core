@@ -16,7 +16,6 @@ from datetime import datetime
 from agent.infra.database.get_db import get_db
 from agent.infra.database.repositories.message_sql_repository import MessageSqlRepository
 from agent.schema.model_chat_persistence import RoundRecord
-from agent.service.activity.conversation_audit_service import conversation_audit_service
 from agent.utils.logger import logger
 from agent.utils.utils import random_uuid
 
@@ -31,6 +30,11 @@ class RoomRoundStore:
     def _to_datetime(timestamp_ms: int) -> datetime:
         """把毫秒时间戳转换为数据库使用的 naive 时间。"""
         return datetime.fromtimestamp(timestamp_ms / 1000)
+
+    @staticmethod
+    def _resolve_trigger_message_id(round_id: str) -> str:
+        """从轮次 ID 还原触发消息 ID。"""
+        return round_id.split(":", 1)[0]
 
     async def start_round(
         self,
@@ -76,7 +80,11 @@ class RoomRoundStore:
                     "finish_round: round_id=%s 没有 start_round 记录，使用终态时间作为 started_at 回退",
                     round_id,
                 )
-            trigger_message_id = existing.trigger_message_id if existing else round_id
+            trigger_message_id = (
+                existing.trigger_message_id
+                if existing
+                else self._resolve_trigger_message_id(round_id)
+            )
             started_at = existing.started_at if existing else finished_at
             created_at = existing.created_at if existing else finished_at
             await repository.upsert_round(
@@ -93,13 +101,6 @@ class RoomRoundStore:
                 )
             )
             await session.commit()
-        await conversation_audit_service.record_room_round_terminal(
-            session_id=session_id,
-            round_id=round_id,
-            status=status,
-            finished_at_ms=finished_at_ms,
-            metadata=metadata,
-        )
 
 
 room_round_store = RoomRoundStore()

@@ -137,8 +137,6 @@ class AgentSqlMapper:
             max_turns=runtime.max_turns,
             max_thinking_tokens=runtime.max_thinking_tokens,
             mcp_servers=cls.parse_json_dict(runtime.mcp_servers_json),
-            skills_enabled=runtime.skills_enabled,
-            installed_skills=cls.parse_json_list(runtime.installed_skills_json),
             setting_sources=cls.parse_json_list(runtime.setting_sources_json),
         )
 
@@ -153,8 +151,6 @@ class AgentSqlMapper:
             "mcp_servers_json": cls.to_json(options.get("mcp_servers") or {}),
             "max_turns": options.get("max_turns"),
             "max_thinking_tokens": options.get("max_thinking_tokens"),
-            "skills_enabled": bool(options.get("skills_enabled", False)),
-            "installed_skills_json": cls.to_json(options.get("installed_skills") or []),
             "setting_sources_json": cls.to_json(options.get("setting_sources") or []),
         }
 

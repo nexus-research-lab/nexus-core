@@ -46,7 +46,6 @@ class MainAgentProfile:
         options: Dict[str, Any] = {
             "allowed_tools": cls.ALLOWED_TOOLS,
             "permission_mode": "default",
-            "skills_enabled": True,
             "setting_sources": cls.SETTING_SOURCES,
         }
         if settings.MAIN_AGENT_MODEL:
@@ -71,7 +70,6 @@ class MainAgentProfile:
         default_options = cls.build_default_options()
         merged_options["allowed_tools"] = default_options["allowed_tools"]
         merged_options["permission_mode"] = default_options["permission_mode"]
-        merged_options["skills_enabled"] = True
         merged_options["setting_sources"] = default_options["setting_sources"]
         if "model" in default_options:
             merged_options["model"] = default_options["model"]
