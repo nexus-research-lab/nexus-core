@@ -12,7 +12,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from agent.infra.database.get_db import get_db
@@ -173,15 +173,20 @@ class LauncherService:
     ) -> RoomAggregate | None:
         """通过关键词查找 Room。"""
         rooms = await persistence_service.list_rooms(limit=100)
+        collaborative_rooms = [
+            room
+            for room in rooms
+            if room.room.room_type == "room"
+        ]
         keyword_lower = keyword.lower()
 
         # 精确匹配名称
-        for room in rooms:
+        for room in collaborative_rooms:
             if room.room.name and room.room.name.lower() == keyword_lower:
                 return room
 
         # 模糊匹配名称
-        for room in rooms:
+        for room in collaborative_rooms:
             if room.room.name and keyword_lower in room.room.name.lower():
                 return room
 
@@ -201,9 +206,15 @@ class LauncherService:
         Returns:
             最近参与的 Room 列表
         """
-        rooms = await persistence_service.list_rooms(limit=limit)
-        logger.debug(f"Returning {len(rooms)} suggested rooms")
-        return rooms
+        rooms = await persistence_service.list_rooms(limit=limit * 3)
+        collaborative_rooms = [
+            room
+            for room in rooms
+            if room.room.room_type == "room"
+        ]
+        suggested_rooms = collaborative_rooms[:limit]
+        logger.debug(f"Returning {len(suggested_rooms)} suggested rooms")
+        return suggested_rooms
 
     async def get_suggested_agents(
         self,
