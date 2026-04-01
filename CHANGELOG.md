@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `persistence` 包重命名为 `repository`（`agent/service/persistence` → `agent/service/repository`，`agent/api/persistence` → `agent/api/repository`）。
 - 前端配置文件合并 `options.ts` + `runtime-config.ts` 为统一的 `options.ts`。
 - 首页 `Nexus` 侧边面板收敛为单一 chat 入口，移除 `Workspace / About / 推荐动作` 等非必要工作区结构，减少首页干扰。
+- 扩展 `agent/cli.py` 与 `nexus-manager` skill，新增 agent / room / workspace / skill 系统操作指令，支持 Nexus 直接完成更多平台管理动作。
 
 ### Removed
 - 删除 `backfill_service` 旧数据回填服务及全部回填调用链。

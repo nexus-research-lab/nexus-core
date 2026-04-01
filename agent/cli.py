@@ -11,139 +11,63 @@
 
 from __future__ import annotations
 
-import argparse
 import asyncio
 import json
 import sys
+from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Any
+
+import click
+import typer
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from agent.schema.model_main_agent_cli import (  # noqa: E402
-    AddRoomMemberCommand,
-    CreateAgentCommand,
-    CreateRoomCommand,
-    ListAgentsCommand,
-    ListRoomsCommand,
-    ValidateAgentNameCommand,
+from agent.cli.command import (  # noqa: E402
+    build_typer_app,
 )
-from agent.service.agent.main_agent_orchestration_service import (  # noqa: E402
-    main_agent_orchestration_service,
-)
+
+ServiceCall = Callable[[object], Awaitable[object]]
 
 
 class MainAgentOrchestrationCli:
     """封装 main agent 的协作编排命令行。"""
 
     def __init__(self) -> None:
-        self._parser = argparse.ArgumentParser(
-            prog="main_agent_orchestration_cli",
-            description="供 main agent 调用的协作编排 CLI",
+        self._app = build_typer_app(
+            run_service_call=self._run_service_call,
+            parse_agent_ids=self._parse_agent_ids,
         )
-        self._register_commands()
-
-    def _register_commands(self) -> None:
-        subparsers = self._parser.add_subparsers(dest="command", required=True)
-
-        list_agents_parser = subparsers.add_parser("list_agents", help="列出成员 agent")
-        list_agents_parser.add_argument(
-            "--include_main",
-            action="store_true",
-            help="是否包含 main agent",
-        )
-
-        validate_agent_parser = subparsers.add_parser(
-            "validate_agent_name",
-            help="校验 agent 名称",
-        )
-        validate_agent_parser.add_argument("--name", required=True, help="待校验名称")
-
-        create_agent_parser = subparsers.add_parser("create_agent", help="创建成员 agent")
-        create_agent_parser.add_argument("--name", required=True, help="成员名称")
-        create_agent_parser.add_argument("--model", default=None, help="模型名")
-
-        list_rooms_parser = subparsers.add_parser("list_rooms", help="列出最近 room")
-        list_rooms_parser.add_argument("--limit", type=int, default=20, help="数量上限")
-
-        create_room_parser = subparsers.add_parser("create_room", help="创建 room")
-        create_room_parser.add_argument(
-            "--agent_ids",
-            required=True,
-            help="逗号分隔的 agent_id 列表",
-        )
-        create_room_parser.add_argument("--name", default=None, help="room 名称")
-        create_room_parser.add_argument("--title", default=None, help="首条对话标题")
-        create_room_parser.add_argument("--description", default="", help="room 描述")
-
-        add_member_parser = subparsers.add_parser("add_room_member", help="向 room 追加成员")
-        add_member_parser.add_argument("--room_id", required=True, help="room_id")
-        add_member_parser.add_argument("--agent_id", required=True, help="agent_id")
 
     def run(self, argv: list[str] | None = None) -> int:
         """执行 CLI。"""
-        args = self._parser.parse_args(argv)
-        return asyncio.run(self._dispatch(args))
-
-    async def _dispatch(self, args: argparse.Namespace) -> int:
         try:
-            result = await self._execute(args)
-        except Exception as exc:  # pylint: disable=broad-except
-            self._print({
-                "ok": False,
-                "error": str(exc),
-            })
-            return 1
-
-        self._print({
-            "ok": True,
-            "data": result,
-        })
+            self._app(args=argv, prog_name="main_agent_orchestration_cli", standalone_mode=False)
+        except typer.Exit as exc:
+            return int(exc.exit_code or 0)
+        except click.ClickException as exc:
+            exc.show()
+            return exc.exit_code
         return 0
 
-    async def _execute(self, args: argparse.Namespace) -> Any:
-        if args.command == "list_agents":
-            command = ListAgentsCommand(include_main=args.include_main)
-            return await main_agent_orchestration_service.list_agents(
-                include_main=command.include_main,
-            )
-        if args.command == "validate_agent_name":
-            command = ValidateAgentNameCommand(name=args.name)
-            return await main_agent_orchestration_service.validate_agent_name(command.name)
-        if args.command == "create_agent":
-            command = CreateAgentCommand(name=args.name, model=args.model)
-            return await main_agent_orchestration_service.create_agent(
-                name=command.name,
-                model=command.model,
-            )
-        if args.command == "list_rooms":
-            command = ListRoomsCommand(limit=args.limit)
-            return await main_agent_orchestration_service.list_rooms(limit=command.limit)
-        if args.command == "create_room":
-            command = CreateRoomCommand(
-                agent_ids=self._parse_agent_ids(args.agent_ids),
-                name=args.name,
-                title=args.title,
-                description=args.description,
-            )
-            return await main_agent_orchestration_service.create_room(
-                agent_ids=command.agent_ids,
-                name=command.name,
-                title=command.title,
-                description=command.description,
-            )
-        if args.command == "add_room_member":
-            command = AddRoomMemberCommand(
-                room_id=args.room_id,
-                agent_id=args.agent_id,
-            )
-            return await main_agent_orchestration_service.add_room_member(
-                room_id=command.room_id,
-                agent_id=command.agent_id,
-            )
-        raise ValueError(f"不支持的命令: {args.command}")
+    def _run_service_call(self, service_call: ServiceCall) -> None:
+        """执行服务调用并统一输出 JSON。"""
+        try:
+            result = asyncio.run(self._execute(service_call))
+        except Exception as exc:  # pylint: disable=broad-except
+            self._print({"ok": False, "error": str(exc)})
+            raise typer.Exit(code=1) from exc
+
+        self._print({"ok": True, "data": result})
+
+    @staticmethod
+    async def _execute(service_call: ServiceCall) -> object:
+        """惰性导入服务，避免 help 阶段初始化后端。"""
+        from agent.service.agent.main_agent_orchestration_service import (  # noqa: WPS433
+            main_agent_orchestration_service,
+        )
+        return await service_call(main_agent_orchestration_service)
 
     @staticmethod
     def _parse_agent_ids(raw_value: str) -> list[str]:
@@ -154,7 +78,7 @@ class MainAgentOrchestrationCli:
         return agent_ids
 
     @staticmethod
-    def _print(payload: dict[str, Any]) -> None:
+    def _print(payload: dict[str, object]) -> None:
         """统一输出 JSON。"""
         print(json.dumps(payload, ensure_ascii=False, indent=2))
 
