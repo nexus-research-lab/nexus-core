@@ -27,6 +27,14 @@ from agent.infra.file_store.storage_bootstrap import FileStorageBootstrap
 from agent.infra.file_store.storage_paths import FileStoragePaths
 from agent.schema.model_chat_persistence import MessageRecord
 from agent.schema.model_message import Message, parse_message
+from agent.service.room.room_message_mapper import (
+    build_preview,
+    infer_kind,
+    infer_round_status,
+    infer_sender_type,
+    infer_status,
+)
+from agent.service.room.room_round_store import room_round_store
 from agent.service.room.room_session_keys import (
     build_room_agent_session_key,
     parse_room_conversation_id,
@@ -69,45 +77,6 @@ class RoomMessageStore:
         """把毫秒时间戳转换为数据库使用的 naive 时间。"""
         return datetime.fromtimestamp(timestamp_ms / 1000)
 
-    @staticmethod
-    def _infer_sender_type(message: Message) -> str:
-        """推导消息发送方类型。"""
-        if message.role == "user":
-            return "user"
-        if message.role == "assistant":
-            return "agent"
-        return "system"
-
-    @staticmethod
-    def _infer_kind(message: Message) -> str:
-        """推导消息索引类型。"""
-        if message.role == "result":
-            return "error" if message.is_error or message.subtype == "error" else "event"
-        if isinstance(message.content, list):
-            content_types = {str(getattr(block, "type", "")) for block in message.content}
-            if "tool_result" in content_types:
-                return "tool_result"
-            if "tool_use" in content_types:
-                return "tool_call"
-        return "text"
-
-    @staticmethod
-    def _build_preview(message: Message) -> Optional[str]:
-        """生成用于列表展示的消息预览。"""
-        if message.result:
-            return message.result[:120]
-        if isinstance(message.content, str):
-            return message.content[:120]
-        if isinstance(message.content, list):
-            for block in message.content:
-                text = getattr(block, "text", None) or getattr(block, "thinking", None)
-                if text:
-                    return str(text)[:120]
-                tool_name = getattr(block, "name", None)
-                if tool_name:
-                    return f"[tool] {tool_name}"[:120]
-        return None
-
     async def save_message(
         self,
         message: Message,
@@ -136,11 +105,12 @@ class RoomMessageStore:
                     id=message.message_id,
                     conversation_id=conversation_id,
                     session_id=room_session_id,
-                    sender_type=self._infer_sender_type(message),
+                    sender_type=infer_sender_type(message),
                     sender_user_id=None if message.role != "user" else "user",
                     sender_agent_id=message.agent_id or None,
-                    kind=self._infer_kind(message),
-                    content_preview=self._build_preview(message),
+                    kind=infer_kind(message),
+                    status=infer_status(message),
+                    content_preview=build_preview(message),
                     jsonl_path=str(log_path),
                     jsonl_offset=None,
                     round_id=message.round_id,
@@ -153,10 +123,72 @@ class RoomMessageStore:
                 await session_repository.touch(room_session_id, last_activity_at=created_at)
             await session.commit()
 
-        if message.role == "result" and cost_session_key:
-            await cost_repository.record_result_message(
-                message.model_copy(update={"session_key": cost_session_key})
+        if message.role != "result":
+            return
+        if cost_session_key:
+            await cost_repository.record_result_message(message.model_copy(update={"session_key": cost_session_key}))
+        if room_session_id and message.round_id:
+            await room_round_store.finish_round(
+                session_id=room_session_id,
+                round_id=message.round_id,
+                status=infer_round_status(message),
+                finished_at_ms=message.timestamp,
+                metadata={
+                    "message_id": message.message_id,
+                    "duration_ms": message.duration_ms,
+                    "duration_api_ms": message.duration_api_ms,
+                    "total_cost_usd": message.total_cost_usd,
+                    "subtype": message.subtype,
+                    "is_error": message.is_error,
+                },
             )
+
+    async def create_pending_message(
+        self,
+        message_id: str,
+        session_key: str,
+        agent_id: str,
+        round_id: str,
+        room_session_id: Optional[str] = None,
+    ) -> None:
+        """为流式回复创建 pending 占位索引。"""
+        conversation_id = parse_room_conversation_id(session_key or "")
+        if not conversation_id:
+            raise ValueError(f"非法 Room session_key: {session_key}")
+
+        created_at = datetime.now()
+        log_path = self._get_conversation_log_path(conversation_id)
+        async with self._db.session() as session:
+            repository = MessageSqlRepository(session)
+            await repository.upsert_message(
+                MessageRecord(
+                    id=message_id,
+                    conversation_id=conversation_id,
+                    session_id=room_session_id,
+                    sender_type="agent",
+                    sender_agent_id=agent_id,
+                    kind="text",
+                    status="pending",
+                    content_preview=None,
+                    jsonl_path=str(log_path),
+                    jsonl_offset=None,
+                    round_id=round_id,
+                    created_at=created_at,
+                    updated_at=created_at,
+                )
+            )
+            await session.commit()
+
+    async def mark_message_status(self, message_id: str, status: str) -> None:
+        """更新消息状态，不改动既有正文索引。"""
+        async with self._db.session() as session:
+            repository = MessageSqlRepository(session)
+            await repository.update_message_status(
+                message_id=message_id,
+                status=status,
+                updated_at=datetime.now(),
+            )
+            await session.commit()
 
     async def register_sdk_session(
         self,

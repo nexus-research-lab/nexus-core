@@ -22,7 +22,7 @@ from agent.infra.database.repositories.session_sql_repository import SessionSqlR
 from agent.schema.model_chat_persistence import MessageRecord
 from agent.schema.model_message import EventMessage, current_timestamp_ms
 from agent.service.activity.activity_event_service import activity_event_service
-from agent.service.session.session_router import build_session_key
+from agent.service.room.room_session_keys import build_room_agent_session_key
 from agent.utils.logger import logger
 from agent.utils.utils import random_uuid
 
@@ -102,7 +102,10 @@ class RoomCollaborationService:
                         sender_agent_id=sender_agent_id,
                         kind="text",
                         content_preview=content[:200],
-                        jsonl_path=f"agent:{sender_agent_id}:ws:group:{conversation_id}",
+                        jsonl_path=build_room_agent_session_key(
+                            conversation_id=conversation_id,
+                            agent_id=sender_agent_id,
+                        ),
                         jsonl_offset=None,
                     )
                     await message_repository.upsert_message(agent_message)
@@ -116,7 +119,10 @@ class RoomCollaborationService:
                         sender_agent_id=None,
                         kind="event",
                         content_preview=f"@{sender_agent_id}: {content}"[:200],
-                        jsonl_path=f"agent:{agent_id}:ws:group:{conversation_id}",
+                        jsonl_path=build_room_agent_session_key(
+                            conversation_id=conversation_id,
+                            agent_id=agent_id,
+                        ),
                         jsonl_offset=None,
                     )
                     await message_repository.upsert_message(notification_message)
@@ -194,10 +200,8 @@ class RoomCollaborationService:
 
             # 为每个 Agent 会话构建 session_key
             for session_record in sessions:
-                session_key = build_session_key(
-                    channel="ws",
-                    chat_type="group",
-                    ref=conversation_id,
+                session_key = build_room_agent_session_key(
+                    conversation_id=conversation_id,
                     agent_id=session_record.agent_id,
                 )
 
@@ -214,6 +218,8 @@ class RoomCollaborationService:
                     EventMessage(
                         event_type="room_collaboration",
                         session_key=session_key,
+                        room_id=room_id,
+                        conversation_id=conversation_id,
                         agent_id=session_record.agent_id,
                         data=collaboration_event,
                         timestamp=current_timestamp_ms(),
@@ -250,10 +256,8 @@ class RoomCollaborationService:
 
             sessions = await session_repository.list_by_conversation(conversation_id)
             return [
-                build_session_key(
-                    channel="ws",
-                    chat_type="group",
-                    ref=conversation_id,
+                build_room_agent_session_key(
+                    conversation_id=conversation_id,
                     agent_id=session_record.agent_id,
                 )
                 for session_record in sessions

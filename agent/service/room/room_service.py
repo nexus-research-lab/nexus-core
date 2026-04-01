@@ -300,8 +300,10 @@ class RoomService:
         # 广播成员变更事件
         from agent.service.channels.ws.ws_connection_registry import ws_connection_registry
         from agent.schema.model_message import EventMessage
-        await ws_connection_registry.broadcast(EventMessage(
+        await ws_connection_registry.broadcast_to_room_subscribers(room_id, EventMessage(
             event_type="room_member_added",
+            room_id=room_id,
+            delivery_mode="ephemeral",
             data={"room_id": room_id, "agent_id": agent_id},
         ))
         return context
@@ -382,8 +384,10 @@ class RoomService:
         # 广播成员变更事件
         from agent.service.channels.ws.ws_connection_registry import ws_connection_registry
         from agent.schema.model_message import EventMessage
-        await ws_connection_registry.broadcast(EventMessage(
+        await ws_connection_registry.broadcast_to_room_subscribers(room_id, EventMessage(
             event_type="room_member_removed",
+            room_id=room_id,
+            delivery_mode="ephemeral",
             data={"room_id": room_id, "agent_id": agent_id},
         ))
         return context
@@ -416,8 +420,9 @@ class RoomService:
                 sdk_session_manager.remove_session(sdk_key)
 
         # 广播删除事件给所有连接的前端
-        await ws_connection_registry.broadcast(EventMessage(
+        await ws_connection_registry.broadcast_to_room_subscribers(room_id, EventMessage(
             event_type="room_deleted",
+            room_id=room_id,
             data={"room_id": room_id},
         ))
 
