@@ -9,7 +9,7 @@
 
 import { Dispatch, RefObject, SetStateAction } from 'react';
 
-import { Message, StreamMessage } from '@/types';
+import { AssistantMessage, ChatAckData, Message, ResultMessage, StreamMessage } from '@/types';
 import { PendingPermission, PermissionDecisionPayload } from '@/types/permission';
 import { WebSocketMessage, WebSocketState } from '@/types/websocket';
 import { WorkspaceEventPayload } from '@/types/workspace-live';
@@ -75,6 +75,10 @@ export interface AgentConversationActionContext {
 export interface AgentConversationLifecycleContext {
   active_conversation_key_ref: RefObject<string | null>;
   load_request_id_ref: RefObject<number>;
+  agent_id?: string | null;
+  room_id?: string | null;
+  conversation_id?: string | null;
+  chat_type?: 'dm' | 'group';
   set_conversation_key: Dispatch<SetStateAction<string | null>>;
   set_messages: Dispatch<SetStateAction<Message[]>>;
   set_pending_permission: Dispatch<SetStateAction<PendingPermission | null>>;
@@ -92,9 +96,13 @@ export interface AgentThinkingPayload {
 
 export interface RoomEventPayload {
   room_id?: string;
+  conversation_id?: string;
   agent_id?: string;
   agent_name?: string;
   round_id?: string;
+  last_seen_room_seq?: number;
+  latest_room_seq?: number;
+  buffer_start_room_seq?: number | null;
 }
 
 export interface HandleAgentConversationWebSocketMessageParams {
@@ -114,5 +122,15 @@ export interface HandleAgentConversationWebSocketMessageParams {
   /** Room-level events from the server (member add/remove/room deleted) */
   on_room_event?: (event_type: string, data: RoomEventPayload) => void;
   /** Update a single message's stream_status field */
-  update_message_status?: (msg_id: string, status: import('@/types/message').AssistantMessageStatus) => void;
+  update_message_status?: (
+    msg_id: string,
+    status: import('@/types/message').AssistantMessageStatus,
+    round_id?: string | null,
+  ) => void;
+  /** 记录本轮 chat_ack 预分配的活跃消息槽位 */
+  track_chat_ack?: (ack: ChatAckData, session_key: string | null) => void;
+  /** 同步 assistant 完整消息的终态 */
+  track_assistant_message?: (message: AssistantMessage) => void;
+  /** result 到达后清理当前 round 的活跃状态 */
+  track_result_message?: (message: ResultMessage) => void;
 }

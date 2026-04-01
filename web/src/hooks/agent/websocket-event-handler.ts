@@ -1,4 +1,12 @@
-import { AssistantMessage, AssistantMessageStatus, ChatAckData, EventMessage, Message, StreamMessage } from '@/types';
+import {
+  AssistantMessage,
+  AssistantMessageStatus,
+  ChatAckData,
+  EventMessage,
+  Message,
+  ResultMessage,
+  StreamMessage,
+} from '@/types';
 import {
   AgentThinkingPayload,
   HandleAgentConversationWebSocketMessageParams,
@@ -24,6 +32,9 @@ export function handleAgentConversationWebSocketMessage({
   set_agent_thinking,
   on_room_event,
   update_message_status,
+  track_chat_ack,
+  track_assistant_message,
+  track_result_message,
 }: HandleAgentConversationWebSocketMessageParams): void {
   const event = backend_message as EventMessage;
   const incoming_session_key = event.session_key || null;
@@ -32,8 +43,12 @@ export function handleAgentConversationWebSocketMessage({
     if (incoming_session_key && !is_current_session_event(incoming_session_key)) {
       return;
     }
+    if (event.message_id) {
+      update_message_status?.(event.message_id, 'error', event.caused_by);
+    } else {
+      set_is_loading(false);
+    }
     set_error(event.data?.message || 'Unknown error');
-    set_is_loading(false);
     return;
   }
 
@@ -64,12 +79,19 @@ export function handleAgentConversationWebSocketMessage({
   }
 
   // Agent thinking/done status in multi-agent rooms
+  // 只处理当前会话的 thinking 状态，避免跨 room 污染
   if (event.event_type === 'agent_thinking') {
+    if (incoming_session_key && !is_current_session_event(incoming_session_key)) {
+      return;
+    }
     set_agent_thinking?.(event.data as AgentThinkingPayload);
     return;
   }
 
   if (event.event_type === 'agent_done') {
+    if (incoming_session_key && !is_current_session_event(incoming_session_key)) {
+      return;
+    }
     set_agent_thinking?.(null);
     return;
   }
@@ -78,7 +100,8 @@ export function handleAgentConversationWebSocketMessage({
   if (
     event.event_type === 'room_member_added' ||
     event.event_type === 'room_member_removed' ||
-    event.event_type === 'room_deleted'
+    event.event_type === 'room_deleted' ||
+    event.event_type === 'room_resync_required'
   ) {
     on_room_event?.(event.event_type, (event.data ?? {}) as RoomEventPayload);
     return;
@@ -100,6 +123,8 @@ export function handleAgentConversationWebSocketMessage({
         const placeholder: AssistantMessage = {
           message_id: slot.msg_id,
           session_key: incoming_session_key ?? '',
+          room_id: event.room_id ?? undefined,
+          conversation_id: event.conversation_id ?? undefined,
           agent_id: slot.agent_id,
           round_id: ack.round_id,
           role: 'assistant',
@@ -112,6 +137,7 @@ export function handleAgentConversationWebSocketMessage({
       }
       return next;
     });
+    track_chat_ack?.(ack, incoming_session_key);
     set_is_loading(true);
     return;
   }
@@ -121,9 +147,9 @@ export function handleAgentConversationWebSocketMessage({
     if (!is_current_session_event(incoming_session_key)) {
       return;
     }
-    const msg_id = event.data?.msg_id as string | undefined;
+    const msg_id = (event.message_id || event.data?.msg_id) as string | undefined;
     if (msg_id) {
-      update_message_status?.(msg_id, 'streaming');
+      update_message_status?.(msg_id, 'streaming', event.data?.round_id);
     }
     return;
   }
@@ -133,9 +159,9 @@ export function handleAgentConversationWebSocketMessage({
     if (!is_current_session_event(incoming_session_key)) {
       return;
     }
-    const msg_id = event.data?.msg_id as string | undefined;
+    const msg_id = (event.message_id || event.data?.msg_id) as string | undefined;
     if (msg_id) {
-      update_message_status?.(msg_id, 'done');
+      update_message_status?.(msg_id, 'done', event.data?.round_id);
     }
     return;
   }
@@ -145,9 +171,9 @@ export function handleAgentConversationWebSocketMessage({
     if (!is_current_session_event(incoming_session_key)) {
       return;
     }
-    const msg_id = event.data?.msg_id as string | undefined;
+    const msg_id = (event.message_id || event.data?.msg_id) as string | undefined;
     if (msg_id) {
-      update_message_status?.(msg_id, 'cancelled');
+      update_message_status?.(msg_id, 'cancelled', event.data?.round_id);
     }
     return;
   }
@@ -192,10 +218,16 @@ export function handleAgentConversationWebSocketMessage({
   set_messages((prev) => upsertMessage(prev, payload));
   if (payload.role === 'result') {
     set_pending_permission(null);
-    set_is_loading(false);
+    track_result_message?.(payload as ResultMessage);
+    if (!track_result_message) {
+      set_is_loading(false);
+    }
     return;
   }
   if (payload.role === 'assistant') {
-    set_is_loading(true);
+    track_assistant_message?.(payload as AssistantMessage);
+    if (!track_assistant_message) {
+      set_is_loading(!(payload.is_complete || payload.stop_reason));
+    }
   }
 }

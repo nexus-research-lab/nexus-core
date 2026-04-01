@@ -10,15 +10,25 @@ function isStreamRenderableBlock(
  * 按 message_id 合并完整消息。
  */
 export function upsertMessage(messages: Message[], incoming: Message): Message[] {
+  const normalized_incoming = (
+    incoming.role === 'assistant'
+      ? {
+        ...incoming,
+        stream_status: incoming.stream_status ?? (
+          incoming.is_complete || incoming.stop_reason ? 'done' : 'streaming'
+        ),
+      }
+      : incoming
+  );
   const existingIndex = messages.findIndex(
-    (message) => message.message_id === incoming.message_id,
+    (message) => message.message_id === normalized_incoming.message_id,
   );
   if (existingIndex === -1) {
-    return [...messages, incoming];
+    return [...messages, normalized_incoming];
   }
 
   const nextMessages = [...messages];
-  nextMessages[existingIndex] = incoming;
+  nextMessages[existingIndex] = normalized_incoming;
   return nextMessages;
 }
 
@@ -45,6 +55,7 @@ export function applyStreamMessage(messages: Message[], event: StreamMessage): M
         role: 'assistant',
         content: [],
         is_complete: false,
+        stream_status: 'streaming',
         model: event.message?.model,
         timestamp: event.timestamp,
       },
@@ -57,11 +68,13 @@ export function applyStreamMessage(messages: Message[], event: StreamMessage): M
 
   const assistantMessage = messages[existingIndex] as AssistantMessage;
   const stop_reason = event.message?.stop_reason || assistantMessage.stop_reason;
+  const is_terminal_stream_event = event.type === 'message_stop';
   const nextMessage: AssistantMessage = {
     ...assistantMessage,
     model: event.message?.model || assistantMessage.model,
     stop_reason,
-    is_complete: stop_reason ? true : assistantMessage.is_complete,
+    is_complete: stop_reason || is_terminal_stream_event ? true : assistantMessage.is_complete,
+    stream_status: stop_reason || is_terminal_stream_event ? 'done' : 'streaming',
     usage: event.usage || assistantMessage.usage,
     content: [...assistantMessage.content],
   };

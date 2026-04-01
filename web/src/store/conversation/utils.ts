@@ -9,15 +9,16 @@
 
 import { Conversation, CreateConversationParams } from '@/types/conversation';
 import { generateUuid } from '@/lib/uuid';
+import { buildWsDmSessionKey } from '@/lib/session-key';
 
-export const generateConversationKey = (): string => {
-  return generateUuid();
+export const generateConversationKey = (agent_id?: string): string => {
+  return buildWsDmSessionKey(generateUuid(), agent_id);
 };
 
 export const createDefaultConversation = (params?: CreateConversationParams): Conversation => {
   const now = Date.now();
   return {
-    session_key: generateConversationKey(),
+    session_key: generateConversationKey(params?.agent_id),
     agent_id: params?.agent_id,
     session_id: null,
     title: params?.title || 'New Chat',

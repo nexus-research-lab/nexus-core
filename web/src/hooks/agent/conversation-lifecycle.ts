@@ -1,4 +1,5 @@
 import { getConversationMessages } from '@/lib/agent-api';
+import { buildRoomSharedSessionKey, buildWsDmSessionKey } from '@/lib/session-key';
 import { generateUuid } from '@/lib/uuid';
 import { AgentConversationLifecycleContext } from '@/types/agent-conversation';
 
@@ -21,7 +22,11 @@ export function resetConversationView(
  * 启动一个新的对话。
  */
 export function startAgentConversation(context: AgentConversationLifecycleContext): void {
-  const new_conversation_key = generateUuid();
+  const new_conversation_key = (
+    context.chat_type === 'group' && context.conversation_id
+      ? buildRoomSharedSessionKey(context.conversation_id)
+      : buildWsDmSessionKey(generateUuid(), context.agent_id)
+  );
   context.load_request_id_ref.current += 1;
   context.active_conversation_key_ref.current = new_conversation_key;
   context.set_conversation_key(new_conversation_key);

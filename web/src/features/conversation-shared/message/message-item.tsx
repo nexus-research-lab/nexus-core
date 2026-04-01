@@ -114,7 +114,12 @@ function MessageItemInner(
 
   const shouldHideAssistantContent = useMemo(() => {
     // Always show bubbles that have a meaningful stream_status
-    if (stream_status === 'pending' || stream_status === 'streaming' || stream_status === 'cancelled') {
+    if (
+      stream_status === 'pending' ||
+      stream_status === 'streaming' ||
+      stream_status === 'cancelled' ||
+      stream_status === 'error'
+    ) {
       return false;
     }
     if (mergedContent.length === 0) return true;
@@ -481,6 +486,10 @@ function MessageItemInner(
                   {/* Room 并发：已取消标记 */}
                   {stream_status === 'cancelled' && mergedContent.length === 0 && (
                     <span className="text-xs text-slate-400 italic">已停止</span>
+                  )}
+
+                  {stream_status === 'error' && mergedContent.length === 0 && (
+                    <span className="text-xs text-rose-500 italic">执行失败</span>
                   )}
 
                   {hasVisibleProcess ? (

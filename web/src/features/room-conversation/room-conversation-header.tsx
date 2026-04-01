@@ -12,18 +12,18 @@ import {
   PanelRight,
 } from "lucide-react";
 
+import { getConversationRouteId } from "@/lib/conversation-route";
 import { cn } from "@/lib/utils";
 import { WorkspaceSurfaceHeader } from "@/shared/ui/workspace/workspace-surface-header";
 import { WorkspaceStatusBadge } from "@/shared/ui/workspace/workspace-status-badge";
 import { Agent } from "@/types/agent";
-import { Conversation } from "@/types/conversation";
+import { RoomConversationView } from "@/types/conversation";
 import { RoomSurfaceTabKey } from "@/types/room-surface";
 
 interface RoomConversationHeaderProps {
-  current_conversation_id: string | null;
+  current_room_conversation_id: string | null;
   current_room_title: string | null;
-  current_conversation_title: string | null;
-  conversations: Conversation[];
+  conversations: RoomConversationView[];
   is_loading: boolean;
   is_detail_panel_open: boolean;
   room_members: Agent[];
@@ -46,12 +46,12 @@ function getInitials(name: string | null): string {
 /** 对话切换下拉菜单 */
 function ConversationSwitcher({
   conversations,
-  current_conversation_id,
+  current_room_conversation_id,
   on_select_conversation,
   on_create_conversation,
 }: {
-  conversations: Conversation[];
-  current_conversation_id: string | null;
+  conversations: RoomConversationView[];
+  current_room_conversation_id: string | null;
   on_select_conversation: (conversation_id: string) => void;
   on_create_conversation?: (title?: string) => Promise<string | null>;
 }) {
@@ -60,7 +60,9 @@ function ConversationSwitcher({
   const trigger_ref = useRef<HTMLButtonElement>(null);
 
   const current_title =
-    conversations.find((c) => c.session_key === current_conversation_id)?.title
+    conversations.find((conversation) => (
+      getConversationRouteId(conversation) === current_room_conversation_id
+    ))?.title
     ?? "选择对话";
 
   const handle_create = async () => {
@@ -100,10 +102,11 @@ function ConversationSwitcher({
             {conversations.length > 0 ? (
               <>
                 {conversations.map((conversation) => {
-                  const is_active = conversation.session_key === current_conversation_id;
+                  const route_conversation_id = getConversationRouteId(conversation);
+                  const is_active = route_conversation_id === current_room_conversation_id;
                   return (
                     <button
-                      key={conversation.session_key}
+                      key={route_conversation_id}
                       className={cn(
                         "flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] transition-colors",
                         is_active
@@ -111,7 +114,7 @@ function ConversationSwitcher({
                           : "text-slate-600 hover:bg-slate-50",
                       )}
                       onClick={() => {
-                        on_select_conversation(conversation.session_key);
+                        on_select_conversation(route_conversation_id);
                         set_is_open(false);
                       }}
                       type="button"
@@ -213,7 +216,7 @@ const ROOM_TABS: { key: RoomSurfaceTabKey; label: string; icon: typeof MessageSq
 ];
 
 const RoomConversationHeaderView = memo(({
-  current_conversation_id,
+  current_room_conversation_id,
   current_room_title,
   conversations,
   is_loading,
@@ -230,7 +233,7 @@ const RoomConversationHeaderView = memo(({
   const subtitle = (
     <ConversationSwitcher
       conversations={conversations}
-      current_conversation_id={current_conversation_id}
+      current_room_conversation_id={current_room_conversation_id}
       on_select_conversation={on_select_conversation}
       on_create_conversation={on_create_conversation}
     />

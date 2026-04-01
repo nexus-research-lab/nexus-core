@@ -41,6 +41,8 @@ export type ContentBlock =
 export interface BaseMessage {
   message_id: string;
   session_key: string;
+  room_id?: string | null;
+  conversation_id?: string | null;
   agent_id: string;
   round_id: string;
   session_id?: SessionId;
@@ -73,7 +75,7 @@ export interface Usage {
 }
 
 /** Status for assistant messages in Room multi-agent scenarios. */
-export type AssistantMessageStatus = 'pending' | 'streaming' | 'done' | 'cancelled';
+export type AssistantMessageStatus = 'pending' | 'streaming' | 'done' | 'cancelled' | 'error';
 
 export interface AssistantMessage extends BaseMessage {
   role: 'assistant';
@@ -116,6 +118,8 @@ export type StreamMessageType =
 export interface StreamMessage {
   message_id: string;
   session_key: string;
+  room_id?: string | null;
+  conversation_id?: string | null;
   agent_id: string;
   round_id: string;
   session_id?: SessionId;
@@ -131,6 +135,10 @@ export interface StreamMessage {
 }
 
 export interface EventMessage {
+  envelope_id?: string;
+  protocol_version?: number;
+  delivery_mode?: 'durable' | 'ephemeral';
+  room_seq?: number;
   event_type:
   | 'message'
   | 'stream'
@@ -144,13 +152,18 @@ export interface EventMessage {
   | 'room_member_added'
   | 'room_member_removed'
   | 'room_deleted'
+  | 'room_resync_required'
   | 'chat_ack'
   | 'stream_start'
   | 'stream_end'
   | 'stream_cancelled';
   session_key?: string | null;
+  room_id?: string | null;
+  conversation_id?: string | null;
   agent_id?: string | null;
+  message_id?: string | null;
   session_id?: SessionId | null;
+  caused_by?: string | null;
   data: any;
   timestamp: number;
 }

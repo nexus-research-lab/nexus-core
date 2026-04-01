@@ -3,31 +3,42 @@
 import { useMemo, useState } from "react";
 import { ArrowLeft, Check, ChevronDown, MessageSquare, Search, X } from "lucide-react";
 
+import { getConversationRouteId } from "@/lib/conversation-route";
 import { formatRelativeTime } from "@/lib/utils";
 import { Agent } from "@/types/agent";
-import { Conversation, ConversationSnapshotPayload } from "@/types/conversation";
+import { Conversation, ConversationSnapshotPayload, RoomConversationView } from "@/types/conversation";
 
 import { DmChatPanel } from "@/features/dm-conversation/dm-chat-panel";
+import { RoomChatPanel } from "./room-chat-panel";
 
 interface RoomMobileWorkspaceProps {
   current_agent: Agent;
+  current_room_type: string;
+  room_id: string | null;
+  room_members: Agent[];
   current_room_title: string;
-  current_conversation: Conversation | null;
-  current_conversation_id: string | null;
-  current_room_conversations: Conversation[];
+  current_room_conversation: RoomConversationView | null;
+  current_agent_conversation: Conversation | null;
+  current_room_conversation_id: string | null;
+  current_room_conversations: RoomConversationView[];
   initial_draft?: string | null;
   on_back_to_directory: () => void;
   on_create_conversation: (title?: string) => void | Promise<string | null>;
   on_select_conversation: (conversation_id: string) => void;
   on_loading_change: (is_loading: boolean) => void;
   on_conversation_snapshot_change: (snapshot: ConversationSnapshotPayload) => void;
+  on_room_event?: (event_type: string, data: import("@/types/agent-conversation").RoomEventPayload) => void;
 }
 
 export function RoomMobileWorkspace({
   current_agent,
+  current_room_type,
+  room_id,
+  room_members,
   current_room_title,
-  current_conversation,
-  current_conversation_id,
+  current_room_conversation,
+  current_agent_conversation,
+  current_room_conversation_id,
   current_room_conversations,
   initial_draft = null,
   on_back_to_directory,
@@ -35,15 +46,17 @@ export function RoomMobileWorkspace({
   on_select_conversation,
   on_loading_change,
   on_conversation_snapshot_change,
+  on_room_event,
 }: RoomMobileWorkspaceProps) {
   const [is_conversation_sheet_open, setIsConversationSheetOpen] = useState(false);
+  const is_dm = current_room_type === "dm";
 
-  const current_conversation_title = useMemo(() => {
-    if (current_conversation?.title?.trim()) {
-      return current_conversation.title;
+  const current_room_conversation_title = useMemo(() => {
+    if (current_room_conversation?.title?.trim()) {
+      return current_room_conversation.title;
     }
     return "新会话";
-  }, [current_conversation]);
+  }, [current_room_conversation]);
 
   return (
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background/90">
@@ -69,7 +82,7 @@ export function RoomMobileWorkspace({
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-slate-900/84">{current_agent.name}</p>
               <p className="truncate text-[12px] text-slate-700/54">
-                {current_room_title || current_conversation_title}
+                {current_room_title || current_room_conversation_title}
               </p>
             </div>
 
@@ -83,18 +96,38 @@ export function RoomMobileWorkspace({
       </div>
 
       <div className="min-h-0 min-w-0 flex-1">
-        <DmChatPanel
-          agent_id={current_agent.agent_id}
-          current_agent_name={current_agent.name}
-          conversations={current_room_conversations}
-          initial_draft={initial_draft}
-          layout="mobile"
-          on_conversation_snapshot_change={on_conversation_snapshot_change}
-          on_create_conversation={on_create_conversation}
-          on_loading_change={on_loading_change}
-          session_key={current_conversation_id}
-          session_title={current_conversation?.title ?? null}
-        />
+        {is_dm ? (
+          <DmChatPanel
+            agent_id={current_agent.agent_id}
+            current_agent_name={current_agent.name}
+            conversations={current_room_conversations}
+            initial_draft={initial_draft}
+            layout="mobile"
+            on_conversation_snapshot_change={on_conversation_snapshot_change}
+            on_create_conversation={on_create_conversation}
+            on_loading_change={on_loading_change}
+            session_key={current_agent_conversation?.session_key ?? null}
+            session_title={current_agent_conversation?.title ?? null}
+          />
+        ) : (
+          <RoomChatPanel
+            agent_id={current_agent.agent_id}
+            conversation_id={current_room_conversation_id}
+            conversations={current_room_conversations}
+            current_agent_name={current_agent.name}
+            current_room_title={current_room_title}
+            initial_draft={initial_draft}
+            layout="mobile"
+            on_conversation_snapshot_change={on_conversation_snapshot_change}
+            on_create_conversation={on_create_conversation}
+            on_loading_change={on_loading_change}
+            on_room_event={on_room_event}
+            on_select_conversation={on_select_conversation}
+            room_id={room_id}
+            room_members={room_members}
+            session_title={current_room_conversation?.title ?? null}
+          />
+        )}
       </div>
 
       {is_conversation_sheet_open ? (
@@ -128,13 +161,14 @@ export function RoomMobileWorkspace({
 
             <div className="max-h-[50vh] space-y-2 overflow-y-auto pr-1">
               {current_room_conversations.map((conversation) => {
-                const is_active = conversation.session_key === current_conversation_id;
+                const route_conversation_id = getConversationRouteId(conversation);
+                const is_active = route_conversation_id === current_room_conversation_id;
                 return (
                   <button
-                    key={conversation.session_key}
+                    key={route_conversation_id}
                     className="workspace-card flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-white/18"
                     onClick={() => {
-                      on_select_conversation(conversation.session_key);
+                      on_select_conversation(route_conversation_id);
                       setIsConversationSheetOpen(false);
                     }}
                     type="button"

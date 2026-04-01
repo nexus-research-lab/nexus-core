@@ -78,10 +78,15 @@ export function RoomPage() {
   const handleRoomEvent = useCallback((event_type: string, _data: import("@/types/agent-conversation").RoomEventPayload) => {
     if (event_type === "room_deleted") {
       navigate(AppRouteBuilders.launcher());
+      return;
+    }
+
+    if (event_type === "room_resync_required") {
+      void controller.handle_refresh_room_state();
     }
     // room_member_added / room_member_removed are handled by the next server-rendered
     // room context fetch; no extra action needed here.
-  }, [navigate]);
+  }, [controller, navigate]);
 
   useEffect(() => {
     // 原有逻辑：自动导航到当前对话
@@ -89,13 +94,13 @@ export function RoomPage() {
       controller.is_hydrated &&
       params.room_id &&
       !params.conversation_id &&
-      controller.current_conversation_id &&
+      controller.current_room_conversation_id &&
       !initialDraft
     ) {
       navigate(
         AppRouteBuilders.room_conversation(
           params.room_id,
-          controller.current_conversation_id,
+          controller.current_room_conversation_id,
         ),
         { replace: true },
       );
@@ -106,7 +111,7 @@ export function RoomPage() {
     navigate,
     params.conversation_id,
     params.room_id,
-    controller.current_conversation_id,
+    controller.current_room_conversation_id,
     initialDraft,
   ]);
 
@@ -143,8 +148,9 @@ export function RoomPage() {
               room_members={controller.room_members}
               current_room_title={controller.current_room_title}
               current_room_conversations={controller.current_room_conversations}
-              current_conversation={controller.current_conversation}
-              current_conversation_id={controller.current_conversation_id}
+              current_room_conversation={controller.current_room_conversation}
+              current_agent_conversation={controller.current_agent_conversation}
+              current_room_conversation_id={controller.current_room_conversation_id}
               current_todos={controller.current_todos}
               editor_width_percent={controller.editor_width_percent}
               initial_draft={initialDraft}
@@ -190,7 +196,7 @@ export function RoomPage() {
   return (
     <WorkspacePageFrame>
       <RoomRouteEntry
-        agents={controller.agents}
+        agents={controller.room_members}
         conversations={controller.conversations}
         conversation_id={params.conversation_id}
         room_id={params.room_id}

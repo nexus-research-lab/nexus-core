@@ -28,6 +28,7 @@ interface ComposerPanelProps {
   placeholder?: string;
   max_length?: number;
   room_members?: Agent[];
+  status_hint?: string | null;
 }
 
 const ComposerPanelView = memo(({
@@ -41,6 +42,7 @@ const ComposerPanelView = memo(({
   placeholder = "继续描述目标、补充上下文，或直接开始协作…",
   max_length = 10000,
   room_members = [],
+  status_hint = null,
 }: ComposerPanelProps) => {
   const [input, setInput] = useState("");
   const [input_history, setInputHistory] = useState<string[]>([]);
@@ -239,6 +241,9 @@ const ComposerPanelView = memo(({
   const char_count = input.length;
   const is_near_limit = char_count > max_length * 0.8;
   const is_over_limit = char_count > max_length;
+  const resolved_status_hint = status_hint ?? (
+    current_agent_name ? `@${current_agent_name} 正在这个协作中` : "继续推进当前协作"
+  );
 
   return (
     <div
@@ -299,7 +304,7 @@ const ComposerPanelView = memo(({
               <span className="font-semibold uppercase tracking-[0.14em]">Message</span>
               {!compact ? (
                 <span className="truncate text-slate-400">
-                  {current_agent_name ? `@${current_agent_name} 正在这个协作中` : "继续推进当前协作"}
+                  {resolved_status_hint}
                 </span>
               ) : null}
             </div>

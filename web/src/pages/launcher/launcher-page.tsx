@@ -7,6 +7,7 @@ import { LauncherAppConversationPanel } from "@/features/launcher/launcher-app-c
 import { LauncherConsole } from "@/features/launcher/launcher-console";
 import { useLauncherPageController } from "@/hooks/use-launcher-page-controller";
 import { createConversation, deleteConversation } from "@/lib/agent-api";
+import { buildWsDmSessionKey } from "@/lib/session-key";
 import { createRoom, ensureDirectRoom } from "@/lib/room-api";
 import { cn } from "@/lib/utils";
 import { AgentOptions } from "@/shared/ui/dialog/agent-options";
@@ -114,10 +115,13 @@ export function LauncherPage() {
       return existing_app_conversation.session_key;
     }
 
-    const created_conversation = await createConversation(APP_CONVERSATION_SEED_KEY, {
-      agent_id: APP_AGENT_ID,
-      title: "Nexus",
-    });
+    const created_conversation = await createConversation(
+      buildWsDmSessionKey(APP_CONVERSATION_SEED_KEY, APP_AGENT_ID),
+      {
+        agent_id: APP_AGENT_ID,
+        title: "Nexus",
+      },
+    );
     skip_app_conversation_load_ref.current = created_conversation.session_key;
     controller.set_app_conversation_key(created_conversation.session_key);
     app_conversation.bind_conversation_key(created_conversation.session_key);

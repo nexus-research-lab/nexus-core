@@ -45,7 +45,7 @@ const EMPTY_AGENT_COST_SUMMARY: AgentCostSummary = {
 
 export function useHomeWorkspaceController({
   current_agent_id,
-  current_conversation,
+  current_agent_conversation,
 }: HomeWorkspaceControllerOptions) {
   const set_workspace_files = useWorkspaceFilesStore((state) => state.set_files);
   const clear_workspace_agent = useWorkspaceFilesStore((state) => state.clear_agent);
@@ -108,7 +108,7 @@ export function useHomeWorkspaceController({
   }, [
     clear_workspace_agent,
     current_agent_id,
-    current_conversation?.session_key,
+    current_agent_conversation?.session_key,
     is_conversation_busy,
     set_workspace_files,
   ]);
@@ -145,7 +145,7 @@ export function useHomeWorkspaceController({
   }, [current_agent_id, is_conversation_busy]);
 
   useEffect(() => {
-    if (!current_conversation?.session_key) {
+    if (!current_agent_conversation?.session_key) {
       setConversationCostSummary({
         ...EMPTY_CONVERSATION_COST_SUMMARY,
         agent_id: current_agent_id ?? "",
@@ -160,7 +160,7 @@ export function useHomeWorkspaceController({
 
     const loadConversationCostSummary = async () => {
       try {
-        const nextSummary = await getConversationCostSummary(current_conversation.session_key);
+        const nextSummary = await getConversationCostSummary(current_agent_conversation.session_key);
         if (!ignore) {
           setConversationCostSummary(nextSummary);
         }
@@ -170,8 +170,8 @@ export function useHomeWorkspaceController({
           setConversationCostSummary({
             ...EMPTY_CONVERSATION_COST_SUMMARY,
             agent_id: current_agent_id ?? "",
-            session_key: current_conversation.session_key,
-            session_id: current_conversation.session_id ?? "",
+            session_key: current_agent_conversation.session_key,
+            session_id: current_agent_conversation.session_id ?? "",
           });
         }
       }
@@ -182,7 +182,12 @@ export function useHomeWorkspaceController({
     return () => {
       ignore = true;
     };
-  }, [current_conversation?.session_id, current_conversation?.session_key, current_agent_id, is_conversation_busy]);
+  }, [
+    current_agent_conversation?.session_id,
+    current_agent_conversation?.session_key,
+    current_agent_id,
+    is_conversation_busy,
+  ]);
 
   const handle_open_workspace_file = useCallback((path: string | null) => {
     setActiveWorkspacePath((currentPath) => {

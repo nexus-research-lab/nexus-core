@@ -14,7 +14,7 @@ import { upsertMessage } from './message-helpers';
 export async function sendConversationMessage(
   content: string,
   context: AgentConversationActionContext,
-): Promise<void> {
+): Promise<string | null> {
   const {
     agent_id,
     session_key,
@@ -32,15 +32,15 @@ export async function sendConversationMessage(
   const resolved_session_key = session_key || active_conversation_key_ref.current;
 
   if (!content.trim()) {
-    return;
+    return null;
   }
   if (!resolved_session_key) {
     set_error('请先选择或创建会话');
-    return;
+    return null;
   }
   if (ws_state !== 'connected') {
     set_error('WebSocket未连接,请稍候重试');
-    return;
+    return null;
   }
 
   const round_id = generateUuid();
@@ -53,6 +53,7 @@ export async function sendConversationMessage(
     role: 'user',
     content,
     timestamp: Date.now(),
+    ...(chat_type === 'group' ? { room_id: room_id ?? undefined, conversation_id: conversation_id ?? undefined } : {}),
   };
 
   set_messages((prev) => upsertMessage(prev, userMessage));
@@ -77,6 +78,7 @@ export async function sendConversationMessage(
   }
 
   ws_send(ws_payload as WebSocketMessage);
+  return round_id;
 }
 
 /**
@@ -91,6 +93,9 @@ export function stopConversationGeneration(
   const {
     agent_id,
     session_key,
+    room_id,
+    conversation_id,
+    chat_type,
     ws_state,
     ws_send,
     active_conversation_key_ref,
@@ -119,6 +124,15 @@ export function stopConversationGeneration(
   // per-msg_id interrupt for Room multi-agent scenario
   if (msg_id) {
     payload.msg_id = msg_id;
+    // 从消息列表中查找目标 agent_id，用于后端精确定位中断目标
+    const target_message = messages.find((m) => m.message_id === msg_id);
+    if (target_message?.agent_id) {
+      payload.target_agent_id = target_message.agent_id;
+    }
+  }
+  if (chat_type === 'group') {
+    if (room_id) payload.room_id = room_id;
+    if (conversation_id) payload.conversation_id = conversation_id;
   }
 
   ws_send(payload as WebSocketMessage);

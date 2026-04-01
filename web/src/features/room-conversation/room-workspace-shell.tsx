@@ -6,7 +6,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { HOME_WORKSPACE_SECTION_GAP_CLASS } from "@/lib/home-layout";
 import { cn } from "@/lib/utils";
 import { Agent } from "@/types/agent";
-import { Conversation, ConversationSnapshotPayload } from "@/types/conversation";
+import { Conversation, ConversationSnapshotPayload, RoomConversationView } from "@/types/conversation";
 import { RoomSurfaceTabKey } from "@/types/room-surface";
 import { TodoItem } from "@/types/todo";
 import { UpdateRoomParams } from "@/types/room";
@@ -23,9 +23,10 @@ interface RoomWorkspaceShellProps {
   room_members: Agent[];
   available_room_agents: Agent[];
   current_room_title: string;
-  current_conversation: Conversation | null;
-  current_conversation_id: string | null;
-  current_room_conversations: Conversation[];
+  current_room_conversation: RoomConversationView | null;
+  current_agent_conversation: Conversation | null;
+  current_room_conversation_id: string | null;
+  current_room_conversations: RoomConversationView[];
   active_workspace_path: string | null;
   initial_draft?: string | null;
   is_editor_open: boolean;
@@ -63,8 +64,9 @@ export function RoomWorkspaceShell({
   room_members,
   available_room_agents,
   current_room_title,
-  current_conversation,
-  current_conversation_id,
+  current_room_conversation,
+  current_agent_conversation,
+  current_room_conversation_id,
   current_room_conversations,
   active_workspace_path,
   initial_draft,
@@ -117,8 +119,12 @@ export function RoomWorkspaceShell({
     return (
       <RoomMobileWorkspace
         current_agent={current_agent}
-        current_conversation={current_conversation}
-        current_conversation_id={current_conversation_id}
+        current_room_type={current_room_type}
+        room_id={room_id}
+        room_members={room_members}
+        current_room_conversation={current_room_conversation}
+        current_agent_conversation={current_agent_conversation}
+        current_room_conversation_id={current_room_conversation_id}
         current_room_conversations={current_room_conversations}
         current_room_title={current_room_title}
         initial_draft={initial_draft}
@@ -126,6 +132,7 @@ export function RoomWorkspaceShell({
         on_conversation_snapshot_change={on_conversation_snapshot_change}
         on_create_conversation={handle_create_conversation_in_shell}
         on_loading_change={on_loading_change}
+        on_room_event={on_room_event}
         on_select_conversation={handle_select_conversation_in_shell}
       />
     );
@@ -144,8 +151,9 @@ export function RoomWorkspaceShell({
         room_description={room_description}
         room_members={room_members}
         current_room_title={current_room_title}
-        current_conversation={current_conversation}
-        current_conversation_id={current_conversation_id}
+        current_room_conversation={current_room_conversation}
+        current_agent_conversation={current_agent_conversation}
+        current_room_conversation_id={current_room_conversation_id}
         current_room_conversations={current_room_conversations}
         initial_draft={initial_draft}
         current_todos={current_todos}

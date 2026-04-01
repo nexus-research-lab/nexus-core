@@ -1,12 +1,12 @@
 import { Activity } from "lucide-react";
 
-import { Conversation } from "@/types/conversation";
+import { RoomConversationView } from "@/types/conversation";
 import { formatRelativeTime, truncate } from "@/lib/utils";
 
 import { ContextSection } from "./context-section";
 
 interface CollaborationStatusSectionProps {
-  active_conversation: Conversation | null;
+  active_conversation: RoomConversationView | null;
   localized_runtime_status: string;
   total_member_count: number;
 }

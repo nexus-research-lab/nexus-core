@@ -1,6 +1,6 @@
 import { SessionId } from "@/types/sdk";
 
-export interface Conversation {
+export interface BaseConversation {
   session_key: string;
   agent_id?: string;
   session_id: SessionId | null;
@@ -14,6 +14,14 @@ export interface Conversation {
   last_activity_at: number;
   is_active?: boolean;
   message_count?: number;
+}
+
+export interface Conversation extends BaseConversation {}
+
+export interface RoomConversationView extends BaseConversation {
+  room_id: string;
+  conversation_id: string;
+  route_conversation_id: string;
 }
 
 export interface ApiConversation {

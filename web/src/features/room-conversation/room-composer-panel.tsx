@@ -299,7 +299,7 @@ const RoomComposerPanelView = memo(({
               <span className="font-semibold uppercase tracking-[0.14em]">Message</span>
               {!compact ? (
                 <span className="truncate text-slate-400">
-                  {current_agent_name ? `@${current_agent_name} 正在这个协作中` : "继续推进当前协作"}
+                  {is_loading ? "协作成员正在回复" : "使用 @成员名 指定本轮参与者"}
                 </span>
               ) : null}
             </div>

@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { WorkspaceCanvasShell } from "@/shared/ui/workspace/workspace-canvas-shell";
 import { WorkspaceInspectorShell } from "@/shared/ui/workspace/workspace-inspector-shell";
 import { Agent } from "@/types/agent";
-import { Conversation, ConversationSnapshotPayload } from "@/types/conversation";
+import { Conversation, ConversationSnapshotPayload, RoomConversationView } from "@/types/conversation";
 import { RoomSurfaceTabKey } from "@/types/room-surface";
 import { TodoItem } from "@/types/todo";
 import { UpdateRoomParams } from "@/types/room";
@@ -32,9 +32,10 @@ interface RoomWorkspaceLayoutProps {
   room_members: Agent[];
   available_room_agents: Agent[];
   current_room_title: string;
-  current_conversation: Conversation | null;
-  current_conversation_id: string | null;
-  current_room_conversations: Conversation[];
+  current_room_conversation: RoomConversationView | null;
+  current_agent_conversation: Conversation | null;
+  current_room_conversation_id: string | null;
+  current_room_conversations: RoomConversationView[];
   active_workspace_path: string | null;
   active_surface_tab: RoomSurfaceTabKey;
   initial_draft?: string | null;
@@ -79,8 +80,9 @@ export function RoomWorkspaceLayout({
   room_members,
   available_room_agents,
   current_room_title,
-  current_conversation,
-  current_conversation_id,
+  current_room_conversation,
+  current_agent_conversation,
+  current_room_conversation_id,
   current_room_conversations,
   active_workspace_path,
   active_surface_tab,
@@ -153,8 +155,8 @@ export function RoomWorkspaceLayout({
                       on_open_workspace_file={handle_open_workspace_file}
                       on_todos_change={on_todos_change}
                       on_toggle_detail_panel={() => set_is_detail_panel_open((prev) => !prev)}
-                      session_key={current_conversation?.session_key ?? null}
-                      session_title={current_conversation?.title ?? null}
+                      session_key={current_agent_conversation?.session_key ?? null}
+                      session_title={current_agent_conversation?.title ?? null}
                     />
                   </ChatBoundary>
                 ) : (
@@ -162,7 +164,7 @@ export function RoomWorkspaceLayout({
                     <RoomChatPanel
                       active_tab={active_surface_tab}
                       agent_id={current_agent.agent_id}
-                      conversation_id={current_conversation_id}
+                      conversation_id={current_room_conversation_id}
                       conversations={current_room_conversations}
                       current_agent_name={current_agent.name}
                       current_room_title={current_room_title}
@@ -179,7 +181,7 @@ export function RoomWorkspaceLayout({
                       on_toggle_detail_panel={() => set_is_detail_panel_open((prev) => !prev)}
                       room_id={room_id}
                       room_members={room_members}
-                      session_title={current_conversation?.title ?? null}
+                      session_title={current_room_conversation?.title ?? null}
                     />
                   </ChatBoundary>
                 )
@@ -188,7 +190,7 @@ export function RoomWorkspaceLayout({
               {active_surface_tab === "history" ? (
                 <RoomConversationHistoryView
                   conversations={current_room_conversations}
-                  current_conversation_id={current_conversation_id}
+                  current_room_conversation_id={current_room_conversation_id}
                   current_room_type={current_room_type}
                   on_create_conversation={on_create_conversation}
                   on_delete_conversation={on_delete_conversation}
@@ -228,7 +230,7 @@ export function RoomWorkspaceLayout({
         show_detail_panel ? (
           <WorkspaceInspectorShell>
             <RoomContextPanel
-              active_conversation={current_conversation}
+              active_conversation={current_room_conversation}
               agent={current_agent}
               available_room_agents={available_room_agents}
               current_agent_id={current_agent_id}

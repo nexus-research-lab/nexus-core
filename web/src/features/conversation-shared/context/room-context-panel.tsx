@@ -7,7 +7,7 @@ import { ConfirmDialog } from "@/shared/ui/dialog/confirm-dialog";
 import { WorkspaceInspectorSection } from "@/shared/ui/workspace/workspace-inspector-section";
 import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import { Agent } from "@/types/agent";
-import { Conversation } from "@/types/conversation";
+import { RoomConversationView } from "@/types/conversation";
 import { TodoItem } from "@/types/todo";
 import { UpdateRoomParams } from "@/types/room";
 
@@ -26,8 +26,8 @@ interface RoomContextPanelProps {
   room_name: string;
   room_description: string;
   room_members: Agent[];
-  room_conversations: Conversation[];
-  active_conversation: Conversation | null;
+  room_conversations: RoomConversationView[];
+  active_conversation: RoomConversationView | null;
   todos: TodoItem[];
   is_conversation_busy: boolean;
   on_add_room_member: (agent_id: string) => Promise<void>;
@@ -126,19 +126,29 @@ export function RoomContextPanel({
                           {member.name}
                         </p>
                         <p className="truncate text-[11px] text-slate-700/48">
-                          {is_active ? "当前活跃" : "参与协作中"}
+                          {is_active ? "当前聚焦" : "参与当前协作"}
                         </p>
                       </div>
                       <span className={`h-2 w-2 shrink-0 rounded-full ${is_active ? "bg-emerald-400" : "bg-slate-300"}`} />
                     </button>
-                    <button
-                      aria-label={`移除 ${member.name}`}
-                      className="shrink-0 rounded-xl p-1.5 text-slate-700/54 opacity-0 transition-all group-hover:opacity-100 hover:bg-white/10 hover:text-destructive"
-                      onClick={() => set_pending_remove_agent_id(member.agent_id)}
-                      type="button"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <button
+                        aria-label={`编辑 ${member.name}`}
+                        className="shrink-0 rounded-xl p-1.5 text-slate-700/54 opacity-0 transition-all group-hover:opacity-100 hover:bg-white/10 hover:text-slate-950"
+                        onClick={() => on_edit_agent(member.agent_id)}
+                        type="button"
+                      >
+                        <Settings className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        aria-label={`移除 ${member.name}`}
+                        className="shrink-0 rounded-xl p-1.5 text-slate-700/54 opacity-0 transition-all group-hover:opacity-100 hover:bg-white/10 hover:text-destructive"
+                        onClick={() => set_pending_remove_agent_id(member.agent_id)}
+                        type="button"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -146,12 +156,14 @@ export function RoomContextPanel({
           </WorkspaceInspectorSection>
         ) : null}
 
-        <MemberSummaryCard
-          agent={agent}
-          localized_runtime_status={localized_runtime_status}
-          on_edit_agent={on_edit_agent}
-          runtime_status={runtime_status}
-        />
+        {current_room_type === "dm" ? (
+          <MemberSummaryCard
+            agent={agent}
+            localized_runtime_status={localized_runtime_status}
+            on_edit_agent={on_edit_agent}
+            runtime_status={runtime_status}
+          />
+        ) : null}
 
         <CollaborationStatusSection
           active_conversation={active_conversation}

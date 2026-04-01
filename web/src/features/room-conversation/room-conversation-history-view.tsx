@@ -3,15 +3,16 @@
 import { useCallback, useState } from "react";
 import { Check, Clock3, MessageSquarePlus, Pencil, Trash2, X } from "lucide-react";
 
+import { getConversationRouteId } from "@/lib/conversation-route";
 import { formatRelativeTime } from "@/lib/utils";
 import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import { WorkspaceSurfaceView } from "@/shared/ui/workspace/workspace-surface-view";
-import { Conversation } from "@/types/conversation";
+import { RoomConversationView } from "@/types/conversation";
 
 interface RoomConversationHistoryViewProps {
   can_manage_conversations?: boolean;
-  conversations: Conversation[];
-  current_conversation_id: string | null;
+  conversations: RoomConversationView[];
+  current_room_conversation_id: string | null;
   current_room_type: string;
   on_create_conversation: (title?: string) => Promise<string | null>;
   on_delete_conversation: (conversation_id: string) => Promise<string | null>;
@@ -22,7 +23,7 @@ interface RoomConversationHistoryViewProps {
 export function RoomConversationHistoryView({
   can_manage_conversations = true,
   conversations,
-  current_conversation_id,
+  current_room_conversation_id,
   current_room_type,
   on_create_conversation,
   on_delete_conversation,
@@ -48,18 +49,21 @@ export function RoomConversationHistoryView({
       eyebrow="History"
       title={current_room_type === "dm" ? "历史对话" : "对话历史"}
     >
-      {conversations.map((conversation) => (
+      {conversations.map((conversation) => {
+        const route_conversation_id = getConversationRouteId(conversation);
+        return (
         <ConversationHistoryItem
-          key={conversation.session_key}
+          key={route_conversation_id}
           can_delete={can_manage_conversations && conversation.conversation_type === "topic"}
           can_rename={can_manage_conversations && on_update_conversation_title !== undefined}
           conversation={conversation}
-          is_active={conversation.session_key === current_conversation_id}
-          on_delete={() => void on_delete_conversation(conversation.session_key)}
-          on_rename={(title) => void on_update_conversation_title?.(conversation.session_key, title)}
-          on_select={() => on_select_conversation(conversation.session_key)}
+          is_active={route_conversation_id === current_room_conversation_id}
+          on_delete={() => void on_delete_conversation(route_conversation_id)}
+          on_rename={(title) => void on_update_conversation_title?.(route_conversation_id, title)}
+          on_select={() => on_select_conversation(route_conversation_id)}
         />
-      ))}
+        );
+      })}
     </WorkspaceSurfaceView>
   );
 }
@@ -76,7 +80,7 @@ function ConversationHistoryItem({
 }: {
   can_delete: boolean;
   can_rename: boolean;
-  conversation: Conversation;
+  conversation: RoomConversationView;
   is_active: boolean;
   on_delete: () => void;
   on_rename: (title: string) => void;

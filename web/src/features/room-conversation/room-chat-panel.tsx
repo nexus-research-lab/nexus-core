@@ -6,7 +6,8 @@ import { useAgentConversation } from "@/hooks/agent";
 import { useConversationLoader } from "@/hooks/use-conversation-loader";
 import { useExtractTodos } from "@/hooks/use-extract-todos";
 import { useFollowScroll } from "@/hooks/use-follow-scroll";
-import { ConversationSnapshotPayload, Conversation } from "@/types/conversation";
+import { buildRoomSharedSessionKey } from "@/lib/session-key";
+import { ConversationSnapshotPayload, RoomConversationView } from "@/types/conversation";
 import { TodoItem } from "@/types/todo";
 import { Agent } from "@/types/agent";
 import { RoomSurfaceTabKey } from "@/types/room-surface";
@@ -18,11 +19,6 @@ import { groupMessagesByRound, get_latest_reply_timestamp } from "@/features/con
 import { RoomConversationEmptyState } from "./room-conversation-empty-state";
 import { RoomConversationHeader } from "./room-conversation-header";
 
-/** 构建 Room 共享 session_key，与后端 room_chat_service.py 一致 */
-function build_room_session_key(conversation_id: string): string {
-  return `room:group:${conversation_id}`;
-}
-
 export interface RoomChatPanelProps {
   agent_id: string | null;
   current_agent_name?: string | null;
@@ -31,7 +27,7 @@ export interface RoomChatPanelProps {
   conversation_id: string | null;
   room_id?: string | null;
   room_members: Agent[];
-  conversations: Conversation[];
+  conversations: RoomConversationView[];
   session_title?: string | null;
   /** Controlled tab — caller manages which surface tab is active */
   active_tab?: RoomSurfaceTabKey;
@@ -76,7 +72,7 @@ export function RoomChatPanel({
 }: RoomChatPanelProps) {
   const is_mobile_layout = layout === "mobile";
 
-  const session_key = conversation_id ? build_room_session_key(conversation_id) : null;
+  const session_key = conversation_id ? buildRoomSharedSessionKey(conversation_id) : null;
 
   const agent_name_map = useMemo(() => {
     if (room_members.length === 0) return undefined;
@@ -91,6 +87,7 @@ export function RoomChatPanel({
     error,
     messages,
     is_loading,
+    agent_thinking,
     pending_permission,
     send_message,
     stop_generation,
@@ -163,6 +160,11 @@ export function RoomChatPanel({
 
   const handle_stop = () => stop_generation();
   const handle_stop_message = (msg_id: string) => stop_generation(msg_id);
+  const composer_status_hint = agent_thinking?.agent_name
+    ? `@${agent_thinking.agent_name} 正在回复`
+    : is_loading
+      ? "协作成员正在回复"
+      : "使用 @成员名 指定本轮参与者";
 
   return (
     <div className="relative flex h-full min-w-0 flex-1 flex-col overflow-hidden bg-transparent">
@@ -198,8 +200,7 @@ export function RoomChatPanel({
             <RoomConversationHeader
               active_tab={active_tab}
               conversations={conversations}
-              current_conversation_id={session_key}
-              current_conversation_title={session_title ?? null}
+              current_room_conversation_id={conversation_id}
               current_room_title={current_room_title ?? null}
               is_detail_panel_open={is_detail_panel_open}
               is_loading={is_loading}
@@ -267,6 +268,7 @@ export function RoomChatPanel({
             on_send_message={handle_send_message}
             on_stop={handle_stop}
             room_members={room_members}
+            status_hint={composer_status_hint}
           />
         </>
       )}
