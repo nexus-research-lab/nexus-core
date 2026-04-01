@@ -81,6 +81,8 @@ class AgentManager:
         workspace.ensure_initialized(agent_name=normalized_name)
 
         agent = await agent_repository.get_agent(agent_id)
+        if agent and options is not None:
+            await self._sync_agent_skills_from_options(agent.agent_id, options)
         logger.info(f"✅ Agent 创建完成: {agent_id} ({normalized_name}), workspace={resolved_path_str}")
         return agent
 
@@ -136,6 +138,8 @@ class AgentManager:
         synced_path = await self._workspace_registry.sync_workspace_path(latest)
         workspace = self._workspace_registry.get_workspace(agent_id, synced_path)
         workspace.ensure_initialized(agent_name=latest.name)
+        if options is not None:
+            await self._sync_agent_skills_from_options(agent_id, options)
         return True
 
     async def delete_agent(self, agent_id: str) -> bool:
@@ -185,8 +189,34 @@ class AgentManager:
         agent_options = agent.options.model_dump(exclude_none=True)
         agent_options.pop("skills_enabled", None)
         agent_options.pop("installed_skills", None)
+        connector_mcp_servers = await self._load_connector_mcp_servers()
+        if connector_mcp_servers:
+            existing_mcp_servers = agent_options.get("mcp_servers") or {}
+            agent_options["mcp_servers"] = {
+                **connector_mcp_servers,
+                **existing_mcp_servers,
+            }
         base_options.update(agent_options)
         return base_options
+
+    async def _sync_agent_skills_from_options(
+        self,
+        agent_id: str,
+        options: AgentOptions,
+    ) -> None:
+        """根据 AgentOptions 中的技能配置同步实际安装状态。"""
+        from agent.service.capability.skills.skill_service import skill_service
+
+        desired_skills = list(options.installed_skills or [])
+        if not options.skills_enabled:
+            desired_skills = []
+        await skill_service.sync_agent_skills(agent_id, desired_skills)
+
+    async def _load_connector_mcp_servers(self) -> dict:
+        """加载全局已连接 connector 对应的 MCP 配置。"""
+        from agent.service.capability.connectors.connector_service import connector_service
+
+        return await connector_service.build_runtime_mcp_servers()
 
 
 # 全局实例

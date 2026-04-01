@@ -70,11 +70,7 @@ export function derive_tab_from_path(pathname: string): SidebarTabKey {
   if (pathname.startsWith("/dms")) return "dms";
   if (pathname.startsWith("/activity")) return "activity";
   if (
-    pathname.startsWith("/skills") ||
-    pathname.startsWith("/connectors") ||
-    pathname.startsWith("/scheduled-tasks") ||
-    pathname.startsWith("/channels") ||
-    pathname.startsWith("/pairings")
+    pathname.startsWith("/capability/")
   ) return "capabilities";
   if (pathname.startsWith("/contacts")) return "contacts";
   // /app、/rooms、以及默认情况都归到 home
@@ -109,17 +105,11 @@ export const useSidebarStore = create<SidebarState & SidebarActions>()(
         })),
 
       set_navigated_from_tab: (tab) => {
-        set({ navigated_from_tab: tab });
-        // 5 秒后自动清除，避免后续浏览器前进/后退误判
-        if (tab) {
-          if (_navigated_from_tab_timer !== null) {
-            clearTimeout(_navigated_from_tab_timer);
-          }
-          _navigated_from_tab_timer = setTimeout(() => {
-            _navigated_from_tab_timer = null;
-            set({ navigated_from_tab: null });
-          }, 5000);
+        if (_navigated_from_tab_timer !== null) {
+          clearTimeout(_navigated_from_tab_timer);
+          _navigated_from_tab_timer = null;
         }
+        set({ navigated_from_tab: tab });
       },
     }),
     {
