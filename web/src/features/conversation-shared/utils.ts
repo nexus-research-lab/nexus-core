@@ -1,4 +1,4 @@
-import { AssistantMessage, AssistantMessageStatus, Message } from "@/types/message";
+import { AssistantMessage, Message, ResultMessage } from "@/types/message";
 
 /** 将消息按 round_id 分组 */
 export function groupMessagesByRound(messages: Message[]): Map<string, Message[]> {
@@ -10,6 +10,45 @@ export function groupMessagesByRound(messages: Message[]): Map<string, Message[]
     }
     groups.get(round_id)!.push(message);
   }
+  return groups;
+}
+
+/**
+ * Room 模式下使用 `原始用户 round_id:agent_id` 作为 agent 子轮次。
+ * 前端时间线需要把它重新折叠回用户发起的主 round_id，否则同一轮会被拆成多段。
+ */
+export function getRoomBaseRoundId(round_id: string, agent_id?: string | null): string {
+  if (!round_id) {
+    return round_id;
+  }
+
+  if (agent_id) {
+    const suffix = `:${agent_id}`;
+    if (round_id.endsWith(suffix)) {
+      return round_id.slice(0, -suffix.length);
+    }
+  }
+
+  const separator_index = round_id.indexOf(":");
+  if (separator_index <= 0) {
+    return round_id;
+  }
+
+  return round_id.slice(0, separator_index);
+}
+
+/** Room 时间线分组：将多 Agent 子轮次归并回同一条用户轮次。 */
+export function groupRoomMessagesByRound(messages: Message[]): Map<string, Message[]> {
+  const groups = new Map<string, Message[]>();
+
+  for (const message of messages) {
+    const round_id = getRoomBaseRoundId(message.round_id || message.message_id, message.agent_id);
+    if (!groups.has(round_id)) {
+      groups.set(round_id, []);
+    }
+    groups.get(round_id)!.push(message);
+  }
+
   return groups;
 }
 
@@ -46,7 +85,20 @@ export function groupRoundByAgent(messages: Message[]): Map<string, AssistantMes
 }
 
 /** 从一组 assistant 消息中推导该 Agent 的聚合状态 */
-export function getAgentRoundStatus(messages: AssistantMessage[]): AgentRoundStatus {
+export function getAgentRoundStatus(
+  messages: AssistantMessage[],
+  result_message?: ResultMessage | null,
+): AgentRoundStatus {
+  if (result_message) {
+    if (result_message.subtype === "error" || result_message.is_error) {
+      return "error";
+    }
+    if (result_message.subtype === "interrupted") {
+      return "cancelled";
+    }
+    return "done";
+  }
+
   if (messages.length === 0) return "pending";
 
   let has_streaming = false;
@@ -68,6 +120,30 @@ export function getAgentRoundStatus(messages: AssistantMessage[]): AgentRoundSta
   if (has_error) return "error";
   if (has_cancelled) return "cancelled";
   return "done";
+}
+
+/** 判断某个 Agent 子轮次是否仍在执行。 */
+export function isAgentRoundActive(status: AgentRoundStatus): boolean {
+  return status === "pending" || status === "streaming";
+}
+
+/** 计算 Agent 回复在时间线中的排序时间，优先使用 result 的完成时间。 */
+export function getAgentRoundTimestamp(
+  messages: AssistantMessage[],
+  result_message?: ResultMessage | null,
+): number {
+  if (result_message?.timestamp) {
+    return result_message.timestamp;
+  }
+
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const timestamp = messages[index]?.timestamp;
+    if (timestamp) {
+      return timestamp;
+    }
+  }
+
+  return 0;
 }
 
 /** 从 assistant 消息中提取纯文本预览（截取前 80 字符） */

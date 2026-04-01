@@ -6,7 +6,7 @@
 
 "use client";
 
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { prepare, layout } from "@chenglou/pretext";
 import { Bot, Check, ChevronDown, ChevronRight, Copy, Edit2, Square, User, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -33,6 +33,10 @@ interface MessageItemProps {
   on_open_workspace_file?: (path: string) => void;
   /** Called when user clicks the per-message stop button in Room mode. */
   on_stop_message?: (msg_id: string) => void;
+  /** 初始化时 process 区域是否默认展开 */
+  default_process_expanded?: boolean;
+  /** 助手头部右侧附加操作，例如查看 Thread */
+  assistant_header_action?: ReactNode;
   class_name?: string;
 }
 
@@ -52,13 +56,15 @@ function MessageItemInner(
     on_edit_user_message,
     on_open_workspace_file,
     on_stop_message,
+    default_process_expanded = false,
+    assistant_header_action,
     class_name,
   }: MessageItemProps) {
   const [copiedUser, setCopiedUser] = useState(false);
   const [copiedAssistant, setCopiedAssistant] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
-  const [isProcessExpanded, setIsProcessExpanded] = useState(false);
+  const [isProcessExpanded, setIsProcessExpanded] = useState(default_process_expanded);
 
   // 分离消息 + 合并内容
   const {
@@ -296,6 +302,8 @@ function MessageItemInner(
   const showCursor = is_last_round && is_loading && streamingBlockIndexes.size > 0;
   const isCompleted = hasFinalAnswer && !is_loading;
   const canOperateRound = !!userMessage && !is_loading;
+  const canCopyAssistant = Boolean(assistantTextContent?.trim());
+  const shouldShowAssistantFooter = isCompleted && (Boolean(stats) || canCopyAssistant || canOperateRound);
 
   // Per-message stop: visible when this bubble is actively pending/streaming
   const can_stop_message = on_stop_message && (stream_status === 'pending' || stream_status === 'streaming');
@@ -402,7 +410,6 @@ function MessageItemInner(
                       </button>
                     )}
                   </div>
-
                 </div>
 
                 {/* 内容 */}
@@ -450,6 +457,12 @@ function MessageItemInner(
 
                   <div className="flex-1" />
 
+                  {assistant_header_action ? (
+                    <div className="shrink-0">
+                      {assistant_header_action}
+                    </div>
+                  ) : null}
+
                   {/* Per-message stop button (Room 并发模式) */}
                   {can_stop_message && (
                     <button
@@ -469,7 +482,7 @@ function MessageItemInner(
                 <div
                   ref={contentAreaRef}
                   className={cn(
-                    compact ? "min-w-0 pb-2 pt-1 text-[13px] leading-6" : "min-w-0 pb-2 pt-1 text-[15px] leading-7",
+                    compact ? "min-w-0 max-w-full overflow-x-hidden pb-2 pt-1 text-[13px] leading-6" : "min-w-0 max-w-full overflow-x-hidden pb-2 pt-1 text-[15px] leading-7",
                   )}
                   style={showCursor ? { minHeight: streamingMinHeight.current } : undefined}
                 >
@@ -568,16 +581,17 @@ function MessageItemInner(
                 </div>
 
                 {/* 底部统计栏（完成后显示） */}
-                {canOperateRound && (
+                {shouldShowAssistantFooter && (
                   <MessageStats
                     stats={stats || undefined}
                     show_cursor={showCursor}
+                    compact={compact}
                     copied_assistant={copiedAssistant}
                     is_regenerating={isRegenerating}
                     is_deleting={isDeleting}
-                    on_copy_assistant={handleCopyAssistant}
-                    on_regenerate={on_regenerate ? handleRegenerate : undefined}
-                    on_delete={on_delete ? handleDelete : undefined}
+                    on_copy_assistant={canCopyAssistant ? handleCopyAssistant : undefined}
+                    on_regenerate={canOperateRound && on_regenerate ? handleRegenerate : undefined}
+                    on_delete={canOperateRound && on_delete ? handleDelete : undefined}
                   />
                 )}
 
@@ -600,6 +614,7 @@ export const MessageItem = memo(MessageItemInner, (prev, next) => {
   if (prev.compact !== next.compact) return false;
   if (prev.current_agent_name !== next.current_agent_name) return false;
   if (prev.pending_permission !== next.pending_permission) return false;
+  if (prev.assistant_header_action !== next.assistant_header_action) return false;
   if (prev.class_name !== next.class_name) return false;
   // Messages array: compare by reference — applyStreamMessage always returns
   // a new array, so reference inequality correctly signals a content change.
