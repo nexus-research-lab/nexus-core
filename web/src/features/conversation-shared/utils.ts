@@ -29,12 +29,7 @@ export function getRoomBaseRoundId(round_id: string, agent_id?: string | null): 
     }
   }
 
-  const separator_index = round_id.indexOf(":");
-  if (separator_index <= 0) {
-    return round_id;
-  }
-
-  return round_id.slice(0, separator_index);
+  return round_id;
 }
 
 /** Room 时间线分组：将多 Agent 子轮次归并回同一条用户轮次。 */

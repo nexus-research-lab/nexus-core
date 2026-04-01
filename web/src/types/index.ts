@@ -26,9 +26,6 @@ export * from './agent';
 // Workspace live 相关类型
 export * from './workspace-live';
 
-// Activity 相关类型
-export * from './activity';
-
 // WebSocket 相关类型
 export * from './websocket';
 

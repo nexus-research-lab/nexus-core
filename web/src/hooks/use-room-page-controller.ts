@@ -328,6 +328,25 @@ export function useRoomPageController({
     [active_room_session?.id, conversations],
   );
 
+  // DM 模式下，store 里可能还没有 loop agent 的 conversation 记录，
+  // 直接用 session 记录构造 session_key，避免 loader 拿到 null 停止加载。
+  const current_agent_session_key = useMemo(() => {
+    if (current_agent_conversation?.session_key) {
+      return current_agent_conversation.session_key;
+    }
+    if (active_room_session?.agent_id && active_room_session?.conversation_id) {
+      const room_type = current_room?.room_type ?? "dm";
+      if (room_type === "dm") {
+        return buildRoomAgentSessionKey(
+          active_room_session.conversation_id,
+          active_room_session.agent_id,
+          "dm",
+        );
+      }
+    }
+    return current_agent_conversation?.session_key ?? null;
+  }, [active_room_session, current_agent_conversation, current_room]);
+
   const current_agent = useMemo(
     () =>
       room_member_agents.find(
@@ -366,7 +385,6 @@ export function useRoomPageController({
       disallowed_tools: editing_agent.options.disallowed_tools,
       max_turns: editing_agent.options.max_turns,
       max_thinking_tokens: editing_agent.options.max_thinking_tokens,
-      skills_enabled: editing_agent.options.skills_enabled,
       setting_sources: editing_agent.options.setting_sources,
     };
   }, [dialog_mode, editing_agent]);
@@ -410,8 +428,6 @@ export function useRoomPageController({
       permission_mode: options.permission_mode,
       allowed_tools: options.allowed_tools,
       disallowed_tools: options.disallowed_tools,
-      skills_enabled: options.skills_enabled,
-      installed_skills: options.installed_skills,
       setting_sources: options.setting_sources,
     };
 
@@ -637,6 +653,7 @@ export function useRoomPageController({
     current_room_conversations: room_conversations,
     current_room_conversation,
     current_agent_conversation,
+    current_agent_session_key,
     current_room_conversation_id,
     recent_agents: room_member_agents,
     is_hydrated,
@@ -669,7 +686,7 @@ export function useRoomPageController({
   }), [
     agents, conversations, rooms, room_error, current_room, current_agent,
     room_member_agents, available_room_agents, room_conversations, current_room_conversation, current_agent_conversation,
-    current_room_conversation_id, is_hydrated, is_dialog_open, dialog_mode,
+    current_agent_session_key, current_room_conversation_id, is_hydrated, is_dialog_open, dialog_mode,
     dialog_initial_title, dialog_initial_options, set_is_dialog_open,
     handle_open_create_agent, handle_edit_agent, handle_select_agent,
     handle_select_conversation, handle_back_to_directory, handle_delete_agent,

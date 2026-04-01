@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, Sparkles } from "lucide-react";
+import { Bot, Shield } from "lucide-react";
 
 import { WorkspaceSurfaceView } from "@/shared/ui/workspace/workspace-surface-view";
 import { Agent } from "@/types/agent";
@@ -34,11 +34,11 @@ export function RoomAgentAboutView({ agent }: RoomAgentAboutViewProps) {
           </div>
           <div className="rounded-[14px] border border-white/18 bg-white/10 px-4 py-3.5">
             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700/46">
-              Skills
+              Permission
             </p>
             <p className="mt-1.5 inline-flex items-center gap-2 text-[13px] font-semibold text-slate-950/84">
-              <Sparkles className="h-4 w-4 text-sky-600" />
-              {agent.options.skills_enabled ? "已启用" : "未启用"}
+              <Shield className="h-4 w-4 text-sky-600" />
+              {agent.options.permission_mode || "default"}
             </p>
           </div>
         </div>

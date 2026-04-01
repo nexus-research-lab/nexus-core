@@ -16,7 +16,6 @@ let _navigated_from_tab_timer: ReturnType<typeof setTimeout> | null = null;
 export type SidebarTabKey =
   | "home"
   | "dms"
-  | "activity"
   | "capabilities"
   | "contacts";
 
@@ -68,7 +67,6 @@ interface SidebarActions {
  */
 export function derive_tab_from_path(pathname: string): SidebarTabKey {
   if (pathname.startsWith("/dms")) return "dms";
-  if (pathname.startsWith("/activity")) return "activity";
   if (
     pathname.startsWith("/capability/")
   ) return "capabilities";

@@ -10,9 +10,7 @@ export type ContactsFilterKey =
   | "recent"
   | "running"
   | "active"
-  | "idle"
-  | "skills_on"
-  | "skills_off";
+  | "idle";
 
 export function get_contacts_runtime_status(agent: Agent): ContactsRuntimeStatus {
   const normalized_status = agent.status?.toLowerCase() ?? "";
@@ -65,11 +63,7 @@ export function get_contacts_agent_description(agent: Agent): string {
     return prompt.replace(/\s+/g, " ").slice(0, 120);
   }
 
-  if (agent.options.skills_enabled) {
-    return "支持技能扩展与多步协作，可直接投入复杂任务推进。";
-  }
-
-  return "可直接发起 1v1 协作，适合稳定执行日常任务与目录工作流。";
+  return "可直接发起 1v1 协作，也可在能力中心单独安装技能与连接器。";
 }
 
 export function matches_contacts_filter(
@@ -94,12 +88,6 @@ export function matches_contacts_filter(
   }
   if (filter === "idle") {
     return runtime_status === "Idle";
-  }
-  if (filter === "skills_on") {
-    return Boolean(agent.options.skills_enabled);
-  }
-  if (filter === "skills_off") {
-    return !agent.options.skills_enabled;
   }
   return true;
 }

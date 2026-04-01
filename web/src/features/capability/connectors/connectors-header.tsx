@@ -1,6 +1,6 @@
 import { Link2 } from "lucide-react";
 
-import { WorkspaceSurfaceHeader } from "@/shared/ui/workspace-surface-header";
+import { WorkspaceSurfaceHeader } from "@/shared/ui/workspace/workspace-surface-header";
 
 import type { ConnectorController } from "@/hooks/use-connector-controller";
 

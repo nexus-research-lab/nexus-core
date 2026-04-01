@@ -9,7 +9,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  Bell,
   BookOpen,
   FolderOpen,
   Home,
@@ -54,13 +53,6 @@ const TAB_ITEMS: TabDef[] = [
     label: "DMs",
     to: AppRouteBuilders.dm_directory(),
     icon: MessageCircleMore,
-  },
-  {
-    key: "activity",
-    label: "Activity",
-    to: AppRouteBuilders.activity(),
-    icon: Bell,
-    show_badge: false,
   },
   {
     key: "capabilities",

@@ -1,8 +1,7 @@
 /**
  * AgentOptions Advanced Tab
  *
- * 权限控制 + 工具授权 + 高级参数
- * 从原 tools tab 和 advanced tab 合并而来（Model Provider 已移至 Identity）
+ * 权限控制 + 工具授权
  */
 
 "use client";
@@ -72,22 +71,32 @@ export function AgentOptionsAdvancedTab({
   onToggleTool,
 }: AgentOptionsAdvancedTabProps) {
   return (
-    <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
+    <div className="space-y-7 animate-in slide-in-from-right-4 duration-300">
       {/* 权限模式 */}
       <div className="space-y-4">
-        <h3 className="text-[11px] font-semibold text-slate-600">
-          权限控制
-        </h3>
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              Runtime Policy
+            </p>
+            <h3 className="mt-1 text-base font-semibold text-slate-900">
+              权限控制
+            </h3>
+          </div>
+          <p className="max-w-[240px] text-right text-xs leading-5 text-slate-400">
+            这里决定 Agent 在执行命令、编辑文件和联网操作时的审批边界。
+          </p>
+        </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {PERMISSION_MODES.map((pm) => (
             <button
               key={pm.value}
               onClick={() => onPermissionModeChange(pm.value)}
               className={cn(
-                "radius-shell-md relative p-4 text-left transition-all duration-200",
+                "radius-shell-md relative overflow-hidden p-4 text-left transition-all duration-200",
                 permissionMode === pm.value
-                  ? "modal-card-active bg-primary/5 ring-1 ring-primary/30"
-                  : "modal-card hover:border-primary/20"
+                  ? "modal-card-active bg-primary/5 ring-1 ring-primary/30 shadow-[0_10px_28px_rgba(15,23,42,0.06)]"
+                  : "modal-card hover:border-primary/20 hover:bg-white/80"
               )}
             >
               <div className="mb-2 flex items-center justify-between">
@@ -131,12 +140,16 @@ export function AgentOptionsAdvancedTab({
           )}
       </div>
 
-      {/* 预先授权工具 */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-[11px] font-semibold text-slate-600">
-            工具授权
-          </h3>
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              Tool Access
+            </p>
+            <h3 className="mt-1 text-base font-semibold text-slate-900">
+              工具预授权
+            </h3>
+          </div>
           <span className="text-[11px] text-slate-400">
             已启用 {allowedTools.length} 个工具
           </span>
@@ -179,8 +192,8 @@ export function AgentOptionsAdvancedTab({
                 className={cn(
                   "radius-shell-md flex items-center justify-between p-4 transition-all duration-200",
                   isChecked
-                    ? "modal-card-active bg-primary/5 ring-1 ring-primary/20"
-                    : "modal-card hover:border-primary/20"
+                    ? "modal-card-active bg-primary/5 ring-1 ring-primary/20 shadow-[0_8px_22px_rgba(15,23,42,0.05)]"
+                    : "modal-card hover:border-primary/20 hover:bg-white/80"
                 )}
               >
                 <div className="mr-4 flex-1">

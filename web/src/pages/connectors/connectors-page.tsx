@@ -1,5 +1,5 @@
 import { ConnectorsDirectory } from "@/features/capability/connectors/connectors-directory";
-import { WorkspacePageFrame } from "@/shared/ui/workspace-page-frame";
+import { WorkspacePageFrame } from "@/shared/ui/workspace/workspace-page-frame";
 
 /** Connectors 页面 — 应用授权卡片网格 + 详情弹窗 */
 export function ConnectorsPage() {

@@ -99,7 +99,6 @@ export function useHomeAgentConversationController() {
       disallowed_tools: editing_agent?.options?.disallowed_tools,
       max_turns: editing_agent?.options?.max_turns,
       max_thinking_tokens: editing_agent?.options?.max_thinking_tokens,
-      skills_enabled: editing_agent?.options?.skills_enabled,
       setting_sources: editing_agent?.options?.setting_sources,
     };
   }, [dialog_mode, editing_agent]);
@@ -162,8 +161,6 @@ export function useHomeAgentConversationController() {
       permission_mode: options.permission_mode,
       allowed_tools: options.allowed_tools,
       disallowed_tools: options.disallowed_tools,
-      skills_enabled: options.skills_enabled,
-      installed_skills: options.installed_skills,
       setting_sources: options.setting_sources,
     };
 

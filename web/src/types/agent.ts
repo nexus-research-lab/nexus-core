@@ -20,8 +20,6 @@ export interface AgentOptions {
     max_turns?: number;
     max_thinking_tokens?: number;
     mcp_servers?: Record<string, any>;
-    skills_enabled?: boolean;
-    installed_skills?: string[];
     setting_sources?: ('user' | 'project' | 'local')[];
 }
 

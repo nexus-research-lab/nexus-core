@@ -2,7 +2,7 @@
 
 import { ExternalLink, Loader2, PackagePlus, X } from "lucide-react";
 
-import { WorkspacePillButton } from "@/shared/ui/workspace-pill-button";
+import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import { ExternalSkillSearchItem } from "@/types/skill";
 
 import { SkillMarkdown } from "./skill-markdown";

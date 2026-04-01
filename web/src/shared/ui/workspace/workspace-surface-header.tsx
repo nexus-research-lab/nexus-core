@@ -79,10 +79,10 @@ export function WorkspaceSurfaceHeader<TTabKey extends string>({
               <button
                 key={tab.key}
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold transition-all",
+                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-semibold transition-all",
                   is_active
                     ? "workspace-chip text-slate-950 shadow-[0_10px_18px_rgba(111,126,162,0.08)]"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-950",
+                    : "border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-950",
                 )}
                 onClick={() => on_change_tab?.(tab.key)}
                 type="button"

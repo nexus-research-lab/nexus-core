@@ -1,7 +1,7 @@
 import { ChevronDown, Filter, Globe2, Search } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { WorkspacePillButton } from "@/shared/ui/workspace-pill-button";
+import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 
 import type { SourceFilter, SkillMarketplaceController } from "@/hooks/use-skill-marketplace";
 import { SOURCE_LABELS } from "@/hooks/use-skill-marketplace";
@@ -150,4 +150,3 @@ export function SkillsSearchBar({ ctrl }: SkillsSearchBarProps) {
     </div>
   );
 }
-

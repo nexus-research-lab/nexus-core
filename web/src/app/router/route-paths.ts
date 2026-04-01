@@ -1,7 +1,6 @@
 export const APP_ROUTE_PATHS = {
   launcher: "/",
   home: "/app",
-  activity: "/activity",
   dm_directory: "/dms",
   room: "/rooms/:room_id",
   room_conversation: "/rooms/:room_id/conversations/:conversation_id",
@@ -39,7 +38,6 @@ export const AppRouteBuilders = {
       app_prompt: app_prompt?.trim() || undefined,
     }),
   home: () => APP_ROUTE_PATHS.home,
-  activity: () => APP_ROUTE_PATHS.activity,
   dm_directory: () => APP_ROUTE_PATHS.dm_directory,
   room: (room_id: string) => `/rooms/${encodeURIComponent(room_id)}`,
   room_conversation: (room_id: string, conversation_id: string) =>

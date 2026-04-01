@@ -25,6 +25,7 @@ interface RoomWorkspaceShellProps {
   current_room_title: string;
   current_room_conversation: RoomConversationView | null;
   current_agent_conversation: Conversation | null;
+  current_agent_session_key: string | null;
   current_room_conversation_id: string | null;
   current_room_conversations: RoomConversationView[];
   active_workspace_path: string | null;
@@ -66,6 +67,7 @@ export function RoomWorkspaceShell({
   current_room_title,
   current_room_conversation,
   current_agent_conversation,
+  current_agent_session_key,
   current_room_conversation_id,
   current_room_conversations,
   active_workspace_path,
@@ -153,6 +155,7 @@ export function RoomWorkspaceShell({
         current_room_title={current_room_title}
         current_room_conversation={current_room_conversation}
         current_agent_conversation={current_agent_conversation}
+        current_agent_session_key={current_agent_session_key}
         current_room_conversation_id={current_room_conversation_id}
         current_room_conversations={current_room_conversations}
         initial_draft={initial_draft}

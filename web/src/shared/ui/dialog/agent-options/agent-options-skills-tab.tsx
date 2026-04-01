@@ -1,315 +1,375 @@
-/**
- * AgentOptions Skills Tab
- *
- * 技能系统开关 + 加载来源 + 当前 Agent 启用技能列表
- */
-
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Check, Loader2, Puzzle, Sparkles } from "lucide-react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { Loader2, Lock, Search, Sparkles } from "lucide-react";
 
-import { getAgentSkillsApi, getAvailableSkillsApi } from "@/lib/skill-api";
+import { getAgentSkillsApi, installSkillApi, uninstallSkillApi } from "@/lib/skill-api";
+import type { AgentSkillEntry } from "@/types/skill";
 import { cn } from "@/lib/utils";
-import { AgentSkillEntry, SkillInfo } from "@/types/skill";
-
-type SettingSource = "user" | "project" | "local";
-
-interface SourceItem {
-  key: SettingSource;
-  label: string;
-  description: string;
-}
-
-const SOURCE_ITEMS: SourceItem[] = [
-  { key: "user", label: "用户设置", description: "读取全局技能和权限设置。" },
-  { key: "project", label: "项目设置", description: "从 workspace 读取。" },
-];
-
-interface SkillToggleItem {
-  name: string;
-  title: string;
-  description: string;
-  version?: string;
-  enabled: boolean;
-  locked: boolean;
-}
 
 interface AgentOptionsSkillsTabProps {
-  agentId?: string;
-  enabledSkillNames: string[];
-  skillsEnabled: boolean;
-  onEnabledSkillNamesChange: (skillNames: string[]) => void;
-  onSkillsEnabledChange: (enabled: boolean) => void;
-  settingSources: SettingSource[];
-  onToggleSettingSource: (source: SettingSource) => void;
+  agent_id?: string;
+  is_visible: boolean;
+  setting_sources: ("user" | "project" | "local")[];
+  on_toggle_setting_source: (source: "user" | "project" | "local") => void;
 }
 
-function buildCreateModeSkills(
-  global_skills: SkillInfo[],
-  enabled_names: string[],
-): SkillToggleItem[] {
-  const enabled_set = new Set(enabled_names);
-  // 市场页 getAvailableSkillsApi 返回的 installed 在 resource_pool_mode 下即为 pool 可用性
-  return global_skills
-    .filter((skill) => !skill.locked && skill.installed && skill.global_enabled)
-    .map((skill) => ({
-      name: skill.name,
-      title: skill.title || skill.name,
-      description: skill.description,
-      version: skill.version,
-      enabled: enabled_set.has(skill.name),
-      locked: skill.locked,
-    }));
-}
-
-function buildEditModeSkills(agent_skills: AgentSkillEntry[]): SkillToggleItem[] {
-  // 后端已按资源池可用性过滤，前端直接展示全部返回项
-  return agent_skills
-    .filter((skill) => !skill.locked)
-    .map((skill) => ({
-      name: skill.name,
-      title: skill.title || skill.name,
-      description: skill.description,
-      version: skill.version,
-      enabled: skill.installed,
-      locked: skill.locked,
-    }));
-}
+const SOURCE_OPTIONS = [
+  {
+    value: "user",
+    label: "User",
+    description: "读取用户级 skill 与个人偏好。",
+  },
+  {
+    value: "project",
+    label: "Project",
+    description: "读取当前项目内定义的 skill 与工作流。",
+  },
+  {
+    value: "local",
+    label: "Local",
+    description: "读取本机临时或实验性 skill 配置。",
+  },
+] as const;
 
 export function AgentOptionsSkillsTab({
-  agentId,
-  enabledSkillNames,
-  skillsEnabled,
-  onEnabledSkillNamesChange,
-  onSkillsEnabledChange,
-  settingSources,
-  onToggleSettingSource,
+  agent_id,
+  is_visible,
+  setting_sources,
+  on_toggle_setting_source,
 }: AgentOptionsSkillsTabProps) {
-  const [loadingSkills, setLoadingSkills] = useState(false);
-  const [availableSkills, setAvailableSkills] = useState<SkillToggleItem[]>([]);
+  const [skills, setSkills] = useState<AgentSkillEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [toggling, setToggling] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+
+  const loadSkills = useCallback(async () => {
+    if (!agent_id) {
+      setSkills([]);
+      setErrorMessage(null);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setErrorMessage(null);
+      const data = await getAgentSkillsApi(agent_id);
+      setSkills(data);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "加载技能列表失败"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [agent_id]);
 
   useEffect(() => {
-    let cancelled = false;
-    const load_skills = async () => {
-      try {
-        setLoadingSkills(true);
-        if (agentId) {
-          const agent_skills = await getAgentSkillsApi(agentId);
-          if (!cancelled) {
-            setAvailableSkills(buildEditModeSkills(agent_skills));
-            onEnabledSkillNamesChange(
-              agent_skills
-                .filter((skill) => !skill.locked && skill.installed)
-                .map((skill) => skill.name),
-            );
-          }
-          return;
-        }
-        const global_skills = await getAvailableSkillsApi();
-        if (!cancelled) {
-          setAvailableSkills(buildCreateModeSkills(global_skills, enabledSkillNames));
-        }
-      } catch {
-        if (!cancelled) {
-          setAvailableSkills([]);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoadingSkills(false);
-        }
+    if (!is_visible) {
+      return;
+    }
+    void loadSkills();
+  }, [is_visible, loadSkills]);
+
+  const handleToggle = useCallback(
+    async (skill: AgentSkillEntry) => {
+      if (!agent_id || skill.locked || toggling) {
+        return;
       }
-    };
 
-    void load_skills();
-    return () => {
-      cancelled = true;
-    };
-  }, [agentId, onEnabledSkillNamesChange]);
-
-  const enabled_count = useMemo(
-    () => availableSkills.filter((skill) => enabledSkillNames.includes(skill.name)).length,
-    [availableSkills, enabledSkillNames],
+      try {
+        setToggling(skill.name);
+        setErrorMessage(null);
+        if (skill.installed) {
+          await uninstallSkillApi(agent_id, skill.name);
+        } else {
+          await installSkillApi(agent_id, skill.name);
+        }
+        await loadSkills();
+      } catch (error) {
+        setErrorMessage(
+          error instanceof Error ? error.message : "切换技能状态失败"
+        );
+      } finally {
+        setToggling(null);
+      }
+    },
+    [agent_id, loadSkills, toggling]
   );
 
-  const toggle_skill = (skill_name: string) => {
-    onEnabledSkillNamesChange(
-      enabledSkillNames.includes(skill_name)
-        ? enabledSkillNames.filter((item) => item !== skill_name)
-        : enabledSkillNames.concat(skill_name),
+  const installedCount = useMemo(
+    () => skills.filter((skill) => skill.installed).length,
+    [skills]
+  );
+  const installedSkills = useMemo(
+    () => skills.filter((skill) => skill.installed),
+    [skills]
+  );
+  const addableSkills = useMemo(
+    () => skills.filter((skill) => !skill.installed && !skill.locked),
+    [skills]
+  );
+  const filteredAddableSkills = useMemo(() => {
+    const query = deferredSearchQuery.trim().toLowerCase();
+    if (!query) {
+      return addableSkills;
+    }
+    return addableSkills.filter((skill) => {
+      const haystacks = [
+        skill.name,
+        skill.title,
+        skill.description,
+        skill.category_name,
+        skill.tags.join(" "),
+      ];
+      return haystacks.some((value) => value.toLowerCase().includes(query));
+    });
+  }, [addableSkills, deferredSearchQuery]);
+
+  const renderSkillCard = (
+    skill: AgentSkillEntry,
+    actionLabel: string,
+    tone: "installed" | "add"
+  ) => {
+    const isBusy = toggling === skill.name;
+    return (
+      <div
+        key={skill.name}
+        className="rounded-[22px] border border-slate-200/70 bg-white/75 px-5 py-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)] transition-all duration-200 hover:border-slate-300/70 hover:bg-white"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-semibold text-slate-900">
+                {skill.title || skill.name}
+              </span>
+              {skill.locked ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">
+                  <Lock className="h-3 w-3" />
+                  系统内置
+                </span>
+              ) : null}
+              {skill.scope === "main" ? (
+                <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-600">
+                  Main Only
+                </span>
+              ) : null}
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+                {skill.source_type}
+              </span>
+            </div>
+            {skill.description ? (
+              <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">
+                {skill.description}
+              </p>
+            ) : null}
+          </div>
+
+          {skill.locked ? (
+            <span className="inline-flex h-9 items-center rounded-full bg-emerald-50 px-3 text-xs font-semibold text-emerald-600">
+              已启用
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void handleToggle(skill)}
+              disabled={isBusy}
+              className={cn(
+                "inline-flex h-9 min-w-24 items-center justify-center rounded-full px-3 text-xs font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-60",
+                tone === "installed"
+                  ? "bg-emerald-50 text-emerald-600 hover:bg-red-50 hover:text-red-500"
+                  : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+              )}
+            >
+              {isBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : actionLabel}
+            </button>
+          )}
+        </div>
+      </div>
     );
   };
 
   return (
-    <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
-      <div className="space-y-4">
-        <h3 className="text-[11px] font-semibold text-slate-600">
-          Agent Skills
-        </h3>
-
-        <div className="modal-card radius-shell-md flex items-center justify-between p-4 transition-all hover:border-primary/20">
-          <div className="flex-1">
-            <label className="flex items-center gap-2 text-sm font-medium leading-none">
-              启用技能系统
-              {skillsEnabled && (
-                <span className="rounded bg-green-500/10 px-1.5 py-0.5 text-[10px] font-medium text-green-600">
-                  已启用
-                </span>
-              )}
-            </label>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              技能先全局安装到 Nexus 技能库，再按 Agent 维度启用/停用。
+    <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+      <div className="rounded-[26px] border border-slate-200/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,250,252,0.88))] p-5 shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              Agent Skills
+            </p>
+            <h3 className="text-base font-semibold text-slate-900">
+              管理当前 Agent 的技能挂载
+            </h3>
+            <p className="text-sm leading-6 text-slate-600">
+              配置来源决定运行时从哪里读取 skill；技能挂载则决定哪些能力会安装到当前 Agent。
+            </p>
+            <p className="text-xs leading-5 text-slate-400">
+              技能启用和卸载会立即生效；配置来源跟随底部保存一起提交。
             </p>
           </div>
-          <label className="relative ml-4 inline-flex cursor-pointer items-center">
-            <input
-              type="checkbox"
-              checked={skillsEnabled}
-              onChange={(e) => onSkillsEnabledChange(e.target.checked)}
-              className="peer sr-only"
-            />
-            <div className="h-6 w-11 rounded-full bg-muted peer peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
-          </label>
+          <span className="rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white">
+            {installedCount}/{skills.length}
+          </span>
         </div>
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-[11px] font-semibold text-slate-600">
-          设置加载来源
-        </h3>
-
-        <div className="radius-shell-md flex gap-3 border border-orange-500/20 bg-orange-500/10 p-4">
-          <div className="mt-0.5 text-orange-600">
-            <Sparkles className="h-4 w-4" />
-          </div>
+        <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="text-sm font-medium text-orange-700">
-              来源同时影响技能与权限规则
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              Skill Sources
             </p>
-            <p className="mt-1 text-xs leading-relaxed text-orange-600/90">
-              Nexus 会从这些来源读取配置。项目/本地设置里的权限规则只有在对应来源启用后，后续会话才会自动生效。
-            </p>
+            <h3 className="mt-1 text-base font-semibold text-slate-900">
+              配置来源
+            </h3>
           </div>
+          <span className="text-[11px] text-slate-400">
+            已启用 {setting_sources.length} 个来源
+          </span>
         </div>
 
-        <div className="grid grid-cols-1 gap-3">
-          {SOURCE_ITEMS.map((item) => {
-            const isEnabled = settingSources.includes(item.key);
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          {SOURCE_OPTIONS.map((source) => {
+            const enabled = setting_sources.includes(source.value);
             return (
-              <div
-                key={item.key}
+              <button
+                key={source.value}
+                type="button"
+                onClick={() => on_toggle_setting_source(source.value)}
                 className={cn(
-                  "radius-shell-md flex items-center justify-between p-4 transition-all duration-200",
-                  isEnabled
-                    ? "modal-card-active bg-primary/5 ring-1 ring-primary/20"
-                    : "modal-card hover:border-primary/20",
+                  "rounded-[22px] border px-4 py-4 text-left transition-all duration-200",
+                  enabled
+                    ? "border-emerald-200 bg-emerald-50/80 shadow-[0_10px_24px_rgba(22,163,74,0.08)]"
+                    : "border-slate-200/70 bg-white/75 hover:border-slate-300/70 hover:bg-white"
                 )}
               >
-                <div className="mr-4 flex-1">
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    {item.label}
-                    {isEnabled && (
-                      <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                        已启用
-                      </span>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {source.label}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">
+                      {source.description}
+                    </p>
+                  </div>
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                      enabled
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-slate-100 text-slate-500"
                     )}
-                  </div>
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    {item.description}
-                  </div>
+                  >
+                    {enabled ? "已启用" : "关闭"}
+                  </span>
                 </div>
-                <label className="relative inline-flex cursor-pointer items-center">
-                  <input
-                    type="checkbox"
-                    checked={isEnabled}
-                    onChange={() => onToggleSettingSource(item.key)}
-                    className="peer sr-only"
-                  />
-                  <div className="h-6 w-11 rounded-full bg-slate-200/80 peer peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-white/60 after:bg-white after:shadow-sm after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
-                </label>
-              </div>
+              </button>
             );
           })}
         </div>
       </div>
 
-      <div className="space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-[11px] font-semibold text-slate-600">
-            当前 Agent 启用技能
-          </h3>
-          <span className="rounded-full bg-white/70 px-2 py-0.5 text-[11px] font-semibold text-slate-500">
-            {enabled_count} / {availableSkills.length}
-          </span>
+      {errorMessage ? (
+        <div className="rounded-[20px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          {errorMessage}
         </div>
+      ) : null}
 
-        {!skillsEnabled ? (
-          <div className="modal-card radius-shell-md px-4 py-4 text-sm text-muted-foreground">
-            先启用技能系统，下面的 Agent 技能开关才会生效。
+      {loading ? (
+        <div className="flex items-center justify-center rounded-[24px] border border-slate-200/70 bg-white/60 py-12 text-slate-400">
+          <Loader2 className="h-4 w-4 animate-spin" />
+        </div>
+      ) : null}
+
+      {!agent_id ? (
+        <div className="rounded-[24px] border border-slate-200/70 bg-white/65 px-5 py-6 text-sm leading-6 text-slate-600">
+          先创建 Agent，系统拿到真实的 agent id 和 workspace 后，才能把 skill 安装到这个 Agent 的工作区。
+        </div>
+      ) : null}
+
+      {agent_id && !loading ? (
+        <>
+          <div className="space-y-4">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Installed
+                </p>
+                <h3 className="mt-1 text-base font-semibold text-slate-900">
+                  已挂载的技能
+                </h3>
+              </div>
+              <span className="text-[11px] text-slate-400">
+                {installedSkills.length} 个已生效
+              </span>
+            </div>
+
+            {installedSkills.length === 0 ? (
+              <div className="rounded-[24px] border border-slate-200/70 bg-white/60 px-5 py-6 text-sm leading-6 text-slate-600">
+                当前还没有挂载任何自定义技能。
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-3">
+                {installedSkills.map((skill) => renderSkillCard(skill, "已启用", "installed"))}
+              </div>
+            )}
           </div>
-        ) : loadingSkills ? (
-          <div className="modal-card radius-shell-md flex items-center justify-center px-4 py-6 text-slate-400">
-            <Loader2 className="h-4 w-4 animate-spin" />
+
+          <div className="space-y-4">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Add More
+                </p>
+                <h3 className="mt-1 text-base font-semibold text-slate-900">
+                  从资源池新增技能
+                </h3>
+              </div>
+              <span className="text-[11px] text-slate-400">
+                {filteredAddableSkills.length}/{addableSkills.length}
+              </span>
+            </div>
+
+            <div className="rounded-[24px] border border-slate-200/70 bg-white/70 p-4">
+              <label className="mb-2 block text-xs font-medium text-slate-500">
+                搜索技能
+              </label>
+              <div className="flex items-center gap-3 rounded-[18px] border border-slate-200/80 bg-white px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
+                <Search className="h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="搜索可添加的 skill..."
+                  className="w-full bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
+                />
+              </div>
+            </div>
+
+            {skills.length === 0 ? (
+              <div className="rounded-[24px] border border-slate-200/70 bg-white/60 px-5 py-6 text-sm leading-6 text-slate-600">
+                当前没有可分配给该 Agent 的技能。先去全局 Skills 页面把内置技能安装到资源池，或导入外部技能。
+              </div>
+            ) : null}
+
+            {skills.length > 0 && filteredAddableSkills.length === 0 ? (
+              <div className="rounded-[24px] border border-slate-200/70 bg-white/60 px-5 py-6 text-sm leading-6 text-slate-600">
+                {addableSkills.length === 0
+                  ? "当前资源池里没有更多可添加的技能。"
+                  : "没有找到匹配的 skill。"}
+              </div>
+            ) : null}
+
+            {filteredAddableSkills.length > 0 ? (
+              <div className="grid grid-cols-1 gap-3">
+                {filteredAddableSkills.map((skill) => renderSkillCard(skill, "新增 Skill", "add"))}
+              </div>
+            ) : null}
           </div>
-        ) : availableSkills.length === 0 ? (
-          <div className="modal-card radius-shell-md px-4 py-4 text-sm text-muted-foreground">
-            还没有可启用的全局技能。请先去 Skills Marketplace 导入或安装技能。
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {availableSkills.map((skill) => {
-              const isEnabled = enabledSkillNames.includes(skill.name);
-              return (
-                <div
-                  key={skill.name}
-                  className={cn(
-                    "radius-shell-md flex items-center justify-between gap-4 p-4 transition-all duration-200",
-                    isEnabled
-                      ? "modal-card-active bg-primary/5 ring-1 ring-primary/20"
-                      : "modal-card hover:border-primary/20",
-                  )}
-                >
-                  <div className="min-w-0 flex flex-1 items-start gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
-                      <Puzzle className="h-5 w-5" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="truncate text-sm font-semibold text-slate-950/90">
-                          {skill.title}
-                        </p>
-                        {skill.version ? (
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
-                            {skill.version}
-                          </span>
-                        ) : null}
-                        {isEnabled ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">
-                            <Check className="h-3 w-3" />
-                            已启用
-                          </span>
-                        ) : null}
-                      </div>
-                      <p className="mt-1 line-clamp-2 text-xs leading-5 text-muted-foreground">
-                        {skill.description || "暂无描述"}
-                      </p>
-                    </div>
-                  </div>
-                  <label className="relative inline-flex cursor-pointer items-center">
-                    <input
-                      type="checkbox"
-                      checked={isEnabled}
-                      onChange={() => toggle_skill(skill.name)}
-                      className="peer sr-only"
-                    />
-                    <div className="h-6 w-11 rounded-full bg-slate-200/80 peer peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20 after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-white/60 after:bg-white after:shadow-sm after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
-                  </label>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+        </>
+      ) : null}
     </div>
   );
 }

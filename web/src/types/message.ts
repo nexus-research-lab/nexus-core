@@ -194,21 +194,3 @@ export interface RoomCollaborationEvent {
   };
   timestamp: number;
 }
-
-export interface ActivityEventMessage {
-  event_type: 'activity';
-  data: ActivityEventData;
-  timestamp: number;
-}
-
-export interface ActivityEventData {
-  id: string;
-  event_type: string;
-  actor_type: 'user' | 'agent' | 'system';
-  actor_id?: string | null;
-  target_type?: string | null;
-  target_id?: string | null;
-  summary?: string | null;
-  metadata_json?: Record<string, any> | null;
-  created_at: string;
-}

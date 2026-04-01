@@ -125,9 +125,6 @@ export function RoomContextPanel({
                         <p className="truncate text-[13px] font-semibold text-slate-900/82">
                           {member.name}
                         </p>
-                        <p className="truncate text-[11px] text-slate-700/48">
-                          {is_active ? "当前聚焦" : "参与当前协作"}
-                        </p>
                       </div>
                       <span className={`h-2 w-2 shrink-0 rounded-full ${is_active ? "bg-emerald-400" : "bg-slate-300"}`} />
                     </button>

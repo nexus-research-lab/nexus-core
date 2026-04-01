@@ -24,7 +24,6 @@ import {
 
 import { HomePanelContent } from "./sidebar-panel-content/home-panel";
 import { DmsPanelContent } from "./sidebar-panel-content/dms-panel";
-import { ActivityPanelContent } from "./sidebar-panel-content/activity-panel";
 import { CapabilitiesPanelContent } from "./sidebar-panel-content/capabilities-panel";
 import { ContactsPanelContent } from "./sidebar-panel-content/contacts-panel";
 
@@ -32,7 +31,6 @@ import { ContactsPanelContent } from "./sidebar-panel-content/contacts-panel";
 const TAB_TITLES: Record<SidebarTabKey, string> = {
   home: "工作台",
   dms: "私信",
-  activity: "活动",
   capabilities: "能力",
   contacts: "成员",
 };
@@ -49,8 +47,6 @@ function render_panel_content(tab: SidebarTabKey) {
       return <HomePanelContent />;
     case "dms":
       return <DmsPanelContent />;
-    case "activity":
-      return <ActivityPanelContent />;
     case "capabilities":
       return <CapabilitiesPanelContent />;
     case "contacts":

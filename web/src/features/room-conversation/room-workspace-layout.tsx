@@ -5,6 +5,7 @@ import { Fragment, RefObject, useState } from "react";
 import { RoomContextPanel } from "@/features/conversation-shared/context/room-context-panel";
 import { EditorPanel } from "@/features/conversation-shared/context/editor-panel";
 import { DmChatPanel } from "@/features/dm-conversation/dm-chat-panel";
+import { DmConversationHeader } from "@/features/dm-conversation/dm-conversation-header";
 import {
   HOME_CHAT_PANEL_CLASS,
 } from "@/lib/home-layout";
@@ -19,6 +20,9 @@ import { UpdateRoomParams } from "@/types/room";
 
 import { RoomChatPanel } from "./room-chat-panel";
 import { RoomChatErrorBoundary } from "./room-chat-error-boundary";
+
+const ChatBoundary = import.meta.env.DEV ? RoomChatErrorBoundary : Fragment;
+import { RoomConversationHeader } from "./room-conversation-header";
 import { RoomConversationHistoryView } from "./room-conversation-history-view";
 import { RoomWorkspaceView } from "./room-workspace-view";
 import { RoomAgentAboutView } from "./room-agent-about-view";
@@ -36,6 +40,7 @@ interface RoomWorkspaceLayoutProps {
   current_room_title: string;
   current_room_conversation: RoomConversationView | null;
   current_agent_conversation: Conversation | null;
+  current_agent_session_key: string | null;
   current_room_conversation_id: string | null;
   current_room_conversations: RoomConversationView[];
   active_workspace_path: string | null;
@@ -99,6 +104,7 @@ function RoomWorkspaceLayoutInner({
   current_room_title,
   current_room_conversation,
   current_agent_conversation,
+  current_agent_session_key,
   current_room_conversation_id,
   current_room_conversations,
   active_workspace_path,
@@ -131,8 +137,6 @@ function RoomWorkspaceLayoutInner({
 }: RoomWorkspaceLayoutProps) {
   const [is_detail_panel_open, set_is_detail_panel_open] = useState(true);
   const is_dm = current_room_type === "dm";
-  const ChatBoundary = import.meta.env.DEV ? RoomChatErrorBoundary : Fragment;
-
   // 仅在 chat tab 且编辑器未打开时显示详情面板
   const show_detail_panel = is_detail_panel_open && !is_editor_open && active_surface_tab === "chat";
 
@@ -154,7 +158,33 @@ function RoomWorkspaceLayoutInner({
           is_joined_with_inspector={show_detail_panel}
         >
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-            <div className="min-h-0 min-w-0 flex-1">
+            {/* Header 常驻在 tab 内容上方，切 tab 不消失 */}
+            {is_dm ? (
+              <DmConversationHeader
+                active_tab={active_surface_tab}
+                conversation_count={current_room_conversations.length}
+                current_agent_name={current_agent.name}
+                is_detail_panel_open={is_detail_panel_open}
+                is_loading={is_conversation_busy}
+                on_change_tab={on_change_surface_tab}
+                on_toggle_detail_panel={() => set_is_detail_panel_open((prev) => !prev)}
+              />
+            ) : (
+              <RoomConversationHeader
+                active_tab={active_surface_tab}
+                conversations={current_room_conversations}
+                current_room_conversation_id={current_room_conversation_id}
+                current_room_title={current_room_title}
+                is_detail_panel_open={is_detail_panel_open}
+                is_loading={is_conversation_busy}
+                on_change_tab={on_change_surface_tab}
+                on_create_conversation={on_create_conversation}
+                on_select_conversation={on_select_conversation}
+                on_toggle_detail_panel={() => set_is_detail_panel_open((prev) => !prev)}
+                room_members={room_members}
+              />
+            )}
+            <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
               {active_surface_tab === "chat" ? (
                 is_dm ? (
                   <ChatBoundary>
@@ -163,6 +193,7 @@ function RoomWorkspaceLayoutInner({
                       agent_id={current_agent.agent_id}
                       conversations={current_room_conversations}
                       current_agent_name={current_agent.name}
+                      hide_header
                       initial_draft={initial_draft}
                       is_detail_panel_open={is_detail_panel_open}
                       on_change_tab={on_change_surface_tab}
@@ -172,7 +203,7 @@ function RoomWorkspaceLayoutInner({
                       on_open_workspace_file={handle_open_workspace_file}
                       on_todos_change={on_todos_change}
                       on_toggle_detail_panel={() => set_is_detail_panel_open((prev) => !prev)}
-                      session_key={current_agent_conversation?.session_key ?? null}
+                      session_key={current_agent_session_key}
                       session_title={current_agent_conversation?.title ?? null}
                     />
                   </ChatBoundary>
@@ -185,6 +216,7 @@ function RoomWorkspaceLayoutInner({
                       conversations={current_room_conversations}
                       current_agent_name={current_agent.name}
                       current_room_title={current_room_title}
+                      hide_header
                       initial_draft={initial_draft}
                       is_detail_panel_open={is_detail_panel_open}
                       on_change_tab={on_change_surface_tab}
@@ -220,6 +252,8 @@ function RoomWorkspaceLayoutInner({
                 <RoomWorkspaceView
                   active_workspace_path={active_workspace_path}
                   agent_id={current_agent.agent_id}
+                  is_dm={is_dm}
+                  room_members={room_members}
                   on_open_workspace_file={on_open_workspace_file}
                 />
               ) : null}

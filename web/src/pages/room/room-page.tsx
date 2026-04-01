@@ -150,6 +150,7 @@ export function RoomPage() {
               current_room_conversations={controller.current_room_conversations}
               current_room_conversation={controller.current_room_conversation}
               current_agent_conversation={controller.current_agent_conversation}
+              current_agent_session_key={controller.current_agent_session_key}
               current_room_conversation_id={controller.current_room_conversation_id}
               current_todos={controller.current_todos}
               editor_width_percent={controller.editor_width_percent}

@@ -3,7 +3,6 @@
 import { ReactNode } from "react";
 
 import {
-  HOME_AGENT_INSPECTOR_WIDTH_CLASS,
   HOME_AGENT_INSPECTOR_WRAPPER_CLASS,
 } from "@/lib/home-layout";
 import { cn } from "@/lib/utils";

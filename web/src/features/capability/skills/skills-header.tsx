@@ -1,7 +1,7 @@
 import { Download, FolderUp, Puzzle, RefreshCw } from "lucide-react";
 
-import { WorkspacePillButton } from "@/shared/ui/workspace-pill-button";
-import { WorkspaceSurfaceHeader } from "@/shared/ui/workspace-surface-header";
+import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
+import { WorkspaceSurfaceHeader } from "@/shared/ui/workspace/workspace-surface-header";
 
 import type { SkillMarketplaceController } from "@/hooks/use-skill-marketplace";
 

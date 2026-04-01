@@ -1,6 +1,6 @@
 "use client";
 
-import { PromptDialog } from "@/shared/ui/confirm-dialog";
+import { PromptDialog } from "@/shared/ui/dialog/confirm-dialog";
 
 import { useSkillMarketplace } from "@/hooks/use-skill-marketplace";
 

@@ -40,7 +40,6 @@ interface AgentDialogInitialOptions extends Partial<AgentConfigOptions> {
   permission_mode?: string;
   allowed_tools?: string[];
   disallowed_tools?: string[];
-  skills_enabled?: boolean;
   setting_sources?: ("user" | "project" | "local")[];
 }
 
@@ -73,13 +72,6 @@ export function AgentOptions({
     sourceOptions.system_prompt || ""
   );
 
-  // ---- Skills 状态 ----
-  const [skillsEnabled, setSkillsEnabled] = useState(
-    sourceOptions.skills_enabled ?? true
-  );
-  const [installedSkills, setInstalledSkills] = useState<string[]>(
-    sourceOptions.installed_skills || []
-  );
   const [settingSources, setSettingSources] = useState<
     ("user" | "project" | "local")[]
   >(sourceOptions.setting_sources || ["user", "project"]);
@@ -110,8 +102,6 @@ export function AgentOptions({
     setVibeTags([]);
     setModel(opts.model || "glm-5");
     setSystemPrompt(opts.system_prompt || "");
-    setSkillsEnabled(opts.skills_enabled ?? true);
-    setInstalledSkills(opts.installed_skills || []);
     setSettingSources(opts.setting_sources || ["user", "project"]);
     setPermissionMode(opts.permission_mode || "default");
     setAllowedTools(opts.allowed_tools || []);
@@ -203,20 +193,12 @@ export function AgentOptions({
     )
       return;
 
-    // 如果启用技能，自动添加 "Skill" 到 allowedTools
-    const finalAllowedTools = [...allowedTools];
-    if (skillsEnabled && !finalAllowedTools.includes("Skill")) {
-      finalAllowedTools.push("Skill");
-    }
-
     const options: AgentConfigOptions = {
       model,
       permission_mode: permissionMode,
-      allowed_tools: finalAllowedTools,
+      allowed_tools: allowedTools,
       disallowed_tools: disallowedTools,
       system_prompt: systemPrompt || undefined,
-      skills_enabled: skillsEnabled,
-      installed_skills: installedSkills,
       setting_sources:
         settingSources.length > 0 ? settingSources : undefined,
     };
@@ -234,21 +216,24 @@ export function AgentOptions({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="modal-dialog-surface radius-shell-xl flex h-[85vh] w-full max-w-5xl flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="modal-dialog-surface radius-shell-xl flex h-[85vh] w-full max-w-[1180px] flex-col overflow-hidden border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.9))] shadow-[0_28px_90px_rgba(15,23,42,0.18)] animate-in zoom-in-95 duration-200">
         {/* 头部 */}
         <div className="flex items-center justify-between border-b modal-divider px-6 py-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl modal-card text-primary">
+            <div className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-slate-900 text-white shadow-[0_12px_24px_rgba(15,23,42,0.12)]">
               <Settings className="h-4 w-4" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold tracking-tight text-slate-800">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                {mode === "create" ? "New Agent" : "Edit Agent"}
+              </p>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight text-slate-800">
                 {mode === "create" ? "创建 Agent" : "Agent 设置"}
               </h2>
               <p className="text-xs text-slate-500">
                 {mode === "create"
                   ? "配置 Agent 能力与行为策略"
-                  : `正在编辑: ${title}`}
+                  : `正在编辑: ${title}${agent_id ? ` · ${agent_id}` : ""}`}
               </p>
             </div>
           </div>
@@ -270,7 +255,7 @@ export function AgentOptions({
           />
 
           {/* 中间内容区 */}
-          <div className="flex-1 overflow-y-auto bg-transparent p-8">
+          <div className="flex-1 overflow-y-auto bg-[linear-gradient(180deg,rgba(255,255,255,0.74),rgba(248,250,252,0.58))] p-8">
             {activeTab === "identity" && (
               <AgentOptionsIdentityTab
                 title={title}
@@ -293,24 +278,21 @@ export function AgentOptions({
               />
             )}
 
-            {activeTab === "skills" && (
-              <AgentOptionsSkillsTab
-                agentId={agent_id}
-                enabledSkillNames={installedSkills}
-                skillsEnabled={skillsEnabled}
-                onEnabledSkillNamesChange={setInstalledSkills}
-                onSkillsEnabledChange={setSkillsEnabled}
-                settingSources={settingSources}
-                onToggleSettingSource={toggleSettingSource}
-              />
-            )}
-
             {activeTab === "advanced" && (
               <AgentOptionsAdvancedTab
                 permissionMode={permissionMode}
                 onPermissionModeChange={setPermissionMode}
                 allowedTools={allowedTools}
                 onToggleTool={toggleTool}
+              />
+            )}
+
+            {activeTab === "skills" && (
+              <AgentOptionsSkillsTab
+                agent_id={mode === "edit" ? agent_id : undefined}
+                is_visible={activeTab === "skills"}
+                setting_sources={settingSources}
+                on_toggle_setting_source={toggleSettingSource}
               />
             )}
           </div>
@@ -321,7 +303,8 @@ export function AgentOptions({
             description={description}
             vibeTags={vibeTags}
             model={model}
-            skillsEnabled={skillsEnabled}
+            permissionMode={permissionMode}
+            settingSourceCount={settingSources.length}
           />
         </div>
 
