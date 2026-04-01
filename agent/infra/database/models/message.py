@@ -74,4 +74,9 @@ class Message(TimestampMixin, Base):
     conversation: Mapped["Conversation"] = relationship(back_populates="messages")
     session: Mapped["Session | None"] = relationship(back_populates="messages")
     sender_agent: Mapped["Agent | None"] = relationship(foreign_keys=[sender_agent_id])
-    rounds: Mapped[list["Round"]] = relationship(back_populates="trigger_message")
+    # 中文注释：Round 依赖 messages.id 做级联删除，删除消息时应直接交给数据库处理，
+    # 避免 ORM 先把 trigger_message_id 置空而触发 NOT NULL 约束。
+    rounds: Mapped[list["Round"]] = relationship(
+        back_populates="trigger_message",
+        passive_deletes=True,
+    )

@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, ForeignKey, Integer, String, Text
+from sqlalchemy import ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from agent.infra.database.async_sqlalchemy import Base
@@ -43,8 +43,6 @@ class Runtime(TimestampMixin, Base):
     mcp_servers_json: Mapped[str] = mapped_column(Text, default="{}", nullable=False)
     max_turns: Mapped[int | None] = mapped_column(Integer)
     max_thinking_tokens: Mapped[int | None] = mapped_column(Integer)
-    skills_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    installed_skills_json: Mapped[str] = mapped_column(Text, default="[]", nullable=False)
     setting_sources_json: Mapped[str] = mapped_column(Text, default="[]", nullable=False)
     runtime_version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
 

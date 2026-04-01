@@ -125,18 +125,4 @@ class RoundRecord(PersistenceModel):
     updated_at: Optional[datetime] = Field(default=None, description="更新时间")
 
 
-class ActivityEventRecord(PersistenceModel):
-    """活动事件记录。"""
-
-    id: str = Field(..., description="事件 ID")
-    event_type: str = Field(..., description="事件类型")
-    actor_type: str = Field(..., description="执行者类型")
-    actor_id: Optional[str] = Field(default=None, description="执行者 ID")
-    target_type: Optional[str] = Field(default=None, description="目标类型")
-    target_id: Optional[str] = Field(default=None, description="目标 ID")
-    summary: Optional[str] = Field(default=None, description="事件摘要")
-    metadata_json: Optional[dict] = Field(default=None, description="事件元数据")
-    created_at: Optional[datetime] = Field(default=None, description="创建时间")
-
-
 ConversationContextAggregate.model_rebuild()

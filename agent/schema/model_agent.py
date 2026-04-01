@@ -22,9 +22,6 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from agent.schema.model_skill import AgentSkillEntry, InstallSkillRequest, SkillInfo
-
-
 # =====================================================
 # Agent 配置 — 映射到 ClaudeAgentOptions
 # =====================================================
@@ -38,8 +35,6 @@ class AgentOptions(BaseModel):
     max_turns: Optional[int] = Field(default=None, description="最大轮次")
     max_thinking_tokens: Optional[int] = Field(default=None, description="思考 token 上限")
     mcp_servers: Optional[dict] = Field(default=None, description="MCP 服务器配置")
-    skills_enabled: bool = Field(default=False, description="是否启用技能")
-    installed_skills: Optional[list[str]] = Field(default=None, description="已手动安装的 skill 名称列表")
     setting_sources: Optional[list[Literal["user", "project", "local"]]] = Field(
         default=None,
         description="Claude 设置加载源",

@@ -97,4 +97,9 @@ class Session(TimestampMixin, Base):
     runtime: Mapped["Runtime"] = relationship(back_populates="sessions")
     conversation: Mapped["Conversation"] = relationship(back_populates="sessions")
     messages: Mapped[list["Message"]] = relationship(back_populates="session")
-    rounds: Mapped[list["Round"]] = relationship(back_populates="session")
+    # 中文注释：Round 依赖 sessions.id 做级联删除，删除会话时应直接交给数据库处理，
+    # 避免 ORM 先把 session_id 置空而触发 NOT NULL 约束。
+    rounds: Mapped[list["Round"]] = relationship(
+        back_populates="session",
+        passive_deletes=True,
+    )
