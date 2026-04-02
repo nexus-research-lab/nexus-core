@@ -178,6 +178,11 @@ uv.toml
 .agents
 .kilocode
 
+# tracked protocol specs / frontend protocol helpers
+!docs/
+docs/ui
+docs/system
+
 # local runtime artifacts
 logs/
 *.pid

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Download, Lock, Power, Puzzle, RefreshCw, Trash2 } from "lucide-react";
+import { Check, Lock, Puzzle, RefreshCw, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { SkillInfo } from "@/types/skill";
@@ -9,10 +9,8 @@ interface SkillsCardProps {
   skill: SkillInfo;
   busy?: boolean;
   on_select: () => void;
-  on_install?: () => void;
   on_update?: () => void;
   on_delete?: () => void;
-  on_toggle_global_enabled?: () => void;
 }
 
 /** Skill 卡片 — 清晰的三段式布局 */
@@ -20,20 +18,16 @@ export function SkillsCard({
   skill,
   busy = false,
   on_select,
-  on_install,
   on_update,
   on_delete,
-  on_toggle_global_enabled,
 }: SkillsCardProps) {
   const {
     title,
     description,
-    installed,
     locked,
     tags,
     source_type,
     has_update,
-    global_enabled,
     deletable,
   } = skill;
 
@@ -42,10 +36,7 @@ export function SkillsCard({
 
   return (
     <article
-      className={cn(
-        "group relative cursor-pointer workspace-card flex flex-col rounded-[22px] px-5 py-4 transition-all hover:border-white/36 hover:bg-white/40",
-        !global_enabled && installed && "opacity-60",
-      )}
+      className={cn("group relative cursor-pointer workspace-card flex flex-col rounded-[22px] px-5 py-4 transition-all hover:border-white/36 hover:bg-white/40")}
       onClick={on_select}
     >
       {/* 右上角操作区 — 悬停显示 */}
@@ -53,7 +44,7 @@ export function SkillsCard({
         className="absolute right-3 top-3 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100"
         onClick={(e) => e.stopPropagation()}
       >
-        {installed && has_update && (
+        {has_update && (
           <button
             className="flex h-7 w-7 items-center justify-center rounded-full text-sky-500 transition-colors hover:bg-sky-50"
             disabled={busy}
@@ -64,12 +55,12 @@ export function SkillsCard({
             <RefreshCw className="h-3.5 w-3.5" />
           </button>
         )}
-        {installed && deletable && (
+        {deletable && (
           <button
             className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500"
             disabled={busy}
             onClick={on_delete}
-            title="从资源池删除"
+            title="从技能库删除"
             type="button"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -82,10 +73,10 @@ export function SkillsCard({
         <div
           className={cn(
             "flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border",
-            installed
-              ? "border-emerald-200/60 bg-emerald-50/80 text-emerald-600"
-              : locked
-                ? "border-amber-200/60 bg-amber-50/80 text-amber-600"
+            locked
+              ? "border-amber-200/60 bg-amber-50/80 text-amber-600"
+              : source_type === "external"
+                ? "border-sky-200/60 bg-sky-50/80 text-sky-600"
                 : "border-white/44 bg-white/64 text-slate-600",
           )}
         >
@@ -135,39 +126,18 @@ export function SkillsCard({
           {locked ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-50/80 px-2.5 py-1 text-[10px] font-semibold text-amber-600">
               <Lock className="h-3 w-3" />
-              内置
+              系统托管
             </span>
-          ) : installed ? (
-            <>
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50/80 px-2.5 py-1 text-[10px] font-semibold text-emerald-600">
-                <Check className="h-3 w-3" />
-                已安装
-              </span>
-              <button
-                className={cn(
-                  "flex h-6 w-6 items-center justify-center rounded-full transition-colors",
-                  global_enabled
-                    ? "text-emerald-500 hover:bg-emerald-50"
-                    : "text-slate-400 hover:bg-slate-100",
-                )}
-                disabled={busy}
-                onClick={() => on_toggle_global_enabled?.()}
-                title={global_enabled ? "全局停用" : "全局启用"}
-                type="button"
-              >
-                <Power className="h-3 w-3" />
-              </button>
-            </>
+          ) : source_type === "external" ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-sky-50/80 px-2.5 py-1 text-[10px] font-semibold text-sky-600">
+              <Check className="h-3 w-3" />
+              已导入
+            </span>
           ) : (
-            <button
-              className="inline-flex items-center gap-1 rounded-full border border-white/40 bg-white/70 px-2.5 py-1 text-[10px] font-semibold text-slate-600 transition-all hover:bg-sky-50 hover:text-sky-600"
-              disabled={busy}
-              onClick={on_install}
-              type="button"
-            >
-              <Download className="h-3 w-3" />
-              安装
-            </button>
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
+              <Puzzle className="h-3 w-3" />
+              可安装到 Agent
+            </span>
           )}
         </div>
       </div>

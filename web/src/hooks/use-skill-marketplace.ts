@@ -1,14 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
-  deleteSkillFromPoolApi,
+  deleteSkillApi,
   getAvailableSkillsApi,
   importSkillsShSkillApi,
   importGitSkillApi,
   importLocalSkillApi,
-  installSkillToPoolApi,
   searchExternalSkillsApi,
-  setSkillGlobalEnabledApi,
   updateImportedSkillsApi,
   updateSingleSkillApi,
 } from "@/lib/skill-api";
@@ -35,7 +33,6 @@ export function useSkillMarketplace() {
   const [discovery_mode, set_discovery_mode] = useState<DiscoveryMode>("catalog");
   const [source_filter, set_source_filter] = useState<SourceFilter>("all");
   const [active_category, set_active_category] = useState<string>("all");
-  const [installed_only, set_installed_only] = useState(false);
   const [selected_skill, set_selected_skill] = useState<string | null>(null);
   const [external_query, set_external_query] = useState("");
   const [external_results, set_external_results] = useState<ExternalSkillSearchItem[]>([]);
@@ -97,11 +94,8 @@ export function useSkillMarketplace() {
     if (active_category !== "all") {
       list = list.filter((s) => s.category_key === active_category);
     }
-    if (installed_only) {
-      list = list.filter((s) => s.installed);
-    }
     return list;
-  }, [active_category, installed_only, skills]);
+  }, [active_category, skills]);
 
   const grouped_skills = useMemo(() => {
     const map = new Map<string, SkillInfo[]>();
@@ -113,10 +107,7 @@ export function useSkillMarketplace() {
     return Array.from(map.entries());
   }, [visible_skills]);
 
-  const installed_count = useMemo(
-    () => skills.filter((s) => s.installed).length,
-    [skills],
-  );
+  const catalog_count = skills.length;
 
   const imported_skill_names = useMemo(
     () => new Set(skills.map((s) => s.name)),
@@ -148,42 +139,12 @@ export function useSkillMarketplace() {
     }
   }, [refresh_marketplace]);
 
-  const handle_install_to_pool = useCallback(async (skill: SkillInfo) => {
+  const handle_delete_skill = useCallback(async (skill: SkillInfo) => {
     clear_messages();
     try {
       set_busy_skill_name(skill.name);
-      await installSkillToPoolApi(skill.name);
-      set_status_message(`${skill.title || skill.name} 已安装`);
-      await refresh_marketplace();
-    } catch (err) {
-      set_error_message(err instanceof Error ? err.message : "安装失败");
-    } finally {
-      set_busy_skill_name(null);
-    }
-  }, [refresh_marketplace]);
-
-  const handle_toggle_global_enabled = useCallback(async (skill: SkillInfo) => {
-    clear_messages();
-    try {
-      set_busy_skill_name(skill.name);
-      await setSkillGlobalEnabledApi(skill.name, !skill.global_enabled);
-      set_status_message(
-        `${skill.title || skill.name} 已${skill.global_enabled ? "全局停用" : "全局启用"}`,
-      );
-      await refresh_marketplace();
-    } catch (err) {
-      set_error_message(err instanceof Error ? err.message : "操作失败");
-    } finally {
-      set_busy_skill_name(null);
-    }
-  }, [refresh_marketplace]);
-
-  const handle_delete_from_pool = useCallback(async (skill: SkillInfo) => {
-    clear_messages();
-    try {
-      set_busy_skill_name(skill.name);
-      await deleteSkillFromPoolApi(skill.name);
-      set_status_message(`${skill.title || skill.name} 已从资源池删除`);
+      await deleteSkillApi(skill.name);
+      set_status_message(`${skill.title || skill.name} 已从技能库删除`);
       if (selected_skill === skill.name) set_selected_skill(null);
       await refresh_marketplace();
     } catch (err) {
@@ -274,7 +235,6 @@ export function useSkillMarketplace() {
     discovery_mode,
     source_filter,
     active_category,
-    installed_only,
     selected_skill,
     external_query,
     external_results,
@@ -291,14 +251,13 @@ export function useSkillMarketplace() {
     categories,
     visible_skills,
     grouped_skills,
-    installed_count,
+    catalog_count,
     imported_skill_names,
     // setter
     set_search_query,
     set_discovery_mode,
     set_source_filter,
     set_active_category,
-    set_installed_only,
     set_selected_skill,
     set_external_query,
     set_preview_external_item,
@@ -309,9 +268,7 @@ export function useSkillMarketplace() {
     // 操作
     refresh_marketplace,
     handle_update_single,
-    handle_install_to_pool,
-    handle_toggle_global_enabled,
-    handle_delete_from_pool,
+    handle_delete_skill,
     handle_update_installed,
     handle_local_import,
     handle_git_import,

@@ -23,7 +23,6 @@ export interface SkillInfo {
     installed: boolean;
     locked: boolean;
     has_update: boolean;
-    global_enabled: boolean;
     deletable: boolean;
 }
 

@@ -133,14 +133,6 @@ export const importGitSkillApi = async (url: string, branch?: string): Promise<S
   });
 };
 
-/** 将 Skill 安装到全局资源池 */
-export const installSkillToPoolApi = async (skill_name: string): Promise<SkillDetail> => {
-  return request_api<SkillDetail>(`/skills/${encodeURIComponent(skill_name)}/install`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-  });
-};
-
 /** 从 skills.sh 搜索外部 Skill */
 export const searchExternalSkillsApi = async (q: string): Promise<ExternalSkillSearchItem[]> => {
   const query = build_query({ q });
@@ -179,20 +171,8 @@ export const updateSingleSkillApi = async (skill_name: string): Promise<SkillDet
   });
 };
 
-/** 设置 Skill 的全局启用状态 */
-export const setSkillGlobalEnabledApi = async (
-  skill_name: string,
-  enabled: boolean,
-): Promise<SkillDetail> => {
-  return request_api<SkillDetail>(`/skills/${encodeURIComponent(skill_name)}/global-enabled`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ enabled }),
-  });
-};
-
-/** 从全局技能池删除 Skill */
-export const deleteSkillFromPoolApi = async (skill_name: string): Promise<void> => {
+/** 从技能库删除外部 Skill */
+export const deleteSkillApi = async (skill_name: string): Promise<void> => {
   await request_api<{ success: boolean }>(`/skills/${encodeURIComponent(skill_name)}`, {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },

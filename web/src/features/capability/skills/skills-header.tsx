@@ -12,9 +12,9 @@ interface SkillsHeaderProps {
 export function SkillsHeader({ ctrl }: SkillsHeaderProps) {
   return (
     <WorkspaceSurfaceHeader
-      badge={`已安装 ${ctrl.installed_count}`}
+      badge={`收录 ${ctrl.catalog_count}`}
       leading={<Puzzle className="h-4 w-4" />}
-      subtitle="浏览和维护全局技能资源池"
+      subtitle="浏览内置与已导入技能"
       title="Skills"
       trailing={
         <div className="flex items-center gap-2">
@@ -24,7 +24,7 @@ export function SkillsHeader({ ctrl }: SkillsHeaderProps) {
           </WorkspacePillButton>
           <WorkspacePillButton onClick={() => ctrl.set_git_prompt_open(true)} size="sm">
             <Download className="h-3.5 w-3.5" />
-            Git 安装
+            Git 导入
           </WorkspacePillButton>
           <WorkspacePillButton onClick={() => void ctrl.handle_update_installed()} size="sm">
             <RefreshCw className="h-3.5 w-3.5" />

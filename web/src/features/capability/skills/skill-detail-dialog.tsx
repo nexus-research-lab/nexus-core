@@ -1,7 +1,7 @@
 /**
  * Skill 详情弹窗
  *
- * 展示完整 Skill 文档、来源、版本和安装操作。
+ * 展示完整 Skill 文档、来源、版本和管理操作。
  */
 
 "use client";
@@ -19,13 +19,7 @@ import {
   X,
 } from "lucide-react";
 
-import {
-  deleteSkillFromPoolApi,
-  getSkillDetailApi,
-  installSkillToPoolApi,
-  setSkillGlobalEnabledApi,
-  updateSingleSkillApi,
-} from "@/lib/skill-api";
+import { deleteSkillApi, getSkillDetailApi, updateSingleSkillApi } from "@/lib/skill-api";
 import { SkillDetail } from "@/types/skill";
 
 import { SkillMarkdown } from "./skill-markdown";
@@ -80,25 +74,11 @@ export function SkillDetailDialog({
     }
   }, [load_detail, on_refresh, skill]);
 
-  const handle_toggle_global_enabled = useCallback(async () => {
-    if (!skill || skill.locked) return;
-    try {
-      set_acting(true);
-      await setSkillGlobalEnabledApi(skill.name, !skill.global_enabled);
-      await Promise.resolve(on_refresh());
-      await load_detail();
-    } catch (err) {
-      set_error(err instanceof Error ? err.message : "切换全局启用状态失败");
-    } finally {
-      set_acting(false);
-    }
-  }, [load_detail, on_refresh, skill]);
-
   const handle_delete = useCallback(async () => {
     if (!skill || !skill.deletable) return;
     try {
       set_acting(true);
-      await deleteSkillFromPoolApi(skill.name);
+      await deleteSkillApi(skill.name);
       await Promise.resolve(on_refresh());
       on_close();
     } catch (err) {
@@ -107,20 +87,6 @@ export function SkillDetailDialog({
       set_acting(false);
     }
   }, [on_close, on_refresh, skill]);
-
-  const handle_install = useCallback(async () => {
-    if (!skill || skill.locked || skill.installed) return;
-    try {
-      set_acting(true);
-      await installSkillToPoolApi(skill.name);
-      await Promise.resolve(on_refresh());
-      await load_detail();
-    } catch (err) {
-      set_error(err instanceof Error ? err.message : "安装 skill 失败");
-    } finally {
-      set_acting(false);
-    }
-  }, [load_detail, on_refresh, skill]);
 
   if (!is_open) return null;
 
@@ -174,11 +140,6 @@ export function SkillDetailDialog({
                 <span className="inline-flex rounded-full bg-white/70 px-3 py-1 text-[11px] font-semibold text-slate-600">
                   版本 {skill.version || "unknown"}
                 </span>
-                {!skill.global_enabled ? (
-                  <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold text-slate-500">
-                    全局停用
-                  </span>
-                ) : null}
                 {skill.locked ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold text-amber-700">
                     <Shield className="h-3 w-3" />
@@ -217,7 +178,7 @@ export function SkillDetailDialog({
           )}
         </div>
 
-      <div className="flex flex-wrap items-center justify-end gap-2 border-t modal-divider px-6 py-4">
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t modal-divider px-6 py-4">
           {skill?.locked ? (
             <button
               className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700"
@@ -229,17 +190,7 @@ export function SkillDetailDialog({
             </button>
           ) : skill ? (
             <>
-              {!skill.installed ? (
-                <button
-                  className="inline-flex items-center gap-2 rounded-full bg-sky-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                  disabled={acting}
-                  onClick={() => void handle_install()}
-                  type="button"
-                >
-                  {acting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Puzzle className="h-4 w-4" />}
-                  安装到资源池
-                </button>
-              ) : skill.has_update ? (
+              {skill.source_type === "external" && skill.has_update ? (
                 <button
                   className="inline-flex items-center gap-2 rounded-full bg-sky-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
                   disabled={acting}
@@ -247,27 +198,24 @@ export function SkillDetailDialog({
                   type="button"
                 >
                   {acting ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                  更新全局技能
+                  更新技能库
                 </button>
               ) : (
-                <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-600">
-                  <Check className="h-4 w-4" />
-                  已安装
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-sm font-semibold text-slate-600">
+                  {skill.source_type === "external" ? (
+                    <>
+                      <Check className="h-4 w-4" />
+                      已导入到技能库
+                    </>
+                  ) : (
+                    <>
+                      <Puzzle className="h-4 w-4" />
+                      可在 Agent 中安装
+                    </>
+                  )}
                 </span>
               )}
-              {!skill.locked && skill.installed ? (
-                <label className="relative inline-flex cursor-pointer items-center">
-                  <input
-                    checked={skill.global_enabled}
-                    className="peer sr-only"
-                    disabled={acting}
-                    onChange={() => void handle_toggle_global_enabled()}
-                    type="checkbox"
-                  />
-                  <div className="h-6 w-11 rounded-full bg-slate-200/80 peer peer-checked:bg-emerald-500 after:absolute after:left-[2px] after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-white/60 after:bg-white after:shadow-sm after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
-                </label>
-              ) : null}
-              {skill.installed && skill.deletable ? (
+              {skill.deletable ? (
                 <button
                   className="inline-flex items-center gap-2 rounded-full bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-600 disabled:opacity-60"
                   disabled={acting}

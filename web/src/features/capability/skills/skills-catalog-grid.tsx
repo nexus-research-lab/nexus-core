@@ -26,13 +26,9 @@ export function SkillsCatalogGrid({ ctrl }: SkillsCatalogGridProps) {
           <Puzzle className="h-6 w-6 text-slate-400" />
         </div>
         <div>
-          <p className="text-[16px] font-bold text-slate-800/80">
-            {ctrl.installed_only ? "没有已安装的技能" : "没有符合条件的技能"}
-          </p>
+          <p className="text-[16px] font-bold text-slate-800/80">没有符合条件的技能</p>
           <p className="mt-1 text-[13px] text-slate-500/60">
-            {ctrl.installed_only
-              ? "试试关闭「已安装」筛选，或从社区技能导入"
-              : "试试切换分类、来源或搜索条件"}
+            试试切换分类、来源或搜索条件
           </p>
         </div>
       </div>
@@ -59,10 +55,8 @@ export function SkillsCatalogGrid({ ctrl }: SkillsCatalogGridProps) {
               >
                 <SkillsCard
                   busy={ctrl.busy_skill_name === skill.name}
-                  on_delete={() => void ctrl.handle_delete_from_pool(skill)}
-                  on_install={() => void ctrl.handle_install_to_pool(skill)}
+                  on_delete={() => void ctrl.handle_delete_skill(skill)}
                   on_select={() => ctrl.set_selected_skill(skill.name)}
-                  on_toggle_global_enabled={() => void ctrl.handle_toggle_global_enabled(skill)}
                   on_update={() => void ctrl.handle_update_single(skill.name)}
                   skill={skill}
                 />

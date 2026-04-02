@@ -80,7 +80,7 @@ export function SkillsDirectory() {
         on_cancel={() => ctrl.set_git_prompt_open(false)}
         on_confirm={(value) => void ctrl.handle_git_import(value)}
         placeholder="https://github.com/owner/repo.git"
-        title="通过 Git 安装"
+        title="通过 Git 导入"
       />
 
       <ExternalSkillPreviewDialog

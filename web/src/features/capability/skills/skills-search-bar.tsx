@@ -1,4 +1,4 @@
-import { ChevronDown, Filter, Globe2, Search } from "lucide-react";
+import { ChevronDown, Globe2, Search } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
@@ -71,7 +71,6 @@ export function SkillsSearchBar({ ctrl }: SkillsSearchBarProps) {
         </div>
       </div>
 
-      {/* 分类标签 + 过滤器 — 只在库内模式显示 */}
       {/* 分类标签 + 过滤器 */}
       <div className="flex items-center justify-between gap-2">
         <div className="soft-scrollbar flex min-w-0 items-center gap-1 overflow-x-auto">
@@ -93,20 +92,6 @@ export function SkillsSearchBar({ ctrl }: SkillsSearchBarProps) {
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
-          <button
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold transition-all",
-              ctrl.installed_only
-                ? "border border-emerald-200/60 bg-emerald-50 text-emerald-700"
-                : "text-slate-600 hover:bg-white/50",
-            )}
-            onClick={() => ctrl.set_installed_only(!ctrl.installed_only)}
-            type="button"
-          >
-            <Filter className="h-3 w-3" />
-            已安装
-          </button>
-
           <div className="relative">
             <button
               className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-semibold text-slate-600 transition-all hover:bg-white/50"

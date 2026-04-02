@@ -76,7 +76,7 @@ export function ExternalSkillPreviewDialog({
 
         <div className="soft-scrollbar flex-1 overflow-y-auto px-6 py-5">
           <div className="workspace-card mb-5 rounded-[22px] px-5 py-4 text-[13px] leading-6 text-slate-700/78">
-            这是来自社区的外部技能预览。导入后会进入 Nexus 的全局技能库，再在 Agent 设置里为具体智能体启用。
+            这是来自社区的外部技能预览。导入后会进入 Nexus 的技能目录，再在 Agent 设置里为具体智能体安装。
           </div>
           <SkillMarkdown markdown={item.readme_markdown || item.description || "暂无预览内容"} />
         </div>
