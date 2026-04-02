@@ -1,9 +1,10 @@
 import { useMemo, useRef } from "react";
+import { areEquivalentSessionKeys } from "@/lib/session-key";
 import { Message, ResultMessage } from "@/types/message";
 import { TodoItem } from "@/types/todo";
 
 function isSameSessionMessage(message: Message, external_session_key: string): boolean {
-  return !message.session_key || message.session_key === external_session_key;
+  return !message.session_key || areEquivalentSessionKeys(message.session_key, external_session_key);
 }
 
 function isSameTodo(left: TodoItem, right: TodoItem): boolean {

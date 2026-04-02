@@ -34,9 +34,9 @@ export function useLauncherPageController() {
   const agent_conversation = useHomeAgentConversationController();
   const [search_params, set_search_params] = useSearchParams();
   const {
-    conversation_key: app_conversation_key,
-    set_conversation_key: set_app_conversation_key,
-    clear_conversation_key: clear_app_conversation_key,
+    session_key: app_session_key,
+    set_session_key: set_app_session_key,
+    clear_session_key: clear_app_session_key,
   } = useAppConversationStore();
 
   const surface: LauncherSurface = search_params.get("surface") === "app" ? "app" : "launcher";
@@ -89,25 +89,25 @@ export function useLauncherPageController() {
     surface,
     route_app_prompt,
     is_app_conversation_open,
-    app_conversation_key,
+    app_session_key,
     app_conversation_draft,
     open_app_conversation,
     close_app_conversation,
     clear_route_app_prompt,
-    set_app_conversation_key,
-    clear_app_conversation_key,
+    set_app_session_key,
+    clear_app_session_key,
     set_app_conversation_draft,
   }), [
     agent_conversation,
     surface,
     route_app_prompt,
     is_app_conversation_open,
-    app_conversation_key,
+    app_session_key,
     app_conversation_draft,
     open_app_conversation,
     close_app_conversation,
     clear_route_app_prompt,
-    set_app_conversation_key,
-    clear_app_conversation_key,
+    set_app_session_key,
+    clear_app_session_key,
   ]);
 }

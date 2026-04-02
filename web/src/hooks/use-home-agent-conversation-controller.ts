@@ -8,7 +8,7 @@ import { validateAgentNameApi } from "@/lib/agent-manage-api";
 import { useConversationStore } from "@/store/conversation";
 import { useAgentStore } from "@/store/agent";
 import { AgentOptions } from "@/types/agent";
-import { ConversationSnapshotPayload } from "@/types/conversation";
+import { SessionSnapshotPayload } from "@/types/conversation";
 
 export function useHomeAgentConversationController() {
   const {
@@ -22,9 +22,9 @@ export function useHomeAgentConversationController() {
   } = useAgentStore();
   const {
     conversations,
-    current_conversation_id,
+    current_session_key,
     create_conversation,
-    set_current_conversation,
+    set_current_session_key,
     sync_conversation_snapshot,
     delete_conversation,
     load_conversations_from_server,
@@ -40,7 +40,7 @@ export function useHomeAgentConversationController() {
 
   const is_hydrated = useInitializeConversations({
     load_conversations_from_server,
-    set_current_conversation,
+    set_current_session_key,
     auto_select_first: false,
     debug_name: "Page",
   });
@@ -66,16 +66,16 @@ export function useHomeAgentConversationController() {
     return grouped;
   }, [conversations]);
 
-  const current_room_conversations = useMemo(() => {
+  const current_agent_sessions = useMemo(() => {
     if (!current_agent_id) {
       return [];
     }
     return conversations_by_agent.get(current_agent_id) ?? [];
   }, [conversations_by_agent, current_agent_id]);
 
-  const current_conversation = useMemo(
-    () => current_room_conversations.find((conversation) => conversation.session_key === current_conversation_id) ?? null,
-    [current_room_conversations, current_conversation_id],
+  const current_session = useMemo(
+    () => current_agent_sessions.find((conversation) => conversation.session_key === current_session_key) ?? null,
+    [current_agent_sessions, current_session_key],
   );
 
   const recent_agents = useMemo(() => agents.slice(0, 4), [agents]);
@@ -105,19 +105,19 @@ export function useHomeAgentConversationController() {
 
   useEffect(() => {
     if (!current_agent_id) {
-      if (current_conversation_id !== null) {
-        set_current_conversation(null);
+      if (current_session_key !== null) {
+        set_current_session_key(null);
       }
       return;
     }
 
-    const hasSelectedConversation = current_room_conversations.some(
-      (conversation) => conversation.session_key === current_conversation_id,
+    const has_selected_session = current_agent_sessions.some(
+      (conversation) => conversation.session_key === current_session_key,
     );
-    if (!hasSelectedConversation) {
-      set_current_conversation(current_room_conversations[0]?.session_key ?? null);
+    if (!has_selected_session) {
+      set_current_session_key(current_agent_sessions[0]?.session_key ?? null);
     }
-  }, [current_agent_id, current_conversation_id, current_room_conversations, set_current_conversation]);
+  }, [current_agent_id, current_session_key, current_agent_sessions, set_current_session_key]);
 
   const handle_open_create_agent = useCallback(() => {
     set_dialog_mode("create");
@@ -143,7 +143,7 @@ export function useHomeAgentConversationController() {
     await delete_agent(agent_id);
   }, [delete_agent]);
 
-  const handle_create_conversation = useCallback(async () => {
+  const handle_create_session = useCallback(async () => {
     if (!current_agent_id) {
       return;
     }
@@ -152,8 +152,8 @@ export function useHomeAgentConversationController() {
       title: "New Chat",
       agent_id: current_agent_id,
     });
-    set_current_conversation(key);
-  }, [create_conversation, current_agent_id, set_current_conversation]);
+    set_current_session_key(key);
+  }, [create_conversation, current_agent_id, set_current_session_key]);
 
   const handle_save_agent_options = useCallback(async (title: string, options: AgentOptions) => {
     const agentOptions = {
@@ -186,44 +186,44 @@ export function useHomeAgentConversationController() {
     return validateAgentNameApi(name, exclude_agent_id);
   }, [dialog_mode, editing_agent_id]);
 
-  const handle_select_conversation = useCallback((conversation_id: string) => {
-    set_current_conversation(conversation_id);
-  }, [set_current_conversation]);
+  const handle_select_session = useCallback((session_key: string) => {
+    set_current_session_key(session_key);
+  }, [set_current_session_key]);
 
-  const handle_open_conversation_from_launcher = useCallback((conversation_id: string, agent_id?: string) => {
+  const handle_open_session_from_launcher = useCallback((session_key: string, agent_id?: string) => {
     if (agent_id) {
       set_current_agent(agent_id);
     }
-    set_current_conversation(conversation_id);
-  }, [set_current_conversation, set_current_agent]);
+    set_current_session_key(session_key);
+  }, [set_current_session_key, set_current_agent]);
 
-  const handle_conversation_snapshot_change = useCallback((snapshot: ConversationSnapshotPayload) => {
-    if (!snapshot.conversation_id) {
+  const handle_conversation_snapshot_change = useCallback((snapshot: SessionSnapshotPayload) => {
+    if (!snapshot.session_key) {
       return;
     }
 
-    sync_conversation_snapshot(snapshot.conversation_id, {
+    sync_conversation_snapshot(snapshot.session_key, {
       message_count: snapshot.message_count,
       ...(snapshot.last_activity_at ? {last_activity_at: snapshot.last_activity_at} : {}),
       session_id: snapshot.session_id,
     });
   }, [sync_conversation_snapshot]);
 
-  const handle_delete_conversation = useCallback(async (conversation_id: string) => {
-    await delete_conversation(conversation_id);
-    if (current_conversation_id === conversation_id) {
-      const remaining = current_room_conversations.filter((conversation) => conversation.session_key !== conversation_id);
-      set_current_conversation(remaining[0]?.session_key ?? null);
+  const handle_delete_session = useCallback(async (session_key: string) => {
+    await delete_conversation(session_key);
+    if (current_session_key === session_key) {
+      const remaining = current_agent_sessions.filter((conversation) => conversation.session_key !== session_key);
+      set_current_session_key(remaining[0]?.session_key ?? null);
     }
-  }, [current_conversation_id, current_room_conversations, delete_conversation, set_current_conversation]);
+  }, [current_agent_sessions, current_session_key, delete_conversation, set_current_session_key]);
 
   return {
     agents,
     current_agent,
     current_agent_id,
-    current_room_conversations,
-    current_conversation,
-    current_conversation_id,
+    current_agent_sessions,
+    current_session,
+    current_session_key,
     conversations,
     recent_agents,
     is_hydrated,
@@ -237,12 +237,12 @@ export function useHomeAgentConversationController() {
     handle_select_agent,
     handle_back_to_directory,
     handle_delete_agent,
-    handle_create_conversation,
+    handle_create_session,
     handle_save_agent_options,
     handle_validate_agent_name,
-    handle_select_conversation,
-    handle_open_conversation_from_launcher,
+    handle_select_session,
+    handle_open_session_from_launcher,
     handle_conversation_snapshot_change,
-    handle_delete_conversation,
+    handle_delete_session,
   };
 }

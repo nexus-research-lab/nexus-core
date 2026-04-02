@@ -16,34 +16,32 @@ import { useAgentStore } from "@/store/agent";
 import { AgentOptions as AgentConfigOptions } from "@/types/agent";
 import { DEFAULT_AGENT_ID } from "@/config/options";
 
-const APP_AGENT_ID = DEFAULT_AGENT_ID;
-const APP_CONVERSATION_SEED_KEY = "launcher-app-main";
-
 export function LauncherPage() {
+  const app_agent_id = DEFAULT_AGENT_ID;
   const controller = useLauncherPageController();
   const navigate = useNavigate();
   const [should_bootstrap_room_after_create, set_should_bootstrap_room_after_create] = useState(false);
   const [pending_room_title, set_pending_room_title] = useState<string>("");
   const consumed_route_prompt_ref = useRef<string | null>(null);
-  const skip_app_conversation_load_ref = useRef<string | null>(null);
-  const hydrated_app_conversation_key_ref = useRef<string | null>(null);
+  const skip_app_session_load_ref = useRef<string | null>(null);
+  const hydrated_app_session_key_ref = useRef<string | null>(null);
   const app_conversation = useAgentConversation({
-    agent_id: APP_AGENT_ID,
+    agent_id: app_agent_id,
   });
 
   useEffect(() => {
-    const next_conversation_key = controller.app_conversation_key;
+    const next_session_key = controller.app_session_key;
 
-    if (!next_conversation_key) {
-      hydrated_app_conversation_key_ref.current = null;
-      app_conversation.bind_conversation_key(null);
+    if (!next_session_key) {
+      hydrated_app_session_key_ref.current = null;
+      app_conversation.bind_session_key(null);
       return;
     }
 
-    if (skip_app_conversation_load_ref.current === next_conversation_key) {
-      skip_app_conversation_load_ref.current = null;
-      hydrated_app_conversation_key_ref.current = next_conversation_key;
-      app_conversation.bind_conversation_key(next_conversation_key);
+    if (skip_app_session_load_ref.current === next_session_key) {
+      skip_app_session_load_ref.current = null;
+      hydrated_app_session_key_ref.current = next_session_key;
+      app_conversation.bind_session_key(next_session_key);
       return;
     }
 
@@ -51,47 +49,47 @@ export function LauncherPage() {
       return;
     }
 
-    if (hydrated_app_conversation_key_ref.current === next_conversation_key) {
+    if (hydrated_app_session_key_ref.current === next_session_key) {
       return;
     }
 
-    hydrated_app_conversation_key_ref.current = next_conversation_key;
-    app_conversation.bind_conversation_key(next_conversation_key);
-    void app_conversation.load_conversation(next_conversation_key);
+    hydrated_app_session_key_ref.current = next_session_key;
+    app_conversation.bind_session_key(next_session_key);
+    void app_conversation.load_session(next_session_key);
   }, [
     app_conversation,
-    controller.app_conversation_key,
+    controller.app_session_key,
     controller.is_app_conversation_open,
   ]);
 
-  const ensure_app_conversation_key = useCallback(async () => {
-    if (controller.app_conversation_key) {
-      app_conversation.bind_conversation_key(controller.app_conversation_key);
-      return controller.app_conversation_key;
+  const ensure_app_session_key = useCallback(async () => {
+    if (controller.app_session_key) {
+      app_conversation.bind_session_key(controller.app_session_key);
+      return controller.app_session_key;
     }
 
     const existing_app_conversation = controller.conversations
-      .filter((conversation) => conversation.agent_id === APP_AGENT_ID)
+      .filter((conversation) => conversation.agent_id === app_agent_id)
       .sort((left, right) => right.last_activity_at - left.last_activity_at)[0];
 
     if (existing_app_conversation) {
-      controller.set_app_conversation_key(existing_app_conversation.session_key);
-      app_conversation.bind_conversation_key(existing_app_conversation.session_key);
+      controller.set_app_session_key(existing_app_conversation.session_key);
+      app_conversation.bind_session_key(existing_app_conversation.session_key);
       return existing_app_conversation.session_key;
     }
 
     const created_conversation = await createConversation(
-      buildWsDmSessionKey(APP_CONVERSATION_SEED_KEY, APP_AGENT_ID),
+      buildWsDmSessionKey(`launcher-app-${app_agent_id}`, app_agent_id),
       {
-        agent_id: APP_AGENT_ID,
+        agent_id: app_agent_id,
         title: "Nexus",
       },
     );
-    skip_app_conversation_load_ref.current = created_conversation.session_key;
-    controller.set_app_conversation_key(created_conversation.session_key);
-    app_conversation.bind_conversation_key(created_conversation.session_key);
+    skip_app_session_load_ref.current = created_conversation.session_key;
+    controller.set_app_session_key(created_conversation.session_key);
+    app_conversation.bind_session_key(created_conversation.session_key);
     return created_conversation.session_key;
-  }, [app_conversation, controller]);
+  }, [app_agent_id, app_conversation, controller]);
 
   const handle_submit_app_conversation = useCallback(async (next_prompt: string) => {
     const trimmed_prompt = next_prompt.trim();
@@ -103,8 +101,8 @@ export function LauncherPage() {
     controller.clear_route_app_prompt();
 
     try {
-      const conversation_key = await ensure_app_conversation_key();
-      app_conversation.bind_conversation_key(conversation_key);
+      const session_key = await ensure_app_session_key();
+      app_conversation.bind_session_key(session_key);
       await app_conversation.send_message(trimmed_prompt);
     } catch (error) {
       // 发送失败时，仅在输入框仍为空时回填，避免覆盖用户新输入。
@@ -113,7 +111,7 @@ export function LauncherPage() {
       ));
       throw error;
     }
-  }, [app_conversation, controller, ensure_app_conversation_key]);
+  }, [app_conversation, controller, ensure_app_session_key]);
 
   useEffect(() => {
     if (app_conversation.ws_state !== "connected") {
@@ -146,43 +144,14 @@ export function LauncherPage() {
     });
   }, [controller, navigate]);
 
-  const handle_open_conversation = useCallback((conversation_id: string, agent_id?: string) => {
-    const matched_conversation = controller.conversations.find(
-      (conversation) => conversation.session_key === conversation_id,
-    );
-
-    if (matched_conversation?.room_id && matched_conversation.conversation_id) {
-      controller.handle_open_conversation_from_launcher(conversation_id, agent_id);
-      navigate(
-        AppRouteBuilders.room_conversation(
-          matched_conversation.room_id,
-          matched_conversation.conversation_id,
-        ),
-      );
-      return;
+  const handle_clear_app_session = useCallback(async () => {
+    if (controller.app_session_key) {
+      await deleteConversation(controller.app_session_key);
     }
-
-    if (agent_id) {
-      void ensureDirectRoom(agent_id).then((context) => {
-        controller.handle_open_conversation_from_launcher(conversation_id, agent_id);
-        navigate(
-          AppRouteBuilders.room_conversation(
-            context.room.id,
-            context.conversation.id,
-          ),
-        );
-      });
-    }
-  }, [controller, navigate]);
-
-  const handle_clear_app_conversation = useCallback(async () => {
-    if (controller.app_conversation_key) {
-      await deleteConversation(controller.app_conversation_key);
-    }
-    hydrated_app_conversation_key_ref.current = null;
-    skip_app_conversation_load_ref.current = null;
-    controller.clear_app_conversation_key();
-    app_conversation.clear_conversation();
+    hydrated_app_session_key_ref.current = null;
+    skip_app_session_load_ref.current = null;
+    controller.clear_app_session_key();
+    app_conversation.clear_session();
     controller.set_app_conversation_draft("");
   }, [app_conversation, controller]);
 
@@ -268,7 +237,6 @@ export function LauncherPage() {
             on_open_app_conversation={controller.open_app_conversation}
             on_close_app_conversation={controller.close_app_conversation}
             on_select_agent={handle_select_agent}
-            on_open_conversation={handle_open_conversation}
             surface={controller.surface}
           />
         </div>
@@ -285,12 +253,10 @@ export function LauncherPage() {
                 error={app_conversation.error}
                 is_loading={app_conversation.is_loading}
                 ws_state={app_conversation.ws_state}
-                on_clear_conversation={handle_clear_app_conversation}
+                on_clear_session={handle_clear_app_session}
                 on_change_draft={controller.set_app_conversation_draft}
                 on_close={controller.close_app_conversation}
-                on_delete_round={app_conversation.delete_round}
                 on_permission_response={app_conversation.send_permission_response}
-                on_regenerate_round={app_conversation.regenerate}
                 on_stop_generation={app_conversation.stop_generation}
                 on_submit={handle_submit_app_conversation}
                 pending_permission={app_conversation.pending_permission}

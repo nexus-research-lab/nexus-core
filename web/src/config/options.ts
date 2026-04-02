@@ -10,7 +10,7 @@ export const initialOptions = {
   permissionMode: 'default',
 }
 
-export const DEFAULT_AGENT_ID = import.meta.env.VITE_DEFAULT_AGENT_ID || 'nexus'
+export let DEFAULT_AGENT_ID = "";
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "0.0.0.0", "::1"]);
 
@@ -71,4 +71,19 @@ export function getAgentWsUrl(): string {
   }
 
   return `ws://${getBrowserHost()}:8010/agent/v1/chat/ws`;
+}
+
+export async function hydrateRuntimeOptions(): Promise<void> {
+  const response = await fetch(`${getAgentApiBaseUrl()}/runtime/options`);
+  if (!response.ok) {
+    throw new Error(`加载运行时配置失败: ${response.status}`);
+  }
+
+  const payload = await response.json();
+  const next_default_agent_id = payload?.data?.default_agent_id;
+  if (!next_default_agent_id || typeof next_default_agent_id !== "string") {
+    throw new Error("运行时配置缺少 default_agent_id");
+  }
+
+  DEFAULT_AGENT_ID = next_default_agent_id;
 }
