@@ -20,6 +20,10 @@ from agent.service.room.room_interrupt_service import room_interrupt_service
 from agent.service.room.room_route_guard import room_route_guard
 from agent.service.room.room_session_keys import is_room_shared_session_key
 from agent.service.session.session_manager import session_manager
+from agent.service.session.session_router import (
+    StructuredSessionKeyError,
+    require_structured_session_key,
+)
 from agent.schema.model_message import EventMessage, Message
 from agent.service.session.session_store import session_store
 from agent.utils.logger import logger
@@ -38,13 +42,30 @@ class InterruptHandler(BaseHandler):
 
     async def handle_interrupt(self, message: Dict[str, Any], chat_tasks: Dict[str, asyncio.Task]) -> None:
         """处理中断消息。"""
-        session_key = message.get("session_key") or message.get("agent_id", "")
+        raw_session_key = message.get("session_key")
+        if not isinstance(raw_session_key, str):
+            raw_session_key = ""
+        try:
+            session_key = require_structured_session_key(raw_session_key)
+        except StructuredSessionKeyError as exc:
+            await self.send(
+                self.create_error_response(
+                    error_type=(
+                        "validation_error"
+                        if str(exc) == "session_key is required"
+                        else "invalid_session_key"
+                    ),
+                    message=str(exc),
+                    session_key=raw_session_key or None,
+                    details={"type": "interrupt"},
+                )
+            )
+            logger.warning("⚠️ interrupt 消息缺少合法 session_key")
+            return
+        message["session_key"] = session_key
         round_id = message.get("round_id")
         target_agent_id = message.get("target_agent_id")
         msg_id = message.get("msg_id")  # per-message interrupt (Room 并发场景)
-        if not session_key:
-            logger.warning("⚠️ interrupt 消息缺少 session_key")
-            return
 
         if is_room_shared_session_key(session_key):
             await self._handle_room_interrupt(

@@ -21,7 +21,9 @@ class ErrorHandler(BaseHandler):
 
     async def handle_unknown_message_type(self, message: Dict[str, Any]) -> None:
         """处理未知消息类型。"""
-        session_key = message.get("session_key") or message.get("agent_id")
+        session_key = message.get("session_key")
+        if not isinstance(session_key, str):
+            session_key = None
         msg_type = message.get("type")
         logger.warning(f"❓未知消息类型: {msg_type}")
         error_response = self.create_error_response(

@@ -18,9 +18,12 @@ from agent.service.channels.ws.handlers.ping_handler import PingHandler
 from agent.service.channels.ws.websocket_sender import WebSocketSender
 from agent.service.channels.ws.ws_connection_registry import ws_connection_registry
 from agent.service.chat.chat_service import ChatService
-from agent.service.chat.room_chat_service import RoomChatService, build_room_session_key
+from agent.service.chat.room_chat_service import RoomChatService
 from agent.service.room.room_route_guard import room_route_guard
-from agent.service.session.session_router import build_session_key
+from agent.service.session.session_router import (
+    get_session_key_validation_error,
+    is_room_session_key,
+)
 
 
 class ChannelDispatcher:
@@ -48,13 +51,13 @@ class ChannelDispatcher:
 
     async def dispatch(self, message: Dict[str, Any]) -> None:
         """根据消息类型路由到对应处理器。"""
-        self._normalize_session_key(message)
         msg_type = message.get("type")
+        if await self._reject_invalid_browser_session_key(message):
+            return
 
         if msg_type == "chat":
             # Room 消息路由到 RoomChatService
             if self._is_room_message(message):
-                self._normalize_room_session_key(message)
                 await self._room_chat_service.handle_room_message_with_task(
                     message, self._chat_tasks,
                 )
@@ -136,26 +139,38 @@ class ChannelDispatcher:
         if message.get("room_id"):
             return True
         session_key = message.get("session_key", "")
-        if isinstance(session_key, str) and session_key.startswith("room:"):
+        if isinstance(session_key, str) and is_room_session_key(session_key):
             return True
         return False
 
-    @staticmethod
-    def _normalize_room_session_key(message: Dict[str, Any]) -> None:
-        """为 Room 消息构建共享 session_key。"""
-        conversation_id = message.get("conversation_id", "")
-        if not message.get("session_key") and conversation_id:
-            message["session_key"] = build_room_session_key(conversation_id)
+    async def _reject_invalid_browser_session_key(
+        self,
+        message: Dict[str, Any],
+    ) -> bool:
+        """拒绝浏览器直接发送的非法 session_key。"""
+        msg_type = message.get("type")
+        if msg_type not in {"chat", "interrupt", "permission_response"}:
+            return False
 
-    @staticmethod
-    def _normalize_session_key(message: Dict[str, Any]) -> None:
-        """将前端 agent_id 标准化为内部 session_key（仅 DM）。"""
-        if "agent_id" not in message or "session_key" in message:
-            return
+        raw_session_key = message.get("session_key")
+        if not isinstance(raw_session_key, str):
+            raw_session_key = ""
 
-        message["session_key"] = build_session_key(
-            channel="ws",
-            chat_type="dm",
-            ref=message["agent_id"],
-            agent_id=message["agent_id"],
+        error_message = get_session_key_validation_error(raw_session_key)
+        if error_message is None:
+            message["session_key"] = raw_session_key.strip()
+            return False
+
+        await self._sender.send_event_message(
+            self._error_handler.create_error_response(
+                error_type=(
+                    "validation_error"
+                    if error_message == "session_key is required"
+                    else "invalid_session_key"
+                ),
+                message=error_message,
+                session_key=raw_session_key or None,
+                details={"type": msg_type},
+            )
         )
+        return True
