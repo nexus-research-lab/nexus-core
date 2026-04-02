@@ -16,10 +16,7 @@ downloads/
 eggs/
 .eggs/
 lib/
-!web/src/lib/
-web/src/lib/*
-!web/src/lib/conversation-route.ts
-!web/src/lib/session-key.ts
+!web/src/lib/*
 lib64/
 parts/
 sdist/
