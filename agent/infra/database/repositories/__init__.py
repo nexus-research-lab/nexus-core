@@ -19,7 +19,6 @@ from agent.infra.database.repositories.conversation_sql_repository import (
 from agent.infra.database.repositories.message_sql_repository import MessageSqlRepository
 from agent.infra.database.repositories.room_sql_repository import RoomSqlRepository
 from agent.infra.database.repositories.session_sql_repository import SessionSqlRepository
-from agent.infra.database.repositories.skill_sql_repository import SkillSqlRepository
 
 __all__ = [
     "AgentSqlRepository",
@@ -28,5 +27,4 @@ __all__ = [
     "MessageSqlRepository",
     "RoomSqlRepository",
     "SessionSqlRepository",
-    "SkillSqlRepository",
 ]

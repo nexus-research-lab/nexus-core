@@ -105,7 +105,7 @@ export const CapabilitiesPanelContent = memo(function CapabilitiesPanelContent()
         }
       });
     void getConnectedCountApi()
-      .then((count) => {
+      .then((count: number) => {
         if (!cancelled) {
           set_connector_count(count);
         }

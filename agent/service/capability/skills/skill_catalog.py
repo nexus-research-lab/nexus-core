@@ -124,8 +124,6 @@ class SkillCatalog:
         records.update(
             self._load_fallback_builtin_records(
                 records,
-                global_states,
-                pool_installed_states,
             )
         )
         return records
@@ -187,15 +185,17 @@ class SkillCatalog:
     def _load_fallback_builtin_records(
         self,
         existing_records: dict[str, SkillCatalogRecord],
-        global_states: dict[str, bool],
-        pool_installed_states: dict[str, bool],
     ) -> dict[str, SkillCatalogRecord]:
         """补齐未在 curated manifest 中声明、但本地实际可用的 builtin skills。"""
         records: dict[str, SkillCatalogRecord] = {}
         existing_names = set(existing_records)
         for skill_dir in self._iter_builtin_skill_dirs():
             skill_name = skill_dir.name
-            if skill_name in self.SYSTEM_SKILL_NAMES or skill_name in existing_names:
+            if (
+                skill_name in self.SYSTEM_SKILL_NAMES
+                or skill_name in self.INTERNAL_SKILL_NAMES
+                or skill_name in existing_names
+            ):
                 continue
             parsed = SkillFrontmatterParser.parse(skill_dir / "SKILL.md")
             category_key = str(parsed.get("category_key") or "builtin-misc")
@@ -216,9 +216,8 @@ class SkillCatalog:
                     source_ref=str(skill_dir),
                     version=str(parsed.get("version") or "builtin"),
                     locked=False,
-                    global_enabled=global_states.get(skill_name, True),
-                    deletable=pool_installed_states.get(skill_name, False),
-                    installed=pool_installed_states.get(skill_name, False),
+                    deletable=False,
+                    installed=False,
                     readme_markdown=str(parsed.get("readme_markdown") or ""),
                     recommendation=recommendation,
                 ),
