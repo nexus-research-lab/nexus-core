@@ -6,9 +6,9 @@ import { AgentConversationLifecycleContext } from '@/types/agent-conversation';
 import { sortMessages } from './message-helpers';
 
 /**
- * 重置当前对话视图状态。
+ * 重置当前会话视图状态。
  */
-export function resetConversationView(
+export function resetSessionView(
   context: AgentConversationLifecycleContext,
   next_error: string | null = null,
 ): void {
@@ -19,33 +19,33 @@ export function resetConversationView(
 }
 
 /**
- * 启动一个新的对话。
+ * 启动一个新的会话。
  */
-export function startAgentConversation(context: AgentConversationLifecycleContext): void {
-  const new_conversation_key = (
+export function startAgentSession(context: AgentConversationLifecycleContext): void {
+  const new_session_key = (
     context.chat_type === 'group' && context.conversation_id
       ? buildRoomSharedSessionKey(context.conversation_id)
       : buildWsDmSessionKey(generateUuid(), context.agent_id)
   );
   context.load_request_id_ref.current += 1;
-  context.active_conversation_key_ref.current = new_conversation_key;
-  context.set_conversation_key(new_conversation_key);
-  resetConversationView(context);
+  context.active_session_key_ref.current = new_session_key;
+  context.set_session_key(new_session_key);
+  resetSessionView(context);
 }
 
 /**
- * 加载现有对话消息。
+ * 加载现有会话消息。
  * 如果 bg_message_cache_ref 中有该 session 的缓存消息，先用缓存预填充（避免 loading 闪烁）。
  * API 返回后用服务端数据覆盖，并清除 cache。
  */
-export async function loadAgentConversation(
+export async function loadAgentSession(
   session_key: string,
   context: AgentConversationLifecycleContext,
 ): Promise<void> {
   const request_id = context.load_request_id_ref.current + 1;
   context.load_request_id_ref.current = request_id;
-  context.active_conversation_key_ref.current = session_key;
-  context.set_conversation_key(session_key);
+  context.active_session_key_ref.current = session_key;
+  context.set_session_key(session_key);
 
   // Pre-fill with cached background messages before the API round-trip
   const cached = context.bg_message_cache_ref?.current.get(session_key);
@@ -55,14 +55,14 @@ export async function loadAgentConversation(
     context.set_is_loading(false);
     context.set_error(null);
   } else {
-    resetConversationView(context);
+    resetSessionView(context);
   }
 
   try {
     const data = await getConversationMessages(session_key);
     if (
       context.load_request_id_ref.current !== request_id ||
-      context.active_conversation_key_ref.current !== session_key
+      context.active_session_key_ref.current !== session_key
     ) {
       return;
     }
@@ -74,28 +74,28 @@ export async function loadAgentConversation(
   } catch (err) {
     if (
       context.load_request_id_ref.current !== request_id ||
-      context.active_conversation_key_ref.current !== session_key
+      context.active_session_key_ref.current !== session_key
     ) {
       return;
     }
-    console.error('[loadConversation] 加载 conversation 失败:', err);
-    context.set_error(err instanceof Error ? err.message : 'Failed to load conversation');
+    console.error('[loadSession] 加载 session 失败:', err);
+    context.set_error(err instanceof Error ? err.message : 'Failed to load session');
   }
 }
 
 /**
- * 清空当前对话选择。
+ * 清空当前会话选择。
  */
-export function clearAgentConversation(context: AgentConversationLifecycleContext): void {
+export function clearAgentSession(context: AgentConversationLifecycleContext): void {
   context.load_request_id_ref.current += 1;
-  context.active_conversation_key_ref.current = null;
-  context.set_conversation_key(null);
-  resetConversationView(context);
+  context.active_session_key_ref.current = null;
+  context.set_session_key(null);
+  resetSessionView(context);
 }
 
 /**
- * 重置对话并创建新的对话键。
+ * 重置会话并创建新的会话键。
  */
-export function resetAgentConversation(context: AgentConversationLifecycleContext): void {
-  startAgentConversation(context);
+export function resetAgentSession(context: AgentConversationLifecycleContext): void {
+  startAgentSession(context);
 }

@@ -21,7 +21,6 @@ export interface Conversation extends BaseConversation {}
 export interface RoomConversationView extends BaseConversation {
   room_id: string;
   conversation_id: string;
-  route_conversation_id: string;
 }
 
 export interface ApiConversation {
@@ -48,35 +47,44 @@ export interface UpdateConversationParams {
   title?: string;
 }
 
-export interface ConversationSnapshotPayload {
-  conversation_id: string;
+interface BaseSnapshotPayload {
   message_count: number;
   last_activity_at?: number;
   session_id: string | null;
 }
 
+export interface SessionSnapshotPayload extends BaseSnapshotPayload {
+  session_key: string;
+}
+
+export interface RoomConversationSnapshotPayload extends BaseSnapshotPayload {
+  conversation_id: string;
+}
+
+export type ConversationSnapshotPayload = SessionSnapshotPayload | RoomConversationSnapshotPayload;
+
 export interface InitializeConversationsOptions {
   load_conversations_from_server: () => Promise<void>;
-  set_current_conversation: (key: string) => void;
+  set_current_session_key: (key: string) => void;
   auto_select_first?: boolean;
   debug_name?: string;
 }
 
-export interface ConversationLoaderOptions {
-  conversation_id: string | null;
-  load_conversation: (key: string) => void;
+export interface SessionLoaderOptions {
+  session_key: string | null;
+  load_session: (key: string) => void;
   debug_name?: string;
 }
 
 export interface ConversationStoreState {
   conversations: Conversation[];
-  current_conversation_id: string | null;
+  current_session_key: string | null;
   loading: boolean;
   error: string | null;
   create_conversation: (params?: CreateConversationParams) => Promise<string>;
   delete_conversation: (key: string) => void;
   update_conversation: (key: string, params: UpdateConversationParams) => void;
-  set_current_conversation: (key: string | null) => void;
+  set_current_session_key: (key: string | null) => void;
   sync_conversation_snapshot: (
     key: string,
     patch: Partial<Pick<Conversation, "message_count" | "last_activity_at" | "session_id">>,

@@ -17,6 +17,7 @@ import { Message as ChatMessage } from '@/types/message';
 import { ConversationCostSummary } from '@/types/cost';
 import { ApiResponse } from '@/types/api';
 import { getAgentApiBaseUrl } from '@/config/options';
+import { assertStructuredSessionKey } from '@/lib/session-key';
 
 const AGENT_API_BASE_URL = getAgentApiBaseUrl();
 
@@ -55,7 +56,8 @@ export const getConversations = async (): Promise<Conversation[]> => {
 };
 
 export const getConversationMessages = async (session_key: string): Promise<ChatMessage[]> => {
-  const response = await fetch(`${AGENT_API_BASE_URL}/sessions/${session_key}/messages`, {
+  const normalized_session_key = assertStructuredSessionKey(session_key);
+  const response = await fetch(`${AGENT_API_BASE_URL}/sessions/${normalized_session_key}/messages`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
   });
@@ -67,7 +69,8 @@ export const getConversationMessages = async (session_key: string): Promise<Chat
 };
 
 export const getConversationCostSummary = async (session_key: string): Promise<ConversationCostSummary> => {
-  const response = await fetch(`${AGENT_API_BASE_URL}/sessions/${session_key}/cost/summary`, {
+  const normalized_session_key = assertStructuredSessionKey(session_key);
+  const response = await fetch(`${AGENT_API_BASE_URL}/sessions/${normalized_session_key}/cost/summary`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
   });
@@ -79,10 +82,8 @@ export const getConversationCostSummary = async (session_key: string): Promise<C
 };
 
 export const deleteConversation = async (session_key: string): Promise<{ success: boolean }> => {
-  if (!session_key) {
-    throw new Error('session_key 不能为空');
-  }
-  const response = await fetch(`${AGENT_API_BASE_URL}/sessions/${session_key}`, {
+  const normalized_session_key = assertStructuredSessionKey(session_key);
+  const response = await fetch(`${AGENT_API_BASE_URL}/sessions/${normalized_session_key}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
   });
@@ -93,27 +94,16 @@ export const deleteConversation = async (session_key: string): Promise<{ success
   return result.data;
 };
 
-export const deleteRound = async (session_key: string, roundId: string): Promise<{ success: boolean; deleted_count: number }> => {
-  const response = await fetch(`${AGENT_API_BASE_URL}/sessions/${session_key}/rounds/${roundId}`, {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-  });
-  if (!response.ok) {
-    throw new Error(`删除轮次失败: ${response.statusText}`);
-  }
-  const result: ApiResponse<{ success: boolean; deleted_count: number }> = await response.json();
-  return result.data;
-};
-
 export const createConversation = async (
   session_key: string,
   params: CreateConversationParams,
 ): Promise<Conversation> => {
+  const normalized_session_key = assertStructuredSessionKey(session_key);
   const response = await fetch(`${AGENT_API_BASE_URL}/sessions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      session_key: session_key,
+      session_key: normalized_session_key,
       agent_id: params.agent_id,
       title: params.title,
     }),
@@ -129,7 +119,8 @@ export const updateConversation = async (
   session_key: string,
   params: UpdateConversationParams,
 ): Promise<Conversation> => {
-  const response = await fetch(`${AGENT_API_BASE_URL}/sessions/${session_key}`, {
+  const normalized_session_key = assertStructuredSessionKey(session_key);
+  const response = await fetch(`${AGENT_API_BASE_URL}/sessions/${normalized_session_key}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

@@ -57,13 +57,13 @@ export const deleteConversationAction = (
 
     set((state) => {
       const next_conversations = state.conversations.filter((item) => item.session_key !== key);
-      const next_current_conversation_id = state.current_conversation_id === key
+      const next_current_session_key = state.current_session_key === key
         ? (next_conversations[0]?.session_key || null)
-        : state.current_conversation_id;
+        : state.current_session_key;
 
       return {
         conversations: next_conversations,
-        current_conversation_id: next_current_conversation_id,
+        current_session_key: next_current_session_key,
         error: null,
       };
     });
@@ -97,10 +97,10 @@ export const updateConversationAction = (
   }
 };
 
-export const setCurrentConversationAction = (
+export const setCurrentSessionKeyAction = (
   set: ConversationStoreSetter
 ) => (key: string | null): void => {
-  set({ current_conversation_id: key, error: null });
+  set({ current_session_key: key, error: null });
 };
 
 export const syncConversationSnapshotAction = (
@@ -183,7 +183,7 @@ export const clearAllConversationsAction = (
 ) => (): void => {
   set({
     conversations: [],
-    current_conversation_id: null,
+    current_session_key: null,
     error: null,
   });
 };

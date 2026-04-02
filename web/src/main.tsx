@@ -3,14 +3,22 @@ import { createRoot } from "react-dom/client";
 
 import { App } from "./App";
 import "./app/globals.css";
+import { hydrateRuntimeOptions } from "./config/options";
 
 const container = document.getElementById("root");
 if (!container) {
   throw new Error("Root container #root not found.");
 }
+const root_container = container;
 
-createRoot(container).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+async function bootstrap() {
+  await hydrateRuntimeOptions();
+
+  createRoot(root_container).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
+}
+
+void bootstrap();

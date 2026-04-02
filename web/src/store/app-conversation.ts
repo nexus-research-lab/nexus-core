@@ -7,21 +7,22 @@ import { AppConversationState } from "@/types/app-conversation";
 export const useAppConversationStore = create<AppConversationState>()(
   persist(
     (set) => ({
-      conversation_key: null,
+      session_key: null,
 
-      set_conversation_key: (conversation_key: string | null) => {
-        set({ conversation_key });
+      set_session_key: (session_key: string | null) => {
+        set({ session_key });
       },
 
-      clear_conversation_key: () => {
-        set({ conversation_key: null });
+      clear_session_key: () => {
+        set({ session_key: null });
       },
     }),
     {
       name: "agent-ui-app-conversation",
       storage: createBrowserJSONStorage(),
+      version: 3,
       partialize: (state) => ({
-        conversation_key: state.conversation_key,
+        session_key: state.session_key,
       }),
     },
   ),

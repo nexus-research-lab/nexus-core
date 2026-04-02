@@ -11,7 +11,7 @@ import { InitializeConversationsOptions } from "@/types/conversation";
 
 export const useInitializeConversations = ({
   load_conversations_from_server,
-  set_current_conversation,
+  set_current_session_key,
   auto_select_first = true,
   debug_name = "useInitializeConversations",
 }: InitializeConversationsOptions) => {
@@ -28,14 +28,14 @@ export const useInitializeConversations = ({
     load_conversations_from_server()
       .then(() => {
         const state = getConversationStoreSnapshot();
-        if (auto_select_first && !state.current_conversation_id && state.conversations.length > 0) {
-          set_current_conversation(state.conversations[0].session_key);
+        if (auto_select_first && !state.current_session_key && state.conversations.length > 0) {
+          set_current_session_key(state.conversations[0].session_key);
         }
       })
       .catch((err) => {
         console.error(`[${debug_name}] Failed to load conversations:`, err);
       });
-  }, [auto_select_first, debug_name, load_conversations_from_server, set_current_conversation]);
+  }, [auto_select_first, debug_name, load_conversations_from_server, set_current_session_key]);
 
   return is_hydrated;
 };

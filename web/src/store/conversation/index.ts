@@ -6,18 +6,23 @@ import { ConversationStoreState } from "@/types/conversation";
 
 import * as actions from "./actions";
 
+interface PersistedConversationStoreState {
+  conversations?: ConversationStoreState["conversations"];
+  current_session_key?: string | null;
+}
+
 export const useConversationStore = create<ConversationStoreState>()(
   persist(
     (set, get) => ({
       conversations: [],
-      current_conversation_id: null,
+      current_session_key: null,
       loading: false,
       error: null,
 
       create_conversation: actions.createConversationAction(set),
       delete_conversation: actions.deleteConversationAction(set),
       update_conversation: actions.updateConversationAction(set),
-      set_current_conversation: actions.setCurrentConversationAction(set),
+      set_current_session_key: actions.setCurrentSessionKeyAction(set),
       sync_conversation_snapshot: actions.syncConversationSnapshotAction(set),
       get_conversation: actions.getConversationAction(get),
       load_conversations_from_server: actions.loadConversationsFromServerAction(set),
@@ -26,9 +31,17 @@ export const useConversationStore = create<ConversationStoreState>()(
     {
       name: "agent-ui-conversations",
       storage: createBrowserJSONStorage(),
+      version: 3,
+      migrate: (persisted_state: unknown): PersistedConversationStoreState => {
+        const state = (persisted_state ?? {}) as PersistedConversationStoreState;
+        return {
+          conversations: Array.isArray(state.conversations) ? state.conversations : [],
+          current_session_key: state.current_session_key ?? null,
+        };
+      },
       partialize: (state) => ({
         conversations: state.conversations,
-        current_conversation_id: state.current_conversation_id,
+        current_session_key: state.current_session_key,
       }),
     },
   ),

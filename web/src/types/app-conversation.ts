@@ -1,5 +1,5 @@
 export interface AppConversationState {
-  conversation_key: string | null;
-  set_conversation_key: (conversation_key: string | null) => void;
-  clear_conversation_key: () => void;
+  session_key: string | null;
+  set_session_key: (session_key: string | null) => void;
+  clear_session_key: () => void;
 }

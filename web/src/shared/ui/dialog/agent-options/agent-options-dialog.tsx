@@ -1,7 +1,7 @@
 /**
  * AgentOptions Dialog 主容器
  *
- * 三栏布局：左侧图标导航 (w-16) + 中间内容 (flex-1) + 右侧 Live Preview (w-80)
+ * 双栏布局：左侧导航 + 右侧内容区
  * 管理所有状态并分发给子组件
  */
 
@@ -20,7 +20,6 @@ import { AgentOptionsIdentityTab } from "./agent-options-identity-tab";
 import { AgentOptionsPersonaTab } from "./agent-options-persona-tab";
 import { AgentOptionsSkillsTab } from "./agent-options-skills-tab";
 import { AgentOptionsAdvancedTab } from "./agent-options-advanced-tab";
-import { AgentOptionsPreview } from "./agent-options-preview";
 
 // ==================== 类型定义 ====================
 
@@ -35,17 +34,16 @@ interface AgentOptionsProps {
   initial_options?: Partial<AgentConfigOptions>;
 }
 
-/** 扩展选项（兼容旧字段） */
+/** 扩展选项 */
 interface AgentDialogInitialOptions extends Partial<AgentConfigOptions> {
   permission_mode?: string;
   allowed_tools?: string[];
   disallowed_tools?: string[];
-  setting_sources?: ("user" | "project" | "local")[];
 }
 
 // ==================== 主组件 ====================
 
-/** AgentOptions 对话框 — 三栏布局 */
+/** AgentOptions 对话框 */
 export function AgentOptions({
   agent_id,
   mode,
@@ -71,10 +69,6 @@ export function AgentOptions({
   const [systemPrompt, setSystemPrompt] = useState(
     sourceOptions.system_prompt || ""
   );
-
-  const [settingSources, setSettingSources] = useState<
-    ("user" | "project" | "local")[]
-  >(sourceOptions.setting_sources || ["user", "project"]);
 
   // ---- Advanced 状态 ----
   const [permissionMode, setPermissionMode] = useState(
@@ -102,7 +96,6 @@ export function AgentOptions({
     setVibeTags([]);
     setModel(opts.model || "glm-5");
     setSystemPrompt(opts.system_prompt || "");
-    setSettingSources(opts.setting_sources || ["user", "project"]);
     setPermissionMode(opts.permission_mode || "default");
     setAllowedTools(opts.allowed_tools || []);
     setDisallowedTools(opts.disallowed_tools || []);
@@ -153,15 +146,6 @@ export function AgentOptions({
     };
   }, [title, is_open, on_validate_name]);
 
-  // ---- 切换技能来源 ----
-  const toggleSettingSource = (source: "user" | "project" | "local") => {
-    setSettingSources((prev) =>
-      prev.includes(source)
-        ? prev.filter((s) => s !== source)
-        : [...prev, source]
-    );
-  };
-
   // ---- 切换工具授权 ----
   const toggleTool = (
     toolName: string,
@@ -199,8 +183,7 @@ export function AgentOptions({
       allowed_tools: allowedTools,
       disallowed_tools: disallowedTools,
       system_prompt: systemPrompt || undefined,
-      setting_sources:
-        settingSources.length > 0 ? settingSources : undefined,
+      setting_sources: ["project"],
     };
     on_save(trimmedTitle, options);
     on_close();
@@ -216,25 +199,20 @@ export function AgentOptions({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="modal-dialog-surface radius-shell-xl flex h-[85vh] w-full max-w-[1180px] flex-col overflow-hidden border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.9))] shadow-[0_28px_90px_rgba(15,23,42,0.18)] animate-in zoom-in-95 duration-200">
+      <div className="modal-dialog-surface radius-shell-xl flex h-[85vh] w-full max-w-[980px] flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         {/* 头部 */}
         <div className="flex items-center justify-between border-b modal-divider px-6 py-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-slate-900 text-white shadow-[0_12px_24px_rgba(15,23,42,0.12)]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl modal-card text-primary">
               <Settings className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                {mode === "create" ? "New Agent" : "Edit Agent"}
-              </p>
-              <h2 className="mt-1 text-lg font-semibold tracking-tight text-slate-800">
-                {mode === "create" ? "创建 Agent" : "Agent 设置"}
+              <h2 className="text-lg font-semibold tracking-tight text-slate-800">
+                {mode === "create" ? "创建 Agent" : title}
               </h2>
-              <p className="text-xs text-slate-500">
-                {mode === "create"
-                  ? "配置 Agent 能力与行为策略"
-                  : `正在编辑: ${title}${agent_id ? ` · ${agent_id}` : ""}`}
-              </p>
+              {mode === "edit" && agent_id ? (
+                <p className="text-xs text-slate-500">ID: {agent_id}</p>
+              ) : null}
             </div>
           </div>
           <button
@@ -246,7 +224,7 @@ export function AgentOptions({
           </button>
         </div>
 
-        {/* 三栏主体：左导航 + 中内容 + 右预览 */}
+        {/* 主体：左导航 + 右内容 */}
         <div className="flex flex-1 overflow-hidden">
           {/* 左侧图标导航 */}
           <AgentOptionsNav
@@ -255,7 +233,7 @@ export function AgentOptions({
           />
 
           {/* 中间内容区 */}
-          <div className="flex-1 overflow-y-auto bg-[linear-gradient(180deg,rgba(255,255,255,0.74),rgba(248,250,252,0.58))] p-8">
+          <div className="flex-1 overflow-y-auto bg-transparent p-8">
             {activeTab === "identity" && (
               <AgentOptionsIdentityTab
                 title={title}
@@ -291,21 +269,9 @@ export function AgentOptions({
               <AgentOptionsSkillsTab
                 agent_id={mode === "edit" ? agent_id : undefined}
                 is_visible={activeTab === "skills"}
-                setting_sources={settingSources}
-                on_toggle_setting_source={toggleSettingSource}
               />
             )}
           </div>
-
-          {/* 右侧 Live Preview */}
-          <AgentOptionsPreview
-            title={title}
-            description={description}
-            vibeTags={vibeTags}
-            model={model}
-            permissionMode={permissionMode}
-            settingSourceCount={settingSources.length}
-          />
         </div>
 
         {/* 底部按钮 */}

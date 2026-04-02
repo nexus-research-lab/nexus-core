@@ -1,8 +1,8 @@
 import { DEFAULT_AGENT_ID } from '@/config/options';
 import { WebSocketMessage } from '@/types/websocket';
-import { deleteRound as deleteRoundApi } from '@/lib/agent-api';
+import { isStructuredSessionKey } from '@/lib/session-key';
 import { generateUuid } from '@/lib/uuid';
-import { Message, UserMessage } from '@/types';
+import { Message } from '@/types';
 import { AgentConversationActionContext } from '@/types/agent-conversation';
 import { PermissionDecisionPayload } from '@/types/permission';
 
@@ -11,7 +11,7 @@ import { upsertMessage } from './message-helpers';
 /**
  * 发送用户消息并建立当前轮次的本地状态。
  */
-export async function sendConversationMessage(
+export async function sendSessionMessage(
   content: string,
   context: AgentConversationActionContext,
 ): Promise<string | null> {
@@ -23,13 +23,13 @@ export async function sendConversationMessage(
     chat_type,
     ws_state,
     ws_send,
-    active_conversation_key_ref,
+    active_session_key_ref,
     set_error,
     set_is_loading,
     set_messages,
     set_pending_permission,
   } = context;
-  const resolved_session_key = session_key || active_conversation_key_ref.current;
+  const resolved_session_key = session_key || active_session_key_ref.current;
 
   if (!content.trim()) {
     return null;
@@ -38,13 +38,17 @@ export async function sendConversationMessage(
     set_error('请先选择或创建会话');
     return null;
   }
+  if (!isStructuredSessionKey(resolved_session_key)) {
+    set_error('当前会话的 session_key 非法，请刷新后重试');
+    return null;
+  }
   if (ws_state !== 'connected') {
     set_error('WebSocket未连接,请稍候重试');
     return null;
   }
 
   const round_id = generateUuid();
-  active_conversation_key_ref.current = resolved_session_key;
+  active_session_key_ref.current = resolved_session_key;
   const userMessage: Message = {
     message_id: round_id,
     session_key: resolved_session_key,
@@ -86,7 +90,7 @@ export async function sendConversationMessage(
  * @param context - 会话上下文
  * @param msg_id - 可选，指定只取消某个 Agent 气泡（Room 并发场景）
  */
-export function stopConversationGeneration(
+export function stopSessionGeneration(
   context: AgentConversationActionContext,
   msg_id?: string,
 ): void {
@@ -98,14 +102,20 @@ export function stopConversationGeneration(
     chat_type,
     ws_state,
     ws_send,
-    active_conversation_key_ref,
+    active_session_key_ref,
     messages,
+    set_error,
     set_is_loading,
     set_pending_permission,
   } = context;
-  const resolved_session_key = session_key || active_conversation_key_ref.current;
+  const resolved_session_key = session_key || active_session_key_ref.current;
 
   if (!resolved_session_key || ws_state !== 'connected') {
+    set_is_loading(false);
+    return;
+  }
+  if (!isStructuredSessionKey(resolved_session_key)) {
+    set_error('当前会话的 session_key 非法，无法中断');
     set_is_loading(false);
     return;
   }
@@ -144,7 +154,7 @@ export function stopConversationGeneration(
 /**
  * 提交权限决策。
  */
-export function sendConversationPermissionResponse(
+export function sendSessionPermissionResponse(
   payload: PermissionDecisionPayload,
   context: AgentConversationActionContext,
 ): boolean {
@@ -153,19 +163,23 @@ export function sendConversationPermissionResponse(
     session_key,
     ws_state,
     ws_send,
-    active_conversation_key_ref,
+    active_session_key_ref,
     pending_permission,
     set_error,
     set_is_loading,
     set_pending_permission,
   } = context;
-  const resolved_session_key = session_key || active_conversation_key_ref.current;
+  const resolved_session_key = session_key || active_session_key_ref.current;
 
   if (!pending_permission) {
     return false;
   }
-  if (!resolved_session_key || active_conversation_key_ref.current !== resolved_session_key) {
+  if (!resolved_session_key || active_session_key_ref.current !== resolved_session_key) {
     set_pending_permission(null);
+    return false;
+  }
+  if (!isStructuredSessionKey(resolved_session_key)) {
+    set_error('当前会话的 session_key 非法，无法提交权限决策');
     return false;
   }
   if (ws_state !== 'connected') {
@@ -195,65 +209,4 @@ export function sendConversationPermissionResponse(
   set_is_loading(true);
   set_error(null);
   return true;
-}
-
-/**
- * 删除指定轮次的消息。
- */
-export async function deleteConversationRound(
-  round_id: string,
-  context: AgentConversationActionContext,
-): Promise<void> {
-  const {
-    session_key,
-    set_error,
-    set_messages,
-  } = context;
-
-  if (!session_key) {
-    return;
-  }
-
-  try {
-    await deleteRoundApi(session_key, round_id);
-    set_messages((prev) => prev.filter((message) => message.round_id !== round_id));
-  } catch (err) {
-    console.error('[deleteRound] 删除失败:', err);
-    set_error(err instanceof Error ? err.message : 'Failed to delete round');
-  }
-}
-
-/**
- * 基于指定轮次重新生成回复。
- */
-export async function regenerateConversationRound(
-  round_id: string,
-  context: AgentConversationActionContext,
-): Promise<void> {
-  const {
-    session_key,
-    messages,
-    set_error,
-    set_is_loading,
-  } = context;
-
-  if (!session_key) {
-    return;
-  }
-
-  const last_user_message = messages.findLast(
-    (message) => message.role === 'user' && message.message_id === round_id,
-  ) as UserMessage | undefined;
-  if (!last_user_message?.content) {
-    return;
-  }
-
-  try {
-    await deleteConversationRound(round_id, context);
-    await sendConversationMessage(last_user_message.content, context);
-  } catch (err) {
-    console.error('[regenerate] 重新生成失败:', err);
-    set_error(err instanceof Error ? err.message : 'Failed to regenerate');
-    set_is_loading(false);
-  }
 }
