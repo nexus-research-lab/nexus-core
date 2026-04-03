@@ -196,7 +196,7 @@ export function sendSessionPermissionResponse(
     type: 'permission_response',
     request_id: payload.request_id,
     session_key: resolved_session_key,
-    agent_id: resolveAgentId(agent_id),
+    agent_id: resolveAgentId(pending_permission.agent_id || agent_id),
     decision: payload.decision,
     message: payload.message || (payload.decision === 'deny' ? 'User denied permission' : ''),
     interrupt: payload.interrupt ?? false,
