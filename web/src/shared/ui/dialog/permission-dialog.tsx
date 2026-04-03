@@ -9,6 +9,7 @@
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { PermissionRiskLevel, PermissionUpdate } from "@/types/permission";
 
 interface PermissionDialogProps {
@@ -24,6 +25,37 @@ interface PermissionDialogProps {
   on_deny: (updated_permissions?: PermissionUpdate[]) => void;
   on_close: () => void;
 }
+
+const FIELD_LABEL_MAP: Record<string, string> = {
+  query: '搜索内容',
+  url: '网址',
+  command: '命令',
+  path: '路径',
+  file_path: '文件路径',
+  pattern: '匹配内容',
+  prompt: '提示词',
+  description: '说明',
+  task: '任务',
+  mode: '模式',
+  directories: '目录',
+  answers: '回答',
+};
+
+const formatInlineValue = (value: unknown): string => {
+  if (value == null || value === '') return '空';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) {
+    return value.map((item) => formatInlineValue(item)).join('、');
+  }
+  if (typeof value === 'object') {
+    const pairs = Object.entries(value as Record<string, unknown>)
+      .slice(0, 4)
+      .map(([key, nestedValue]) => `${FIELD_LABEL_MAP[key] || key}：${formatInlineValue(nestedValue)}`);
+    return pairs.join('；');
+  }
+  return String(value);
+};
 
 export function PermissionDialog(
   {
@@ -65,26 +97,32 @@ export function PermissionDialog(
   }, [suggestions]);
 
   const riskColorMap: Record<PermissionRiskLevel, string> = {
-    low: 'text-emerald-700 dark:text-emerald-300',
-    medium: 'text-amber-700 dark:text-amber-300',
-    high: 'text-red-700 dark:text-red-300',
+    low: 'bg-emerald-100 text-emerald-700',
+    medium: 'bg-amber-100 text-amber-700',
+    high: 'bg-red-100 text-red-700',
   };
+
+  const readableFields = useMemo(() => {
+    return Object.entries(tool_input).map(([key, value]) => ({
+      key,
+      label: FIELD_LABEL_MAP[key] || key,
+      value: formatInlineValue(value),
+    }));
+  }, [tool_input]);
 
   // 格式化显示工具输入参数
   const formatToolInput = () => {
-    const entries = Object.entries(tool_input);
-    if (entries.length === 0) return null;
+    if (readableFields.length === 0) return null;
 
     return (
       <div className="mt-3 space-y-2">
         <p className="text-xs font-medium text-muted-foreground uppercase">参数详情</p>
-        {entries.map(([key, value]) => (
-          <div key={key} className="neo-inset radius-shell-sm p-3">
-            <span className="text-xs font-medium text-foreground">{key}:</span>
-            <pre className="mt-1 text-xs text-muted-foreground overflow-auto max-h-32 whitespace-pre-wrap break-words">
-              {typeof value === 'string' && value.length > 200 ? value.substring(0, 200) + '...'
-                : typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
-            </pre>
+        {readableFields.map((field) => (
+          <div key={field.key} className="neo-inset radius-shell-sm p-3">
+            <span className="text-xs font-medium text-foreground">{field.label}</span>
+            <p className="mt-1 text-xs leading-6 text-muted-foreground whitespace-pre-wrap break-words">
+              {field.value}
+            </p>
           </div>
         ))}
       </div>
@@ -102,17 +140,17 @@ export function PermissionDialog(
       <div
         className="soft-ring radius-shell-lg panel-surface flex w-full max-w-lg flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         {/* 头部 */}
-        <div className="flex items-center justify-between border-b border-white/55 bg-orange-500/10 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-slate-200/70 bg-white/90 px-5 py-4">
           <div className="flex items-center gap-3">
-            <div className="neo-pill radius-shell-sm flex h-10 w-10 items-center justify-center bg-orange-500/15 text-orange-600">
+            <div className="neo-pill radius-shell-sm flex h-10 w-10 items-center justify-center bg-amber-100/80 text-amber-600">
               <AlertTriangle className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-base font-semibold text-foreground tracking-tight">
-                权限确认
+                {tool_name}
               </h2>
               <p className="text-xs text-muted-foreground">
-                Agent 想要使用工具
+                需要你的确认
               </p>
             </div>
           </div>
@@ -126,40 +164,29 @@ export function PermissionDialog(
 
         {/* 内容 */}
         <div className="p-5 space-y-4 max-h-[60vh] overflow-auto">
-          <div className="radius-shell-md border border-orange-500/20 bg-orange-500/10 p-4">
-            <p className="text-sm font-medium text-orange-700 dark:text-orange-400">
-              Agent 想要使用「{tool_name}」工具
-            </p>
-            <p className="text-xs text-orange-600/90 dark:text-orange-300/90 mt-1.5 leading-relaxed">
-              允许后，Agent 将执行此工具对应的操作。请检查下方参数是否正确。
-            </p>
-            {(summary || risk_label || expires_at) && (
-              <div className="mt-3 space-y-1 text-xs">
-                {summary && (
-                  <p className="text-foreground/80 break-all">
-                    <span className="font-medium text-foreground">摘要：</span>
-                    {summary}
-                  </p>
-                )}
-                {risk_label && (
-                  <p className={risk_level ? riskColorMap[risk_level] : 'text-foreground/80'}>
-                    <span className="font-medium text-foreground">风险：</span>
-                    {risk_label}
-                  </p>
-                )}
-                {expires_at && (
-                  <p className="text-foreground/70">
-                    <span className="font-medium text-foreground">过期：</span>
-                    {new Date(expires_at).toLocaleString()}
-                  </p>
-                )}
-              </div>
-            )}
+          <div className="radius-shell-md border border-slate-200/70 bg-slate-50/80 p-4">
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              {risk_label ? (
+                <span className={risk_level ? cn("rounded-full px-2 py-1 font-medium", riskColorMap[risk_level]) : "rounded-full bg-slate-200 px-2 py-1 font-medium text-slate-600"}>
+                  {risk_label}
+                </span>
+              ) : null}
+              {expires_at ? (
+                <span className="text-slate-400">
+                  {new Date(expires_at).toLocaleString()} 前确认
+                </span>
+              ) : null}
+            </div>
+            {summary ? (
+              <p className="mt-3 text-sm leading-7 text-slate-700 break-words">
+                {summary}
+              </p>
+            ) : null}
           </div>
 
           {readableSuggestions.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase">记住这次授权</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase">授权范围</p>
               <div className="space-y-2">
                 <label className="neo-card-flat radius-shell-md flex items-start gap-3 p-3">
                   <input
@@ -170,8 +197,8 @@ export function PermissionDialog(
                     className="mt-0.5"
                   />
                   <div>
-                    <p className="text-sm font-medium text-foreground">仅本次生效</p>
-                    <p className="text-xs text-muted-foreground">这次允许，下次再问你</p>
+                    <p className="text-sm font-medium text-foreground">仅这次</p>
+                    <p className="text-xs text-muted-foreground">本次执行后失效</p>
                   </div>
                 </label>
                 {readableSuggestions.map((suggestion) => (
@@ -211,7 +238,7 @@ export function PermissionDialog(
                 : undefined;
               on_allow(selectedUpdate);
             }}
-            className="radius-shell-sm bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-[0_16px_28px_rgba(133,119,255,0.22)] transition-colors hover:bg-primary/90"
+            className="radius-shell-sm bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800"
           >
             允许
           </button>
