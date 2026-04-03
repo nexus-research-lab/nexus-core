@@ -61,6 +61,8 @@ class WebSocketConnectionManager:
     async def cleanup(self, chat_tasks: Dict[str, asyncio.Task]) -> None:
         """清理当前连接持有的运行时资源。"""
         logger.info("🧹 WebSocket连接清理")
+        if self.sender:
+            InteractivePermissionStrategy.unregister_sender(self.sender)
         if self.permission_strategy:
             self.permission_strategy.close()
 

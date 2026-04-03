@@ -9,6 +9,7 @@
 
 """WebSocket 消息发送器。"""
 
+import asyncio
 from typing import Any, Dict
 
 from fastapi import WebSocket
@@ -34,6 +35,7 @@ class WebSocketSender(MessageSender):
         self.websocket = websocket
         self._workspace_subscriptions: Dict[str, str] = {}
         self._is_closed = False
+        self._send_lock = asyncio.Lock()
         ws_connection_registry.register(self)
 
     async def _safe_send_json(self, payload: Dict[str, Any]) -> None:
@@ -41,16 +43,21 @@ class WebSocketSender(MessageSender):
         if self._is_closed:
             return
 
-        try:
-            await self.websocket.send_json(payload)
-        except RuntimeError as exc:
-            self._is_closed = True
-            self.unsubscribe_all_workspace()
-            logger.warning(f"⚠️ WebSocket 已关闭，停止发送 workspace 事件: {exc}")
-        except Exception:
-            self._is_closed = True
-            self.unsubscribe_all_workspace()
-            raise
+        # 中文注释：同一条 WebSocket 上会并发发送流式消息、事件消息、权限请求。
+        # 这里必须串行写入，避免 send_json 并发竞争导致消息乱序或丢失。
+        async with self._send_lock:
+            if self._is_closed:
+                return
+            try:
+                await self.websocket.send_json(payload)
+            except RuntimeError as exc:
+                self._is_closed = True
+                self.unsubscribe_all_workspace()
+                logger.warning(f"⚠️ WebSocket 已关闭，停止发送 workspace 事件: {exc}")
+            except Exception:
+                self._is_closed = True
+                self.unsubscribe_all_workspace()
+                raise
 
     async def send_message(self, message: Message) -> None:
         """发送完整消息。"""

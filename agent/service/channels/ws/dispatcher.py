@@ -19,6 +19,9 @@ from agent.service.channels.ws.websocket_sender import WebSocketSender
 from agent.service.channels.ws.ws_connection_registry import ws_connection_registry
 from agent.service.chat.chat_service import ChatService
 from agent.service.chat.room_chat_service import RoomChatService
+from agent.service.permission.strategy.permission_interactive import (
+    InteractivePermissionStrategy,
+)
 from agent.service.room.room_route_guard import room_route_guard
 from agent.service.session.session_router import (
     get_session_key_validation_error,
@@ -54,6 +57,7 @@ class ChannelDispatcher:
         msg_type = message.get("type")
         if await self._reject_invalid_browser_session_key(message):
             return
+        self._register_active_session(message)
 
         if msg_type == "chat":
             # Room 消息路由到 RoomChatService
@@ -73,6 +77,9 @@ class ChannelDispatcher:
 
         if msg_type == "permission_response":
             await self._permission_handler.handle_permission_response(message)
+            return
+
+        if msg_type == "bind_session":
             return
 
         if msg_type == "subscribe_workspace":
@@ -131,6 +138,16 @@ class ChannelDispatcher:
 
         await self._error_handler.handle_unknown_message_type(message)
 
+    def _register_active_session(self, message: Dict[str, Any]) -> None:
+        """把当前连接登记为该 session 的活跃 sender。"""
+        session_key = message.get("session_key")
+        if not isinstance(session_key, str) or not session_key:
+            return
+        InteractivePermissionStrategy.register_session_sender(
+            session_key=session_key,
+            sender=self._sender,
+        )
+
     @staticmethod
     def _is_room_message(message: Dict[str, Any]) -> bool:
         """判断是否为 Room 消息。"""
@@ -149,7 +166,7 @@ class ChannelDispatcher:
     ) -> bool:
         """拒绝浏览器直接发送的非法 session_key。"""
         msg_type = message.get("type")
-        if msg_type not in {"chat", "interrupt", "permission_response"}:
+        if msg_type not in {"chat", "interrupt", "permission_response", "bind_session"}:
             return False
 
         raw_session_key = message.get("session_key")
