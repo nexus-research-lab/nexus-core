@@ -28,8 +28,9 @@ async def extract_request_id(request: Request = None):
             body_data = json.loads(body_bytes)
             request_id = body_data.get("request_id", f"{settings.PROJECT_NAME}-{worker.get_id()}")
             request.state.request_id = request_id
-        except Exception:
-            pass
+        except Exception as e:
+            # JSON 解析失败时使用默认 request_id
+            request.state.request_id = f"{settings.PROJECT_NAME}-{worker.get_id()}"
     elif request.method == "GET":
         request_id = request.query_params.get("request_id", f"{settings.PROJECT_NAME}-{worker.get_id()}")
         request.state.request_id = request_id

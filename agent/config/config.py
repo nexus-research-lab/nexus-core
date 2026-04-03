@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     # 项目信息, 服务配置
     LOGO: str = logo
     WORKERS: int = int(os.getenv("WORKERS", 1))
-    DEBUG: bool = True
+    DEBUG: bool = bool(os.getenv("DEBUG", "false").lower() in ("true", "1", "yes"))
     PROJECT_NAME: str = "agent"
     API_PREFIX: str = "/agent"
     ENABLE_SWAGGER_DOC: bool = True
@@ -69,6 +69,25 @@ class Settings(BaseSettings):
     # 缓存配置
     CACHE_FILE_DIR: str = os.path.abspath(os.path.join(os.getcwd(), "cache"))
     DEFAULT_CACHE_TTL_DAYS: int = 7
+
+    # 缓存开关
+    ENABLE_CACHE: bool = True
+
+    # HTTP 超时（秒）
+    HTTP_TIMEOUT: int = 30
+
+    # Redis 配置
+    REDIS_HOST: str = "127.0.0.1"
+    REDIS_PORT: int = 6379
+    REDIS_PASSWD: Optional[str] = None
+    REDIS_DB: int = 0
+    REDIS_CLUSTER_ENABLED: bool = False
+    REDIS_CLUSTER_NODES: str = ""
+    REDIS_POOL: bool = True
+    REDIS_MAX_CONNECTIONS: int = 10
+    REDIS_SOCKET_TIMEOUT: int = 5
+    REDIS_SOCKET_CONNECT_TIMEOUT: int = 5
+    REDIS_SOCKET_KEEPALIVE: bool = True
 
     # 数据库配置
     DATABASE_URL: str = "sqlite+aiosqlite:///~/.nexus/data/nexus.db"

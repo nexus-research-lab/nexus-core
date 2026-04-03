@@ -1,4 +1,4 @@
-# !/usr/bin/env pythonwsgi_app
+# !/usr/bin/env python
 # -*- coding: utf-8 -*-
 # =====================================================
 # @File   ：config_gunicorn

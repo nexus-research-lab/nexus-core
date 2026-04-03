@@ -31,7 +31,7 @@ class BaseClient(ABC):
                 kwargs["proxies"] = {"http": proxy, "https": proxy}
             if "headers" not in kwargs:
                 kwargs["headers"] = {'Content-Type': 'application/json'}
-            if kwargs.get("timeout", None):
+            if "timeout" not in kwargs:
                 kwargs["timeout"] = settings.HTTP_TIMEOUT
 
             response = requests.request(method, url, **kwargs)
@@ -66,6 +66,7 @@ class BaseClient(ABC):
                         raise ServerException(f"API request failed with state: {response.status}, error: {error_msg}")
                     return await response.json()
         except Exception as e:
+            logger.error(f"Failed to async invoke API: {url}, error: {e}")
             raise e
 
     @abstractmethod
