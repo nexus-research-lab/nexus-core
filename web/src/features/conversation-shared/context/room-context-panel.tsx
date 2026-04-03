@@ -11,7 +11,6 @@ import { RoomConversationView } from "@/types/conversation";
 import { TodoItem } from "@/types/todo";
 import { UpdateRoomParams } from "@/types/room";
 
-import { CollaborationStatusSection } from "./collaboration-status-section";
 import { MemberSummaryCard } from "./member-summary-card";
 import { RoomMemberPickerDialog } from "@/features/room-members/room-member-picker-dialog";
 import { ProgressSection } from "./progress-section";
@@ -109,9 +108,8 @@ export function RoomContextPanel({
                 return (
                   <div
                     key={member.agent_id}
-                    className={`group flex items-center gap-2 rounded-[16px] px-1 py-1 transition-all duration-300 ${
-                      is_active ? "bg-white/14" : "hover:bg-white/10"
-                    }`}
+                    className={`group flex items-center gap-2 rounded-[16px] px-1 py-1 transition-all duration-300 ${is_active ? "bg-white/14" : "hover:bg-white/10"
+                      }`}
                   >
                     <button
                       className="flex min-w-0 flex-1 items-center gap-3 rounded-[14px] px-2 py-1 text-left"
@@ -161,12 +159,6 @@ export function RoomContextPanel({
             runtime_status={runtime_status}
           />
         ) : null}
-
-        <CollaborationStatusSection
-          active_conversation={active_conversation}
-          localized_runtime_status={localized_runtime_status}
-          total_member_count={room_members.length}
-        />
 
         <ProgressSection todos={todos} />
       </>
