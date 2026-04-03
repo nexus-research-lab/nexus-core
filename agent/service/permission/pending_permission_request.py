@@ -16,6 +16,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
+from agent.service.permission.permission_route_context import PermissionRouteContext
+
 
 @dataclass
 class PendingPermissionRequest:
@@ -23,7 +25,11 @@ class PendingPermissionRequest:
 
     request_id: str
     session_key: str
+    dispatch_session_key: str
     tool_name: str
     input_data: dict[str, Any]
+    suggestion_updates: list[dict[str, object]]
     event: asyncio.Event
     expires_at: datetime
+    route_context: PermissionRouteContext | None = None
+    dispatched_sender_id: int | None = None
