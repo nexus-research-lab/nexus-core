@@ -6,11 +6,10 @@
 
 "use client";
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { CheckCircle, ChevronDown, ChevronRight, Clock, Loader, Sparkles, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CodeBlock } from './code-block';
-import { PermissionDialog } from '@/shared/ui/dialog/permission-dialog';
 import { ToolResultContent, ToolUseContent } from '@/types/message';
 import { PermissionRiskLevel, PermissionUpdate } from '@/types/permission';
 
@@ -58,6 +57,81 @@ const getToolTitle = (tool_name: string): string => {
   return TOOL_TITLE_MAP[tool_name] ?? tool_name;
 };
 
+const FIELD_LABEL_MAP: Record<string, string> = {
+  query: '搜索内容',
+  url: '网址',
+  command: '命令',
+  path: '路径',
+  file_path: '文件路径',
+  pattern: '匹配内容',
+  prompt: '提示词',
+  description: '说明',
+  task: '任务',
+  mode: '模式',
+  directories: '目录',
+  answers: '回答',
+};
+
+const PRIMARY_INPUT_KEYS = [
+  'command',
+  'query',
+  'url',
+  'path',
+  'file_path',
+  'pattern',
+  'description',
+  'prompt',
+  'task',
+] as const;
+
+const formatPermissionValue = (value: unknown): string => {
+  if (value == null || value === '') return '空';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) {
+    return value.map((item) => formatPermissionValue(item)).join('、');
+  }
+  if (typeof value === 'object') {
+    return Object.entries(value as Record<string, unknown>)
+      .map(([key, nestedValue]) => `${FIELD_LABEL_MAP[key] || key}：${formatPermissionValue(nestedValue)}`)
+      .join('；');
+  }
+  return String(value);
+};
+
+const getReadableSuggestions = (suggestions: PermissionUpdate[] = []) => {
+  const destinationMap: Record<string, string> = {
+    session: '仅本会话',
+    projectSettings: '项目设置',
+    userSettings: '用户设置',
+    localSettings: '本地设置',
+  };
+  const behaviorMap: Record<string, string> = {
+    allow: '允许',
+    deny: '拒绝',
+    ask: '继续询问',
+  };
+
+  return suggestions.map((suggestion, index) => {
+    const destination = suggestion.destination
+      ? destinationMap[suggestion.destination] || suggestion.destination
+      : '当前会话';
+    const behavior = suggestion.behavior
+      ? behaviorMap[suggestion.behavior] || suggestion.behavior
+      : '更新规则';
+    const ruleSummary = suggestion.rules
+      ?.map((rule) => rule.rule_content || rule.tool_name)
+      .filter(Boolean)
+      .join('，');
+
+    return {
+      index,
+      label: `${behavior}并写入${destination}`,
+      description: ruleSummary || suggestion.type,
+    };
+  });
+};
+
 /** 获取工具输入的简短摘要 */
 const getInputSummary = (input: any): string | null => {
   if (!input) return null;
@@ -70,6 +144,18 @@ const getInputSummary = (input: any): string | null => {
   if (input.task) return input.task;
   if (input.prompt) return input.prompt;
   if (input.command) return `$ ${input.command.slice(0, 50)}${input.command.length > 50 ? '...' : ''}`;
+  return null;
+};
+
+/** 获取工具输入的完整展示文本 */
+const getPrimaryInputDetail = (input: any): { key: string; value: string } | null => {
+  if (!input) return null;
+  for (const key of PRIMARY_INPUT_KEYS) {
+    const value = input[key];
+    if (typeof value === 'string' && value) {
+      return { key, value };
+    }
+  }
   return null;
 };
 
@@ -92,7 +178,7 @@ export function ToolBlock({
   permission_request,
 }: ToolBlockProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState<number>(-1);
   const [copied, setCopied] = useState(false);
 
   // 复制工具执行结果
@@ -127,6 +213,25 @@ export function ToolBlock({
   // 路径显示
   const inputSummary = useMemo(() => getInputSummary(tool_use.input), [tool_use.input]);
   const toolTitle = useMemo(() => getToolTitle(tool_use.name), [tool_use.name]);
+  const primaryInputDetail = useMemo(
+    () => getPrimaryInputDetail(permission_request?.tool_input || tool_use.input),
+    [permission_request?.tool_input, tool_use.input],
+  );
+  const readableSuggestions = useMemo(
+    () => getReadableSuggestions(permission_request?.suggestions || []),
+    [permission_request?.suggestions],
+  );
+  const readablePermissionFields = useMemo(() => {
+    if (!permission_request?.tool_input) return [];
+
+    return Object.entries(permission_request.tool_input)
+      .filter(([key]) => key !== primaryInputDetail?.key)
+      .map(([key, value]) => ({
+        key,
+        label: FIELD_LABEL_MAP[key] || key,
+        value: formatPermissionValue(value),
+      }));
+  }, [permission_request?.tool_input, primaryInputDetail?.key]);
   const resultSummary = useMemo(() => {
     if (!tool_result) return null;
     return getResultSummary(tool_result.content);
@@ -139,6 +244,10 @@ export function ToolBlock({
   const isSuccess = finalStatus === 'success';
   const isError = finalStatus === 'error';
   const isWaiting = finalStatus === 'waiting_permission';
+
+  useEffect(() => {
+    setSelectedSuggestionIndex(-1);
+  }, [permission_request?.request_id]);
 
   return (
     <div className="border-l border-slate-200/90 pl-4">
@@ -253,70 +362,122 @@ export function ToolBlock({
       )}
 
       {permission_request && isWaiting && (
-        <div className="ml-7 mt-2 rounded-xl border border-amber-200/70 bg-amber-50/45 p-3">
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2 text-[11px]">
-              <span className="rounded-full bg-amber-100 px-2 py-1 font-medium text-amber-700">
-                {permission_request.risk_label || '需要确认'}
-              </span>
-              {permission_request.expires_at ? (
-                <span className="text-slate-400">
-                  {new Date(permission_request.expires_at).toLocaleTimeString()}
-                  {' '}前确认
-                </span>
-              ) : null}
+        <div className="ml-7 mt-2 border-t border-slate-200/80 pt-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="min-w-0 text-[11px] text-slate-400">
+              {permission_request.expires_at
+                ? `${new Date(permission_request.expires_at).toLocaleTimeString()} 前确认`
+                : '确认后继续执行'}
             </div>
-            {permission_request.summary ? (
-              <p className="text-[13px] leading-6 text-slate-700">
-                {permission_request.summary}
+
+            <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2">
+              <button
+                onClick={() => permission_request.on_deny()}
+                className="modal-btn-secondary rounded-lg px-3 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:text-slate-800"
+              >
+                拒绝
+              </button>
+              <button
+                onClick={() => {
+                  const selectedUpdate = selectedSuggestionIndex >= 0 && permission_request.suggestions
+                    ? [permission_request.suggestions[selectedSuggestionIndex]]
+                    : undefined;
+                  permission_request.on_allow(selectedUpdate);
+                }}
+                className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-[0_8px_20px_rgba(133,119,255,0.2)] transition-colors hover:bg-primary/90"
+              >
+                允许
+              </button>
+            </div>
+          </div>
+
+          {permission_request.summary ? (
+            <p className="mt-2 text-[13px] leading-7 text-slate-600">
+              {permission_request.summary}
+            </p>
+          ) : null}
+
+          {primaryInputDetail ? (
+            <div className="modal-card radius-shell-md mt-2 overflow-hidden">
+              <div className="border-b modal-divider px-4 py-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  {FIELD_LABEL_MAP[primaryInputDetail.key] || '执行内容'}
+                </p>
+              </div>
+              <pre className="px-4 py-3 text-[13px] leading-7 whitespace-pre-wrap break-all text-slate-800">
+                {primaryInputDetail.value}
+              </pre>
+            </div>
+          ) : null}
+
+          {readablePermissionFields.length > 0 ? (
+            <div className="mt-2 grid gap-2">
+              {readablePermissionFields.map((field) => (
+                <div key={field.key} className="modal-card radius-shell-md px-4 py-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    {field.label}
+                  </p>
+                  <p className="mt-2 text-[13px] leading-7 whitespace-pre-wrap break-words text-slate-800">
+                    {field.value}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          {readableSuggestions.length > 0 ? (
+            <div className="mt-3 space-y-2">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                授权范围
               </p>
-            ) : null}
-          </div>
-
-          <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
-            <button
-              onClick={() => setShowDetailModal(true)}
-              className="workspace-chip radius-shell-sm px-3 py-1 text-xs font-medium transition-colors hover:text-slate-950"
-            >
-              详情
-            </button>
-            <button
-              onClick={() => permission_request.on_deny()}
-              className="workspace-chip radius-shell-sm px-3 py-1 text-xs font-medium transition-colors hover:text-slate-950"
-            >
-              拒绝
-            </button>
-            <button
-              onClick={() => permission_request.on_allow()}
-              className="radius-shell-sm bg-slate-900 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-slate-800"
-            >
-              允许
-            </button>
-          </div>
+              <div className="space-y-2">
+                <label
+                  className={cn(
+                    "radius-shell-md flex items-start gap-3 px-4 py-3 transition-all duration-200",
+                    selectedSuggestionIndex === -1
+                      ? "modal-card-active bg-primary/5 ring-1 ring-primary/30 shadow-[0_10px_28px_rgba(15,23,42,0.06)]"
+                      : "modal-card hover:border-primary/20 hover:bg-white/80",
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name={`permission-suggestion-${permission_request.request_id}`}
+                    checked={selectedSuggestionIndex === -1}
+                    onChange={() => setSelectedSuggestionIndex(-1)}
+                    className="mt-0.5"
+                  />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">仅这次</p>
+                    <p className="text-xs text-muted-foreground">只对这一次生效</p>
+                  </div>
+                </label>
+                {readableSuggestions.map((suggestion) => (
+                  <label
+                    key={suggestion.index}
+                    className={cn(
+                      "radius-shell-md flex items-start gap-3 px-4 py-3 transition-all duration-200",
+                      selectedSuggestionIndex === suggestion.index
+                        ? "modal-card-active bg-primary/5 ring-1 ring-primary/30 shadow-[0_10px_28px_rgba(15,23,42,0.06)]"
+                        : "modal-card hover:border-primary/20 hover:bg-white/80",
+                    )}
+                  >
+                    <input
+                      type="radio"
+                      name={`permission-suggestion-${permission_request.request_id}`}
+                      checked={selectedSuggestionIndex === suggestion.index}
+                      onChange={() => setSelectedSuggestionIndex(suggestion.index)}
+                      className="mt-0.5"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{suggestion.label}</p>
+                      <p className="text-xs text-muted-foreground break-all">{suggestion.description}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
-      )}
-
-      {/* 详情弹窗 */}
-      {permission_request && showDetailModal && (
-        <PermissionDialog
-          is_open={showDetailModal}
-          tool_name={tool_use.name}
-          tool_input={permission_request.tool_input}
-          risk_level={permission_request.risk_level}
-          risk_label={permission_request.risk_label}
-          summary={permission_request.summary}
-          suggestions={permission_request.suggestions}
-          expires_at={permission_request.expires_at}
-          on_allow={(updated_permissions) => {
-            setShowDetailModal(false);
-            permission_request.on_allow(updated_permissions);
-          }}
-          on_deny={(updated_permissions) => {
-            setShowDetailModal(false);
-            permission_request.on_deny(updated_permissions);
-          }}
-          on_close={() => setShowDetailModal(false)}
-        />
       )}
     </div>
   );

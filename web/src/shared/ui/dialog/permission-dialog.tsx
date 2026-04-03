@@ -6,7 +6,7 @@
 
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AlertTriangle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -72,6 +72,7 @@ export function PermissionDialog(
     on_close
   }: PermissionDialogProps) {
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState<number>(-1);
+  const confirmButtonRef = useRef<HTMLButtonElement>(null);
 
   const readableSuggestions = useMemo(() => {
     return suggestions.map((suggestion, index) => {
@@ -110,17 +111,46 @@ export function PermissionDialog(
     }));
   }, [tool_input]);
 
+  useEffect(() => {
+    if (is_open && confirmButtonRef.current) {
+      confirmButtonRef.current.focus();
+    }
+  }, [is_open]);
+
+  useEffect(() => {
+    if (is_open) {
+      setSelectedSuggestionIndex(-1);
+    }
+  }, [is_open]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!is_open) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        on_close();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [is_open, on_close]);
+
   // 格式化显示工具输入参数
   const formatToolInput = () => {
     if (readableFields.length === 0) return null;
 
     return (
-      <div className="mt-3 space-y-2">
-        <p className="text-xs font-medium text-muted-foreground uppercase">参数详情</p>
+      <div className="space-y-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Parameters</p>
+          <h3 className="mt-1 text-base font-semibold text-slate-900">参数</h3>
+        </div>
         {readableFields.map((field) => (
-          <div key={field.key} className="neo-inset radius-shell-sm p-3">
-            <span className="text-xs font-medium text-foreground">{field.label}</span>
-            <p className="mt-1 text-xs leading-6 text-muted-foreground whitespace-pre-wrap break-words">
+          <div key={field.key} className="modal-card radius-shell-md px-4 py-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+              {field.label}
+            </p>
+            <p className="mt-2 text-sm leading-7 whitespace-pre-wrap break-words text-slate-800">
               {field.value}
             </p>
           </div>
@@ -136,38 +166,46 @@ export function PermissionDialog(
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+      className="fixed inset-0 z-9999 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-150"
+      onClick={on_close}
+    >
       <div
-        className="soft-ring radius-shell-lg panel-surface flex w-full max-w-lg flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-        {/* 头部 */}
-        <div className="flex items-center justify-between border-b border-slate-200/70 bg-white/90 px-5 py-4">
-          <div className="flex items-center gap-3">
-            <div className="neo-pill radius-shell-sm flex h-10 w-10 items-center justify-center bg-amber-100/80 text-amber-600">
-              <AlertTriangle className="w-5 h-5" />
+        className="modal-dialog-surface radius-shell-xl flex w-full max-w-2xl flex-col overflow-hidden animate-in zoom-in-95 duration-150"
+        onClick={(event) => event.stopPropagation()}
+        style={{ maxHeight: "80vh" }}
+      >
+        <div className="flex items-center justify-between border-b modal-divider px-6 py-5">
+          <div className="flex items-start gap-3">
+            <div
+              className={cn(
+                "modal-card flex h-10 w-10 items-center justify-center rounded-xl",
+                risk_level === "high" && "bg-red-100 text-red-600",
+                risk_level === "medium" && "bg-amber-100 text-amber-600",
+                (!risk_level || risk_level === "low") && "bg-emerald-100 text-emerald-600",
+              )}
+            >
+              <AlertTriangle className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-foreground tracking-tight">
+              <h2 className="text-lg font-semibold tracking-tight text-slate-800">
                 {tool_name}
               </h2>
-              <p className="text-xs text-muted-foreground">
-                需要你的确认
-              </p>
+              <p className="text-xs text-slate-500">{risk_label || "需要确认"}</p>
             </div>
           </div>
           <button
             onClick={on_close}
-            className="neo-pill radius-shell-sm p-2 text-muted-foreground transition-colors hover:text-foreground"
+            className="modal-btn-secondary rounded-xl p-2 text-slate-400 transition-colors hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-primary/50"
           >
-            <X className="w-4 h-4" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* 内容 */}
-        <div className="p-5 space-y-4 max-h-[60vh] overflow-auto">
-          <div className="radius-shell-md border border-slate-200/70 bg-slate-50/80 p-4">
+        <div className="soft-scrollbar flex-1 space-y-5 overflow-y-auto px-6 py-5">
+          <div className="modal-card radius-shell-lg px-5 py-5">
             <div className="flex flex-wrap items-center gap-2 text-xs">
               {risk_label ? (
-                <span className={risk_level ? cn("rounded-full px-2 py-1 font-medium", riskColorMap[risk_level]) : "rounded-full bg-slate-200 px-2 py-1 font-medium text-slate-600"}>
+                <span className={risk_level ? cn("rounded-full px-2.5 py-1 font-medium", riskColorMap[risk_level]) : "rounded-full bg-slate-200 px-2.5 py-1 font-medium text-slate-600"}>
                   {risk_label}
                 </span>
               ) : null}
@@ -177,18 +215,26 @@ export function PermissionDialog(
                 </span>
               ) : null}
             </div>
-            {summary ? (
-              <p className="mt-3 text-sm leading-7 text-slate-700 break-words">
-                {summary}
-              </p>
-            ) : null}
+            <p className="mt-4 text-[15px] leading-8 break-words text-slate-800">
+              {summary || "确认后继续执行"}
+            </p>
           </div>
 
           {readableSuggestions.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase">授权范围</p>
+            <div className="space-y-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Policy</p>
+                <h3 className="mt-1 text-base font-semibold text-slate-900">授权范围</h3>
+              </div>
               <div className="space-y-2">
-                <label className="neo-card-flat radius-shell-md flex items-start gap-3 p-3">
+                <label
+                  className={cn(
+                    "radius-shell-md flex items-start gap-3 px-4 py-3 transition-all duration-200",
+                    selectedSuggestionIndex === -1
+                      ? "modal-card-active bg-primary/5 ring-1 ring-primary/30 shadow-[0_10px_28px_rgba(15,23,42,0.06)]"
+                      : "modal-card hover:border-primary/20 hover:bg-white/80",
+                  )}
+                >
                   <input
                     type="radio"
                     name="permission-suggestion"
@@ -198,11 +244,19 @@ export function PermissionDialog(
                   />
                   <div>
                     <p className="text-sm font-medium text-foreground">仅这次</p>
-                    <p className="text-xs text-muted-foreground">本次执行后失效</p>
+                    <p className="text-xs text-muted-foreground">只对这一次生效</p>
                   </div>
                 </label>
                 {readableSuggestions.map((suggestion) => (
-                  <label key={suggestion.index} className="neo-card-flat radius-shell-md flex items-start gap-3 p-3">
+                  <label
+                    key={suggestion.index}
+                    className={cn(
+                      "radius-shell-md flex items-start gap-3 px-4 py-3 transition-all duration-200",
+                      selectedSuggestionIndex === suggestion.index
+                        ? "modal-card-active bg-primary/5 ring-1 ring-primary/30 shadow-[0_10px_28px_rgba(15,23,42,0.06)]"
+                        : "modal-card hover:border-primary/20 hover:bg-white/80",
+                    )}
+                  >
                     <input
                       type="radio"
                       name="permission-suggestion"
@@ -223,22 +277,22 @@ export function PermissionDialog(
           {formatToolInput()}
         </div>
 
-        {/* 底部按钮 */}
-        <div className="flex items-center justify-end gap-3 border-t border-white/55 px-5 py-4">
+        <div className="flex items-center justify-end gap-3 border-t modal-divider px-6 py-5">
           <button
             onClick={() => on_deny()}
-            className="neo-pill radius-shell-sm px-4 py-2 text-sm font-medium transition-colors hover:text-accent"
+            className="modal-btn-secondary rounded-xl px-5 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:text-slate-800 focus-visible:ring-2 focus-visible:ring-primary/50"
           >
             拒绝
           </button>
           <button
+            ref={confirmButtonRef}
             onClick={() => {
               const selectedUpdate = selectedSuggestionIndex >= 0
                 ? [suggestions[selectedSuggestionIndex]]
                 : undefined;
               on_allow(selectedUpdate);
             }}
-            className="radius-shell-sm bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800"
+            className="rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-[0_8px_24px_rgba(133,119,255,0.25)] transition-all hover:bg-primary/90 hover:shadow-[0_12px_32px_rgba(133,119,255,0.3)] focus-visible:ring-2 focus-visible:ring-primary/50"
           >
             允许
           </button>
