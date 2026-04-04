@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Settings, Trash2, X } from "lucide-react";
 
+import { useI18n } from "@/shared/i18n/i18n-context";
 import { ConfirmDialog } from "@/shared/ui/dialog/confirm-dialog";
 import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import { UpdateRoomParams } from "@/types/room";
@@ -26,6 +27,7 @@ export function RoomSettingsPanel({
   on_delete_room,
   on_close,
 }: RoomSettingsPanelProps) {
+  const { t } = useI18n();
   const [is_editing_name, set_is_editing_name] = useState(false);
   const [is_editing_description, set_is_editing_description] = useState(false);
   const [is_delete_confirm_open, set_is_delete_confirm_open] = useState(false);
@@ -95,11 +97,11 @@ export function RoomSettingsPanel({
             <div className="flex items-center gap-2">
               <Settings className="h-4.5 w-4.5 text-slate-700" />
               <h2 className="text-lg font-semibold text-slate-900">
-                Room 设置
+                {t("room.settings_title")}
               </h2>
             </div>
             <button
-              aria-label="关闭"
+              aria-label={t("common.close")}
               className="neo-pill radius-shell-sm p-1.5 text-slate-500 transition-colors hover:text-slate-700"
               onClick={on_close}
             >
@@ -112,7 +114,7 @@ export function RoomSettingsPanel({
             {/* 名称设置 */}
             <div className="space-y-2">
               <label className="text-xs font-semibold uppercase tracking-wider text-slate-700/64">
-                名称
+                {t("room.name")}
               </label>
               {is_editing_name ? (
                 <div className="flex gap-2">
@@ -127,7 +129,7 @@ export function RoomSettingsPanel({
                         set_is_editing_name(false);
                       }
                     }}
-                    placeholder="输入 Room 名称"
+                    placeholder={t("room.name_placeholder")}
                     maxLength={64}
                     className="neo-inset radius-shell-sm flex-1 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400/50 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:outline-none"
                   />
@@ -136,17 +138,17 @@ export function RoomSettingsPanel({
                     onClick={() => handle_update_name(edit_name_value)}
                     disabled={is_updating}
                   >
-                    保存
+                    {t("common.save")}
                   </WorkspacePillButton>
                 </div>
               ) : (
                 <div className="flex items-center justify-between gap-3 rounded-lg bg-slate-50/50 px-4 py-3">
-                  <p className="text-sm text-slate-900">{room_name || "未命名 Room"}</p>
+                  <p className="text-sm text-slate-900">{room_name || t("room.untitled_room")}</p>
                   <WorkspacePillButton
                     size="sm"
                     onClick={() => set_is_editing_name(true)}
                   >
-                    编辑
+                    {t("common.edit")}
                   </WorkspacePillButton>
                 </div>
               )}
@@ -155,7 +157,7 @@ export function RoomSettingsPanel({
             {/* 描述设置 */}
             <div className="space-y-2">
               <label className="text-xs font-semibold uppercase tracking-wider text-slate-700/64">
-                描述
+                {t("room.description")}
               </label>
               {is_editing_description ? (
                 <div className="flex gap-2">
@@ -168,7 +170,7 @@ export function RoomSettingsPanel({
                         set_is_editing_description(false);
                       }
                     }}
-                    placeholder="描述这个 Room 的用途..."
+                    placeholder={t("room.description_placeholder")}
                     maxLength={256}
                     rows={3}
                     className="neo-inset radius-shell-sm flex-1 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400/50 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:outline-none resize-none"
@@ -178,19 +180,19 @@ export function RoomSettingsPanel({
                     onClick={() => handle_update_description(edit_description_value)}
                     disabled={is_updating}
                   >
-                    保存
+                    {t("common.save")}
                   </WorkspacePillButton>
                 </div>
               ) : (
                 <div className="flex items-center justify-between gap-3 rounded-lg bg-slate-50/50 px-4 py-3">
                   <p className="text-sm text-slate-900 min-w-0 flex-1 truncate">
-                    {room_description || "暂无描述"}
+                    {room_description || t("room.no_description")}
                   </p>
                   <WorkspacePillButton
                     size="sm"
                     onClick={() => set_is_editing_description(true)}
                   >
-                    编辑
+                    {t("common.edit")}
                   </WorkspacePillButton>
                 </div>
               )}
@@ -205,7 +207,7 @@ export function RoomSettingsPanel({
                 class_name="w-full justify-center"
               >
                 <Trash2 className="h-4 w-4" />
-                删除 Room
+                {t("room.delete_title")}
               </WorkspacePillButton>
             </div>
           </div>
@@ -215,10 +217,10 @@ export function RoomSettingsPanel({
       {/* 删除确认对话框 */}
       <ConfirmDialog
         is_open={is_delete_confirm_open}
-        title="删除 Room"
-        message="确定要删除这个 Room 吗？此操作将移除 Room 及其所有对话和消息，无法恢复。"
-        confirm_text="删除"
-        cancel_text="取消"
+        title={t("room.delete_title")}
+        message={t("room.delete_message")}
+        confirm_text={t("common.delete")}
+        cancel_text={t("common.cancel")}
         variant="danger"
         on_confirm={handle_delete_room}
         on_cancel={() => set_is_delete_confirm_open(false)}

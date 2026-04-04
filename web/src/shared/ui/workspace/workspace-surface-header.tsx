@@ -4,6 +4,7 @@ import { Check, ChevronDown, Circle, ListChecks, LoaderCircle, LucideIcon, X, } 
 import { ReactNode, useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/shared/i18n/i18n-context";
 import { LoadingOrb } from "@/shared/ui/feedback/loading-orb";
 import { TodoItem } from "@/types/todo";
 
@@ -125,6 +126,7 @@ export function WorkspaceTaskStrip({
                                      todos,
                                      class_name,
 }: WorkspaceTaskStripProps) {
+  const { t } = useI18n();
   const total_count = todos.length;
   const completed_count = todos.filter((todo) => todo.status === "completed").length;
   const active_count = todos.filter((todo) => todo.status !== "completed").length;
@@ -149,7 +151,7 @@ export function WorkspaceTaskStrip({
     <div className={cn("relative", class_name)}>
       {is_open ? (
         <button
-          aria-label="关闭任务面板"
+          aria-label={t("tasks.close_panel")}
           className="fixed inset-0 z-30"
           onClick={() => {
             set_expanded_task_index(null);
@@ -170,7 +172,7 @@ export function WorkspaceTaskStrip({
         >
           <ListChecks className="h-3.5 w-3.5 text-slate-600/84"/>
           <span className="text-[11px] font-semibold tracking-[0.08em] text-slate-700/88">
-            TASKS
+            {t("tasks.label")}
           </span>
           <span className="text-[11px] font-medium tabular-nums text-slate-500/88">
             {completed_count}/{total_count}
@@ -206,11 +208,11 @@ export function WorkspaceTaskStrip({
             <div className="max-h-[320px] overflow-y-auto px-4">
               <div
                 className="grid grid-cols-[40px_84px_minmax(0,1fr)_28px] gap-3 border-b border-slate-200/60 px-2 py-1 text-[9px] items-center font-semibold uppercase tracking-[0.14em] text-slate-500/76">
-                <span>ID</span>
-                <span>Status</span>
-                <span>Subject</span>
+                <span>{t("tasks.id")}</span>
+                <span>{t("tasks.status")}</span>
+                <span>{t("tasks.subject")}</span>
                 <button
-                  aria-label="关闭任务面板"
+                  aria-label={t("tasks.close_panel")}
                   className="ml-1 inline-flex h-6 w-6 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
                   onClick={() => {
                     set_expanded_task_index(null);
@@ -267,7 +269,7 @@ export function WorkspaceTaskStrip({
                             ) : (
                               <Circle className="h-3 w-3"/>
                             )}
-                            {is_completed ? "Done" : is_running ? "Running" : "Pending"}
+                            {is_completed ? t("tasks.done") : is_running ? t("tasks.running") : t("tasks.pending")}
                           </span>
 
                           <div className="min-w-0">
@@ -309,7 +311,7 @@ export function WorkspaceTaskStrip({
                 </div>
               ) : (
                 <p className="px-1 py-4 text-[11px] text-slate-500/76">
-                  当前没有活跃任务。
+                  {t("tasks.no_active")}
                 </p>
               )}
             </div>

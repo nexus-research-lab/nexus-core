@@ -20,10 +20,12 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { AppRouteBuilders } from "@/app/router/route-paths";
 import { getConnectedCountApi } from "@/lib/connector-api";
 import { getAvailableSkillsApi } from "@/lib/skill-api";
+import { useI18n } from "@/shared/i18n/i18n-context";
 import { SidebarListItem } from "@/shared/ui/sidebar/collapsible-section";
 import { SkillInfo } from "@/types/skill";
 
 export const CapabilitiesPanelContent = memo(function CapabilitiesPanelContent() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
   const [skills, set_skills] = useState<SkillInfo[]>([]);
@@ -66,7 +68,7 @@ export const CapabilitiesPanelContent = memo(function CapabilitiesPanelContent()
       <SidebarListItem
         icon={<Puzzle className="h-3.5 w-3.5" />}
         is_active={location.pathname.startsWith("/capability/skills")}
-        label="skills"
+        label={t("capability.skills")}
         meta={String(skill_count)}
         on_click={() => navigate(AppRouteBuilders.skills())}
       />
@@ -74,7 +76,7 @@ export const CapabilitiesPanelContent = memo(function CapabilitiesPanelContent()
       <SidebarListItem
         icon={<Link2 className="h-3.5 w-3.5" />}
         is_active={location.pathname.startsWith("/capability/connectors")}
-        label="connectors"
+        label={t("capability.connectors")}
         meta={String(connector_count)}
         on_click={() => navigate(AppRouteBuilders.connectors())}
       />
@@ -82,7 +84,7 @@ export const CapabilitiesPanelContent = memo(function CapabilitiesPanelContent()
       <SidebarListItem
         icon={<Calendar className="h-3.5 w-3.5" />}
         is_active={location.pathname.startsWith("/capability/scheduled-tasks")}
-        label="scheduled"
+        label={t("capability.scheduled")}
         meta={String(scheduled_task_count)}
         on_click={() => navigate(AppRouteBuilders.scheduled_tasks())}
       />
@@ -90,7 +92,7 @@ export const CapabilitiesPanelContent = memo(function CapabilitiesPanelContent()
       <SidebarListItem
         icon={<Radio className="h-3.5 w-3.5" />}
         is_active={location.pathname.startsWith("/capability/channels")}
-        label="channels"
+        label={t("capability.channels")}
         meta={String(channel_count)}
         on_click={() => navigate(AppRouteBuilders.channels())}
       />
@@ -98,7 +100,7 @@ export const CapabilitiesPanelContent = memo(function CapabilitiesPanelContent()
       <SidebarListItem
         icon={<Users2 className="h-3.5 w-3.5" />}
         is_active={location.pathname.startsWith("/capability/pairings")}
-        label="pairings"
+        label={t("capability.pairings")}
         meta={String(pairing_count)}
         on_click={() => navigate(AppRouteBuilders.pairings())}
       />

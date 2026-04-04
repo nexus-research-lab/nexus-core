@@ -7,6 +7,7 @@
 
 import { Construction } from "lucide-react";
 
+import { useI18n } from "@/shared/i18n/i18n-context";
 import { WorkspaceEntryPage } from "@/shared/ui/workspace/workspace-entry-page";
 
 interface PlaceholderPageProps {
@@ -16,11 +17,13 @@ interface PlaceholderPageProps {
 
 export function PlaceholderPage({
   title,
-  description = "此功能即将推出，敬请期待。",
+  description,
 }: PlaceholderPageProps) {
+  const { t } = useI18n();
+
   return (
     <WorkspaceEntryPage
-      description={description}
+      description={description ?? t("common.coming_soon")}
       icon={<Construction className="h-6 w-6 text-slate-900/78" />}
       title={title}
     />

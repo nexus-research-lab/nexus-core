@@ -13,7 +13,9 @@ import {
 import { DebugReferenceOverlay } from "@/features/launcher/launcher-reference-overlay-debug";
 import { cn, truncate } from "@/lib/utils";
 import { ANIMATIONS } from "@/config/animation-assets";
+import { useI18n } from "@/shared/i18n/i18n-context";
 import { LottiePlayer } from "@/shared/ui/feedback/lottie-player";
+import { LanguageSwitch } from "@/shared/ui/i18n/language-switch";
 import { useSidebarStore } from "@/store/sidebar";
 import { Agent } from "@/types/agent";
 import { Conversation } from "@/types/conversation";
@@ -159,6 +161,8 @@ const HeroStage = memo(function HeroStage({
   surface,
   is_query_loading,
 }: HeroStageProps) {
+  const { t } = useI18n();
+
   return (
     <div className="relative flex w-full max-w-[1180px] flex-col items-center" onClick={(e) => e.stopPropagation()}>
       <DebugReferenceOverlay />
@@ -172,7 +176,7 @@ const HeroStage = memo(function HeroStage({
         <div className="space-y-3">
           <FadeSlideIn delay_ms={0} duration_ms={380} y_offset={6}>
             <p className="text-[9px] font-medium uppercase tracking-[0.32em] text-muted-foreground/70">
-              Collaboration Hub
+              {t("launcher.collaboration_hub")}
             </p>
           </FadeSlideIn>
           <div className="relative inline-block">
@@ -183,7 +187,7 @@ const HeroStage = memo(function HeroStage({
             />
             <h1
               className="mb-7 text-[24px] font-extrabold leading-[1.12] tracking-[-0.05em] text-foreground/96 sm:mb-10 sm:text-[42px] sm:leading-[1.05]">
-              <AnimatedHeroText text="和你的 agents 开始协作" initial_delay_ms={80} stagger_ms={26} />
+              <AnimatedHeroText text={t("launcher.hero_title")} initial_delay_ms={80} stagger_ms={26} />
             </h1>
           </div>
         </div>
@@ -202,7 +206,7 @@ const HeroStage = memo(function HeroStage({
                       on_submit();
                     }
                   }}
-                  placeholder="描述意图，@提及 Agent 或 #Room 来启动协作..."
+                  placeholder={t("launcher.query_placeholder")}
                   value={query}
                   disabled={is_query_loading}
                 />
@@ -263,7 +267,7 @@ const HeroStage = memo(function HeroStage({
                 onClick={() => is_app_conversation_open ? on_close_app_conversation() : on_open_app_conversation(query)}
                 type="button"
               >
-                交给 Nexus →
+                {t("launcher.handoff")} →
               </button>
             </FadeSlideIn>
           </div>
@@ -409,6 +413,7 @@ export function LauncherConsole({
         </div>
 
         <div className="relative z-40 flex items-center gap-1.5 sm:gap-2">
+          <LanguageSwitch />
         </div>
       </div>
 

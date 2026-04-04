@@ -2,6 +2,7 @@
 
 import { Bot, MessageSquareText, Users } from "lucide-react";
 
+import { useI18n } from "@/shared/i18n/i18n-context";
 import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 
 interface ContactsAgentCardProps {
@@ -25,6 +26,7 @@ export function ContactsAgentCard({
   on_open_room,
   on_create_team,
 }: ContactsAgentCardProps) {
+  const { t } = useI18n();
   return (
     <article
       className="workspace-card cursor-pointer rounded-[26px] border border-white/24 px-6 py-6 text-center transition-all hover:border-white/30 hover:bg-white/34"
@@ -49,11 +51,11 @@ export function ContactsAgentCard({
       <div className="mt-5 flex items-center justify-center gap-3" onClick={(e) => e.stopPropagation()}>
         <WorkspacePillButton onClick={on_open_room} size="sm" variant="success">
           <MessageSquareText className="h-3.5 w-3.5" />
-          Chat
+          {t("contacts.chat")}
         </WorkspacePillButton>
         <WorkspacePillButton onClick={on_create_team} size="sm">
           <Users className="h-3.5 w-3.5" />
-          Create Team
+          {t("contacts.create_team")}
         </WorkspacePillButton>
       </div>
     </article>

@@ -12,6 +12,7 @@ import { createPortal } from "react-dom";
 import { Bot, Check, Hash, Plus, Search, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/shared/i18n/i18n-context";
 import { Agent } from "@/types/agent";
 
 interface CreateRoomDialogProps {
@@ -31,6 +32,7 @@ export function CreateRoomDialog({
   on_cancel,
   on_confirm,
 }: CreateRoomDialogProps) {
+  const { t } = useI18n();
   const [search_query, set_search_query] = useState("");
   const [selected_ids, set_selected_ids] = useState<string[]>([]);
   const [room_name, set_room_name] = useState("");
@@ -107,15 +109,15 @@ export function CreateRoomDialog({
             </div>
             <div className="min-w-0">
               <h2 className="truncate text-lg font-semibold tracking-tight text-slate-800">
-                创建 Room
+                {t("room.create_dialog_title")}
               </h2>
               <p className="truncate text-xs text-slate-500">
-                设置名称并添加至少一个 Agent 成员
+                {t("room.create_dialog_subtitle")}
               </p>
             </div>
           </div>
           <button
-            aria-label="关闭对话框"
+            aria-label={t("common.close")}
             className="modal-btn-secondary rounded-xl p-2 text-slate-400 transition-colors hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-primary/50"
             onClick={on_cancel}
             type="button"
@@ -134,7 +136,7 @@ export function CreateRoomDialog({
               <input
                 className="modal-card w-full rounded-xl py-2 pl-8 pr-3 text-sm text-slate-800 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:outline-none"
                 onChange={(e) => set_search_query(e.target.value)}
-                placeholder="搜索 Agent..."
+                placeholder={t("room.search_agent_placeholder")}
                 type="text"
                 value={search_query}
               />
@@ -142,7 +144,7 @@ export function CreateRoomDialog({
 
             {/* Agent 计数 */}
             <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
-              All Agents ({filtered_agents.length})
+              {t("room.all_agents", { count: filtered_agents.length })}
             </p>
 
             {/* Agent 列表 */}
@@ -172,7 +174,7 @@ export function CreateRoomDialog({
                       <p className="truncate text-[11px] text-slate-500">
                         {agent.options?.system_prompt
                           ? agent.options.system_prompt.slice(0, 50) + (agent.options.system_prompt.length > 50 ? "..." : "")
-                          : agent.status ?? "idle"}
+                          : agent.status ?? t("status.idle")}
                       </p>
                     </div>
 
@@ -200,7 +202,7 @@ export function CreateRoomDialog({
           {/* 右栏：已选成员 */}
           <div className="flex w-[220px] shrink-0 flex-col gap-3">
             <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">
-              已选成员 ({selected_ids.length} / {MAX_MEMBERS})
+              {t("room.selected_members", { count: selected_ids.length, max: MAX_MEMBERS })}
             </p>
 
             <div className="modal-card flex flex-1 flex-col gap-1 overflow-y-auto rounded-2xl p-2.5">
@@ -227,7 +229,7 @@ export function CreateRoomDialog({
                 ))
               ) : (
                 <p className="flex flex-1 items-center justify-center text-[12px] text-slate-400">
-                  从左侧添加 Agent 成员
+                  {t("room.add_from_left")}
                 </p>
               )}
             </div>
@@ -239,14 +241,14 @@ export function CreateRoomDialog({
           {/* Room 名称输入 */}
           <div className="flex items-center gap-2.5">
             <label className="shrink-0 text-[13px] font-semibold text-slate-700">
-              Room 名称
+              {t("room.name_label")}
             </label>
             <input
               className="modal-card w-48 rounded-xl px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:outline-none"
               maxLength={64}
               onChange={(e) => set_room_name(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter" && can_create) handle_create(); }}
-              placeholder="e.g. dev-team"
+              placeholder={t("room.name_placeholder")}
               type="text"
               value={room_name}
             />
@@ -259,7 +261,7 @@ export function CreateRoomDialog({
               onClick={on_cancel}
               type="button"
             >
-              取消
+              {t("common.cancel")}
             </button>
             <button
               className={cn(
@@ -272,7 +274,7 @@ export function CreateRoomDialog({
               onClick={handle_create}
               type="button"
             >
-              {is_creating ? "创建中..." : "创建 Room"}
+              {is_creating ? t("room.creating_action") : t("room.create_action")}
             </button>
           </div>
         </div>

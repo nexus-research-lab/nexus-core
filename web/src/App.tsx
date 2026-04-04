@@ -1,5 +1,10 @@
 import { AppRouter } from "@/routes/app-router";
+import { I18nProvider } from "@/shared/i18n/i18n-provider";
 
 export function App() {
-  return <AppRouter />;
+  return (
+    <I18nProvider>
+      <AppRouter />
+    </I18nProvider>
+  );
 }

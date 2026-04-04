@@ -3,6 +3,7 @@
 import { Plus, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 
+import { useI18n } from "@/shared/i18n/i18n-context";
 import { WorkspaceSearchInput } from "@/shared/ui/workspace/workspace-search-input";
 import { WorkspaceSurfaceHeader } from "@/shared/ui/workspace/workspace-surface-header";
 import { Agent } from "@/types/agent";
@@ -40,6 +41,7 @@ export function ContactsDirectory({
                                     on_edit_agent,
                                     on_create_team,
                                   }: ContactsDirectoryProps) {
+  const { t } = useI18n();
   const [active_tab, set_active_tab] = useState<ContactsTabKey>("my_agents");
   const [search_query, set_search_query] = useState("");
 
@@ -63,8 +65,8 @@ export function ContactsDirectory({
 
   // Header tabs 定义
   const tabs: { key: ContactsTabKey; label: string }[] = [
-    {key: "my_agents", label: "My Agents"},
-    {key: "task_generated", label: "Task Generated"},
+    {key: "my_agents", label: t("contacts.tab_my_agents")},
+    {key: "task_generated", label: t("contacts.tab_task_generated")},
   ];
 
   // Header 右侧：搜索框
@@ -73,7 +75,7 @@ export function ContactsDirectory({
       class_name="hidden sm:inline-flex"
       input_class_name="w-[200px]"
       on_change={set_search_query}
-      placeholder="搜索成员..."
+      placeholder={t("common.search_agents")}
       value={search_query}
     />
   );
@@ -85,9 +87,9 @@ export function ContactsDirectory({
         badge="AGENTS"
         leading={<Users className="h-4 w-4 text-slate-800/72"/>}
         on_change_tab={set_active_tab}
-        subtitle="管理你的 AI 成员，配置身份与能力"
+        subtitle={t("contacts.subtitle")}
         tabs={tabs}
-        title="Agents"
+        title={t("contacts.title")}
         trailing={header_trailing}
       />
 
@@ -104,10 +106,10 @@ export function ContactsDirectory({
                 <Plus className="h-7 w-7 text-slate-600"/>
               </div>
               <p className="mt-4 text-[18px] font-bold tracking-[-0.03em] text-slate-950/80">
-                New Agent
+                {t("contacts.new_agent")}
               </p>
               <p className="mt-2 text-[13px] leading-5 text-slate-700/60">
-                创建一个新的 AI 成员
+                {t("contacts.new_agent_description")}
               </p>
             </article>
           )}
@@ -116,7 +118,7 @@ export function ContactsDirectory({
           {filtered_agents.map((agent) => (
             <ContactsAgentCard
               key={agent.agent_id}
-              description={get_contacts_agent_description(agent)}
+              description={get_contacts_agent_description(agent, t("contacts.default_description"))}
               name={agent.name}
               on_create_team={() => on_create_team(agent.agent_id)}
               on_open_profile={() => on_edit_agent(agent.agent_id)}
@@ -131,10 +133,10 @@ export function ContactsDirectory({
             className="workspace-card mt-6 flex min-h-80 items-center justify-center rounded-[28px] px-8 text-center">
             <div>
               <p className="text-[22px] font-bold tracking-[-0.04em] text-slate-950/90">
-                暂无任务生成的成员
+                {t("contacts.empty_generated_title")}
               </p>
               <p className="mt-3 text-sm leading-7 text-slate-700/60">
-                任务自动创建的 Agent 将显示在这里。
+                {t("contacts.empty_generated_description")}
               </p>
             </div>
           </div>

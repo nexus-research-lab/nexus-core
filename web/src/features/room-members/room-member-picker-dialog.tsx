@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 
 import { Agent } from "@/types/agent";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/shared/i18n/i18n-context";
 
 interface RoomMemberPickerDialogProps {
   agents: Agent[];
@@ -18,6 +19,7 @@ export function RoomMemberPickerDialog({
   on_cancel,
   on_select,
 }: RoomMemberPickerDialogProps) {
+  const { t } = useI18n();
   if (!is_open) {
     return null;
   }
@@ -31,13 +33,13 @@ export function RoomMemberPickerDialog({
       <div className="soft-ring radius-shell-lg panel-surface w-full max-w-lg p-5">
         <div className="flex items-start justify-between gap-3 pb-3">
           <div>
-            <h3 className="text-base font-semibold text-foreground">添加成员</h3>
+            <h3 className="text-base font-semibold text-foreground">{t("room.add_member_dialog_title")}</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              选择一个已有成员加入当前 room。
+              {t("room.add_member_dialog_subtitle")}
             </p>
           </div>
           <button
-            aria-label="关闭"
+            aria-label={t("common.close")}
             className="neo-pill radius-shell-sm p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/50"
             onClick={on_cancel}
             type="button"
@@ -48,7 +50,7 @@ export function RoomMemberPickerDialog({
 
         {agents.length === 0 ? (
           <div className="radius-shell-md neo-inset px-4 py-4 text-sm text-muted-foreground">
-            当前没有可添加的成员。
+            {t("room.no_available_members")}
           </div>
         ) : (
           <div className="max-h-[360px] space-y-2 overflow-y-auto pr-1">
@@ -69,7 +71,7 @@ export function RoomMemberPickerDialog({
                     {agent.name}
                   </p>
                   <p className="truncate text-[11px] text-slate-700/52">
-                    选择后会加入当前 room 的所有对话
+                    {t("room.add_member_dialog_hint")}
                   </p>
                 </div>
               </button>

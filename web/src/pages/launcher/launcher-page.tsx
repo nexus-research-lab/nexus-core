@@ -11,6 +11,7 @@ import { buildWsDmSessionKey } from "@/lib/session-key";
 import { createRoom, ensureDirectRoom } from "@/lib/room-api";
 import { cn } from "@/lib/utils";
 import { AgentOptions } from "@/shared/ui/dialog/agent-options";
+import { useI18n } from "@/shared/i18n/i18n-context";
 import { AppLoadingScreen } from "@/shared/ui/layout/app-loading-screen";
 import { useAgentStore } from "@/store/agent";
 import { useSidebarStore } from "@/store/sidebar";
@@ -18,6 +19,7 @@ import { AgentOptions as AgentConfigOptions } from "@/types/agent";
 import { getDefaultAgentId } from "@/config/options";
 
 export function LauncherPage() {
+  const { t } = useI18n();
   const app_agent_id = getDefaultAgentId();
   const controller = useLauncherPageController();
   const navigate = useNavigate();
@@ -191,8 +193,8 @@ export function LauncherPage() {
 
     const room_context = await createRoom({
       agent_ids: [next_agent_id],
-      title: pending_room_title || title || "新协作",
-      name: pending_room_title || title || "新协作",
+      title: pending_room_title || title || t("launcher.new_collaboration"),
+      name: pending_room_title || title || t("launcher.new_collaboration"),
     });
     set_pending_room_title("");
     set_should_bootstrap_room_after_create(false);
@@ -203,7 +205,7 @@ export function LauncherPage() {
         room_context.conversation.id,
       ),
     );
-  }, [controller, navigate, pending_room_title, set_active_panel_item, should_bootstrap_room_after_create]);
+  }, [controller, navigate, pending_room_title, set_active_panel_item, should_bootstrap_room_after_create, t]);
 
   if (!controller.is_hydrated) {
     return <AppLoadingScreen />;

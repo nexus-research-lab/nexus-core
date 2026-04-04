@@ -8,12 +8,14 @@
  * 宽度从 store 读取，右边缘可拖拽调整（180–400px）。
  */
 
-import { FolderOpen, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 
 import { AppRouteBuilders } from "@/app/router/route-paths";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/shared/i18n/i18n-context";
+import { LanguageSwitch } from "@/shared/ui/i18n/language-switch";
 import { CollapsibleSection } from "@/shared/ui/sidebar/collapsible-section";
 import { WIDE_PANEL_MIN_WIDTH, WIDE_PANEL_MAX_WIDTH, useSidebarStore } from "@/store/sidebar";
 
@@ -22,21 +24,8 @@ import { CapabilitiesPanelContent } from "./sidebar-panel-content/capabilities-p
 
 const CAPABILITY_SECTION_COUNT = 5;
 
-interface UtilityLink {
-  label: string;
-  to?: string;
-  icon: typeof FolderOpen;
-}
-
-const UTILITY_LINKS: UtilityLink[] = [
-  {
-    label: "设置",
-    to: AppRouteBuilders.settings(),
-    icon: Settings,
-  },
-];
-
 export function SidebarWidePanel() {
+  const { t } = useI18n();
   const wide_panel_width = useSidebarStore((s) => s.wide_panel_width);
   const set_wide_panel_width = useSidebarStore((s) => s.set_wide_panel_width);
 
@@ -92,40 +81,23 @@ export function SidebarWidePanel() {
       <div className="home-glass-panel radius-shell-xl flex h-full w-full flex-col overflow-hidden">
         {/* 面板头部 */}
         <div className="border-b border-white/20 px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <Link
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(233,229,223,0.92))] text-base font-black tracking-[-0.06em] text-slate-900 shadow-[0_12px_24px_rgba(102,112,145,0.12)] transition-transform duration-200 hover:scale-[1.03]"
                 to={AppRouteBuilders.launcher()}
-                title="回到 Launcher"
+                title={t("sidebar.back_to_launcher")}
               >
                 N
               </Link>
               <div className="min-w-0">
                 <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-slate-500/70">
-                  Workspace
+                  {t("sidebar.workspace_label")}
                 </p>
-                <h2 className="truncate text-sm font-bold text-slate-800">工作台</h2>
+                <h2 className="truncate text-sm font-bold text-slate-800">{t("sidebar.workspace_title")}</h2>
               </div>
             </div>
-
-            <div className="flex items-center gap-1">
-              {UTILITY_LINKS.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.label}
-                    className="flex h-9 w-9 items-center justify-center rounded-[14px] bg-white/30 text-slate-600 transition-all duration-200 hover:bg-white/55 hover:text-slate-900"
-                    title={item.label}
-                    to={item.to ?? AppRouteBuilders.home()}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </Link>
-                );
-              })}
-            </div>
           </div>
-
         </div>
 
         {/* 面板内容 */}
@@ -135,29 +107,22 @@ export function SidebarWidePanel() {
           <CollapsibleSection
             count={CAPABILITY_SECTION_COUNT}
             section_id="sidebar-capabilities"
-            title="能力"
+            title={t("sidebar.capabilities")}
           >
             <CapabilitiesPanelContent />
           </CollapsibleSection>
         </div>
 
-        <div className="flex items-center gap-2 border-t border-white/16 px-3 py-2">
-          <a
-            className="rounded-full px-2 py-1 text-[11px] font-medium text-slate-500 transition-colors hover:bg-white/35 hover:text-slate-900"
-            href="https://docs.nexus.ai"
-            rel="noreferrer"
-            target="_blank"
+        <div className="flex items-center justify-between gap-3 border-t border-white/16 px-3 py-2.5">
+          <Link
+            className="flex h-9 w-9 items-center justify-center rounded-[14px] bg-white/30 text-slate-600 transition-all duration-200 hover:bg-white/55 hover:text-slate-900"
+            title={t("sidebar.settings")}
+            to={AppRouteBuilders.settings()}
           >
-            文档
-          </a>
-          <a
-            className="rounded-full px-2 py-1 text-[11px] font-medium text-slate-500 transition-colors hover:bg-white/35 hover:text-slate-900"
-            href="https://feedback.nexus.ai"
-            rel="noreferrer"
-            target="_blank"
-          >
-            反馈
-          </a>
+            <Settings className="h-4 w-4" />
+          </Link>
+
+          <LanguageSwitch />
         </div>
       </div>
 

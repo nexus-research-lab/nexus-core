@@ -18,6 +18,7 @@ import {
   WorkspaceSurfaceHeader,
   WorkspaceTaskStrip,
 } from "@/shared/ui/workspace/workspace-surface-header";
+import { useI18n } from "@/shared/i18n/i18n-context";
 import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import { WorkspaceStatusBadge } from "@/shared/ui/workspace/workspace-status-badge";
 import { Agent } from "@/types/agent";
@@ -69,13 +70,14 @@ function ConversationSwitcher({
   on_select_conversation: (conversation_id: string) => void;
   on_create_conversation?: (title?: string) => Promise<string | null>;
 }) {
+  const { t } = useI18n();
   const [is_open, set_is_open] = useState(false);
   const [is_creating, set_is_creating] = useState(false);
   const trigger_ref = useRef<HTMLButtonElement>(null);
 
   const current_title =
     conversations.find((conversation) => conversation.conversation_id === conversation_id)?.title
-    ?? "选择对话";
+    ?? t("room.choose_conversation");
 
   const handle_create = async () => {
     if (!on_create_conversation || is_creating) return;
@@ -132,7 +134,7 @@ function ConversationSwitcher({
                     >
                       <MessageSquare className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                       <span className="min-w-0 flex-1 truncate">
-                        {conversation.title || "未命名对话"}
+                        {conversation.title || t("room.untitled_conversation")}
                       </span>
                       {is_active ? (
                         <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
@@ -152,13 +154,13 @@ function ConversationSwitcher({
                   >
                     <MessageSquarePlus className={cn("h-3.5 w-3.5 shrink-0", is_creating && "animate-spin")} />
                     <span className="min-w-0 flex-1">
-                      {is_creating ? "创建中..." : "新建对话"}
+                      {is_creating ? t("room.creating") : t("room.new_conversation")}
                     </span>
                   </button>
                 )}
               </>
             ) : (
-              <div className="px-3 py-2 text-[11px] text-slate-400">暂无对话</div>
+              <div className="px-3 py-2 text-[11px] text-slate-400">{t("room.no_conversations")}</div>
             )}
           </div>
         </>
@@ -173,6 +175,7 @@ function MemberAvatarStack({
 }: {
   room_members: Agent[];
 }) {
+  const { t } = useI18n();
   const MAX_VISIBLE = 5;
   const visible_members = room_members.slice(0, MAX_VISIBLE);
   const overflow_count = room_members.length - MAX_VISIBLE;
@@ -181,7 +184,7 @@ function MemberAvatarStack({
     <div className="flex items-center rounded-lg px-2 py-1">
       <div className="flex items-center -space-x-2">
         <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-slate-100 text-[8px] font-bold text-slate-900/82 shadow-sm">
-          YOU
+          {t("room.you")}
         </div>
         {visible_members.map((member) => (
           <div
@@ -219,6 +222,7 @@ function RoomHeaderActions({
   on_update_room: (room_id: string, params: UpdateRoomParams) => Promise<void>;
   on_delete_room: () => Promise<void>;
 }) {
+  const { t } = useI18n();
   const [is_member_picker_open, set_is_member_picker_open] = useState(false);
   const [is_settings_open, set_is_settings_open] = useState(false);
 
@@ -236,18 +240,18 @@ function RoomHeaderActions({
     <>
       <div className="hidden items-center gap-2 lg:flex">
         <WorkspacePillButton
-          aria-label="添加成员"
+          aria-label={t("room.add_member")}
           onClick={() => set_is_member_picker_open(true)}
           size="icon"
-          title="添加成员"
+          title={t("room.add_member")}
         >
           <UserPlus className="h-4 w-4" />
         </WorkspacePillButton>
         <WorkspacePillButton
-          aria-label="Room 设置"
+          aria-label={t("room.settings")}
           onClick={() => set_is_settings_open(true)}
           size="icon"
-          title="Room 设置"
+          title={t("room.settings")}
         >
           <Settings className="h-4 w-4" />
         </WorkspacePillButton>
@@ -276,12 +280,6 @@ function RoomHeaderActions({
   );
 }
 
-const ROOM_TABS: { key: RoomSurfaceTabKey; label: string; icon: typeof MessageSquare }[] = [
-  { key: "chat", label: "Chat", icon: MessageSquare },
-  { key: "history", label: "History", icon: History },
-  { key: "workspace", label: "Workspace", icon: FolderTree },
-];
-
 const RoomConversationHeaderView = memo(({
   conversation_id,
   room_id,
@@ -300,7 +298,13 @@ const RoomConversationHeaderView = memo(({
   on_update_room,
   on_delete_room,
 }: RoomConversationHeaderProps) => {
-  const header_title = current_room_title?.trim() || "未命名协作";
+  const { t } = useI18n();
+  const header_title = current_room_title?.trim() || t("room.untitled_collaboration");
+  const room_tabs: { key: RoomSurfaceTabKey; label: string; icon: typeof MessageSquare }[] = [
+    { key: "chat", label: t("room.chat"), icon: MessageSquare },
+    { key: "history", label: t("room.history"), icon: History },
+    { key: "workspace", label: t("room.workspace"), icon: FolderTree },
+  ];
 
   const title_trailing = (
     <ConversationSwitcher
@@ -327,7 +331,7 @@ const RoomConversationHeaderView = memo(({
       />
       <WorkspaceStatusBadge
         icon={<span className="text-current">●</span>}
-        label={is_loading ? "协作中" : "在线"}
+        label={is_loading ? t("status.collaborating") : t("status.online")}
         tone={is_loading ? "running" : "active"}
       />
     </>
@@ -340,7 +344,7 @@ const RoomConversationHeaderView = memo(({
       leading={<Hash size={14} className="text-slate-800/72" />}
       on_change_tab={on_change_tab}
       tabs_trailing={<WorkspaceTaskStrip todos={todos} />}
-      tabs={ROOM_TABS}
+      tabs={room_tabs}
       title={header_title}
       title_trailing={title_trailing}
       trailing={trailing}

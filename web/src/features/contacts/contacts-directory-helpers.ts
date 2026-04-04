@@ -57,13 +57,13 @@ export function get_contacts_agent_conversations(
     .sort((left, right) => right.last_activity_at - left.last_activity_at);
 }
 
-export function get_contacts_agent_description(agent: Agent): string {
+export function get_contacts_agent_description(agent: Agent, fallback_description: string): string {
   const prompt = agent.options.system_prompt?.trim();
   if (prompt) {
     return prompt.replace(/\s+/g, " ").slice(0, 120);
   }
 
-  return "可直接发起 1v1 协作，也可在能力中心单独安装技能与连接器。";
+  return fallback_description;
 }
 
 export function matches_contacts_filter(

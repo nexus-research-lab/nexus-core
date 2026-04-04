@@ -3,6 +3,7 @@
 import { ChevronRight, File, FileCode, FileText, Folder, FolderOpen, FolderTree } from "lucide-react";
 import { memo, useCallback, useMemo, useState } from "react";
 
+import { useI18n } from "@/shared/i18n/i18n-context";
 import { WorkspaceSurfaceView } from "@/shared/ui/workspace/workspace-surface-view";
 import { useWorkspaceFilesStore } from "@/store/workspace-files";
 import { Agent, WorkspaceFileEntry } from "@/types/agent";
@@ -179,6 +180,7 @@ export function RoomWorkspaceView({
   room_members,
   on_open_workspace_file,
 }: RoomWorkspaceViewProps) {
+  const { t } = useI18n();
   const [selected_agent_id, set_selected_agent_id] = useState(agent_id);
   const files_by_agent = useWorkspaceFilesStore((state) => state.files_by_agent);
 
@@ -192,7 +194,7 @@ export function RoomWorkspaceView({
   );
 
   return (
-    <WorkspaceSurfaceView eyebrow="Workspace" title="文件资源">
+    <WorkspaceSurfaceView eyebrow={t("room.workspace")} title={t("room.workspace_title")}>
       {!is_dm && room_members.length > 1 && (
         <MemberSwitcher
           members={room_members}
@@ -217,11 +219,11 @@ export function RoomWorkspaceView({
         <div className="rounded-2xl border border-white/20 bg-white/10 px-5 py-5 text-sm leading-7 text-slate-700/60">
           <div className="mb-2 flex items-center gap-2 font-medium text-slate-900/60">
             <FolderTree className="h-4 w-4" />
-            暂无文件
+            {t("room.no_files")}
           </div>
           {is_dm
-            ? "Agent 创建或读写文件后会在这里显示。"
-            : "切换上方成员查看各自的工作区文件。"}
+            ? t("room.no_files_dm_hint")
+            : t("room.no_files_room_hint")}
         </div>
       )}
     </WorkspaceSurfaceView>

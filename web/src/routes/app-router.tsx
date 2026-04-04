@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { APP_ROUTE_PATHS } from "@/app/router/route-paths";
 import { LauncherPage } from "@/pages/launcher/launcher-page";
 import { PlaceholderPage } from "@/pages/placeholder/placeholder-page";
+import { useI18n } from "@/shared/i18n/i18n-context";
 import { AppLayout } from "@/shared/ui/layout/app-layout";
 import { AppLayoutNoSidebar } from "@/shared/ui/layout/app-layout-no-sidebar";
 
@@ -40,6 +41,8 @@ function PageFallback() {
 }
 
 export function AppRouter() {
+  const { t } = useI18n();
+
   return (
     <BrowserRouter>
       <Suspense fallback={<PageFallback />}>
@@ -72,11 +75,20 @@ export function AppRouter() {
             {/* 能力子路由 */}
             <Route element={<ConnectorsPage />} path={APP_ROUTE_PATHS.connectors} />
             <Route element={<ScheduledTasksPage />} path={APP_ROUTE_PATHS.scheduled_tasks} />
-            <Route element={<PlaceholderPage title="频道" description="管理消息频道" />} path={APP_ROUTE_PATHS.channels} />
-            <Route element={<PlaceholderPage title="配对" description="管理 Agent 配对关系" />} path={APP_ROUTE_PATHS.pairings} />
+            <Route
+              element={<PlaceholderPage title={t("placeholder.channels_title")} description={t("placeholder.channels_description")} />}
+              path={APP_ROUTE_PATHS.channels}
+            />
+            <Route
+              element={<PlaceholderPage title={t("placeholder.pairings_title")} description={t("placeholder.pairings_description")} />}
+              path={APP_ROUTE_PATHS.pairings}
+            />
 
             {/* 其他占位路由 */}
-            <Route element={<PlaceholderPage title="设置" description="应用程序设置和偏好" />} path={APP_ROUTE_PATHS.settings} />
+            <Route
+              element={<PlaceholderPage title={t("placeholder.settings_title")} description={t("placeholder.settings_description")} />}
+              path={APP_ROUTE_PATHS.settings}
+            />
           </Route>
 
           {/* 兜底重定向 */}

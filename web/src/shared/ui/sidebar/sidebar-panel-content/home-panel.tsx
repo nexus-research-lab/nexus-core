@@ -23,6 +23,7 @@ import { useNavigate } from "react-router-dom";
 import { AppRouteBuilders } from "@/app/router/route-paths";
 import { CreateRoomDialog } from "@/features/room-members/create-room-dialog";
 import { createRoom, deleteRoom, listRooms, updateRoom } from "@/lib/room-api";
+import { useI18n } from "@/shared/i18n/i18n-context";
 import { ConfirmDialog, PromptDialog } from "@/shared/ui/dialog/confirm-dialog";
 import { CollapsibleSection, SidebarListItem } from "@/shared/ui/sidebar/collapsible-section";
 import { useAgentStore } from "@/store/agent";
@@ -53,7 +54,11 @@ function load_starred_items(): StarredItem[] {
 // ==================== 辅助函数 ====================
 
 /** 获取 DM 的显示名称（优先使用 Agent 名称） */
-function get_dm_display_name(room: RoomAggregate, agents: Agent[]): string {
+function get_dm_display_name(
+  room: RoomAggregate,
+  agents: Agent[],
+  fallback_label: string,
+): string {
   const agent_member = room.members.find((m) => m.member_type === "agent");
   if (agent_member?.member_agent_id) {
     const matched = agents.find(
@@ -61,7 +66,7 @@ function get_dm_display_name(room: RoomAggregate, agents: Agent[]): string {
     );
     if (matched) return matched.name;
   }
-  return room.room.name?.trim() || "未命名 DM";
+  return room.room.name?.trim() || fallback_label;
 }
 
 /** 获取 Room 的时间戳用于排序 */
@@ -74,6 +79,7 @@ function get_room_timestamp(room: RoomAggregate): number {
 // ==================== 主组件 ====================
 
 export const HomePanelContent = memo(function HomePanelContent() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const agents = useAgentStore((s) => s.agents);
   const load_agents = useAgentStore((s) => s.load_agents_from_server);
@@ -88,6 +94,8 @@ export const HomePanelContent = memo(function HomePanelContent() {
   const [delete_target, set_delete_target] = useState<{ id: string; name: string } | null>(null);
   const [is_create_room_open, set_is_create_room_open] = useState(false);
   const [is_creating_room, set_is_creating_room] = useState(false);
+  const untitled_room_label = t("home.untitled_room");
+  const untitled_dm_label = t("home.untitled_dm");
 
   /** 刷新 Room 列表 */
   const refresh_rooms = useCallback(() => {
@@ -171,7 +179,7 @@ export const HomePanelContent = memo(function HomePanelContent() {
         <CollapsibleSection
           count={starred.length}
           section_id="home-starred"
-          title="Starred"
+          title={t("home.starred")}
         >
           {starred.map((item) => (
             <SidebarListItem
@@ -195,11 +203,11 @@ export const HomePanelContent = memo(function HomePanelContent() {
       {/* Rooms 分区 — 带新建按钮 */}
       <CollapsibleSection
         action_icon={<Plus className="h-3 w-3" />}
-        action_title="新建 Room"
+        action_title={t("home.create_room")}
         count={normal_rooms.length}
         on_action={handle_create_room}
         section_id="home-rooms"
-        title="Rooms"
+        title={t("home.rooms")}
       >
         {normal_rooms.length > 0 ? (
           normal_rooms.map((room) => (
@@ -207,14 +215,14 @@ export const HomePanelContent = memo(function HomePanelContent() {
               key={room.room.id}
               icon={<Hash className="h-3.5 w-3.5" />}
               is_active={active_item_id === room.room.id}
-              label={room.room.name?.trim() || "未命名ROOM"}
+              label={room.room.name?.trim() || untitled_room_label}
               on_click={() => navigate_to_room(room.room.id)}
               on_rename={() => set_rename_target({ id: room.room.id, name: room.room.name?.trim() || "" })}
-              on_delete={() => set_delete_target({ id: room.room.id, name: room.room.name?.trim() || "未命名ROOM" })}
+              on_delete={() => set_delete_target({ id: room.room.id, name: room.room.name?.trim() || untitled_room_label })}
             />
           ))
         ) : (
-          <p className="px-2 py-2 text-[11px] text-slate-400">暂无ROOM</p>
+          <p className="px-2 py-2 text-[11px] text-slate-400">{t("home.no_rooms")}</p>
         )}
       </CollapsibleSection>
 
@@ -222,7 +230,7 @@ export const HomePanelContent = memo(function HomePanelContent() {
       <CollapsibleSection
         count={dm_rooms.length}
         section_id="home-dms"
-        title="Direct Messages"
+        title={t("home.direct_messages")}
       >
         {dm_rooms.length > 0 ? (
           dm_rooms.map((room) => (
@@ -230,13 +238,13 @@ export const HomePanelContent = memo(function HomePanelContent() {
               key={room.room.id}
               icon={<MessageCircleMore className="h-3.5 w-3.5" />}
               is_active={active_item_id === room.room.id}
-              label={get_dm_display_name(room, agents)}
+              label={get_dm_display_name(room, agents, untitled_dm_label)}
               on_click={() => navigate_to_room(room.room.id)}
-              on_delete={() => set_delete_target({ id: room.room.id, name: get_dm_display_name(room, agents) })}
+              on_delete={() => set_delete_target({ id: room.room.id, name: get_dm_display_name(room, agents, untitled_dm_label) })}
             />
           ))
         ) : (
-          <p className="px-2 py-2 text-[11px] text-slate-400">暂无私信</p>
+          <p className="px-2 py-2 text-[11px] text-slate-400">{t("home.no_dms")}</p>
         )}
       </CollapsibleSection>
 
@@ -244,7 +252,7 @@ export const HomePanelContent = memo(function HomePanelContent() {
       <CollapsibleSection
         count={agents.length}
         section_id="home-agents"
-        title="Agents"
+        title={t("home.agents")}
       >
         {agents.length > 0 ? (
           agents.map((agent) => (
@@ -253,12 +261,12 @@ export const HomePanelContent = memo(function HomePanelContent() {
               icon={<Bot className="h-3.5 w-3.5" />}
               is_active={active_item_id === agent.agent_id}
               label={agent.name}
-              meta={agent.status === "running" ? "●" : "idle"}
+              meta={agent.status === "running" ? "●" : t("status.idle")}
               on_click={() => navigate_to_agent(agent.agent_id)}
             />
           ))
         ) : (
-          <p className="px-2 py-2 text-[11px] text-slate-400">暂无成员</p>
+          <p className="px-2 py-2 text-[11px] text-slate-400">{t("home.no_agents")}</p>
         )}
       </CollapsibleSection>
 
@@ -268,18 +276,18 @@ export const HomePanelContent = memo(function HomePanelContent() {
         is_open={rename_target !== null}
         on_cancel={() => set_rename_target(null)}
         on_confirm={(value) => void handle_rename_room(value)}
-        placeholder="输入新名称"
-        title="重命名"
+        placeholder={t("home.rename_placeholder")}
+        title={t("home.rename")}
       />
 
       {/* 删除确认对话框 */}
       <ConfirmDialog
-        confirm_text="删除"
+        confirm_text={t("common.delete")}
         is_open={delete_target !== null}
-        message={`确定要删除「${delete_target?.name ?? ""}」吗？此操作不可撤销。`}
+        message={t("home.delete_message", { name: delete_target?.name ?? "" })}
         on_cancel={() => set_delete_target(null)}
         on_confirm={() => void handle_delete_room()}
-        title="删除确认"
+        title={t("home.delete_confirm")}
         variant="danger"
       />
 

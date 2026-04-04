@@ -12,6 +12,7 @@ import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/shared/i18n/i18n-context";
 import { useSidebarStore } from "@/store/sidebar";
 
 interface CollapsibleSectionProps {
@@ -48,6 +49,7 @@ export function SidebarListItem({
   on_rename,
   on_delete,
 }: SidebarListItemProps) {
+  const { t } = useI18n();
   const [menu_pos, set_menu_pos] = useState<{ x: number; y: number } | null>(null);
 
   const handle_context_menu = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
@@ -118,7 +120,7 @@ export function SidebarListItem({
               type="button"
             >
               <Pencil className="h-3 w-3" />
-              重命名
+              {t("home.rename")}
             </button>
           ) : null}
 
@@ -132,7 +134,7 @@ export function SidebarListItem({
               type="button"
             >
               <Trash2 className="h-3 w-3" />
-              删除
+              {t("common.delete")}
             </button>
           ) : null}
         </div>,
