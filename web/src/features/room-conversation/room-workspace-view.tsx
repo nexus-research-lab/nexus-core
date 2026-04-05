@@ -183,8 +183,8 @@ export function RoomWorkspaceView({
   const files_by_agent = useWorkspaceFilesStore((state) => state.files_by_agent);
 
   const view_agent_id = is_dm ? agent_id : selected_agent_id;
-  const all_files = files_by_agent[view_agent_id] ?? [];
-  const tree = useMemo(() => buildTree(all_files), [all_files]);
+  const all_files = files_by_agent[view_agent_id];
+  const tree = useMemo(() => buildTree(all_files ?? []), [files_by_agent, view_agent_id]);
 
   const handle_click_file = useCallback(
     (path: string) => on_open_workspace_file(path),
