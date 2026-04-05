@@ -36,8 +36,8 @@ export function CodeShell({
   return (
     <div
       className={cn(
-        "relative my-4 overflow-hidden rounded-[22px] border border-slate-200/88 bg-slate-50/96 shadow-[0_22px_36px_rgb(17_24_39/0.14)]",
-        is_dark_theme && "border-white/10 bg-[rgb(23_25_31_/_0.98)] shadow-[0_22px_36px_rgb(0_0_0/0.28)]",
+        "relative my-4 overflow-hidden rounded-[22px] border border-slate-200/88 bg-slate-50/96",
+        is_dark_theme && "border-white/10 bg-[rgb(23_25_31_/_0.98)]",
         class_name,
       )}
     >
