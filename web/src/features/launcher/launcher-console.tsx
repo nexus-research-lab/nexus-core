@@ -10,12 +10,12 @@ import {
   HeroBlobShell,
   HeroInputShell,
 } from "@/features/launcher/launcher-glass-shell";
-import { DebugReferenceOverlay } from "@/features/launcher/launcher-reference-overlay-debug";
 import { cn, truncate } from "@/lib/utils";
 import { ANIMATIONS } from "@/config/animation-assets";
 import { useI18n } from "@/shared/i18n/i18n-context";
 import { LottiePlayer } from "@/shared/ui/feedback/lottie-player";
 import { LanguageSwitch } from "@/shared/ui/i18n/language-switch";
+import { ThemeSwitch } from "@/shared/ui/theme/theme-switch";
 import { useSidebarStore } from "@/store/sidebar";
 import { Agent } from "@/types/agent";
 import { Conversation } from "@/types/conversation";
@@ -165,8 +165,6 @@ const HeroStage = memo(function HeroStage({
 
   return (
     <div className="relative flex w-full max-w-[1180px] flex-col items-center" onClick={(e) => e.stopPropagation()}>
-      <DebugReferenceOverlay />
-
       <HeroBlobShell
         class_name={cn(
           "z-10 transition-transform duration-500 ease-out lg:origin-left",
@@ -196,9 +194,15 @@ const HeroStage = memo(function HeroStage({
           <FadeSlideIn delay_ms={440} duration_ms={420} y_offset={10}>
             <HeroInputShell class_name="mx-auto w-full max-w-[326px] sm:max-w-[480px]">
               <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-                <MessageSquare className="h-4.5 w-4.5 text-black/58" />
+                <MessageSquare
+                  className="h-4.5 w-4.5"
+                  style={{ color: "var(--launcher-input-icon)" }}
+                />
                 <input
-                  className="flex-1 bg-transparent text-[14px] text-white/92 outline-none placeholder:text-black/42 sm:text-[15px]"
+                  className="flex-1 bg-transparent text-[14px] outline-none placeholder:text-[color:var(--launcher-input-placeholder)] sm:text-[15px]"
+                  style={{
+                    color: "var(--launcher-input-text)",
+                  }}
                   onChange={(event) => on_query_change(event.target.value)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
@@ -210,18 +214,28 @@ const HeroStage = memo(function HeroStage({
                   value={query}
                   disabled={is_query_loading}
                 />
-                <button
-                  className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/84 text-slate-900 shadow-[0_10px_20px_rgba(255,255,255,0.16)] transition-transform duration-300 hover:-translate-y-0.5 ${is_query_loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  onClick={on_submit}
-                  type="button"
-                  disabled={is_query_loading}
-                >
-                  {is_query_loading ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-transparent" />
-                  ) : (
-                    <ArrowUp className="h-4 w-4" />
-                  )}
-                </button>
+                <HeroActionOrbShell class_name="shrink-0" is_active={!is_query_loading}>
+                  <button
+                    className={cn(
+                      "inline-flex h-full w-full items-center justify-center rounded-full transition duration-150 ease-out hover:-translate-y-0.5",
+                      is_query_loading && "cursor-not-allowed opacity-50 hover:translate-y-0",
+                    )}
+                    style={{
+                      background: "var(--launcher-submit-background)",
+                      boxShadow: "var(--launcher-submit-shadow)",
+                      color: "var(--launcher-submit-color)",
+                    }}
+                    onClick={on_submit}
+                    type="button"
+                    disabled={is_query_loading}
+                  >
+                    {is_query_loading ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-transparent" />
+                    ) : (
+                      <ArrowUp className="h-4 w-4" />
+                    )}
+                  </button>
+                </HeroActionOrbShell>
               </div>
             </HeroInputShell>
           </FadeSlideIn>
@@ -230,7 +244,12 @@ const HeroStage = memo(function HeroStage({
             {recent_agents.map((agent, index) => (
               <FadeSlideIn key={agent.id} delay_ms={580 + index * 55} duration_ms={360} y_offset={6} style={{ display: "inline-flex" }}>
                 <button
-                  className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white/84 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/18 sm:text-sm"
+                  className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition duration-150 ease-out hover:-translate-y-0.5 sm:text-sm"
+                  style={{
+                    background: "var(--launcher-agent-chip-background)",
+                    boxShadow: "inset 0 0 0 1px var(--launcher-agent-chip-border)",
+                    color: "var(--launcher-agent-chip-text)",
+                  }}
                   onClick={() => on_select_agent(agent.id)}
                   type="button"
                 >
@@ -249,7 +268,12 @@ const HeroStage = memo(function HeroStage({
             {recent_rooms.map((room, index) => (
               <FadeSlideIn key={room.id} delay_ms={580 + (recent_agents.length + index) * 55} duration_ms={360} y_offset={6} style={{ display: "inline-flex" }}>
                 <button
-                  className="rounded-full bg-white/8 px-3 py-1.5 text-xs font-medium text-white/76 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/16 sm:text-sm"
+                  className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium transition duration-150 ease-out hover:-translate-y-0.5 sm:text-sm"
+                  style={{
+                    background: "var(--launcher-room-chip-background)",
+                    boxShadow: "inset 0 0 0 1px var(--launcher-room-chip-border)",
+                    color: "var(--launcher-room-chip-text)",
+                  }}
                   onClick={(e) => {
                     e.stopPropagation();
                     on_open_room(room.id);
@@ -263,7 +287,8 @@ const HeroStage = memo(function HeroStage({
 
             <FadeSlideIn delay_ms={580 + (recent_agents.length + recent_rooms.length) * 55} duration_ms={360} y_offset={6} style={{ display: "inline-flex" }}>
               <button
-                className="px-2 text-xs font-medium text-purple-700/52 transition-colors hover:text-purple-700/82 sm:text-sm"
+                className="px-2 text-xs font-medium transition-colors duration-150 ease-out hover:text-[color:var(--launcher-handoff-hover-color)] sm:text-sm"
+                style={{ color: "var(--launcher-handoff-color)" }}
                 onClick={() => is_app_conversation_open ? on_close_app_conversation() : on_open_app_conversation(query)}
                 type="button"
               >
@@ -398,8 +423,6 @@ export function LauncherConsole({
 
   return (
     <section className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-      <div className="pointer-events-none absolute inset-0" />
-
       <div className="relative z-30 flex items-center justify-between gap-3 px-3 pt-3 sm:px-7 sm:pt-1"
         onClick={(e) => e.stopPropagation()}>
         <div className="relative flex items-center gap-1 px-1 py-1">
@@ -413,6 +436,7 @@ export function LauncherConsole({
         </div>
 
         <div className="relative z-40 flex items-center gap-1.5 sm:gap-2">
+          <ThemeSwitch />
           <LanguageSwitch />
         </div>
       </div>

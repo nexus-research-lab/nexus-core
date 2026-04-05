@@ -2,9 +2,6 @@
 
 import { BlobPoint } from "@/types/launcher";
 
-export const OUTER_STORAGE_KEY = "nexus-home-blob-points";
-export const INPUT_STORAGE_KEY = "nexus-home-input-blob-points";
-export const SIDE_PANEL_STORAGE_KEY = "nexus-home-side-panel-blob-points";
 export const OUTER_VIEWBOX_WIDTH = 1040;
 export const OUTER_VIEWBOX_HEIGHT = 760;
 export const INPUT_VIEWBOX_WIDTH = 760;
@@ -67,10 +64,6 @@ export const DEFAULT_SIDE_PANEL_POINTS: BlobPoint[] = [
   {"x": 16, "y": 227.56848103057757}
 ];
 
-export function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
 export function createClosedSplinePath(points: BlobPoint[]): string {
   if (points.length < 3) {
     return "";
@@ -130,61 +123,4 @@ export function createInnerPoints(points: BlobPoint[], scaleX = 0.82, scaleY = 0
   }));
 }
 
-function distanceToSegment(point: BlobPoint, start: BlobPoint, end: BlobPoint): number {
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
 
-  if (dx === 0 && dy === 0) {
-    return Math.hypot(point.x - start.x, point.y - start.y);
-  }
-
-  const projection = ((point.x - start.x) * dx + (point.y - start.y) * dy) / (dx * dx + dy * dy);
-  const t = clamp(projection, 0, 1);
-  const closestX = start.x + t * dx;
-  const closestY = start.y + t * dy;
-
-  return Math.hypot(point.x - closestX, point.y - closestY);
-}
-
-export function findNearestSegmentIndex(points: BlobPoint[], point: BlobPoint): number {
-  let bestIndex = 0;
-  let bestDistance = Number.POSITIVE_INFINITY;
-
-  for (let index = 0; index < points.length; index += 1) {
-    const start = points[index];
-    const end = points[(index + 1) % points.length];
-    const distance = distanceToSegment(point, start, end);
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      bestIndex = index;
-    }
-  }
-
-  return bestIndex;
-}
-
-export function parsePoints(
-  raw: string | null,
-  maxWidth: number,
-  maxHeight: number,
-): BlobPoint[] | null {
-  if (!raw) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as BlobPoint[];
-    if (!Array.isArray(parsed) || parsed.length < 6) {
-      return null;
-    }
-
-    return parsed
-      .filter((point) => Number.isFinite(point?.x) && Number.isFinite(point?.y))
-      .map((point) => ({
-        x: clamp(point.x, 16, maxWidth - 16),
-        y: clamp(point.y, 16, maxHeight - 16),
-      }));
-  } catch {
-    return null;
-  }
-}

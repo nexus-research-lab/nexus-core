@@ -3,6 +3,12 @@
 import { Check, Link2, Unplug } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import {
+  WorkspaceCatalogBadge,
+  WorkspaceCatalogCard,
+  WorkspaceCatalogMedia,
+} from "@/shared/ui/workspace/workspace-catalog-card";
+import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import { ConnectorInfo } from "@/types/connector";
 
 import { getConnectorColors, getConnectorLetter } from "./connector-icons";
@@ -30,9 +36,9 @@ export function ConnectorCard({
   const is_coming_soon = status === "coming_soon";
 
   return (
-    <article
-      className={cn(
-        "group relative flex cursor-pointer workspace-card flex-col rounded-[22px] px-5 py-4 transition-all hover:border-white/36 hover:bg-white/40",
+    <WorkspaceCatalogCard
+      class_name={cn(
+        "group cursor-pointer rounded-[22px] px-5 py-4",
         is_coming_soon && "opacity-70",
       )}
       onClick={on_select}
@@ -40,15 +46,15 @@ export function ConnectorCard({
       {/* 顶部：图标 + 标题 + 状态 */}
       <div className="flex items-start gap-3">
         {/* 品牌图标 */}
-        <div
-          className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border border-white/50 text-sm font-bold",
+        <WorkspaceCatalogMedia
+          class_name={cn(
+            "h-10 w-10 shrink-0 border-white/50 text-sm font-bold",
             colors.bg,
             colors.text,
           )}
         >
           {letter}
-        </div>
+        </WorkspaceCatalogMedia>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -64,22 +70,22 @@ export function ConnectorCard({
         {/* 右上角状态 */}
         <div className="shrink-0">
           {is_connected ? (
-            <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-600">
+            <WorkspaceCatalogBadge tone="success">
               <Check className="h-3 w-3" />
               已连接
-            </span>
+            </WorkspaceCatalogBadge>
           ) : is_coming_soon ? (
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-400">
+            <WorkspaceCatalogBadge tone="neutral">
               即将推出
-            </span>
+            </WorkspaceCatalogBadge>
           ) : !is_configured ? (
-            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-600">
+            <WorkspaceCatalogBadge tone="warning">
               待配置
-            </span>
+            </WorkspaceCatalogBadge>
           ) : (
-            <span className="flex items-center gap-1 rounded-full bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-400">
+            <WorkspaceCatalogBadge tone="neutral">
               未连接
-            </span>
+            </WorkspaceCatalogBadge>
           )}
         </div>
       </div>
@@ -88,28 +94,30 @@ export function ConnectorCard({
       {!is_coming_soon && (
         <div className="mt-3 flex items-center justify-end" onClick={(e) => e.stopPropagation()}>
           {is_connected ? (
-            <button
-              className="flex items-center gap-1 rounded-full px-3 py-1 text-[12px] font-medium text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
+            <WorkspacePillButton
               disabled={busy}
+              density="compact"
               onClick={on_disconnect}
-              type="button"
+              size="sm"
+              variant="danger"
             >
               <Unplug className="h-3 w-3" />
               断开
-            </button>
+            </WorkspacePillButton>
           ) : (
-            <button
-              className="flex items-center gap-1 rounded-full bg-sky-500 px-3 py-1.5 text-[12px] font-medium text-white shadow-sm transition-all hover:bg-sky-600"
+            <WorkspacePillButton
               disabled={busy || !is_configured}
+              density="compact"
               onClick={on_connect}
-              type="button"
+              size="sm"
+              variant={is_configured ? "strong" : "default"}
             >
               <Link2 className="h-3 w-3" />
               {is_configured ? "连接" : "未配置"}
-            </button>
+            </WorkspacePillButton>
           )}
         </div>
       )}
-    </article>
+    </WorkspaceCatalogCard>
   );
 }

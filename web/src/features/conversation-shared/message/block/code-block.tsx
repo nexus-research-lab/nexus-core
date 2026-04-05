@@ -2,6 +2,11 @@
 
 import { lazy, Suspense } from "react";
 
+import { cn } from "@/lib/utils";
+import { useTheme } from "@/shared/theme/theme-context";
+
+import { CodeShell } from "./code-shell";
+
 interface CodeBlockProps {
   language: string;
   value: string;
@@ -13,16 +18,28 @@ const LazyCodeBlockContent = lazy(async () => {
 });
 
 function CodeBlockFallback({ language, value }: CodeBlockProps) {
+  const { theme } = useTheme();
+  const is_dark_theme = theme === "dark";
+
   return (
-    <div className="relative my-4 overflow-hidden rounded-[22px] border border-white/10 bg-[#1e1e1e] shadow-[0_22px_36px_rgba(17,24,39,0.28)]">
-      <div className="flex items-center justify-between border-b border-white/5 bg-[#252526] px-4 py-2">
-        <span className="text-xs font-mono text-muted-foreground">{language || "text"}</span>
-        <span className="text-xs text-muted-foreground">Loading</span>
-      </div>
-      <pre className="overflow-x-auto p-6 text-sm leading-6 whitespace-pre-wrap break-words text-slate-100">
+    <CodeShell
+      language={language}
+      right_slot={(
+        <span className={cn("font-mono text-xs text-slate-500/90", is_dark_theme && "text-slate-300/94")}>
+          Loading
+        </span>
+      )}
+      content_class_name="overflow-x-auto"
+    >
+      <pre
+        className={cn(
+          "whitespace-pre-wrap break-words px-6 py-6 text-sm leading-[1.7] text-slate-800/92",
+          is_dark_theme && "text-slate-100/96",
+        )}
+      >
         {value}
       </pre>
-    </div>
+    </CodeShell>
   );
 }
 

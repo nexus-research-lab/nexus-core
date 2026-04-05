@@ -1,24 +1,21 @@
 "use client";
 
-import { memo, useRef, useState } from "react";
+import { memo, useState } from "react";
 import {
-  Check,
-  ChevronDown,
   FolderTree,
   Hash,
   History,
   MessageSquare,
-  MessageSquarePlus,
   Settings,
   UserPlus,
 } from "lucide-react";
 
-import { cn } from "@/lib/utils";
 import {
   WorkspaceSurfaceHeader,
   WorkspaceTaskStrip,
 } from "@/shared/ui/workspace/workspace-surface-header";
 import { useI18n } from "@/shared/i18n/i18n-context";
+import { WorkspaceConversationSwitcher } from "@/shared/ui/workspace/workspace-conversation-switcher";
 import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import { WorkspaceStatusBadge } from "@/shared/ui/workspace/workspace-status-badge";
 import { Agent } from "@/types/agent";
@@ -58,117 +55,6 @@ function getInitials(name: string | null): string {
   return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
 }
 
-/** 对话切换下拉菜单 */
-function ConversationSwitcher({
-  conversations,
-  conversation_id,
-  on_select_conversation,
-  on_create_conversation,
-}: {
-  conversations: RoomConversationView[];
-  conversation_id: string | null;
-  on_select_conversation: (conversation_id: string) => void;
-  on_create_conversation?: (title?: string) => Promise<string | null>;
-}) {
-  const { t } = useI18n();
-  const [is_open, set_is_open] = useState(false);
-  const [is_creating, set_is_creating] = useState(false);
-  const trigger_ref = useRef<HTMLButtonElement>(null);
-
-  const current_title =
-    conversations.find((conversation) => conversation.conversation_id === conversation_id)?.title
-    ?? t("room.choose_conversation");
-
-  const handle_create = async () => {
-    if (!on_create_conversation || is_creating) return;
-    set_is_creating(true);
-    set_is_open(false);
-    try {
-      await on_create_conversation();
-    } finally {
-      set_is_creating(false);
-    }
-  };
-
-  return (
-    <div className="relative">
-      <button
-        ref={trigger_ref}
-        className={cn(
-          "flex h-7 max-w-[168px] items-center gap-1 rounded-full border border-white/60 bg-white/72 px-2.5 text-[11px] font-medium text-slate-600 shadow-sm transition-colors",
-          "hover:bg-slate-100/70 hover:text-slate-800",
-          is_open && "bg-slate-100/80 text-slate-800",
-        )}
-        onClick={() => set_is_open((prev) => !prev)}
-        type="button"
-      >
-        <span className="max-w-[124px] truncate">{current_title}</span>
-        <ChevronDown className={cn("h-3 w-3 transition-transform", is_open && "rotate-180")} />
-      </button>
-
-      {is_open ? (
-        <>
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => set_is_open(false)}
-          />
-          <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-xl border border-slate-200/60 bg-white/95 py-1 shadow-lg backdrop-blur-md">
-            {conversations.length > 0 ? (
-              <>
-                {conversations.map((conversation) => {
-                  const is_active = conversation.conversation_id === conversation_id;
-                  return (
-                    <button
-                      key={conversation.conversation_id}
-                      className={cn(
-                        "flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] transition-colors",
-                        is_active
-                          ? "bg-slate-100/80 font-semibold text-slate-900"
-                          : "text-slate-600 hover:bg-slate-50",
-                      )}
-                      onClick={() => {
-                        on_select_conversation(conversation.conversation_id);
-                        set_is_open(false);
-                      }}
-                      type="button"
-                    >
-                      <MessageSquare className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                      <span className="min-w-0 flex-1 truncate">
-                        {conversation.title || t("room.untitled_conversation")}
-                      </span>
-                      {is_active ? (
-                        <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-                      ) : null}
-                    </button>
-                  );
-                })}
-                {on_create_conversation && (
-                  <div className="mx-3 my-1 border-t border-slate-200/60" />
-                )}
-                {on_create_conversation && (
-                  <button
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12px] font-medium text-emerald-600 hover:bg-emerald-50/80 transition-colors disabled:opacity-60"
-                    disabled={is_creating}
-                    onClick={handle_create}
-                    type="button"
-                  >
-                    <MessageSquarePlus className={cn("h-3.5 w-3.5 shrink-0", is_creating && "animate-spin")} />
-                    <span className="min-w-0 flex-1">
-                      {is_creating ? t("room.creating") : t("room.new_conversation")}
-                    </span>
-                  </button>
-                )}
-              </>
-            ) : (
-              <div className="px-3 py-2 text-[11px] text-slate-400">{t("room.no_conversations")}</div>
-            )}
-          </div>
-        </>
-      ) : null}
-    </div>
-  );
-}
-
 /** 成员头像堆叠组件 */
 function MemberAvatarStack({
   room_members,
@@ -181,22 +67,22 @@ function MemberAvatarStack({
   const overflow_count = room_members.length - MAX_VISIBLE;
 
   return (
-    <div className="flex items-center rounded-lg px-2 py-1">
-      <div className="flex items-center -space-x-2">
-        <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-slate-100 text-[8px] font-bold text-slate-900/82 shadow-sm">
+    <div className="flex items-center rounded-full border border-white/42 bg-white/36 px-[7px] py-[3px]">
+      <div className="ml-1 flex items-center gap-0">
+        <div className="ml-0 flex h-[27px] w-[27px] items-center justify-center rounded-full border-2 border-white/92 bg-white/92 text-[8px] font-bold text-slate-900/86 shadow-[0_6px_14px_rgba(106,124,158,0.12)]">
           {t("room.you")}
         </div>
         {visible_members.map((member) => (
           <div
             key={member.agent_id}
-            className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-linear-to-b from-slate-100 to-slate-200 text-[8px] font-bold text-slate-700 shadow-sm"
+            className="-ml-[6px] flex h-[27px] w-[27px] items-center justify-center rounded-full border-2 border-white/92 bg-linear-to-b from-slate-50/95 to-slate-200/94 text-[8px] font-bold text-slate-600/88 shadow-[0_6px_14px_rgba(106,124,158,0.12)]"
             title={member.name}
           >
             {getInitials(member.name)}
           </div>
         ))}
         {overflow_count > 0 ? (
-          <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-slate-200 text-[9px] font-semibold text-slate-600 shadow-sm">
+          <div className="-ml-[6px] flex h-[27px] w-[27px] items-center justify-center rounded-full border-2 border-white/92 bg-slate-200/92 text-[8px] font-semibold text-slate-600/82 shadow-[0_6px_14px_rgba(106,124,158,0.12)]">
             +{overflow_count}
           </div>
         ) : null}
@@ -242,6 +128,7 @@ function RoomHeaderActions({
         <WorkspacePillButton
           aria-label={t("room.add_member")}
           onClick={() => set_is_member_picker_open(true)}
+          density="compact"
           size="icon"
           title={t("room.add_member")}
         >
@@ -250,6 +137,7 @@ function RoomHeaderActions({
         <WorkspacePillButton
           aria-label={t("room.settings")}
           onClick={() => set_is_settings_open(true)}
+          density="compact"
           size="icon"
           title={t("room.settings")}
         >
@@ -307,9 +195,10 @@ const RoomConversationHeaderView = memo(({
   ];
 
   const title_trailing = (
-    <ConversationSwitcher
+    <WorkspaceConversationSwitcher
       conversations={conversations}
       conversation_id={conversation_id}
+      density="compact"
       on_select_conversation={on_select_conversation}
       on_create_conversation={on_create_conversation}
     />
@@ -332,6 +221,7 @@ const RoomConversationHeaderView = memo(({
       <WorkspaceStatusBadge
         icon={<span className="text-current">●</span>}
         label={is_loading ? t("status.collaborating") : t("status.online")}
+        size="compact"
         tone={is_loading ? "running" : "active"}
       />
     </>
@@ -341,6 +231,7 @@ const RoomConversationHeaderView = memo(({
     <WorkspaceSurfaceHeader
       active_tab={active_tab}
       badge="ROOM"
+      density="compact"
       leading={<Hash size={14} className="text-slate-800/72" />}
       on_change_tab={on_change_tab}
       tabs_trailing={<WorkspaceTaskStrip todos={todos} />}

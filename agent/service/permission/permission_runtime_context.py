@@ -70,13 +70,13 @@ class PermissionRuntimeContext:
                     pending_request.session_key,
                     pending_request.tool_name,
                 )
-                return PermissionResultDeny(message="Permission channel unavailable")
+                return self._build_denied_result(tool_name, "Permission channel unavailable")
             await asyncio.wait_for(pending_request.event.wait(), timeout=timeout_seconds)
             response = self._permission_responses.get(pending_request.request_id, {})
             return self._build_permission_result(tool_name, input_data, response)
         except asyncio.TimeoutError:
             logger.warning("⏰ 权限请求超时: %s", tool_name)
-            return PermissionResultDeny(message="Permission request timeout")
+            return self._build_denied_result(tool_name, "Permission request timeout")
         finally:
             self._cleanup_request(pending_request.request_id)
     def handle_permission_response(self, message: Dict[str, Any]) -> bool:
@@ -250,6 +250,13 @@ class PermissionRuntimeContext:
         """清理单个权限请求。"""
         self._permission_requests.pop(request_id, None)
         self._permission_responses.pop(request_id, None)
+    @staticmethod
+    def _build_denied_result(tool_name: str, message: str) -> PermissionResult:
+        """构建系统侧拒绝结果。"""
+        return PermissionResultDeny(
+            message=message,
+            interrupt=(tool_name == "AskUserQuestion"),
+        )
     def _build_permission_result(self, tool_name: str, input_data: dict[str, Any], response: Dict[str, Any]) -> PermissionResult:
         """将前端权限响应转换为 Claude SDK 结果。"""
         decision = response.get("decision", "deny")

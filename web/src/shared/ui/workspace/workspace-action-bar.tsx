@@ -4,10 +4,12 @@ import { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
+const ACTION_CARD_CLASS_NAME =
+  "surface-card rounded-[24px] px-4 py-4 text-left transition-[transform,background,border-color] duration-150 hover:-translate-y-px hover:bg-white/46 hover:border-white/48";
+
 interface WorkspaceActionBarProps {
   children: ReactNode;
   variant?: "pills" | "cards";
-  class_name?: string;
 }
 
 interface WorkspaceActionCardProps {
@@ -20,7 +22,6 @@ interface WorkspaceActionCardProps {
 export function WorkspaceActionBar({
   children,
   variant = "pills",
-  class_name,
 }: WorkspaceActionBarProps) {
   return (
     <div
@@ -28,7 +29,6 @@ export function WorkspaceActionBar({
         variant === "pills"
           ? "mt-6 flex flex-wrap items-center justify-center gap-3"
           : "mt-6 grid gap-3 md:grid-cols-3",
-        class_name,
       )}
     >
       {children}
@@ -44,7 +44,7 @@ export function WorkspaceActionCard({
 }: WorkspaceActionCardProps) {
   return (
     <button
-      className="workspace-card rounded-[24px] px-4 py-4 text-left transition hover:bg-white/20"
+      className={ACTION_CARD_CLASS_NAME}
       onClick={on_click}
       type="button"
     >

@@ -7,6 +7,8 @@ import { WorkspaceActionBar, WorkspaceActionCard } from "@/shared/ui/workspace/w
 import { Agent } from "@/types/agent";
 import { Conversation } from "@/types/conversation";
 
+const METRIC_CARD_CLASS_NAME = "surface-card rounded-[22px] px-4 py-4";
+
 interface RoomRouteEntryProps {
   room_id?: string;
   conversation_id?: string;
@@ -32,7 +34,7 @@ export function RoomRouteEntry({
 
   return (
     <div className="grid flex-1 gap-4 xl:grid-cols-[0.92fr_1.08fr]">
-      <section className="workspace-card rounded-[30px] px-6 py-6">
+      <section className="surface-card radius-shell-xl px-6 py-6">
         <h2 className="mt-2 text-[28px] font-black tracking-[-0.04em] text-slate-950/90">
           {room_agent ? room_agent.name : t("room.route_empty_title")}
         </h2>
@@ -58,14 +60,14 @@ export function RoomRouteEntry({
         </WorkspaceActionBar>
       </section>
 
-      <aside className="workspace-card rounded-[30px] px-6 py-6">
+      <aside className="surface-card radius-shell-xl px-6 py-6">
         <div className="mt-4 grid gap-3">
-          <div className="workspace-card rounded-3xl px-4 py-4">
+          <div className={METRIC_CARD_CLASS_NAME}>
             <p className="text-[11px] uppercase tracking-[0.12em] text-slate-700/46">Room</p>
             <p className="mt-1 text-sm font-semibold text-slate-950/86">{room_id ?? "-"}</p>
           </div>
 
-          <div className="workspace-card rounded-3xl px-4 py-4">
+          <div className={METRIC_CARD_CLASS_NAME}>
             <p className="text-[11px] uppercase tracking-[0.12em] text-slate-700/46">
               {t("room.route_conversation")}
             </p>
@@ -73,13 +75,13 @@ export function RoomRouteEntry({
           </div>
 
           {recent_room_conversations.length ? (
-            <div className="workspace-card rounded-3xl px-4 py-4">
+            <div className={METRIC_CARD_CLASS_NAME}>
               <p className="text-[11px] uppercase tracking-[0.12em] text-slate-700/46">{t("room.route_recent")}</p>
               <div className="mt-3 space-y-2">
                 {recent_room_conversations.map((conversation) => (
                   <button
                     key={conversation.conversation_id}
-                    className="flex w-full items-center justify-between gap-3 rounded-2xl bg-white/10 px-3 py-3 text-left transition hover:bg-white/16"
+                    className="surface-inset radius-shell-md flex w-full items-center justify-between gap-3 px-3 py-3 text-left transition hover:bg-white/34"
                     onClick={() =>
                       navigate(
                         AppRouteBuilders.room_conversation(
@@ -93,7 +95,9 @@ export function RoomRouteEntry({
                     <span className="truncate text-sm text-slate-900/84">
                       {conversation.title || t("room.untitled_conversation")}
                     </span>
-                    <ArrowRight className="h-4 w-4 shrink-0 text-slate-700/52" />
+                    <span className="chip-default inline-flex h-9 w-9 items-center justify-center rounded-full">
+                      <ArrowRight className="h-4 w-4 shrink-0 text-slate-700/52" />
+                    </span>
                   </button>
                 ))}
               </div>

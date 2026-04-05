@@ -11,11 +11,17 @@ import { prepare, layout } from "@chenglou/pretext";
 import { Bot, Check, ChevronDown, ChevronRight, Copy, Edit2, Square, User, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAssistantContentMerge } from "@/hooks/use-assistant-content-merge";
+import { useScrollAnchoredState } from "@/hooks/use-scroll-anchored-state";
 import { AssistantMessage, ContentBlock, Message } from "@/types/message";
-import { PendingPermission, PermissionDecisionPayload } from "@/types/permission";
+import {
+  PendingPermission,
+  PermissionDecisionPayload,
+  buildPermissionSignature,
+} from "@/types/permission";
 import { ContentRenderer } from "./content-renderer";
 import { MessageStats } from "./message-stats";
 import { ToolBlock } from "./block/tool-block";
+import { MessageActionButton, MessageAvatar, MessageLoadingDots, MessageShell } from "./message-primitives";
 
 interface OrderedAssistantEntry {
   block: ContentBlock;
@@ -82,7 +88,12 @@ function MessageItemInner(
   }: MessageItemProps) {
   const [copiedUser, setCopiedUser] = useState(false);
   const [copiedAssistant, setCopiedAssistant] = useState(false);
-  const [isProcessExpanded, setIsProcessExpanded] = useState(default_process_expanded);
+  const {
+    is_open: isProcessExpanded,
+    toggle: toggleProcessExpanded,
+    set_open: setIsProcessExpanded,
+    anchor_ref: processAnchorRef,
+  } = useScrollAnchoredState(default_process_expanded);
 
   // 分离消息 + 合并内容
   const {
@@ -161,13 +172,14 @@ function MessageItemInner(
     });
 
     const matched_request_ids = new Set<string>();
-    for (const block of mergedContent) {
+    for (let index = mergedContent.length - 1; index >= 0; index -= 1) {
+      const block = mergedContent[index];
       if (block.type !== "tool_use" || resolved_tool_use_ids.has(block.id)) {
         continue;
       }
       const signature = buildPermissionSignature(block.name, block.input);
       const queue = permission_queue_map.get(signature);
-      const permission = queue?.shift();
+      const permission = queue?.pop();
       if (!permission) {
         continue;
       }
@@ -178,7 +190,11 @@ function MessageItemInner(
     return {
       matchedPendingPermissionsByToolUseId: matched_permissions,
       unmatchedPendingPermissions: pending_permissions.filter(
-        (permission) => !matched_request_ids.has(permission.request_id),
+        (permission) => (
+          !matched_request_ids.has(permission.request_id)
+          && permission.interaction_mode !== "question"
+          && permission.tool_name !== "AskUserQuestion"
+        ),
       ),
     };
   }, [mergedContent, pending_permissions]);
@@ -557,10 +573,10 @@ function MessageItemInner(
   );
 
   useEffect(() => {
-    if (pending_permissions.length > 0 || (is_last_round && is_loading)) {
+    if (pending_permissions.length > 0) {
       setIsProcessExpanded(true);
     }
-  }, [is_last_round, is_loading, pending_permissions.length]);
+  }, [pending_permissions.length, setIsProcessExpanded]);
 
   // 操作
   const handleCopyUser = useCallback(async () => {
@@ -599,7 +615,7 @@ function MessageItemInner(
     on_stop_message(firstAssistant.message_id);
   }, [on_stop_message, firstAssistant]);
   const pendingPermissionBlock = unmatchedPendingPermissions.length > 0 ? (
-    <div className="mt-3 space-y-3 rounded-xl bg-slate-50/70 p-3">
+    <div className="mt-3 flex flex-col gap-3 rounded-2xl bg-slate-50/72 p-3">
       {unmatchedPendingPermissions.map((permission) => (
         <ToolBlock
           key={permission.request_id}
@@ -681,13 +697,13 @@ function MessageItemInner(
   };
 
   return (
-    <div
-      className={cn(
-        "w-full min-w-0 animate-in fade-in slide-in-from-bottom-2 duration-300",
-        "space-y-2 py-3",
-        !compact && "border-b border-slate-200/75",
+    <MessageShell
+      class_name={cn(
+        "animate-in fade-in slide-in-from-bottom-2 space-y-2 py-3 duration-300",
         class_name,
-      )}>
+      )}
+      separated={!compact}
+    >
 
       {/* ═══════════════════════ 用户消息 ═══════════════════════ */}
       {userMessage && (
@@ -698,9 +714,9 @@ function MessageItemInner(
               compact ? "grid-cols-[minmax(0,1fr)]" : "grid-cols-[40px_minmax(0,1fr)] gap-3",
             )}>
               {!compact ? (
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600">
+                <MessageAvatar>
                   <User className="h-4 w-4" />
-                </div>
+                </MessageAvatar>
               ) : null}
               <div className="relative min-w-0">
                 {/* 头部 */}
@@ -709,9 +725,9 @@ function MessageItemInner(
                   compact ? "h-6" : "h-7",
                 )}>
                   {compact ? (
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-slate-500">
+                    <MessageAvatar class_name="shrink-0" size="compact">
                       <User className="h-3 w-3" />
-                    </div>
+                    </MessageAvatar>
                   ) : null}
                   <span className="shrink-0 text-sm font-bold text-slate-900">你</span>
                   <span className="hidden shrink-0 text-xs text-slate-500 sm:inline">
@@ -721,18 +737,15 @@ function MessageItemInner(
 
                   {/* 操作按钮 */}
                   <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
+                    <MessageActionButton
                       aria-label="复制消息"
                       onClick={handleCopyUser}
-                      className={cn(
-                        "p-1 rounded transition-colors focus-visible:ring-2 focus-visible:ring-primary/50",
-                        copiedUser ? "text-success" : "text-muted-foreground/50 hover:text-foreground"
-                      )}
+                      tone={copiedUser ? "success" : "default"}
                     >
                       {copiedUser ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                    </button>
+                    </MessageActionButton>
                     {on_edit_user_message && (
-                      <button
+                      <MessageActionButton
                         aria-label="编辑消息"
                         onClick={() => {
                           const newContent = prompt('编辑消息:', userContent);
@@ -740,10 +753,10 @@ function MessageItemInner(
                             on_edit_user_message(userMessage.message_id, newContent);
                           }
                         }}
-                        className="p-1 rounded text-muted-foreground/50 hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-primary/50"
+                        tone="default"
                       >
                         <Edit2 className="w-3 h-3" />
-                      </button>
+                      </MessageActionButton>
                     )}
                   </div>
                 </div>
@@ -772,9 +785,9 @@ function MessageItemInner(
               compact ? "grid-cols-[minmax(0,1fr)]" : "grid-cols-[40px_minmax(0,1fr)] gap-3",
             )}>
               {!compact ? (
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600">
+                <MessageAvatar>
                   <Bot className="h-4 w-4" />
-                </div>
+                </MessageAvatar>
               ) : null}
 
               <div className="relative min-w-0">
@@ -784,9 +797,9 @@ function MessageItemInner(
                   compact ? "min-h-6 pb-0" : "h-7 pb-0.5",
                 )}>
                   {compact ? (
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-slate-500">
+                    <MessageAvatar class_name="shrink-0" size="compact">
                       <Bot className="h-3 w-3" />
-                    </div>
+                    </MessageAvatar>
                   ) : null}
                   <span className="shrink-0 text-sm font-bold text-slate-900">
                     {current_agent_name || "协作成员"}
@@ -810,15 +823,16 @@ function MessageItemInner(
 
                   {/* Per-message stop button (Room 并发模式) */}
                   {can_stop_message && (
-                    <button
+                    <MessageActionButton
                       type="button"
                       aria-label="停止生成"
                       onClick={handle_stop_message}
-                      className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                      class_name="flex items-center gap-1 px-1.5 py-0.5 text-xs"
+                      tone="default"
                     >
                       <Square className="h-3 w-3 fill-current" />
                       <span>停止</span>
-                    </button>
+                    </MessageActionButton>
                   )}
 
                 </div>
@@ -834,11 +848,7 @@ function MessageItemInner(
 
                   {/* Room 并发：pending 占位动画 */}
                   {stream_status === 'pending' && mergedContent.length === 0 && (
-                    <div className="flex items-center gap-1.5 py-1">
-                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:0ms]" />
-                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:150ms]" />
-                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:300ms]" />
-                    </div>
+                    <MessageLoadingDots class_name="py-1" size="md" />
                   )}
 
                   {/* Room 并发：已取消标记 */}
@@ -866,10 +876,10 @@ function MessageItemInner(
                   ) : null}
 
                   {shouldRenderProcessCallchain ? (
-                    <div>
+                    <div ref={processAnchorRef as React.RefObject<HTMLDivElement>}>
                       <button
-                        className="flex w-full items-center gap-2 px-0 py-1.5 text-left transition-colors hover:text-slate-700"
-                        onClick={() => setIsProcessExpanded((previous) => !previous)}
+                        className="flex w-full items-center gap-2 py-1.5 text-left text-slate-500/86 transition-colors duration-150 hover:text-slate-700/94"
+                        onClick={toggleProcessExpanded}
                         type="button"
                       >
                         <Wrench className="h-3 w-3 shrink-0 text-slate-300" />
@@ -927,7 +937,7 @@ function MessageItemInner(
           </div>
         </div>
       )}
-    </div>
+    </MessageShell>
   );
 }
 
@@ -977,32 +987,6 @@ function extractTextFromContentBlocks(content?: ContentBlock[] | null): string {
     }
   });
   return texts.join("\n\n");
-}
-
-function buildPermissionSignature(tool_name: string, tool_input: Record<string, unknown>): string {
-  return `${tool_name}:${stableStringify(tool_input)}`;
-}
-
-function stableStringify(value: unknown): string {
-  if (value == null) {
-    return "null";
-  }
-  if (typeof value === "string") {
-    return JSON.stringify(value);
-  }
-  if (typeof value === "number" || typeof value === "boolean") {
-    return String(value);
-  }
-  if (Array.isArray(value)) {
-    return `[${value.map((item) => stableStringify(item)).join(",")}]`;
-  }
-  if (typeof value === "object") {
-    return `{${Object.keys(value as Record<string, unknown>)
-      .sort()
-      .map((key) => `${JSON.stringify(key)}:${stableStringify((value as Record<string, unknown>)[key])}`)
-      .join(",")}}`;
-  }
-  return JSON.stringify(String(value));
 }
 
 export default MessageItem;

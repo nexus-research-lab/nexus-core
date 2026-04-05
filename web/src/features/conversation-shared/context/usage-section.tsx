@@ -5,6 +5,8 @@ import { formatCost, formatTokens } from "@/lib/utils";
 
 import { ContextSection } from "./context-section";
 
+const METRIC_CARD_CLASS_NAME = "surface-card rounded-[22px] px-3 py-2";
+
 interface UsageSectionProps {
   agent_cost_summary: AgentCostSummary;
   conversation_cost_summary: ConversationCostSummary;
@@ -22,13 +24,13 @@ export function UsageSection({
       title="Conversation Usage"
     >
       <div className="grid grid-cols-2 gap-2">
-        <div className="workspace-card rounded-[22px] px-3 py-2">
+        <div className={METRIC_CARD_CLASS_NAME}>
           <p className="text-[11px] uppercase tracking-[0.12em] text-slate-700/50">当前 room</p>
           <p className="mt-1 text-sm font-semibold text-slate-900/86">
             {formatCost(conversation_cost_summary.total_cost_usd)}
           </p>
         </div>
-        <div className="workspace-card rounded-[22px] px-3 py-2">
+        <div className={METRIC_CARD_CLASS_NAME}>
           <p className="text-[11px] uppercase tracking-[0.12em] text-slate-700/50">成员累计</p>
           <p className="mt-1 text-sm font-semibold text-slate-900/86">
             {formatCost(agent_cost_summary.total_cost_usd)}

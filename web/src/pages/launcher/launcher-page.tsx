@@ -5,6 +5,7 @@ import { AppRouteBuilders } from "@/app/router/route-paths";
 import { useAgentConversation } from "@/hooks/agent";
 import { LauncherAppConversationPanel } from "@/features/launcher/launcher-app-conversation-panel";
 import { LauncherConsole } from "@/features/launcher/launcher-console";
+import { getLauncherSurfaceThemeStyle } from "@/features/launcher/launcher-surface-theme";
 import { useLauncherPageController } from "@/hooks/use-launcher-page-controller";
 import { createConversation, deleteConversation } from "@/lib/agent-api";
 import { buildWsDmSessionKey } from "@/lib/session-key";
@@ -12,6 +13,7 @@ import { createRoom, ensureDirectRoom } from "@/lib/room-api";
 import { cn } from "@/lib/utils";
 import { AgentOptions } from "@/shared/ui/dialog/agent-options";
 import { useI18n } from "@/shared/i18n/i18n-context";
+import { useTheme } from "@/shared/theme/theme-context";
 import { AppLoadingScreen } from "@/shared/ui/layout/app-loading-screen";
 import { useAgentStore } from "@/store/agent";
 import { useSidebarStore } from "@/store/sidebar";
@@ -20,6 +22,7 @@ import { getDefaultAgentId } from "@/config/options";
 
 export function LauncherPage() {
   const { t } = useI18n();
+  const { theme } = useTheme();
   const app_agent_id = getDefaultAgentId();
   const controller = useLauncherPageController();
   const navigate = useNavigate();
@@ -213,7 +216,10 @@ export function LauncherPage() {
 
   return (
     <>
-      <div className="relative flex min-h-0 flex-1 gap-1 overflow-hidden">
+      <div
+        className="relative flex min-h-0 flex-1 gap-1 overflow-hidden"
+        style={getLauncherSurfaceThemeStyle(theme)}
+      >
         <div
           className={cn(
             "pointer-events-none absolute inset-y-[8%] right-[22%] z-10 hidden w-[34%] rounded-full bg-[radial-gradient(circle,rgba(174,208,255,0.24),rgba(174,208,255,0.08)_36%,transparent_76%)] blur-3xl transition-all duration-500 lg:block",
@@ -223,17 +229,25 @@ export function LauncherPage() {
           )}
         />
         <div
-          className="launcher-surface-bridge hidden lg:block"
-          data-open={controller.is_app_conversation_open ? "true" : "false"}
+          className={cn(
+            "pointer-events-none absolute inset-[18%_22%_14%_auto] hidden w-[min(34vw,420px)] rounded-full blur-3xl transition-all duration-500 lg:block",
+            controller.is_app_conversation_open
+              ? "translate-x-0 scale-x-100 opacity-100"
+              : "translate-x-11 scale-x-[0.82] opacity-0",
+          )}
+          style={{
+            background: "var(--launcher-bridge-background)",
+            transformOrigin: "left center",
+          }}
         />
 
         <div
           className={cn(
-            "launcher-surface-left min-w-0 flex-1",
+            "min-w-0 flex-1 transition-[transform,opacity,filter,max-width] duration-500 ease-out",
+            controller.surface === "app" && "saturate-[0.96]",
             controller.is_app_conversation_open &&
             "lg:max-w-[calc(100%-430px)] lg:scale-[0.985] lg:opacity-[0.96]",
           )}
-          data-surface={controller.surface}
           onClick={() => controller.is_app_conversation_open && controller.close_app_conversation()}
         >
           <LauncherConsole
@@ -251,8 +265,12 @@ export function LauncherPage() {
         {controller.is_app_conversation_open ? (
           <div className="absolute inset-x-3 bottom-4 top-24 z-40 lg:static lg:inset-auto lg:block lg:w-[420px] lg:shrink-0 lg:pb-8">
             <div
-              className="launcher-app-panel-shell h-full"
-              data-open={controller.is_app_conversation_open ? "true" : "false"}
+              className={cn(
+                "h-full transition-[transform,opacity,filter] duration-500 ease-out",
+                controller.is_app_conversation_open
+                  ? "translate-x-0 scale-100 opacity-100 blur-0"
+                  : "translate-x-[34px] scale-[0.94] opacity-0 blur-[8px]",
+              )}
             >
               <LauncherAppConversationPanel
                 app_conversation_draft={controller.app_conversation_draft}

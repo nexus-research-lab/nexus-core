@@ -6,7 +6,6 @@ import { LauncherPage } from "@/pages/launcher/launcher-page";
 import { PlaceholderPage } from "@/pages/placeholder/placeholder-page";
 import { useI18n } from "@/shared/i18n/i18n-context";
 import { AppLayout } from "@/shared/ui/layout/app-layout";
-import { AppLayoutNoSidebar } from "@/shared/ui/layout/app-layout-no-sidebar";
 
 // 懒加载页面组件 — 首次导航时按需加载
 const ContactsPage = lazy(() =>
@@ -48,7 +47,7 @@ export function AppRouter() {
       <Suspense fallback={<PageFallback />}>
         <Routes>
           {/* Launcher — 无侧边栏布局，eager 加载 */}
-          <Route element={<AppLayoutNoSidebar />} path={APP_ROUTE_PATHS.launcher}>
+          <Route element={<AppLayout show_sidebar={false} />} path={APP_ROUTE_PATHS.launcher}>
             <Route index element={<LauncherPage />} />
           </Route>
 

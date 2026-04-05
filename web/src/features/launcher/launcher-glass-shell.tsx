@@ -8,21 +8,15 @@ import {
   DEFAULT_INPUT_POINTS,
   DEFAULT_OUTER_POINTS,
   DEFAULT_SIDE_PANEL_POINTS,
-  INPUT_STORAGE_KEY,
   INPUT_VIEWBOX_HEIGHT,
   INPUT_VIEWBOX_WIDTH,
-  OUTER_STORAGE_KEY,
   OUTER_VIEWBOX_HEIGHT,
   OUTER_VIEWBOX_WIDTH,
-  SIDE_PANEL_STORAGE_KEY,
   SIDE_PANEL_VIEWBOX_HEIGHT,
   SIDE_PANEL_VIEWBOX_WIDTH,
 } from "@/features/launcher/launcher-blob-shape";
 import { cn } from "@/lib/utils";
 import { BlobPoint } from "@/types/launcher";
-
-import { BlobDebugController, BlobDebugPanel } from "./launcher-blob-debug";
-import { useBlobDebugTarget, useEditableShape } from "./launcher-blob-debug-hooks";
 
 interface GlassGradientStop {
   color: string;
@@ -57,7 +51,6 @@ interface StaticGlassShellProps {
   outer_glow_width?: number;
   path: string;
   stroke: string;
-  svg_overlay?: ReactNode;
   view_box_height: number;
   view_box_width: number;
 }
@@ -107,6 +100,18 @@ const ACTION_ORB_POINTS: BlobPoint[] = [
 const ACTION_ORB_PATH = createClosedSplinePath(ACTION_ORB_POINTS);
 const ACTION_ORB_INNER_PATH = createClosedSplinePath(createInnerPoints(ACTION_ORB_POINTS, 0.93, 0.93));
 
+// Precomputed static paths for the 3 editable blob shapes (previously computed at runtime via useEditableShape)
+const SIDE_PANEL_PATH = createClosedSplinePath(DEFAULT_SIDE_PANEL_POINTS);
+const SIDE_PANEL_INNER_PATH = createClosedSplinePath(createInnerPoints(DEFAULT_SIDE_PANEL_POINTS, 0.958, 0.95));
+
+const OUTER_PATH = createClosedSplinePath(DEFAULT_OUTER_POINTS);
+const OUTER_INNER_PATH_1 = createClosedSplinePath(createInnerPoints(DEFAULT_OUTER_POINTS, 0.985, 0.982));
+const OUTER_INNER_PATH_2 = createClosedSplinePath(createInnerPoints(DEFAULT_OUTER_POINTS, 0.992, 0.99));
+
+const INPUT_PATH = createClosedSplinePath(DEFAULT_INPUT_POINTS);
+const INPUT_INNER_PATH_1 = createClosedSplinePath(createInnerPoints(DEFAULT_INPUT_POINTS, 0.965, 0.92));
+const INPUT_INNER_PATH_2 = createClosedSplinePath(createInnerPoints(DEFAULT_INPUT_POINTS, 0.93, 0.86));
+
 function StaticGlassShell({
   aura_background = `radial-gradient(28% 22% at 20% 24%, rgba(255,190,122,0.12), rgba(255,190,122,0) 76%),
     radial-gradient(24% 24% at 82% 18%, rgba(118,231,206,0.12), rgba(118,231,206,0) 78%),
@@ -128,7 +133,6 @@ function StaticGlassShell({
   outer_glow_width = 18,
   path,
   stroke,
-  svg_overlay,
   view_box_height,
   view_box_width,
 }: StaticGlassShellProps) {
@@ -214,8 +218,6 @@ function StaticGlassShell({
         />
       </svg>
 
-      {svg_overlay}
-
       <div className={cn("relative z-10", content_class_name)}>
         {children}
       </div>
@@ -224,101 +226,40 @@ function StaticGlassShell({
 }
 
 export function HeroSidePanelShell({ children, class_name }: HeroBlobShellProps) {
-  const panel = useEditableShape({
-    defaultPoints: DEFAULT_SIDE_PANEL_POINTS,
-    storageKey: SIDE_PANEL_STORAGE_KEY,
-    viewBoxHeight: SIDE_PANEL_VIEWBOX_HEIGHT,
-    viewBoxWidth: SIDE_PANEL_VIEWBOX_WIDTH,
-  });
-  const {setTarget, target} = useBlobDebugTarget();
-  const activeShape = target === "panel" ? panel : null;
-  const innerPath = createClosedSplinePath(createInnerPoints(panel.points, 0.958, 0.95));
-
   return (
-    <>
-      <StaticGlassShell
-        class_name={cn("w-[280px]", class_name)}
-        content_class_name="flex h-full min-h-0 flex-col px-6 py-7"
-        aura_background={`radial-gradient(24% 20% at 18% 28%, rgba(255,184,124,0.10), rgba(255,184,124,0) 78%),
-          radial-gradient(24% 20% at 80% 18%, rgba(110,228,214,0.10), rgba(110,228,214,0) 78%),
-          radial-gradient(32% 18% at 46% 92%, rgba(128,118,255,0.12), rgba(128,118,255,0) 76%),
-          radial-gradient(40% 18% at 52% 8%, rgba(255,255,255,0.08), rgba(255,255,255,0) 72%)`}
-        aura_blur_class_name="blur-[34px]"
-        fill={panel.debugEnabled ? "rgba(37,55,88,0.5)" : "rgba(214,224,246,0.12)"}
-        fill_gradient_stops={panel.debugEnabled ? undefined : [
-          { offset: "0%", color: "rgba(245,248,255,0.18)" },
-          { offset: "42%", color: "rgba(212,224,248,0.12)" },
-          { offset: "100%", color: "rgba(182,200,235,0.14)" },
-        ]}
-        glow_blur_deviation={5}
-        inner_fill={panel.debugEnabled ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.05)"}
-        inner_fill_gradient_stops={panel.debugEnabled ? undefined : [
-          { offset: "0%", color: "rgba(250,252,255,0.08)" },
-          { offset: "52%", color: "rgba(217,229,249,0.04)" },
-          { offset: "100%", color: "rgba(200,214,240,0.07)" },
-        ]}
-        inner_glow_opacity={panel.debugEnabled ? 0.78 : 0.42}
-        inner_path={innerPath}
-        inner_stroke={panel.debugEnabled ? "rgba(170,226,255,0.22)" : "rgba(255,255,255,0.09)"}
-        outer_glow_opacity={panel.debugEnabled ? 0.86 : 0.5}
-        outer_glow_width={panel.debugEnabled ? 18 : 13}
-        path={panel.path}
-        stroke={panel.debugEnabled ? "rgba(170,226,255,0.42)" : "rgba(255,255,255,0.22)"}
-        svg_overlay={panel.debugEnabled ? (
-          <BlobDebugController
-            is_active={target === "panel"}
-            color="rgba(170,226,255,0.92)"
-            current_target={target}
-            debug_enabled={panel.debugEnabled}
-            fill="transparent"
-            on_copy={async () => {
-              await navigator.clipboard.writeText(panel.points.map(p => `{\"x\":${p.x},\"y\":${p.y}}`).join(",\n"));
-            }}
-            on_path_double_click={panel.handlePathDoubleClick}
-            on_point_pointer_down={panel.handlePointPointerDown}
-            on_point_pointer_up={panel.handlePointPointerUp}
-            on_reset={() => {
-              localStorage.removeItem(SIDE_PANEL_STORAGE_KEY);
-              panel.setPoints(DEFAULT_SIDE_PANEL_POINTS);
-            }}
-            panel_class_name="bottom-4 left-4"
-            path={panel.path}
-            points={panel.points}
-            set_target={setTarget}
-            show_panel={false}
-            stroke="transparent"
-            stroke_width={10}
-            svg_ref={panel.svgRef}
-            target="panel"
-            title="Panel Shape"
-            view_box_height={SIDE_PANEL_VIEWBOX_HEIGHT}
-            view_box_width={SIDE_PANEL_VIEWBOX_WIDTH}
-          />
-        ) : null}
-        view_box_height={SIDE_PANEL_VIEWBOX_HEIGHT}
-        view_box_width={SIDE_PANEL_VIEWBOX_WIDTH}
-      >
-        {children}
-      </StaticGlassShell>
-
-      {panel.debugEnabled && activeShape && (
-        <BlobDebugPanel
-          current_target={target}
-          on_copy={async () => {
-            await navigator.clipboard.writeText(activeShape.points.map(p => `{\"x\":${p.x},\"y\":${p.y}}`).join(",\n"));
-          }}
-          on_reset={() => {
-            localStorage.removeItem(SIDE_PANEL_STORAGE_KEY);
-            panel.setPoints(DEFAULT_SIDE_PANEL_POINTS);
-          }}
-          panel_class_name="bottom-4 left-4"
-          points={activeShape.points}
-          set_target={setTarget}
-          target={target}
-          title="Blob Shape"
-        />
-      )}
-    </>
+    <StaticGlassShell
+      class_name={cn("w-[280px]", class_name)}
+      content_class_name="flex h-full min-h-0 flex-col px-6 py-7"
+      aura_background={`radial-gradient(24% 20% at 18% 28%, rgba(255,184,124,0.10), rgba(255,184,124,0) 78%),
+        radial-gradient(24% 20% at 80% 18%, rgba(110,228,214,0.10), rgba(110,228,214,0) 78%),
+        radial-gradient(32% 18% at 46% 92%, rgba(128,118,255,0.12), rgba(128,118,255,0) 76%),
+        radial-gradient(40% 18% at 52% 8%, rgba(255,255,255,0.08), rgba(255,255,255,0) 72%)`}
+      aura_blur_class_name="blur-[34px]"
+      fill="rgba(214,224,246,0.12)"
+      fill_gradient_stops={[
+        { offset: "0%", color: "rgba(245,248,255,0.18)" },
+        { offset: "42%", color: "rgba(212,224,248,0.12)" },
+        { offset: "100%", color: "rgba(182,200,235,0.14)" },
+      ]}
+      glow_blur_deviation={5}
+      inner_fill="rgba(255,255,255,0.05)"
+      inner_fill_gradient_stops={[
+        { offset: "0%", color: "rgba(250,252,255,0.08)" },
+        { offset: "52%", color: "rgba(217,229,249,0.04)" },
+        { offset: "100%", color: "rgba(200,214,240,0.07)" },
+      ]}
+      inner_glow_opacity={0.42}
+      inner_path={SIDE_PANEL_INNER_PATH}
+      inner_stroke="rgba(255,255,255,0.09)"
+      outer_glow_opacity={0.5}
+      outer_glow_width={13}
+      path={SIDE_PANEL_PATH}
+      stroke="rgba(255,255,255,0.22)"
+      view_box_height={SIDE_PANEL_VIEWBOX_HEIGHT}
+      view_box_width={SIDE_PANEL_VIEWBOX_WIDTH}
+    >
+      {children}
+    </StaticGlassShell>
   );
 }
 
@@ -396,265 +337,154 @@ export function HeroBlobShell({ children, class_name }: HeroBlobShellProps) {
   const gradientId = useId();
   const outerEdgeGlowGradientId = useId();
   const outerEdgeGlowId = useId();
-  const outer = useEditableShape({
-    defaultPoints: DEFAULT_OUTER_POINTS,
-    storageKey: OUTER_STORAGE_KEY,
-    viewBoxHeight: OUTER_VIEWBOX_HEIGHT,
-    viewBoxWidth: OUTER_VIEWBOX_WIDTH,
-  });
-  const {setTarget, target} = useBlobDebugTarget();
-  const activeShape = target === "hero" ? outer : null;
+  const tintGradientId = useId();
 
   return (
-    <>
-      <div className={cn("relative isolate w-full max-w-[404px] sm:max-w-[980px]", class_name)}>
-        <div className="absolute inset-[-24%] z-0 pointer-events-none sm:inset-[-20%]">
-          <div className="h-full w-full origin-center scale-x-[1.7] scale-y-[0.96] sm:scale-x-[1.4] sm:scale-y-[1.2] lg:scale-x-100 lg:scale-y-100  ">
-          <div
-            className="absolute inset-0 pointer-events-none blur-[56px]"
-            style={{
-              background: `radial-gradient(30% 16% at 50% 82%, rgba(133,119,255,0.30), rgba(133,119,255,0) 74%),
-                radial-gradient(12% 20% at 86% 22%, rgba(118,231,206,0.18), rgba(118,231,206,0) 76%),
-                radial-gradient(12% 18% at 14% 38%, rgba(255,190,122,0.14), rgba(255,190,122,0) 76%),
-                radial-gradient(40% 12% at 50% 12%, rgba(255,255,255,0.14), rgba(255,255,255,0) 74%)`,
-            }}
+    <div className={cn("relative isolate w-full max-w-[404px] sm:max-w-[980px]", class_name)}>
+      <div className="absolute inset-[-24%] z-0 pointer-events-none sm:inset-[-20%]">
+        <div className="h-full w-full origin-center scale-x-[1.7] scale-y-[0.96] sm:scale-x-[1.4] sm:scale-y-[1.2] lg:scale-x-100 lg:scale-y-100  ">
+        <div
+          className="absolute inset-0 pointer-events-none blur-[56px]"
+          style={{
+            background: "var(--launcher-hero-aura)",
+          }}
+        />
+
+        <svg
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full pointer-events-none"
+          preserveAspectRatio="none"
+          viewBox={`0 0 ${OUTER_VIEWBOX_WIDTH} ${OUTER_VIEWBOX_HEIGHT}`}
+        >
+          <defs>
+            <linearGradient id={gradientId} x1="142" x2="900" y1="92" y2="640" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" style={{ stopColor: "var(--launcher-hero-stop-1)" }} />
+              <stop offset="44%" style={{ stopColor: "var(--launcher-hero-stop-2)" }} />
+              <stop offset="100%" style={{ stopColor: "var(--launcher-hero-stop-3)" }} />
+            </linearGradient>
+            <radialGradient id={tintGradientId} cx="20%" cy="18%" r="88%">
+              <stop offset="0%" style={{ stopColor: "var(--launcher-hero-tint-1)" }} />
+              <stop offset="42%" style={{ stopColor: "var(--launcher-hero-tint-2)" }} />
+              <stop offset="74%" style={{ stopColor: "var(--launcher-hero-tint-3)" }} />
+              <stop offset="100%" style={{ stopColor: "var(--launcher-hero-tint-4)" }} />
+            </radialGradient>
+            <linearGradient id={outerEdgeGlowGradientId} x1="176" x2="888" y1="74" y2="674" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="rgba(255,255,255,0.78)"/>
+              <stop offset="34%" stopColor="rgba(255,255,255,0.34)"/>
+              <stop offset="74%" stopColor="rgba(211,224,248,0.26)"/>
+              <stop offset="100%" stopColor="rgba(255,255,255,0.18)"/>
+            </linearGradient>
+            <filter id={outerEdgeGlowId} x="-20%" y="-80%" width="140%" height="260%">
+              <feGaussianBlur stdDeviation="6"/>
+            </filter>
+          </defs>
+
+          <path
+            d={OUTER_PATH}
+            fill="none"
+            filter={`url(#${outerEdgeGlowId})`}
+            opacity={0.88}
+            stroke={`url(#${outerEdgeGlowGradientId})`}
+            strokeWidth="18"
           />
-
-          <svg
-            aria-hidden="true"
-            className="absolute inset-0 h-full w-full pointer-events-none"
-            preserveAspectRatio="none"
-            viewBox={`0 0 ${OUTER_VIEWBOX_WIDTH} ${OUTER_VIEWBOX_HEIGHT}`}
-          >
-            <defs>
-              <linearGradient id={gradientId} x1="142" x2="900" y1="92" y2="640" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="rgba(229,237,255,0.12)"/>
-                <stop offset="44%" stopColor="rgba(214,225,248,0.11)"/>
-                <stop offset="100%" stopColor="rgba(203,216,241,0.12)"/>
-              </linearGradient>
-              <linearGradient id={outerEdgeGlowGradientId} x1="176" x2="888" y1="74" y2="674" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="rgba(255,255,255,0.78)"/>
-                <stop offset="34%" stopColor="rgba(255,255,255,0.34)"/>
-                <stop offset="74%" stopColor="rgba(211,224,248,0.26)"/>
-                <stop offset="100%" stopColor="rgba(255,255,255,0.18)"/>
-              </linearGradient>
-              <filter id={outerEdgeGlowId} x="-20%" y="-80%" width="140%" height="260%">
-                <feGaussianBlur stdDeviation="6"/>
-              </filter>
-            </defs>
-
-            <path
-              d={outer.path}
-              fill="none"
-              filter={`url(#${outerEdgeGlowId})`}
-              opacity={outer.debugEnabled ? 0 : 0.88}
-              stroke={`url(#${outerEdgeGlowGradientId})`}
-              strokeWidth="18"
-            />
-            <path
-              d={createClosedSplinePath(createInnerPoints(outer.points, 0.985, 0.982))}
-              fill="none"
-              filter={`url(#${outerEdgeGlowId})`}
-              opacity={outer.debugEnabled ? 0 : 0.78}
-              stroke="rgba(255,255,255,0.22)"
-              strokeWidth="14"
-            />
-            <path
-              d={outer.path}
-              fill={outer.debugEnabled ? "rgba(182,191,237,0.58)" : `url(#${gradientId})`}
-              opacity={0.92}
-              stroke={outer.debugEnabled ? "rgba(189,200,255,0.68)" : "rgba(255,255,255,0.32)"}
-              strokeWidth="2"
-            />
-            <path
-              d={createClosedSplinePath(createInnerPoints(outer.points, 0.992, 0.99))}
-              fill={outer.debugEnabled ? "rgba(88,102,164,0.22)" : "rgba(216,226,247,0.06)"}
-              opacity={outer.debugEnabled ? 0.96 : 0.92}
-              stroke={outer.debugEnabled ? "rgba(214,221,255,0.32)" : "rgba(255,255,255,0.08)"}
-              strokeWidth="4"
-            />
-          </svg>
-          </div>
-        </div>
-
-        <div className="relative z-10 px-5 py-11 text-center sm:px-14 sm:py-12 lg:px-18 lg:py-16">
-          {children}
-        </div>
-
-        {outer.debugEnabled && (
-          <BlobDebugController
-            is_active={target === "hero"}
-            color="rgba(122,108,255,0.9)"
-            current_target={target}
-            debug_enabled={outer.debugEnabled}
-            fill="transparent"
-            on_copy={async () => {
-              await navigator.clipboard.writeText(outer.points.map(p => `{\"x\":${p.x},\"y\":${p.y}}`).join(",\n"));
-            }}
-            on_path_double_click={outer.handlePathDoubleClick}
-            on_point_pointer_down={outer.handlePointPointerDown}
-            on_point_pointer_up={outer.handlePointPointerUp}
-            on_reset={() => {
-              localStorage.removeItem(OUTER_STORAGE_KEY);
-              outer.setPoints(DEFAULT_OUTER_POINTS);
-            }}
-            panel_class_name="bottom-4 left-4"
-            path={outer.path}
-            points={outer.points}
-            set_target={setTarget}
-            show_panel={false}
-            stroke="transparent"
-            stroke_width={10}
-            svg_ref={outer.svgRef}
-            target="hero"
-            title="Hero Shape"
-            view_box_height={OUTER_VIEWBOX_HEIGHT}
-            view_box_width={OUTER_VIEWBOX_WIDTH}
+          <path
+            d={OUTER_INNER_PATH_1}
+            fill="none"
+            filter={`url(#${outerEdgeGlowId})`}
+            opacity={0.78}
+            stroke="rgba(255,255,255,0.22)"
+            strokeWidth="14"
           />
-        )}
+          <path
+            d={OUTER_PATH}
+            fill={`url(#${gradientId})`}
+            opacity={0.92}
+            stroke="var(--launcher-hero-stroke)"
+            strokeWidth="2"
+          />
+          <path
+            d={OUTER_PATH}
+            fill={`url(#${tintGradientId})`}
+            style={{ mixBlendMode: "soft-light" }}
+          />
+          <path
+            d={OUTER_INNER_PATH_2}
+            fill="var(--launcher-hero-inner-fill)"
+            opacity={0.92}
+            stroke="var(--launcher-hero-inner-stroke)"
+            strokeWidth="4"
+          />
+        </svg>
+        </div>
       </div>
 
-      {outer.debugEnabled && activeShape && (
-        <BlobDebugPanel
-          current_target={target}
-          on_copy={async () => {
-            await navigator.clipboard.writeText(activeShape.points.map(p => `{\"x\":${p.x},\"y\":${p.y}}`).join(",\n"));
-          }}
-          on_reset={() => {
-            localStorage.removeItem(OUTER_STORAGE_KEY);
-            outer.setPoints(DEFAULT_OUTER_POINTS);
-          }}
-          panel_class_name="bottom-4 left-4"
-          points={activeShape.points}
-          set_target={setTarget}
-          target={target}
-          title="Blob Shape"
-        />
-      )}
-    </>
+      <div className="relative z-10 px-5 py-11 text-center sm:px-14 sm:py-12 lg:px-18 lg:py-16">
+        {children}
+      </div>
+    </div>
   );
 }
 
 export function HeroInputShell({ children, class_name }: HeroInputShellProps) {
   const inputGlowGradientId = useId();
   const inputGlowId = useId();
-  const input = useEditableShape({
-    defaultPoints: DEFAULT_INPUT_POINTS,
-    storageKey: INPUT_STORAGE_KEY,
-    viewBoxHeight: INPUT_VIEWBOX_HEIGHT,
-    viewBoxWidth: INPUT_VIEWBOX_WIDTH,
-  });
-  const {setTarget, target} = useBlobDebugTarget();
-  const activeShape = target === "input" ? input : null;
 
   return (
-    <>
-      <div className={cn("relative isolate w-full", class_name)}>
-        <div className="absolute inset-[-4%] z-0 sm:inset-[-6%]">
-          <svg
-            aria-hidden="true"
-            className="absolute inset-0 h-full w-full pointer-events-none"
-            preserveAspectRatio="none"
-            viewBox={`0 0 ${INPUT_VIEWBOX_WIDTH} ${INPUT_VIEWBOX_HEIGHT}`}
-          >
-            <defs>
-              <linearGradient id={inputGlowGradientId} x1="42" x2="712" y1="34" y2="142" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="rgba(255,255,255,0.78)"/>
-                <stop offset="34%" stopColor="rgba(255,255,255,0.34)"/>
-                <stop offset="74%" stopColor="rgba(211,224,248,0.26)"/>
-                <stop offset="100%" stopColor="rgba(255,255,255,0.18)"/>
-              </linearGradient>
-              <filter id={inputGlowId} x="-20%" y="-80%" width="140%" height="260%">
-                <feGaussianBlur stdDeviation="6"/>
-              </filter>
-            </defs>
+    <div className={cn("relative isolate w-full", class_name)}>
+      <div className="absolute inset-[-4%] z-0 sm:inset-[-6%]">
+        <svg
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full pointer-events-none"
+          preserveAspectRatio="none"
+          viewBox={`0 0 ${INPUT_VIEWBOX_WIDTH} ${INPUT_VIEWBOX_HEIGHT}`}
+        >
+          <defs>
+            <linearGradient id={inputGlowGradientId} x1="42" x2="712" y1="34" y2="142" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="rgba(255,255,255,0.78)"/>
+              <stop offset="34%" stopColor="rgba(255,255,255,0.34)"/>
+              <stop offset="74%" stopColor="rgba(211,224,248,0.26)"/>
+              <stop offset="100%" stopColor="rgba(255,255,255,0.18)"/>
+            </linearGradient>
+            <filter id={inputGlowId} x="-20%" y="-80%" width="140%" height="260%">
+              <feGaussianBlur stdDeviation="6"/>
+            </filter>
+          </defs>
 
-            <path
-              d={input.path}
-              fill="none"
-              filter={`url(#${inputGlowId})`}
-              opacity={input.debugEnabled ? 0 : 0.88}
-              stroke={`url(#${inputGlowGradientId})`}
-              strokeWidth="18"
-            />
-            <path
-              d={createClosedSplinePath(createInnerPoints(input.points, 0.965, 0.92))}
-              fill="none"
-              filter={`url(#${inputGlowId})`}
-              opacity={input.debugEnabled ? 0 : 0.78}
-              stroke="rgba(255,255,255,0.22)"
-              strokeWidth="14"
-            />
-            <path
-              d={input.path}
-              fill={input.debugEnabled ? "rgba(23,34,52,0.72)" : "rgba(255,255,255,0.08)"}
-              stroke={input.debugEnabled ? "rgba(176,235,220,0.58)" : "rgba(255,255,255,0.32)"}
-              strokeWidth="2"
-            />
-            <path
-              d={createClosedSplinePath(createInnerPoints(input.points, 0.93, 0.86))}
-              fill={input.debugEnabled ? "rgba(80,122,146,0.24)" : "rgba(255,255,255,0.04)"}
-              opacity={input.debugEnabled ? 0.98 : 0.92}
-              stroke={input.debugEnabled ? "rgba(206,244,236,0.3)" : "rgba(255,255,255,0.08)"}
-              strokeWidth="4"
-            />
-          </svg>
-        </div>
-
-        <div className="relative z-10 px-4 py-4 sm:px-6 sm:py-5">
-          {children}
-        </div>
-
-        {input.debugEnabled && (
-          <BlobDebugController
-            is_active={target === "input"}
-            color="rgba(118,231,206,0.92)"
-            current_target={target}
-            debug_enabled={input.debugEnabled}
-            fill="transparent"
-            on_copy={async () => {
-              await navigator.clipboard.writeText(input.points.map(p => `{\"x\":${p.x},\"y\":${p.y}}`).join(",\n"));
-            }}
-            on_path_double_click={input.handlePathDoubleClick}
-            on_point_pointer_down={input.handlePointPointerDown}
-            on_point_pointer_up={input.handlePointPointerUp}
-            on_reset={() => {
-              localStorage.removeItem(INPUT_STORAGE_KEY);
-              input.setPoints(DEFAULT_INPUT_POINTS);
-            }}
-            panel_class_name="bottom-4 right-4"
-            path={input.path}
-            points={input.points}
-            set_target={setTarget}
-            show_panel={false}
-            stroke="transparent"
-            stroke_width={10}
-            svg_ref={input.svgRef}
-            target="input"
-            title="Input Shape"
-            view_box_height={INPUT_VIEWBOX_HEIGHT}
-            view_box_width={INPUT_VIEWBOX_WIDTH}
+          <path
+            d={INPUT_PATH}
+            fill="none"
+            filter={`url(#${inputGlowId})`}
+            opacity={0.88}
+            stroke={`url(#${inputGlowGradientId})`}
+            strokeWidth="18"
           />
-        )}
+          <path
+            d={INPUT_INNER_PATH_1}
+            fill="none"
+            filter={`url(#${inputGlowId})`}
+            opacity={0.78}
+            stroke="rgba(255,255,255,0.22)"
+            strokeWidth="14"
+          />
+          <path
+            d={INPUT_PATH}
+            fill="var(--launcher-input-fill)"
+            stroke="var(--launcher-input-stroke)"
+            strokeWidth="2"
+          />
+          <path
+            d={INPUT_INNER_PATH_2}
+            fill="var(--launcher-input-inner-fill)"
+            opacity={0.92}
+            stroke="var(--launcher-input-inner-stroke)"
+            strokeWidth="4"
+          />
+        </svg>
       </div>
 
-      {input.debugEnabled && activeShape && (
-        <BlobDebugPanel
-          current_target={target}
-          on_copy={async () => {
-            await navigator.clipboard.writeText(activeShape.points.map(p => `{\"x\":${p.x},\"y\":${p.y}}`).join(",\n"));
-          }}
-          on_reset={() => {
-            localStorage.removeItem(INPUT_STORAGE_KEY);
-            input.setPoints(DEFAULT_INPUT_POINTS);
-          }}
-          panel_class_name="bottom-4 left-4"
-          points={activeShape.points}
-          set_target={setTarget}
-          target={target}
-          title="Blob Shape"
-        />
-      )}
-    </>
+      <div className="relative z-10 px-4 py-4 sm:px-6 sm:py-5">
+        {children}
+      </div>
+    </div>
   );
 }

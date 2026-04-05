@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 interface WorkspacePageFrameProps {
   children: ReactNode;
+  /** 中文注释：页面框架保留少量布局槽位，避免业务层回头改壳层质感。 */
   body_class_name?: string;
   panel_class_name?: string;
   content_padding_class_name?: string;
@@ -24,7 +25,7 @@ export function WorkspacePageFrame({
       <section
         className={cn(
           "relative flex min-h-0 flex-1 flex-col overflow-hidden",
-          use_default_panel_style && "home-glass-panel-subtle radius-shell-xl",
+          use_default_panel_style && "glass-panel-subtle radius-shell-xl",
           content_padding_class_name,
           panel_class_name,
         )}

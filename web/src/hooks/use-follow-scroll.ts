@@ -11,6 +11,57 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 const BOTTOM_THRESHOLD_PX = 80;
+const SMOOTH_SCROLL_DURATION_MS = 420;
+const EASE_X1 = 0.23;
+const EASE_Y1 = 1;
+const EASE_X2 = 0.32;
+const EASE_Y2 = 1;
+
+function sample_cubic(a: number, b: number, c: number, t: number): number {
+  return ((a * t + b) * t + c) * t;
+}
+
+function sample_cubic_derivative(a: number, b: number, c: number, t: number): number {
+  return (3 * a * t + 2 * b) * t + c;
+}
+
+function solve_bezier_progress(progress: number): number {
+  const clamped_progress = Math.min(Math.max(progress, 0), 1);
+  const cx = 3 * EASE_X1;
+  const bx = 3 * (EASE_X2 - EASE_X1) - cx;
+  const ax = 1 - cx - bx;
+  const cy = 3 * EASE_Y1;
+  const by = 3 * (EASE_Y2 - EASE_Y1) - cy;
+  const ay = 1 - cy - by;
+
+  let t = clamped_progress;
+  for (let iteration = 0; iteration < 5; iteration += 1) {
+    const x = sample_cubic(ax, bx, cx, t) - clamped_progress;
+    const derivative = sample_cubic_derivative(ax, bx, cx, t);
+    if (Math.abs(derivative) < 1e-6) {
+      break;
+    }
+    t -= x / derivative;
+  }
+
+  let lower = 0;
+  let upper = 1;
+  t = Math.min(Math.max(t, 0), 1);
+  for (let iteration = 0; iteration < 8; iteration += 1) {
+    const x = sample_cubic(ax, bx, cx, t);
+    if (Math.abs(x - clamped_progress) < 1e-5) {
+      break;
+    }
+    if (x > clamped_progress) {
+      upper = t;
+    } else {
+      lower = t;
+    }
+    t = (lower + upper) / 2;
+  }
+
+  return sample_cubic(ay, by, cy, t);
+}
 
 interface UseFollowScrollOptions {
   /** 依赖变化时触发滚动（通常是 messages 和 is_loading） */
@@ -107,9 +158,36 @@ export function useFollowScroll({
     pending_scroll_frame_ref.current = requestAnimationFrame(() => {
       const next = scroll_ref.current;
       if (!next) return;
+      const target_top = next.scrollHeight;
+      const start_top = next.scrollTop;
+      const distance = target_top - start_top;
 
-      next.scrollTo({ top: next.scrollHeight, behavior });
-      last_scroll_top_ref.current = next.scrollTop;
+      if (Math.abs(distance) < 1) {
+        next.scrollTop = target_top;
+        last_scroll_top_ref.current = next.scrollTop;
+        return;
+      }
+
+      const start_time = performance.now();
+
+      // 中文注释：用固定时长动画替代浏览器默认 smooth，
+      // 这样不同容器的滚动速度更一致，也更容易微调。
+      const step = (now: number) => {
+        const elapsed = now - start_time;
+        const progress = Math.min(elapsed / SMOOTH_SCROLL_DURATION_MS, 1);
+        const eased_progress = solve_bezier_progress(progress);
+
+        next.scrollTop = start_top + distance * eased_progress;
+        last_scroll_top_ref.current = next.scrollTop;
+
+        if (progress < 1) {
+          pending_scroll_inner_frame_ref.current = requestAnimationFrame(step);
+        } else {
+          pending_scroll_inner_frame_ref.current = null;
+        }
+      };
+
+      pending_scroll_inner_frame_ref.current = requestAnimationFrame(step);
     });
   }, [cancel_pending_scroll]);
 

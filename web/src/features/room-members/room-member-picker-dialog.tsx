@@ -5,6 +5,8 @@ import { X } from "lucide-react";
 import { Agent } from "@/types/agent";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/shared/i18n/i18n-context";
+import { DIALOG_EMPTY_CLASS_NAME } from "@/shared/ui/dialog/dialog-styles";
+import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 
 interface RoomMemberPickerDialogProps {
   agents: Agent[];
@@ -26,58 +28,61 @@ export function RoomMemberPickerDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      className="dialog-backdrop"
       role="dialog"
       aria-modal="true"
     >
-      <div className="soft-ring radius-shell-lg panel-surface w-full max-w-lg p-5">
-        <div className="flex items-start justify-between gap-3 pb-3">
-          <div>
-            <h3 className="text-base font-semibold text-foreground">{t("room.add_member_dialog_title")}</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
+      <div className="dialog-shell soft-ring radius-shell-lg w-full max-w-lg">
+        <div className="dialog-header">
+          <div className="min-w-0 flex-1">
+            <h3 className="dialog-title">{t("room.add_member_dialog_title")}</h3>
+            <p className="dialog-subtitle">
               {t("room.add_member_dialog_subtitle")}
             </p>
           </div>
-          <button
+          <WorkspacePillButton
             aria-label={t("common.close")}
-            className="neo-pill radius-shell-sm p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/50"
+            density="compact"
             onClick={on_cancel}
-            type="button"
+            size="icon"
+            variant="default"
           >
             <X className="h-4 w-4" />
-          </button>
+          </WorkspacePillButton>
         </div>
 
-        {agents.length === 0 ? (
-          <div className="radius-shell-md neo-inset px-4 py-4 text-sm text-muted-foreground">
-            {t("room.no_available_members")}
-          </div>
-        ) : (
-          <div className="max-h-[360px] space-y-2 overflow-y-auto pr-1">
-            {agents.map((agent) => (
-              <button
-                key={agent.agent_id}
-                className={cn(
-                  "workspace-card flex w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left transition-all duration-300 hover:-translate-y-0.5",
-                )}
-                onClick={() => on_select(agent.agent_id)}
-                type="button"
-              >
-                <div className="workspace-chip flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-slate-900/82">
-                  {agent.name.slice(0, 2).toUpperCase()}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-slate-900/88">
-                    {agent.name}
-                  </p>
-                  <p className="truncate text-[11px] text-slate-700/52">
-                    {t("room.add_member_dialog_hint")}
-                  </p>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="dialog-body">
+          {agents.length === 0 ? (
+            <div className={DIALOG_EMPTY_CLASS_NAME}>
+              {t("room.no_available_members")}
+            </div>
+          ) : (
+            <div className="max-h-[360px] space-y-2 overflow-y-auto pr-1">
+              {agents.map((agent) => (
+                <button
+                  key={agent.agent_id}
+                  className={cn(
+                    "surface-card flex w-full items-center gap-3 rounded-[20px] px-4 py-3 text-left transition-all duration-300 hover:-translate-y-0.5",
+                  )}
+                  onClick={() => on_select(agent.agent_id)}
+                  type="button"
+                >
+                  <div className="chip-default flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-slate-900/82">
+                    {agent.name.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-slate-900/88">
+                      {agent.name}
+                    </p>
+                    <p className="truncate text-[11px] text-slate-700/52">
+                      {t("room.add_member_dialog_hint")}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

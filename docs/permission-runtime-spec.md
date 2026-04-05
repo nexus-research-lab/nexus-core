@@ -218,7 +218,19 @@ Claude SDK client
 - 后端根据 `request_id` 找到 pending request
 - 唤醒等待中的 Claude SDK 权限回调
 
-### 7.6 用户中断
+### 7.6 问答交互不是普通权限条
+
+- `AskUserQuestion` 仍复用 `permission_request -> permission_response` 这条链
+- 但它的前端交互模式必须标记为 `question`
+- `question` 模式的目的只有两件事：
+  - 复用 `request_id`
+  - 回传 `user_answers`
+- 前端不能再为它额外渲染一条通用的 `允许 / 拒绝` 权限条
+- 若同一会话内同一 Agent 重试了同一条 `AskUserQuestion`，新的请求应替换旧的挂起请求
+- `AskUserQuestion` 的 `allow` 必须携带 `user_answers`，不能发送空确认
+- `AskUserQuestion` 若超时或通道不可用，应直接中断当前运行，不再继续重试
+
+### 7.7 用户中断
 
 - 若某轮被中断
 - 与该运行时 `session_key` 相关的 pending permission request 应一起取消
@@ -234,6 +246,7 @@ Claude SDK client
 - `session_key`
 - `tool_name`
 - `tool_input`
+- `interaction_mode`
 - `expires_at`
 - Room 场景下的 `room_id / conversation_id / agent_id / message_id / caused_by`
 

@@ -1,0 +1,26 @@
+/**
+# !/usr/bin/env xx
+# -*- coding: utf-8 -*-
+# =====================================================
+# @File   ：stage-glow.ts
+# @Date   ：2026-04-05 18:32
+# @Author ：leemysw
+# 2026-04-05 18:32   Create
+# =====================================================
+*/
+
+import type { CSSProperties } from "react";
+
+export type StageGlowTone = "green" | "lilac" | "peach";
+
+const STAGE_GLOW_BACKGROUND_MAP: Record<StageGlowTone, string> = {
+  lilac: "var(--glow-lilac)",
+  green: "var(--glow-green)",
+  peach: "var(--glow-peach)",
+};
+
+export function getStageGlowStyle(tone: StageGlowTone): CSSProperties {
+  return {
+    background: STAGE_GLOW_BACKGROUND_MAP[tone],
+  };
+}

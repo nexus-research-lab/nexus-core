@@ -5,9 +5,17 @@ import { FileText, Image as ImageIcon, Paperclip, Send, StopCircle, X } from "lu
 
 import { cn } from "@/lib/utils";
 import { LoadingOrb } from "@/shared/ui/feedback/loading-orb";
+import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import { useTextareaHeight } from "@/hooks/use-textarea-height";
 import { Agent } from "@/types/agent";
 
+import {
+  COMPOSER_ATTACHMENT_CLASS_NAME,
+  COMPOSER_ATTACHMENT_REMOVE_CLASS_NAME,
+  COMPOSER_FOOTER_CLASS_NAME,
+  getComposerShellClassName,
+  getComposerShellStyle,
+} from "./composer-styles";
 import { MentionPopover } from "./mention-popover";
 
 interface AttachmentFile {
@@ -19,7 +27,6 @@ interface AttachmentFile {
 
 interface ComposerPanelProps {
   compact: boolean;
-  current_agent_name: string | null;
   is_loading: boolean;
   on_send_message: (content: string) => void | Promise<void>;
   on_stop: () => void;
@@ -28,12 +35,10 @@ interface ComposerPanelProps {
   placeholder?: string;
   max_length?: number;
   room_members?: Agent[];
-  status_hint?: string | null;
 }
 
 const ComposerPanelView = memo(({
   compact,
-  current_agent_name,
   is_loading,
   on_send_message,
   on_stop,
@@ -42,13 +47,11 @@ const ComposerPanelView = memo(({
   placeholder = "继续描述目标、补充上下文，或直接开始协作…",
   max_length = 10000,
   room_members = [],
-  status_hint = null,
 }: ComposerPanelProps) => {
   const [input, setInput] = useState("");
   const [input_history, setInputHistory] = useState<string[]>([]);
   const [history_index, setHistoryIndex] = useState(-1);
   const [attachments, setAttachments] = useState<AttachmentFile[]>([]);
-  const [is_focused, setIsFocused] = useState(false);
 
   // @mention 状态
   const [mention_active, set_mention_active] = useState(false);
@@ -241,9 +244,6 @@ const ComposerPanelView = memo(({
   const char_count = input.length;
   const is_near_limit = char_count > max_length * 0.8;
   const is_over_limit = char_count > max_length;
-  const resolved_status_hint = status_hint ?? (
-    current_agent_name ? `@${current_agent_name} 正在这个协作中` : "继续推进当前协作"
-  );
 
   return (
     <div
@@ -254,11 +254,11 @@ const ComposerPanelView = memo(({
     >
       <div className="relative mx-auto w-full max-w-[1020px]">
         {attachments.length > 0 ? (
-          <div className="workspace-card radius-shell-md mb-3 flex flex-wrap gap-2 p-3">
+          <div className="glass-card radius-shell-md mb-3 flex flex-wrap gap-2 p-3">
             {attachments.map((attachment) => (
               <div
                 key={attachment.id}
-                className="workspace-chip radius-shell-sm group relative flex items-center gap-2 px-3 py-2"
+                className={COMPOSER_ATTACHMENT_CLASS_NAME}
               >
                 {attachment.type === "image" ? (
                   attachment.preview ? (
@@ -281,7 +281,7 @@ const ComposerPanelView = memo(({
                 </span>
                 <button
                   aria-label="移除附件"
-                  className="ml-1 rounded p-0.5 text-red-400 opacity-60 transition-opacity hover:bg-red-500/10 hover:opacity-100 focus-visible:ring-2 focus-visible:ring-primary/50"
+                  className={COMPOSER_ATTACHMENT_REMOVE_CLASS_NAME}
                   onClick={() => remove_attachment(attachment.id)}
                 >
                   <X size={12} />
@@ -292,26 +292,11 @@ const ComposerPanelView = memo(({
         ) : null}
 
         <div
-          className={cn(
-            "relative overflow-hidden rounded-[18px] border border-slate-300 bg-white transition-all duration-300",
-            is_focused ? "shadow-[0_8px_18px_rgba(15,23,42,0.08)]" : "shadow-sm",
-            disabled && "cursor-not-allowed opacity-50",
-            compact && "shadow-none",
-          )}
+          className={getComposerShellClassName(disabled)}
+          style={getComposerShellStyle(compact)}
         >
-          <div className={cn("border-b border-slate-200 px-4", compact ? "py-1.5" : "py-2")}>
-            <div className="flex items-center justify-between gap-3 text-[11px] text-slate-500">
-              <span className="font-semibold uppercase tracking-[0.14em]">Message</span>
-              {!compact ? (
-                <span className="truncate text-slate-400">
-                  {resolved_status_hint}
-                </span>
-              ) : null}
-            </div>
-          </div>
-
-          <div className={cn("flex items-end gap-2", compact ? "p-2.5" : "px-3 py-2.5")}>
-            <div className="flex items-center gap-1 pb-1">
+          <div className={cn("flex items-end gap-2", compact ? "p-1.5" : "px-2 py-1.5")}>
+            <div className="flex items-center gap-1 pb-0.5">
               <input
                 ref={file_input_ref}
                 accept="image/*,.pdf,.doc,.docx,.txt,.md,.ppt,.pptx,.xls,.xlsx"
@@ -321,20 +306,16 @@ const ComposerPanelView = memo(({
                 onChange={handle_file_select}
                 type="file"
               />
-              <button
+              <WorkspacePillButton
                 aria-label="添加附件"
-                className={cn(
-                  "rounded-md p-2 transition-all duration-200",
-                  "text-slate-500 hover:bg-slate-100 hover:text-slate-950",
-                  "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted-foreground",
-                  "focus-visible:ring-2 focus-visible:ring-primary/40",
-                )}
+                density={compact ? "compact" : "default"}
                 disabled={disabled || is_loading}
                 onClick={() => file_input_ref.current?.click()}
-                type="button"
+                size="icon"
+                variant="default"
               >
                 <Paperclip size={16} />
-              </button>
+              </WorkspacePillButton>
             </div>
 
             <div className="relative flex-1">
@@ -350,13 +331,13 @@ const ComposerPanelView = memo(({
               <textarea
                 ref={textarea_ref}
                 className={cn(
-                  "multiline-cursor min-h-6 max-h-32 w-full resize-none bg-transparent text-[15px] leading-6 text-slate-900 outline-none",
+                  "multiline-cursor min-h-6 max-h-24 w-full resize-none bg-transparent text-[14px] leading-6 text-slate-900 outline-none shadow-none ring-0",
                   "placeholder:text-slate-400",
                   "disabled:cursor-not-allowed disabled:opacity-50",
+                  "focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none",
                   "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
                 )}
                 disabled={disabled || is_loading}
-                onBlur={() => setIsFocused(false)}
                 onChange={(event) => handle_input_change(event.target.value)}
                 onCompositionEnd={() => {
                   setTimeout(() => {
@@ -366,7 +347,6 @@ const ComposerPanelView = memo(({
                 onCompositionStart={() => {
                   is_composing_ref.current = true;
                 }}
-                onFocus={() => setIsFocused(true)}
                 onKeyDown={handle_key_down}
                 placeholder={placeholder}
                 rows={1}
@@ -374,7 +354,7 @@ const ComposerPanelView = memo(({
               />
             </div>
 
-            <div className={cn("flex items-center gap-2 pb-1", compact && "gap-1.5")}>
+            <div className={cn("flex items-center gap-2 pb-0.5", compact && "gap-1.5")}>
               {char_count > 0 ? (
                 <div className="text-[10px] tabular-nums">
                   <span
@@ -391,42 +371,31 @@ const ComposerPanelView = memo(({
               ) : null}
 
               {is_loading ? (
-                <button
+                <WorkspacePillButton
                   aria-label="停止生成"
-                  className={cn(
-                    "relative overflow-hidden rounded-2xl p-2",
-                    "bg-[linear-gradient(135deg,rgba(255,224,224,0.98),rgba(247,173,173,0.92))] text-destructive",
-                    "transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/40",
-                    "group hover:-translate-y-0.5 hover:shadow-[0_12px_20px_rgba(239,68,68,0.18)]",
-                  )}
+                  density={compact ? "compact" : "default"}
                   onClick={on_stop}
+                  size="icon"
+                  variant="danger"
                 >
-                  <div className="absolute inset-0 animate-pulse bg-destructive/10" />
-                  <StopCircle size={16} className="relative z-10" />
-                </button>
+                  <StopCircle size={16} />
+                </WorkspacePillButton>
               ) : (
-                <button
+                <WorkspacePillButton
                   aria-label="发送消息"
-                  className={cn(
-                    "relative overflow-hidden rounded-2xl p-2",
-                    "bg-[linear-gradient(135deg,rgba(166,255,194,0.94),rgba(102,217,143,0.90))] text-[#18653a]",
-                    "transition-all duration-200",
-                    "hover:-translate-y-0.5 hover:shadow-[0_14px_22px_rgba(102,217,143,0.18)]",
-                    "disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-primary/20 disabled:hover:shadow-none",
-                    "focus-visible:ring-2 focus-visible:ring-primary/40",
-                    "group",
-                  )}
+                  density={compact ? "compact" : "default"}
                   disabled={is_input_empty || disabled || is_over_limit}
                   onClick={handle_send}
+                  size="icon"
+                  variant="success"
                 >
-                  <div className="absolute inset-0 translate-x-full bg-linear-to-r from-transparent via-white/10 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-                  <Send size={16} className="relative z-10" />
-                </button>
+                  <Send size={16} />
+                </WorkspacePillButton>
               )}
             </div>
           </div>
 
-          <div className="flex items-center justify-between border-t border-slate-200 px-4 py-2">
+          <div className={COMPOSER_FOOTER_CLASS_NAME}>
             <div className="flex items-center gap-3 text-[10px] text-slate-400">
               {is_loading ? (
                 <span className="flex items-center gap-2 text-emerald-700/72">

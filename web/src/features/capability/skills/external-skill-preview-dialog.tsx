@@ -2,6 +2,11 @@
 
 import { ExternalLink, Loader2, PackagePlus, X } from "lucide-react";
 
+import { cn } from "@/lib/utils";
+import {
+  DIALOG_TAG_CLASS_NAME,
+  getDialogNoteClassName,
+} from "@/shared/ui/dialog/dialog-styles";
 import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import { ExternalSkillSearchItem } from "@/types/skill";
 
@@ -35,53 +40,54 @@ export function ExternalSkillPreviewDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      className="dialog-backdrop"
       onClick={on_close}
     >
       <div
-        className="modal-dialog-surface radius-shell-xl flex h-[84vh] w-full max-w-5xl flex-col overflow-hidden"
+        className="dialog-shell radius-shell-xl flex h-[84vh] w-full max-w-5xl flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4 border-b modal-divider px-6 py-5">
-          <div className="min-w-0">
-            <h2 className="truncate text-[28px] font-black tracking-[-0.04em] text-slate-950/92">
+        <div className="dialog-header">
+          <div className="min-w-0 flex-1">
+            <h2 className="dialog-title truncate" data-size="hero">
               {item.title || item.skill_slug}
             </h2>
-            <p className="mt-1 text-[14px] text-slate-700/70">
+            <p className="dialog-subtitle">
               {item.package_spec} · {formatInstalls(item.installs)} installs
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <span className="inline-flex rounded-full bg-white/70 px-3 py-1 text-[11px] font-semibold text-slate-600">
+              <span className={DIALOG_TAG_CLASS_NAME}>
                 社区技能
               </span>
-              <span className="inline-flex rounded-full bg-white/70 px-3 py-1 text-[11px] font-semibold text-slate-600">
+              <span className={DIALOG_TAG_CLASS_NAME}>
                 {item.source}
               </span>
               {already_imported ? (
-                <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-600">
+                <span className={cn(DIALOG_TAG_CLASS_NAME, "text-emerald-700")}>
                   已导入
                 </span>
               ) : null}
             </div>
           </div>
-          <button
+          <WorkspacePillButton
             aria-label="关闭"
-            className="rounded-full p-2 text-slate-400 transition-colors hover:bg-white/60 hover:text-slate-700"
+            density="compact"
             onClick={on_close}
-            type="button"
+            size="icon"
+            variant="default"
           >
             <X className="h-5 w-5" />
-          </button>
+          </WorkspacePillButton>
         </div>
 
-        <div className="soft-scrollbar flex-1 overflow-y-auto px-6 py-5">
-          <div className="workspace-card mb-5 rounded-[22px] px-5 py-4 text-[13px] leading-6 text-slate-700/78">
+        <div className="dialog-body dialog-body--scroll soft-scrollbar flex-1">
+          <div className={getDialogNoteClassName("default", "mb-5")}>
             这是来自社区的外部技能预览。导入后会进入 Nexus 的技能目录，再在 Agent 设置里为具体智能体安装。
           </div>
           <SkillMarkdown markdown={item.readme_markdown || item.description || "暂无预览内容"} />
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t modal-divider px-6 py-4">
+        <div className="dialog-footer flex-wrap justify-between gap-3">
           <a
             className="inline-flex items-center gap-2 text-sm font-semibold text-sky-600 underline decoration-sky-300 underline-offset-4"
             href={item.detail_url}
@@ -92,7 +98,7 @@ export function ExternalSkillPreviewDialog({
             打开原始页面
           </a>
           <div className="flex flex-wrap items-center gap-2">
-            <WorkspacePillButton disabled={busy || already_imported} onClick={on_import_only}>
+            <WorkspacePillButton disabled={busy || already_imported} onClick={on_import_only} variant="strong">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackagePlus className="h-4 w-4" />}
               导入到技能库
             </WorkspacePillButton>

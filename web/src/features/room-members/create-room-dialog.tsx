@@ -13,6 +13,7 @@ import { Bot, Check, Hash, Plus, Search, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/shared/i18n/i18n-context";
+import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import { Agent } from "@/types/agent";
 
 interface CreateRoomDialogProps {
@@ -91,7 +92,7 @@ export function CreateRoomDialog({
   // Portal 渲染到 body，确保弹窗不受侧边栏 overflow 限制
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+      className="dialog-backdrop animate-in fade-in duration-200"
       onClick={on_cancel}
       role="dialog"
       aria-modal="true"
@@ -116,14 +117,15 @@ export function CreateRoomDialog({
               </p>
             </div>
           </div>
-          <button
+          <WorkspacePillButton
             aria-label={t("common.close")}
-            className="modal-btn-secondary rounded-xl p-2 text-slate-400 transition-colors hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-primary/50"
+            density="compact"
             onClick={on_cancel}
-            type="button"
+            size="icon"
+            variant="default"
           >
             <X className="h-5 w-5" />
-          </button>
+          </WorkspacePillButton>
         </div>
 
         {/* 内容区：左右两栏 */}
@@ -256,26 +258,17 @@ export function CreateRoomDialog({
 
           {/* 操作按钮 */}
           <div className="flex items-center gap-3">
-            <button
-              className="modal-btn-secondary rounded-xl px-4 py-2 text-[13px] font-semibold transition-colors"
-              onClick={on_cancel}
-              type="button"
-            >
+            <WorkspacePillButton onClick={on_cancel} size="md" variant="default">
               {t("common.cancel")}
-            </button>
-            <button
-              className={cn(
-                "rounded-xl px-5 py-2 text-[13px] font-semibold text-white transition-all",
-                can_create
-                  ? "bg-primary shadow-[0_8px_20px_rgba(var(--color-primary-rgb,99,102,241),0.25)] hover:brightness-110"
-                  : "modal-card cursor-not-allowed text-slate-400",
-              )}
+            </WorkspacePillButton>
+            <WorkspacePillButton
               disabled={!can_create}
               onClick={handle_create}
-              type="button"
+              size="md"
+              variant={can_create ? "strong" : "default"}
             >
               {is_creating ? t("room.creating_action") : t("room.create_action")}
-            </button>
+            </WorkspacePillButton>
           </div>
         </div>
       </div>

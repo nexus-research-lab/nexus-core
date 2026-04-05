@@ -3,6 +3,14 @@
 import { Check, Lock, Puzzle, RefreshCw, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import {
+  WorkspaceCatalogAction,
+  WorkspaceCatalogBadge,
+  WorkspaceCatalogCard,
+  WorkspaceCatalogMedia,
+  WorkspaceCatalogTag,
+} from "@/shared/ui/workspace/workspace-catalog-card";
+import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import { SkillInfo } from "@/types/skill";
 
 interface SkillsCardProps {
@@ -35,8 +43,8 @@ export function SkillsCard({
     source_type === "system" ? "系统" : source_type === "builtin" ? "内置" : "外部";
 
   return (
-    <article
-      className={cn("group relative cursor-pointer workspace-card flex flex-col rounded-[22px] px-5 py-4 transition-all hover:border-white/36 hover:bg-white/40")}
+    <WorkspaceCatalogCard
+      class_name="group cursor-pointer rounded-[22px] px-5 py-4"
       onClick={on_select}
     >
       {/* 右上角操作区 — 悬停显示 */}
@@ -45,34 +53,31 @@ export function SkillsCard({
         onClick={(e) => e.stopPropagation()}
       >
         {has_update && (
-          <button
-            className="flex h-7 w-7 items-center justify-center rounded-full text-sky-500 transition-colors hover:bg-sky-50"
+          <WorkspaceCatalogAction
             disabled={busy}
             onClick={on_update}
             title="更新"
-            type="button"
           >
             <RefreshCw className="h-3.5 w-3.5" />
-          </button>
+          </WorkspaceCatalogAction>
         )}
         {deletable && (
-          <button
-            className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500"
+          <WorkspaceCatalogAction
             disabled={busy}
             onClick={on_delete}
             title="从技能库删除"
-            type="button"
+            tone="danger"
           >
             <Trash2 className="h-3.5 w-3.5" />
-          </button>
+          </WorkspaceCatalogAction>
         )}
       </div>
 
-      {/* 头部：图标 + 名称 + 来源标签 */}
+        {/* 头部：图标 + 名称 + 来源标签 */}
       <div className="flex items-center gap-3">
-        <div
-          className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border",
+        <WorkspaceCatalogMedia
+          class_name={cn(
+            "h-10 w-10 shrink-0",
             locked
               ? "border-amber-200/60 bg-amber-50/80 text-amber-600"
               : source_type === "external"
@@ -81,19 +86,19 @@ export function SkillsCard({
           )}
         >
           {locked ? <Lock className="h-[18px] w-[18px]" /> : <Puzzle className="h-[18px] w-[18px]" />}
-        </div>
+        </WorkspaceCatalogMedia>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="truncate text-[15px] font-bold tracking-[-0.02em] text-slate-950/90">
               {title}
             </p>
-            <span className="shrink-0 rounded-full border border-white/40 bg-white/60 px-1.5 py-px text-[9px] font-semibold text-slate-500">
+            <WorkspaceCatalogBadge class_name="shrink-0" tone="neutral">
               {source_label}
-            </span>
+            </WorkspaceCatalogBadge>
             {has_update && (
-              <span className="shrink-0 rounded-full bg-sky-50 px-1.5 py-px text-[9px] font-semibold text-sky-600">
+              <WorkspaceCatalogBadge class_name="shrink-0" tone="info">
                 可更新
-              </span>
+              </WorkspaceCatalogBadge>
             )}
           </div>
         </div>
@@ -109,12 +114,9 @@ export function SkillsCard({
         {/* 标签 */}
         <div className="flex min-w-0 flex-wrap gap-1">
           {tags.slice(0, 3).map((tag) => (
-            <span
-              key={tag}
-              className="inline-flex rounded-full border border-white/30 bg-white/50 px-2 py-0.5 text-[10px] font-medium text-slate-500/80"
-            >
+            <WorkspaceCatalogTag key={tag}>
               {tag}
-            </span>
+            </WorkspaceCatalogTag>
           ))}
         </div>
 
@@ -124,23 +126,23 @@ export function SkillsCard({
           onClick={(e) => e.stopPropagation()}
         >
           {locked ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50/80 px-2.5 py-1 text-[10px] font-semibold text-amber-600">
+            <WorkspaceCatalogBadge tone="warning">
               <Lock className="h-3 w-3" />
               系统托管
-            </span>
+            </WorkspaceCatalogBadge>
           ) : source_type === "external" ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-sky-50/80 px-2.5 py-1 text-[10px] font-semibold text-sky-600">
+            <WorkspaceCatalogBadge tone="success">
               <Check className="h-3 w-3" />
               已导入
-            </span>
+            </WorkspaceCatalogBadge>
           ) : (
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/70 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
+            <WorkspacePillButton density="compact" size="sm" variant="default">
               <Puzzle className="h-3 w-3" />
               可安装到 Agent
-            </span>
+            </WorkspacePillButton>
           )}
         </div>
       </div>
-    </article>
+    </WorkspaceCatalogCard>
   );
 }

@@ -11,6 +11,7 @@ import { UserQuestionAnswer } from './ask-user-question';
 
 export type PermissionRiskLevel = 'low' | 'medium' | 'high';
 export type PermissionDecision = 'allow' | 'deny';
+export type PermissionInteractionMode = 'permission' | 'question';
 export type PermissionUpdateType =
   | 'addRules'
   | 'replaceRules'
@@ -43,6 +44,7 @@ export interface PendingPermission {
   agent_id?: string | null;
   message_id?: string | null;
   caused_by?: string | null;
+  interaction_mode?: PermissionInteractionMode;
   risk_level?: PermissionRiskLevel;
   risk_label?: string;
   summary?: string;
@@ -57,4 +59,33 @@ export interface PermissionDecisionPayload {
   updated_permissions?: PermissionUpdate[];
   message?: string;
   interrupt?: boolean;
+}
+
+export function buildPermissionSignature(
+  tool_name: string,
+  tool_input: Record<string, unknown>,
+): string {
+  return `${tool_name}:${stableStringify(tool_input)}`;
+}
+
+function stableStringify(value: unknown): string {
+  if (value == null) {
+    return 'null';
+  }
+  if (typeof value === 'string') {
+    return JSON.stringify(value);
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringify(item)).join(',')}]`;
+  }
+  if (typeof value === 'object') {
+    return `{${Object.keys(value as Record<string, unknown>)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableStringify((value as Record<string, unknown>)[key])}`)
+      .join(',')}}`;
+  }
+  return JSON.stringify(String(value));
 }

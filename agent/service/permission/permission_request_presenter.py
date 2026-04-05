@@ -44,6 +44,7 @@ class PermissionRequestPresenter:
             "request_id": request.request_id,
             "tool_name": request.tool_name,
             "tool_input": request.input_data,
+            "interaction_mode": cls._resolve_interaction_mode(request.tool_name),
             "risk_level": risk_level,
             "risk_label": risk_label,
             "summary": cls._summarize_input(request.tool_name, request.input_data),
@@ -63,6 +64,13 @@ class PermissionRequestPresenter:
         if tool_name in cls.INTERACTIVE_TOOLS:
             return "medium", "交互"
         return "high", "敏感"
+
+    @staticmethod
+    def _resolve_interaction_mode(tool_name: str) -> str:
+        """区分普通权限确认与问答交互。"""
+        if tool_name == "AskUserQuestion":
+            return "question"
+        return "permission"
 
     @classmethod
     def _summarize_input(cls, tool_name: str, input_data: dict[str, object]) -> str:

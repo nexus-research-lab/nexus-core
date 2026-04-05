@@ -15,7 +15,7 @@ export function MemberSummaryCard({
   on_edit_agent,
 }: MemberSummaryCardProps) {
   return (
-    <section className="border-b workspace-divider px-4 py-4 min-w-[240px]">
+    <section className="border-b glass-divider px-4 py-4 min-w-[240px]">
       <div className="rounded-[24px] bg-[linear-gradient(180deg,rgba(255,255,255,0.72),rgba(240,244,255,0.60))] px-4 py-4 ring-1 ring-white/40">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -41,7 +41,7 @@ export function MemberSummaryCard({
             </span>
             <button
               aria-label="打开 Agent 设置"
-              className="home-glass-pill inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-semibold text-slate-900/84 transition-colors hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1"
+              className="glass-pill inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-semibold text-slate-900/84 transition-colors hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1"
               onClick={() => on_edit_agent(agent.agent_id)}
               type="button"
             >

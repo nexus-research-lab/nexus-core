@@ -11,28 +11,30 @@
 
 "use client";
 
-import { useState, useCallback, useMemo } from 'react';
-import { Check, CheckCircle, CheckSquare, ChevronDown, ChevronRight, Circle, MessageSquare, Send, Square } from 'lucide-react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { AlertCircle, Check, CheckCircle, CheckSquare, ChevronDown, ChevronRight, Circle, MessageSquare, Send, Square } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AskUserQuestionInput, UserQuestion, UserQuestionAnswer } from '@/types/ask-user-question';
-import { ToolUseContent } from '@/types/message';
+import { ToolResultContent, ToolUseContent } from '@/types/message';
+import { MessageRail } from '../message-rail';
 
 interface AskUserQuestionCardProps {
-  question: UserQuestion;
-  question_index: number;
-  selected_options: Set<string>;
-  custom_answer: string;
-  on_toggle_option: (question_index: number, option_label: string, multi_select: boolean) => void;
-  on_custom_answer_change: (question_index: number, custom_answer: string, multi_select: boolean) => void;
-  is_submitted: boolean;
-  default_expanded?: boolean;
+    question: UserQuestion;
+    question_index: number;
+    selected_options: Set<string>;
+    custom_answer: string;
+    on_toggle_option: (question_index: number, option_label: string, multi_select: boolean) => void;
+    on_custom_answer_change: (question_index: number, custom_answer: string, multi_select: boolean) => void;
+    is_submitted: boolean;
+    default_expanded?: boolean;
 }
 
 interface AskUserQuestionBlockProps {
-  tool_use: ToolUseContent;
-  on_submit?: (tool_use_id: string, answers: UserQuestionAnswer[]) => boolean | Promise<boolean>;
-  is_submitted?: boolean;
-  is_ready?: boolean;
+    tool_use: ToolUseContent;
+    tool_result?: ToolResultContent;
+    on_submit?: (tool_use_id: string, answers: UserQuestionAnswer[]) => boolean | Promise<boolean>;
+    is_submitted?: boolean;
+    is_ready?: boolean;
 }
 
 // ==================== 子组件 ====================
@@ -51,6 +53,7 @@ function QuestionCard({
     const [isExpanded, setIsExpanded] = useState(default_expanded);
     const isMultiSelect = question.multi_select ?? false;
     const hasCustomAnswer = custom_answer.trim().length > 0;
+    const showCustomAnswer = !is_submitted || hasCustomAnswer;
     const hasSelection = selected_options.size > 0 || hasCustomAnswer;
     const selectedCount = selected_options.size + (hasCustomAnswer ? 1 : 0);
 
@@ -61,37 +64,37 @@ function QuestionCard({
 
     return (
         <div className={cn(
-            "overflow-hidden rounded-[18px] border transition-all duration-200",
+            "overflow-hidden rounded-[14px] border transition duration-150 ease-out",
             hasSelection
-                ? "border-white/32 bg-white/20 shadow-[0_14px_24px_rgba(133,119,255,0.08)]"
-                : "border-white/20 bg-white/10"
+                ? "border-primary/18 bg-white/10"
+                : "border-white/12 bg-white/5",
         )}>
             {/* 问题头部（可点击收起） */}
             <div
                 className={cn(
-                    "flex items-center gap-2 px-3 py-2 cursor-pointer select-none",
-                    "transition-colors hover:bg-white/12",
-                    isExpanded && "border-b border-white/18"
+                    "flex cursor-pointer select-none items-center gap-1 px-2.5 py-1 transition duration-150 ease-out",
+                    isExpanded && "border-b border-white/12",
+                    !isExpanded && "hover:bg-white/6",
                 )}
                 onClick={() => setIsExpanded(!isExpanded)}
             >
                 {/* 序号 */}
                 <span className={cn(
-                    "w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold",
-                    hasSelection ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                    "flex h-5 w-5 items-center justify-center rounded-full bg-slate-200/70 text-[10px] font-bold text-slate-500/85",
+                    hasSelection && "bg-primary/12 text-primary",
                 )}>
                     {question_index + 1}
                 </span>
 
                 {/* header 标签 */}
                 {question.header && (
-                    <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary/80">
+                    <span className="rounded-xl bg-primary/8 px-1.5 text-[9px] font-bold uppercase tracking-[0.08em] text-primary/80">
                         {question.header}
                     </span>
                 )}
 
                 {/* 问题文本 */}
-                <span className="text-sm font-medium text-foreground truncate flex-1">
+                <span className="flex-1 truncate text-[13px] font-medium leading-tight text-foreground">
                     {question.question}
                 </span>
 
@@ -108,7 +111,7 @@ function QuestionCard({
 
                 {/* 选中数量 */}
                 {hasSelection && (
-                    <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
                         {selectedCount}
                     </span>
                 )}
@@ -125,7 +128,7 @@ function QuestionCard({
 
             {/* 选项列表（可收起） */}
             {isExpanded && (
-                <div className="p-3 space-y-2">
+                <div className="space-y-1.5 p-2.5">
                     {question.options.map((option, optIndex) => {
                         const isSelected = selected_options.has(option.label);
                         const Icon = isMultiSelect
@@ -135,40 +138,39 @@ function QuestionCard({
                         return (
                             <button
                                 key={optIndex}
+                                className={cn(
+                                    "w-full rounded-[12px] border px-2.5 py-0.5 text-left transition duration-150 ease-out",
+                                    isSelected
+                                        ? "border-primary/20 bg-primary/6"
+                                        : "border-white/12 bg-white/5 hover:border-primary/16 hover:bg-primary/4",
+                                    is_submitted && "cursor-not-allowed opacity-60",
+                                )}
                                 disabled={is_submitted}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     on_toggle_option(question_index, option.label, isMultiSelect);
                                 }}
-                                className={cn(
-                                    "radius-shell-sm w-full border text-left p-3 transition-all duration-200",
-                                    "hover:border-primary/50 hover:bg-primary/5",
-                                    isSelected
-                                        ? "border-white/32 bg-primary/10 shadow-[0_12px_20px_rgba(133,119,255,0.08)]"
-                                        : "border-white/18 bg-white/8",
-                                    is_submitted && "opacity-60 cursor-not-allowed"
-                                )}
                             >
-                                <div className="flex items-start gap-3">
+                                <div className="flex items-start gap-2.5">
                                     <Icon className={cn(
-                                        "w-4 h-4 mt-0.5 flex-shrink-0 transition-colors",
+                                        "mt-0.5 h-4 w-4 flex-shrink-0 transition-colors",
                                         isSelected ? "text-primary" : "text-muted-foreground/50"
                                     )} />
                                     <div className="flex-1 min-w-0">
                                         <div className={cn(
-                                            "text-sm font-medium",
+                                            "text-[13px] font-medium leading-tight",
                                             isSelected ? "text-primary" : "text-foreground"
                                         )}>
                                             {option.label}
                                         </div>
                                         {option.description && (
-                                            <div className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                                            <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
                                                 {option.description}
                                             </div>
                                         )}
                                     </div>
                                     {isSelected && (
-                                        <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                                        <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
                                             已选
                                         </span>
                                     )}
@@ -177,43 +179,42 @@ function QuestionCard({
                         );
                     })}
 
-                    <div
-                        className={cn(
-                            "radius-shell-sm border p-3 transition-all duration-200",
-                            hasCustomAnswer
-                                ? "border-white/32 bg-primary/10 shadow-[0_12px_20px_rgba(133,119,255,0.08)]"
-                                : "border-white/18 bg-white/8"
-                        )}
-                        onClick={(event) => event.stopPropagation()}
-                    >
-                        <div className="mb-2 flex items-center justify-between gap-2">
-                            <div className="text-sm font-medium text-foreground">自定义回答</div>
-                            {hasCustomAnswer && (
-                                <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                                    已填写
-                                </span>
-                            )}
-                        </div>
-                        <textarea
-                            disabled={is_submitted}
-                            value={custom_answer}
-                            onChange={(event) => {
-                                on_custom_answer_change(
-                                    question_index,
-                                    event.target.value,
-                                    isMultiSelect,
-                                );
-                            }}
+                    {showCustomAnswer ? (
+                        <div
+                            className="px-0.5 pt-1"
                             onClick={(event) => event.stopPropagation()}
-                            placeholder={isMultiSelect ? "可补充其他答案…" : "没有合适选项时，在这里输入你的回答…"}
-                            rows={3}
-                            className={cn(
-                                "w-full resize-none rounded-2xl border border-white/36 bg-white/58 px-3 py-2 text-sm text-foreground outline-none transition-all",
-                                "placeholder:text-muted-foreground/70 focus:border-primary/40 focus:bg-white/75",
-                                is_submitted && "cursor-not-allowed opacity-60"
-                            )}
-                        />
-                    </div>
+                        >
+                            <div className="mb-1 flex items-center justify-between gap-2">
+                                <div className="text-[13px] font-medium text-foreground">自定义回答</div>
+                                {hasCustomAnswer && (
+                                    <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                                        已填写
+                                    </span>
+                                )}
+                            </div>
+                            <div className="border-b border-white/14">
+                                <textarea
+                                    className={cn(
+                                        "h-7 min-h-7 w-full resize-none border-0 bg-transparent px-0 py-0 text-[13px] leading-7 text-slate-900 outline-none shadow-none ring-0 transition duration-150 ease-out focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none",
+                                        "placeholder:text-muted-foreground/70",
+                                        is_submitted && "cursor-not-allowed opacity-60"
+                                    )}
+                                    disabled={is_submitted}
+                                    value={custom_answer}
+                                    onChange={(event) => {
+                                        on_custom_answer_change(
+                                            question_index,
+                                            event.target.value,
+                                            isMultiSelect,
+                                        );
+                                    }}
+                                    onClick={(event) => event.stopPropagation()}
+                                    placeholder={isMultiSelect ? "可补充其他答案…" : "没有合适选项时，在这里输入你的回答…"}
+                                    rows={1}
+                                />
+                            </div>
+                        </div>
+                    ) : null}
                 </div>
             )}
         </div>
@@ -224,6 +225,7 @@ function QuestionCard({
 
 export function AskUserQuestionBlock({
     tool_use,
+    tool_result,
     on_submit,
     is_submitted: initialSubmitted = false,
     is_ready = true,
@@ -243,9 +245,23 @@ export function AskUserQuestionBlock({
         questions.forEach((_, index) => map.set(index, ''));
         return map;
     });
-    const [isSubmitted, setIsSubmitted] = useState(initialSubmitted);
-    // 展开/收起状态：已提交时默认收起
-    const [isExpanded, setIsExpanded] = useState(!initialSubmitted);
+    const resultText = typeof tool_result?.content === 'string' ? tool_result.content : '';
+    const isTimedOut = Boolean(
+        tool_result?.is_error &&
+        resultText.includes('Permission request timeout'),
+    );
+    const isFailed = Boolean(tool_result?.is_error && !isTimedOut);
+    const [hasLocalSubmission, setHasLocalSubmission] = useState(false);
+    const isSubmitted = initialSubmitted || hasLocalSubmission;
+    const shouldStartCollapsed = initialSubmitted || isTimedOut || isFailed;
+    // 展开/收起状态：首帧就按最终状态初始化，避免先展开再收起的闪动
+    const [isExpanded, setIsExpanded] = useState(() => !shouldStartCollapsed);
+
+    useEffect(() => {
+        if (initialSubmitted || isTimedOut || isFailed) {
+            setIsExpanded(false);
+        }
+    }, [initialSubmitted, isFailed, isTimedOut]);
 
     // 切换选项
     const handleToggleOption = useCallback((questionIndex: number, optionLabel: string, multiSelect: boolean) => {
@@ -333,7 +349,7 @@ export function AskUserQuestionBlock({
         if (submitted === false) {
             return;
         }
-        setIsSubmitted(true);
+        setHasLocalSubmission(true);
         setIsExpanded(false); // 提交后收起
     }, [canSubmit, customAnswers, isSubmitted, is_ready, on_submit, questions, selections, tool_use.id]);
 
@@ -367,28 +383,36 @@ export function AskUserQuestionBlock({
         return null;
     }
 
+    const isReadOnly = isSubmitted || isTimedOut || isFailed;
+    const headerToneClassName = isTimedOut || isFailed
+        ? "text-amber-500"
+        : isSubmitted
+            ? "text-emerald-600"
+            : "text-primary";
+    const headerLabel = isTimedOut
+        ? "提问已超时"
+        : isFailed
+            ? "提问未完成"
+            : isSubmitted
+                ? "已收到你的回应"
+                : "需要你的回应";
+
     return (
-        <div className={cn(
-            "my-2 overflow-hidden rounded-[22px] border transition-all duration-300",
-            isSubmitted
-                ? "border-white/28 bg-white/14 shadow-[0_18px_30px_rgba(102,217,143,0.08)]"
-                : "border-white/24 bg-white/12 shadow-[0_18px_30px_rgba(133,119,255,0.08)]"
-        )}>
+        <MessageRail class_name="my-1.5">
             {/* ═══════════ 头部（可点击展开/收起） ═══════════ */}
             <div
                 className={cn(
-                    "flex min-h-11 items-center gap-2 px-3 text-xs cursor-pointer select-none transition-colors",
-                    "hover:bg-white/10",
-                    isSubmitted ? "border-green-500/20" : "border-primary/20",
-                    isExpanded && "border-b"
+                    "flex min-h-8 cursor-pointer select-none items-center gap-2 py-0.5 text-xs transition duration-150 ease-out",
                 )}
                 onClick={() => setIsExpanded(!isExpanded)}
             >
                 <div className={cn(
-                    "flex h-7 w-7 items-center justify-center rounded-full border border-white/28 bg-white/20",
-                    isSubmitted ? "text-green-500" : "text-primary"
+                    "flex h-5 w-5 items-center justify-center rounded-full",
+                    headerToneClassName,
                 )}>
-                    {isSubmitted ? (
+                    {isTimedOut || isFailed ? (
+                        <AlertCircle className="w-3.5 h-3.5" />
+                    ) : isSubmitted ? (
                         <CheckCircle className="w-3.5 h-3.5" />
                     ) : (
                         <MessageSquare className="w-3.5 h-3.5" />
@@ -396,10 +420,10 @@ export function AskUserQuestionBlock({
                 </div>
 
                 <span className={cn(
-                    "font-medium uppercase tracking-[0.14em]",
-                    isSubmitted ? "text-green-500" : "text-primary"
+                    "font-medium uppercase tracking-[0.12em]",
+                    headerToneClassName,
                 )}>
-                    {isSubmitted ? '已确认' : '需要你的回应'}
+                    {headerLabel}
                 </span>
 
                 <span className="text-muted-foreground/30">│</span>
@@ -412,7 +436,7 @@ export function AskUserQuestionBlock({
                 {!isExpanded && answerSummary && (
                     <>
                         <span className="text-muted-foreground/30">│</span>
-                        <span className="text-muted-foreground/60 truncate max-w-[200px]">
+                        <span className="truncate max-w-[200px] text-slate-500/75">
                             {answerSummary}
                         </span>
                     </>
@@ -420,8 +444,8 @@ export function AskUserQuestionBlock({
 
                 <div className="flex-1" />
 
-                {!isSubmitted && totalSelected > 0 && (
-                    <span className="rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] text-primary">
+                {!isReadOnly && totalSelected > 0 && (
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
                         已选 {totalSelected} 项
                     </span>
                 )}
@@ -438,7 +462,7 @@ export function AskUserQuestionBlock({
 
             {/* ═══════════ 问题列表（可收起） ═══════════ */}
             {isExpanded && (
-                <div className="space-y-6 p-4">
+                <div className="mt-2 space-y-2">
                     {questions.map((question, index) => (
                         <QuestionCard
                             key={index}
@@ -448,18 +472,19 @@ export function AskUserQuestionBlock({
                             custom_answer={customAnswers.get(index) || ''}
                             on_toggle_option={handleToggleOption}
                             on_custom_answer_change={handleCustomAnswerChange}
-                            is_submitted={isSubmitted}
+                            is_submitted={isReadOnly}
+                            default_expanded={isTimedOut || isFailed}
                         />
                     ))}
                 </div>
             )}
 
             {/* ═══════════ 底部操作栏 ═══════════ */}
-            {!isSubmitted && isExpanded && (
-                <div className="flex h-12 items-center justify-between border-t border-white/18 bg-white/14 px-4">
-                    <span className="text-xs text-muted-foreground">
+            {!isReadOnly && isExpanded && (
+                <div className="flex min-h-0 items-center justify-between gap-3 border-t border-white/12">
+                    <span className="text-[11px] leading-none text-muted-foreground">
                         {!is_ready
-                            ? '等待系统准备提问上下文'
+                            ? '等待提问就绪'
                             : canSubmit
                                 ? '✓ 所有问题都已回应'
                                 : '每个问题至少回应一次'}
@@ -472,13 +497,13 @@ export function AskUserQuestionBlock({
                         }}
                         disabled={!canSubmit || !is_ready}
                         className={cn(
-                            "radius-shell-sm flex items-center gap-2 px-4 py-1.5 text-xs font-medium transition-all duration-200",
+                            "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium leading-none transition-colors",
                             canSubmit && is_ready
-                                ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_14px_24px_rgba(133,119,255,0.18)]"
-                                : "neo-pill text-muted-foreground cursor-not-allowed"
+                                ? "border-primary/24 bg-primary/10 text-primary hover:bg-primary/14"
+                                : "border-white/14 bg-white/6 text-slate-400",
                         )}
                     >
-                        <Send className="w-3 h-3" />
+                        <Send className="h-3 w-3" />
                         继续协作
                     </button>
                 </div>
@@ -486,11 +511,11 @@ export function AskUserQuestionBlock({
 
             {/* ═══════════ 已提交状态（展开时显示） ═══════════ */}
             {isSubmitted && isExpanded && (
-                <div className="flex h-10 items-center gap-2 border-t border-green-500/20 bg-green-500/5 px-4">
+                <div className="mt-2 flex items-center gap-2 border-t border-emerald-500/18 pt-2 text-xs font-semibold text-emerald-600">
                     <Check className="w-3.5 h-3.5 text-green-500" />
                     <span className="text-xs font-medium text-green-600">已收到你的回应</span>
                 </div>
             )}
-        </div>
+        </MessageRail>
     );
 }

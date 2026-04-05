@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/shared/i18n/i18n-context";
 import { LanguageSwitch } from "@/shared/ui/i18n/language-switch";
 import { CollapsibleSection } from "@/shared/ui/sidebar/collapsible-section";
+import { ThemeSwitch } from "@/shared/ui/theme/theme-switch";
 import { WIDE_PANEL_MIN_WIDTH, WIDE_PANEL_MAX_WIDTH, useSidebarStore } from "@/store/sidebar";
 
 import { HomePanelContent } from "./sidebar-panel-content/home-panel";
@@ -75,33 +76,33 @@ export function SidebarWidePanel() {
 
   return (
     <div
-      className="relative flex h-full shrink-0 flex-col px-2 py-4"
+      className="relative flex h-full shrink-0 flex-col px-2.5 py-3"
       style={{ width: wide_panel_width }}
     >
-      <div className="home-glass-panel radius-shell-xl flex h-full w-full flex-col overflow-hidden">
+      <div className="surface-panel radius-shell-xl flex h-full w-full flex-col overflow-hidden">
         {/* 面板头部 */}
-        <div className="border-b border-white/20 px-4 py-3">
-          <div className="flex items-center gap-3">
-            <div className="flex min-w-0 items-center gap-3">
+        <div className="border-b glass-divider px-4 py-2.5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex min-w-0 items-center gap-2.5">
               <Link
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(233,229,223,0.92))] text-base font-black tracking-[-0.06em] text-slate-900 shadow-[0_12px_24px_rgba(102,112,145,0.12)] transition-transform duration-200 hover:scale-[1.03]"
+                className="chip-default flex h-9 w-9 shrink-0 items-center justify-center rounded-[15px] text-[15px] font-black tracking-[-0.06em] text-slate-900 transition-transform duration-200 hover:translate-y-[-0.5px]"
                 to={AppRouteBuilders.launcher()}
                 title={t("sidebar.back_to_launcher")}
               >
                 N
               </Link>
               <div className="min-w-0">
-                <p className="text-[11px] font-medium uppercase tracking-[0.24em] text-slate-500/70">
+                <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-slate-500/68">
                   {t("sidebar.workspace_label")}
                 </p>
-                <h2 className="truncate text-sm font-bold text-slate-800">{t("sidebar.workspace_title")}</h2>
+                <h2 className="truncate text-[15px] font-bold tracking-[-0.03em] text-slate-800">{t("sidebar.workspace_title")}</h2>
               </div>
             </div>
           </div>
         </div>
 
         {/* 面板内容 */}
-        <div className="flex-1 overflow-y-auto px-2 py-2">
+        <div className="flex-1 overflow-y-auto px-2.5 py-2">
           <HomePanelContent />
 
           <CollapsibleSection
@@ -113,16 +114,19 @@ export function SidebarWidePanel() {
           </CollapsibleSection>
         </div>
 
-        <div className="flex items-center justify-between gap-3 border-t border-white/16 px-3 py-2.5">
+        <div className="flex items-center justify-between gap-2.5 border-t glass-divider px-3 py-2.5">
           <Link
-            className="flex h-9 w-9 items-center justify-center rounded-[14px] bg-white/30 text-slate-600 transition-all duration-200 hover:bg-white/55 hover:text-slate-900"
+            className="chip-default flex h-8 w-8 items-center justify-center rounded-[14px] text-slate-600 transition-all duration-200 hover:text-slate-900"
             title={t("sidebar.settings")}
             to={AppRouteBuilders.settings()}
           >
             <Settings className="h-4 w-4" />
           </Link>
 
-          <LanguageSwitch />
+          <div className="flex flex-wrap items-center justify-end gap-1.5">
+            <ThemeSwitch />
+            <LanguageSwitch />
+          </div>
         </div>
       </div>
 
@@ -130,7 +134,7 @@ export function SidebarWidePanel() {
       <div
         className={cn(
           "absolute right-0 top-0 z-10 h-full w-1 cursor-col-resize",
-          "transition-colors duration-150 hover:bg-slate-400/30",
+          "transition-colors duration-150 hover:bg-slate-400/18",
         )}
         onPointerDown={handle_pointer_down}
         onPointerMove={handle_pointer_move}

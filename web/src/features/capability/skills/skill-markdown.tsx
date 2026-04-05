@@ -1,7 +1,11 @@
 "use client";
 
+import type { ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+
+const SKILL_MARKDOWN_CLASS_NAME =
+  "text-sm leading-[1.9] text-slate-700/84 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0";
 
 interface SkillMarkdownProps {
   markdown: string;
@@ -9,51 +13,12 @@ interface SkillMarkdownProps {
 
 export function SkillMarkdown({ markdown }: SkillMarkdownProps) {
   return (
-    <div className="skill-markdown text-[14px] leading-7 text-slate-700/85">
+    <div className={SKILL_MARKDOWN_CLASS_NAME}>
       <ReactMarkdown
         components={{
-          h1: ({ children }) => (
-            <h1 className="mt-8 text-[28px] font-black tracking-[-0.04em] text-slate-950/92 first:mt-0">
-              {children}
-            </h1>
-          ),
-          h2: ({ children }) => (
-            <h2 className="mt-7 text-[22px] font-bold tracking-[-0.03em] text-slate-950/90">
-              {children}
-            </h2>
-          ),
-          h3: ({ children }) => (
-            <h3 className="mt-6 text-[18px] font-bold text-slate-900/88">
-              {children}
-            </h3>
-          ),
-          p: ({ children }) => (
-            <p className="mt-4 text-[14px] leading-7 text-slate-700/82">{children}</p>
-          ),
-          ul: ({ children }) => (
-            <ul className="mt-4 list-disc space-y-2 pl-6 text-[14px] leading-7 text-slate-700/82">
-              {children}
-            </ul>
-          ),
-          ol: ({ children }) => (
-            <ol className="mt-4 list-decimal space-y-2 pl-6 text-[14px] leading-7 text-slate-700/82">
-              {children}
-            </ol>
-          ),
-          li: ({ children }) => <li>{children}</li>,
-          code: ({ children }) => (
-            <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[12px] text-slate-800">
-              {children}
-            </code>
-          ),
-          pre: ({ children }) => (
-            <pre className="mt-4 overflow-x-auto rounded-[18px] bg-slate-950 px-4 py-4 text-[12px] text-slate-100">
-              {children}
-            </pre>
-          ),
           a: ({ children, href }) => (
             <a
-              className="text-sky-600 underline decoration-sky-300 underline-offset-4"
+              className="text-sky-600/92 underline decoration-sky-300/72 underline-offset-4"
               href={href}
               rel="noreferrer"
               target="_blank"
@@ -61,6 +26,61 @@ export function SkillMarkdown({ markdown }: SkillMarkdownProps) {
               {children}
             </a>
           ),
+          h1: ({ children }) => (
+            <h1 className="mt-8 text-[28px] font-black tracking-[-0.04em] text-slate-950/92">
+              {children}
+            </h1>
+          ),
+          h2: ({ children }) => (
+            <h2 className="mt-7 text-[22px] font-bold tracking-[-0.03em] text-slate-950/92">
+              {children}
+            </h2>
+          ),
+          h3: ({ children }) => (
+            <h3 className="mt-6 text-[18px] font-bold text-slate-950/92">
+              {children}
+            </h3>
+          ),
+          p: ({ children }) => (
+            <p className="mt-4">
+              {children}
+            </p>
+          ),
+          ul: ({ children }) => (
+            <ul className="mt-4 list-disc pl-6">
+              {children}
+            </ul>
+          ),
+          ol: ({ children }) => (
+            <ol className="mt-4 list-decimal pl-6">
+              {children}
+            </ol>
+          ),
+          li: ({ children }) => (
+            <li className="mt-[0.45rem] first:mt-0">
+              {children}
+            </li>
+          ),
+          pre: ({ children }) => (
+            <pre className="mt-4 overflow-x-auto rounded-[18px] bg-slate-950/96 p-4 text-xs text-slate-50/96 shadow-[0_16px_28px_rgba(15,23,42,0.18)]">
+              {children}
+            </pre>
+          ),
+          code: ({ children, className }) => {
+            if (className) {
+              return (
+                <code className={className}>
+                  {children}
+                </code>
+              );
+            }
+
+            return (
+              <code className="rounded-lg bg-slate-100/90 px-[0.42rem] py-[0.16rem] text-[12px] text-slate-800/92">
+                {children as ReactNode}
+              </code>
+            );
+          },
         }}
         remarkPlugins={[remarkGfm]}
       >

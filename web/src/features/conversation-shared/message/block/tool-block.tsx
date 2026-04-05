@@ -8,6 +8,7 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { CheckCircle, ChevronDown, ChevronRight, Clock, Loader, Sparkles, XCircle } from 'lucide-react';
+import { useScrollAnchoredState } from '@/hooks/use-scroll-anchored-state';
 import { cn } from '@/lib/utils';
 import { CodeBlock } from './code-block';
 import { ToolResultContent, ToolUseContent } from '@/types/message';
@@ -164,6 +165,30 @@ const getResultSummary = (content: any): string => {
   return 'JSON 数据';
 };
 
+const TOOL_TONE_STYLES: Record<string, string> = {
+  default: 'text-slate-400',
+  error: 'text-rose-500',
+  running: 'text-sky-500',
+  success: 'text-emerald-500',
+  waiting: 'text-orange-500',
+};
+
+const TOOL_LABEL_STYLES: Record<string, string> = {
+  default: 'text-slate-600/90',
+  error: 'text-rose-500',
+  running: 'text-sky-500',
+  success: 'text-emerald-600',
+  waiting: 'text-orange-500',
+};
+
+const getPermissionChoiceClassName = (selected: boolean) =>
+  cn(
+    "rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-colors",
+    selected
+      ? "border-white/12 bg-primary/8 text-primary"
+      : "border-white/12 bg-white/6 text-slate-500 hover:text-slate-700",
+  );
+
 // ==================== 主组件 ====================
 
 export function ToolBlock({
@@ -174,7 +199,11 @@ export function ToolBlock({
   end_time,
   permission_request,
 }: ToolBlockProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const {
+    is_open: isExpanded,
+    toggle: toggleExpanded,
+    anchor_ref: toolAnchorRef,
+  } = useScrollAnchoredState(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState<number>(-1);
   const [copied, setCopied] = useState(false);
 
@@ -245,6 +274,15 @@ export function ToolBlock({
   const isSuccess = finalStatus === 'success';
   const isError = finalStatus === 'error';
   const isWaiting = finalStatus === 'waiting_permission';
+  const statusTone = isSuccess
+    ? 'success'
+    : isError
+      ? 'error'
+      : isRunning
+        ? 'running'
+        : isWaiting
+          ? 'waiting'
+          : 'default';
   const waitingConfirmationText = permission_request?.expires_at
     ? `${new Date(permission_request.expires_at).toLocaleTimeString()} 前确认`
     : '确认后继续执行';
@@ -254,23 +292,20 @@ export function ToolBlock({
   }, [permission_request?.request_id]);
 
   return (
-    <div className="border-l border-slate-200/90 pl-4">
+    <div
+      ref={toolAnchorRef as React.RefObject<HTMLDivElement>}
+      className="border-l-2 pl-4"
+      style={{ borderColor: "color-mix(in srgb, var(--foreground) 18%, transparent)" }}
+    >
       <div
         className={cn(
           "flex min-w-0 flex-wrap cursor-pointer select-none items-center gap-x-2 gap-y-1 py-1 text-xs transition-colors sm:flex-nowrap",
           isRunning && "animate-pulse"
         )}
-        onClick={() => hasResult && setIsExpanded(!isExpanded)}
+        onClick={() => hasResult && toggleExpanded()}
       >
         {/* 工具图标 */}
-        <div className={cn(
-          "flex h-5 w-5 items-center justify-center rounded-full",
-          isSuccess && "text-green-500",
-          isError && "text-red-500",
-          isRunning && "text-sky-500",
-          isWaiting && "text-orange-500",
-          !isSuccess && !isError && !isRunning && !isWaiting && "text-slate-400",
-        )}>
+        <div className={cn("flex h-5 w-5 items-center justify-center rounded-full", TOOL_TONE_STYLES[statusTone])}>
           {isRunning ? (
             <Loader className="h-3.5 w-3.5 animate-spin" />
           ) : isSuccess ? (
@@ -286,13 +321,7 @@ export function ToolBlock({
 
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-2">
-            <span className={cn(
-              "shrink-0 text-[11px] font-medium",
-              isSuccess && "text-green-600",
-              isError && "text-red-500",
-              isRunning && "text-sky-500",
-              isWaiting && "text-orange-500"
-            )}>
+            <span className={cn("shrink-0 text-[11px] font-medium", TOOL_LABEL_STYLES[statusTone])}>
               {toolTitle}
             </span>
             {isWaiting ? (
@@ -319,13 +348,17 @@ export function ToolBlock({
         {isWaiting && permission_request ? (
           <div className="ml-auto flex shrink-0 flex-wrap items-center justify-end gap-2">
             <button
-              onClick={() => permission_request.on_deny()}
+              onClick={(event) => {
+                event.stopPropagation();
+                permission_request.on_deny();
+              }}
               className="modal-btn-secondary rounded-lg px-3 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:text-slate-800"
             >
               拒绝
             </button>
             <button
-              onClick={() => {
+              onClick={(event) => {
+                event.stopPropagation();
                 const selectedUpdate = selectedSuggestionIndex >= 0 && permission_request.suggestions
                   ? [permission_request.suggestions[selectedSuggestionIndex]]
                   : undefined;
@@ -339,7 +372,7 @@ export function ToolBlock({
         ) : null}
 
         {/* 复制按钮（有结果时） */}
-        {hasResult && !isWaiting && (
+        {hasResult && !isWaiting ? (
           <button
             onClick={handleCopyResult}
             className={cn(
@@ -352,7 +385,7 @@ export function ToolBlock({
           >
             {copied ? '✓' : '复制'}
           </button>
-        )}
+        ) : null}
 
         {/* 展开指示器 */}
         {hasResult && (
@@ -363,13 +396,27 @@ export function ToolBlock({
       </div>
 
       {isRunning && (
-        <div className="ml-7 h-px bg-slate-200/80" />
+        <div
+          className="ml-7 h-px"
+          style={{ backgroundColor: "color-mix(in srgb, var(--foreground) 12%, transparent)" }}
+        />
+      )}
+
+      {!hasResult && isRunning && (
+        <div className="ml-7 mt-2 flex items-center gap-2 text-xs text-slate-500">
+          <div className="flex gap-1">
+            <div className="w-1.5 h-1.5 bg-primary rounded-full animate-[pulse_1s_ease-in-out_infinite]" />
+            <div className="w-1.5 h-1.5 bg-primary rounded-full animate-[pulse_1s_ease-in-out_0.2s_infinite]" />
+            <div className="w-1.5 h-1.5 bg-primary rounded-full animate-[pulse_1s_ease-in-out_0.4s_infinite]" />
+          </div>
+          <span className="text-[11px] text-slate-400">处理中</span>
+        </div>
       )}
 
       {hasResult && isExpanded && (
         <div className="ml-7 mt-2 max-h-[300px] overflow-y-auto custom-scrollbar">
             {typeof tool_result.content === 'string' ? (
-              <pre className="bg-slate-100/80 p-3 text-xs whitespace-pre-wrap break-all text-slate-800">
+              <pre className="rounded-2xl border border-slate-200/80 bg-slate-50/92 p-3 text-xs whitespace-pre-wrap break-all text-slate-800">
                 {tool_result.content}
               </pre>
             ) : (
@@ -378,23 +425,10 @@ export function ToolBlock({
         </div>
       )}
 
-      {!hasResult && isRunning && (
-        <div className="ml-7 mt-2 text-xs text-slate-500">
-          <div className="flex items-center gap-2">
-            <div className="flex gap-1">
-              <div className="w-1.5 h-1.5 bg-primary rounded-full animate-[pulse_1s_ease-in-out_infinite]" />
-              <div className="w-1.5 h-1.5 bg-primary rounded-full animate-[pulse_1s_ease-in-out_0.2s_infinite]" />
-              <div className="w-1.5 h-1.5 bg-primary rounded-full animate-[pulse_1s_ease-in-out_0.4s_infinite]" />
-            </div>
-            <span className="text-[11px] text-slate-400">处理中</span>
-          </div>
-        </div>
-      )}
-
       {permission_request && isWaiting && (
-        <div className="ml-7 mt-2 space-y-2">
-          {primaryInputDetail ? (
-            <div className="text-[13px] leading-7 text-slate-800">
+        <div className="ml-7 mt-1.5 space-y-1.5">
+          {primaryInputDetail?.value.trim() ? (
+            <div className="rounded-xl border border-white/12 bg-white/5 px-2.5 py-1.5 text-[12px] leading-5 text-slate-700">
               <pre className="whitespace-pre-wrap break-all">
                 {primaryInputDetail.value}
               </pre>
@@ -402,14 +436,11 @@ export function ToolBlock({
           ) : null}
 
           {readableSuggestions.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="space-y-1">
+              <div className="text-[10px] font-medium text-slate-400">权限范围</div>
+              <div className="flex flex-wrap items-center gap-1.5">
               <label
-                className={cn(
-                  "workspace-chip radius-shell-sm flex items-center gap-2 px-3 py-1.5 text-xs font-medium transition-all duration-200",
-                  selectedSuggestionIndex === -1
-                    ? "text-primary ring-1 ring-primary/25 shadow-[0_8px_18px_rgba(15,23,42,0.05)]"
-                    : "text-slate-500 hover:text-slate-800",
-                )}
+                className={getPermissionChoiceClassName(selectedSuggestionIndex === -1)}
               >
                 <input
                   type="radio"
@@ -423,12 +454,7 @@ export function ToolBlock({
               {readableSuggestions.map((suggestion) => (
                 <label
                   key={suggestion.index}
-                  className={cn(
-                    "workspace-chip radius-shell-sm flex items-center gap-2 px-3 py-1.5 text-xs font-medium transition-all duration-200",
-                    selectedSuggestionIndex === suggestion.index
-                      ? "text-primary ring-1 ring-primary/25 shadow-[0_8px_18px_rgba(15,23,42,0.05)]"
-                      : "text-slate-500 hover:text-slate-800",
-                  )}
+                  className={getPermissionChoiceClassName(selectedSuggestionIndex === suggestion.index)}
                 >
                   <input
                     type="radio"
@@ -440,6 +466,7 @@ export function ToolBlock({
                   <span>{suggestion.label}</span>
                 </label>
               ))}
+              </div>
             </div>
           ) : null}
         </div>

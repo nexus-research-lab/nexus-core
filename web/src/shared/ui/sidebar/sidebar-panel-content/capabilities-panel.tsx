@@ -14,7 +14,7 @@ import {
   Radio,
   Users2,
 } from "lucide-react";
-import { memo, useEffect, useMemo, useState } from "react";
+import { Fragment, memo, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { AppRouteBuilders } from "@/app/router/route-paths";
@@ -64,7 +64,7 @@ export const CapabilitiesPanelContent = memo(function CapabilitiesPanelContent()
   const pairing_count = 0;
 
   return (
-    <div className="flex flex-col gap-0.5 pb-1">
+    <Fragment>
       <SidebarListItem
         icon={<Puzzle className="h-3.5 w-3.5" />}
         is_active={location.pathname.startsWith("/capability/skills")}
@@ -104,6 +104,6 @@ export const CapabilitiesPanelContent = memo(function CapabilitiesPanelContent()
         meta={String(pairing_count)}
         on_click={() => navigate(AppRouteBuilders.pairings())}
       />
-    </div>
+    </Fragment>
   );
 });

@@ -5,9 +5,14 @@ import { ToolBlock } from './block/tool-block';
 import { AskUserQuestionBlock } from './block/ask-user-question-block';
 import { CodeBlock } from './block/code-block';
 import { ThinkingBlock } from './block/thinking-block';
-import { cn } from '@/lib/utils';
-import { ContentBlock } from '@/types/message';
+import { ContentBlock, ToolResultContent } from '@/types/message';
 import { PendingPermission, PermissionDecisionPayload } from '@/types/permission';
+import {
+  MessageCallout,
+  MessageCalloutTitle,
+  MessageRail,
+  MessageResultLabel,
+} from './message-rail';
 
 interface ContentRendererProps {
   content: string | ContentBlock[];
@@ -32,11 +37,11 @@ export function ContentRenderer(
   // Handle string content (Markdown)
   if (typeof content === 'string') {
     return (
-        <MarkdownRenderer
-          content={content}
-          is_streaming={is_streaming}
-          on_open_workspace_file={on_open_workspace_file}
-        />
+      <MarkdownRenderer
+        content={content}
+        is_streaming={is_streaming}
+        on_open_workspace_file={on_open_workspace_file}
+      />
     );
   }
 
@@ -95,16 +100,16 @@ export function ContentRenderer(
 
         if (block.type === 'task_progress') {
           return (
-            <div key={index} className="border-l border-slate-200/90 pl-4">
-              <div className="rounded-md bg-sky-50/70 px-3 py-2 text-[12px] text-sky-700">
-                <div className="font-medium text-sky-600">
+            <MessageRail key={index}>
+              <MessageCallout>
+                <MessageCalloutTitle>
                   {block.last_tool_name || '后台任务'} 正在执行
-                </div>
+                </MessageCalloutTitle>
                 <div className="mt-1 whitespace-pre-wrap break-words text-slate-600">
                   {block.description || '正在处理中…'}
                 </div>
-              </div>
-            </div>
+              </MessageCallout>
+            </MessageRail>
           );
         }
 
@@ -113,13 +118,15 @@ export function ContentRenderer(
           if (block.name === 'AskUserQuestion') {
             const toolData = toolUseMap.get(block.id);
             const hasResult = !!toolData?.result;
+            const toolResult = toolData?.result as ToolResultContent | undefined;
             const pending_permission = pending_permissions_by_tool_use_id?.get(block.id);
             const isThisToolPending = Boolean(pending_permission && !hasResult);
             return (
               <div key={index}>
                 <AskUserQuestionBlock
                   tool_use={block}
-                  is_submitted={hasResult}
+                  tool_result={toolResult}
+                  is_submitted={hasResult && !toolResult?.is_error}
                   is_ready={Boolean(isThisToolPending)}
                   on_submit={(_, answers) => {
                     if (!pending_permission) {
@@ -186,24 +193,26 @@ export function ContentRenderer(
         // 独立的 tool_result（没有对应的 tool_use）
         if (block.type === 'tool_result') {
           return (
-            <div key={index} className="border-l border-slate-200/90 pl-4">
-              <div className="mb-2 flex items-center gap-2 text-[11px] font-medium">
-                {block.is_error ? (
-                  <span className="text-red-500">Error</span>
-                ) : (
-                  <span className="text-green-500">Result</span>
-                )}
+            <MessageRail key={index}>
+              <div className="ml-4">
+                <MessageResultLabel tone={block.is_error ? "error" : "success"}>
+                  {block.is_error ? (
+                    <span>Error</span>
+                  ) : (
+                    <span>Result</span>
+                  )}
+                </MessageResultLabel>
+                <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                  {typeof block.content === 'string' ? (
+                    <pre className="rounded-2xl border border-slate-200/80 bg-slate-50/92 p-3 text-xs text-slate-800/95 whitespace-pre-wrap break-words">
+                      {block.content}
+                    </pre>
+                  ) : (
+                    <CodeBlock language="json" value={JSON.stringify(block.content, null, 2)} />
+                  )}
+                </div>
               </div>
-              <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
-                {typeof block.content === 'string' ? (
-                  <pre className="rounded-md bg-slate-100/80 p-3 text-xs font-mono whitespace-pre-wrap break-all text-slate-800">
-                    {block.content}
-                  </pre>
-                ) : (
-                  <CodeBlock language="json" value={JSON.stringify(block.content, null, 2)} />
-                )}
-              </div>
-            </div>
+            </MessageRail>
           );
         }
 

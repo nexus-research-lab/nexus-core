@@ -20,6 +20,14 @@ import {
 } from "lucide-react";
 
 import { deleteSkillApi, getSkillDetailApi, updateSingleSkillApi } from "@/lib/skill-api";
+import { cn } from "@/lib/utils";
+import {
+  DIALOG_HEADER_ICON_CLASS_NAME,
+  DIALOG_HEADER_LEADING_CLASS_NAME,
+  DIALOG_TAG_CLASS_NAME,
+  getDialogNoteClassName,
+} from "@/shared/ui/dialog/dialog-styles";
+import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import { SkillDetail } from "@/types/skill";
 
 import { SkillMarkdown } from "./skill-markdown";
@@ -92,38 +100,39 @@ export function SkillDetailDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      className="dialog-backdrop"
       onClick={on_close}
     >
       <div
-        className="modal-dialog-surface radius-shell-xl flex h-[84vh] w-full max-w-5xl flex-col overflow-hidden"
+        className="dialog-shell radius-shell-xl flex h-[84vh] w-full max-w-5xl flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4 border-b modal-divider px-6 py-5">
-          <div className="flex min-w-0 items-center gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[20px] bg-white/70">
+        <div className="dialog-header">
+          <div className={cn(DIALOG_HEADER_LEADING_CLASS_NAME, "min-w-0 flex-1 items-center")}>
+            <div className={cn(DIALOG_HEADER_ICON_CLASS_NAME, "h-14 w-14 rounded-[20px]")}>
               <Puzzle className="h-7 w-7 text-slate-900/88" />
             </div>
             <div className="min-w-0">
-              <h2 className="truncate text-[28px] font-black tracking-[-0.04em] text-slate-950/92">
+              <h2 className="dialog-title truncate" data-size="hero">
                 {loading ? "加载中..." : skill?.title ?? skill_name}
               </h2>
-              <p className="mt-1 text-[14px] text-slate-700/70">
+              <p className="dialog-subtitle">
                 {skill?.description || "正在读取 Skill.md 文档"}
               </p>
             </div>
           </div>
-          <button
+          <WorkspacePillButton
             aria-label="关闭"
-            className="rounded-full p-2 text-slate-400 transition-colors hover:bg-white/60 hover:text-slate-700"
+            density="compact"
             onClick={on_close}
-            type="button"
+            size="icon"
+            variant="default"
           >
             <X className="h-5 w-5" />
-          </button>
+          </WorkspacePillButton>
         </div>
 
-        <div className="soft-scrollbar flex-1 overflow-y-auto px-6 py-5">
+        <div className="dialog-body dialog-body--scroll soft-scrollbar flex-1">
           {loading ? (
             <div className="flex min-h-80 items-center justify-center">
               <Loader2 className="h-7 w-7 animate-spin text-slate-400" />
@@ -131,17 +140,17 @@ export function SkillDetailDialog({
           ) : skill ? (
             <>
               <div className="mb-5 flex flex-wrap gap-2">
-                <span className="inline-flex rounded-full bg-white/70 px-3 py-1 text-[11px] font-semibold text-slate-600">
+                <span className={DIALOG_TAG_CLASS_NAME}>
                   {skill.category_name}
                 </span>
-                <span className="inline-flex rounded-full bg-white/70 px-3 py-1 text-[11px] font-semibold text-slate-600">
+                <span className={DIALOG_TAG_CLASS_NAME}>
                   {skill.source_type === "system" ? "系统内置" : skill.source_type === "builtin" ? "内置推荐" : "用户导入"}
                 </span>
-                <span className="inline-flex rounded-full bg-white/70 px-3 py-1 text-[11px] font-semibold text-slate-600">
+                <span className={DIALOG_TAG_CLASS_NAME}>
                   版本 {skill.version || "unknown"}
                 </span>
                 {skill.locked ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold text-amber-700">
+                  <span className={cn(DIALOG_TAG_CLASS_NAME, "text-amber-700")}>
                     <Shield className="h-3 w-3" />
                     系统锁定
                   </span>
@@ -149,7 +158,7 @@ export function SkillDetailDialog({
                 {skill.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center gap-1 rounded-full bg-slate-100/80 px-3 py-1 text-[11px] font-semibold text-slate-600"
+                    className={DIALOG_TAG_CLASS_NAME}
                   >
                     <Tag className="h-3 w-3" />
                     {tag}
@@ -158,13 +167,13 @@ export function SkillDetailDialog({
               </div>
 
               {skill.recommendation ? (
-                <div className="workspace-card mb-5 rounded-[22px] px-5 py-4 text-[13px] leading-6 text-slate-700/78">
+                <div className={getDialogNoteClassName("default", "mb-5")}>
                   {skill.recommendation}
                 </div>
               ) : null}
 
               {error ? (
-                <div className="mb-5 rounded-[18px] border border-rose-200/80 bg-rose-50/80 px-4 py-3 text-[13px] text-rose-600">
+                <div className={getDialogNoteClassName("danger", "mb-5")}>
                   {error}
                 </div>
               ) : null}
@@ -178,30 +187,31 @@ export function SkillDetailDialog({
           )}
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t modal-divider px-6 py-4">
+        <div className="dialog-footer flex-wrap gap-2">
           {skill?.locked ? (
-            <button
-              className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700"
+            <WorkspacePillButton
+              class_name="text-amber-700"
               disabled
-              type="button"
+              size="md"
+              variant="default"
             >
               <Lock className="h-4 w-4" />
               系统级
-            </button>
+            </WorkspacePillButton>
           ) : skill ? (
             <>
               {skill.source_type === "external" && skill.has_update ? (
-                <button
-                  className="inline-flex items-center gap-2 rounded-full bg-sky-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                <WorkspacePillButton
                   disabled={acting}
                   onClick={() => void handle_update()}
-                  type="button"
+                  size="md"
+                  variant="strong"
                 >
                   {acting ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                   更新技能库
-                </button>
+                </WorkspacePillButton>
               ) : (
-                <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-sm font-semibold text-slate-600">
+                <span className={cn(DIALOG_TAG_CLASS_NAME, "px-4 py-2 text-sm")}>
                   {skill.source_type === "external" ? (
                     <>
                       <Check className="h-4 w-4" />
@@ -216,15 +226,15 @@ export function SkillDetailDialog({
                 </span>
               )}
               {skill.deletable ? (
-                <button
-                  className="inline-flex items-center gap-2 rounded-full bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-600 disabled:opacity-60"
+                <WorkspacePillButton
                   disabled={acting}
                   onClick={() => void handle_delete()}
-                  type="button"
+                  size="md"
+                  variant="danger"
                 >
                   {acting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                   删除
-                </button>
+                </WorkspacePillButton>
               ) : null}
             </>
           ) : null}

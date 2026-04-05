@@ -4,6 +4,7 @@ import { memo } from "react";
 import { Bot, Check, Loader2, Square, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AgentRoundStatus } from "@/features/conversation-shared/utils";
+import { MessageLoadingDots } from "./message-primitives";
 
 interface AgentCardProps {
   agent_id: string;
@@ -18,13 +19,7 @@ interface AgentCardProps {
 function StatusIndicator({ status }: { status: AgentRoundStatus }) {
   switch (status) {
     case "pending":
-      return (
-        <span className="flex items-center gap-0.5">
-          <span className="h-1 w-1 animate-bounce rounded-full bg-slate-400 [animation-delay:0ms]" />
-          <span className="h-1 w-1 animate-bounce rounded-full bg-slate-400 [animation-delay:150ms]" />
-          <span className="h-1 w-1 animate-bounce rounded-full bg-slate-400 [animation-delay:300ms]" />
-        </span>
-      );
+      return <MessageLoadingDots size="sm" />;
     case "streaming":
       return <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />;
     case "done":
@@ -62,20 +57,21 @@ export const AgentCard = memo(function AgentCard({
       type="button"
       onClick={on_click}
       className={cn(
-        "group flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-all",
-        "hover:bg-slate-50/80",
+        "group flex w-full items-center gap-3 rounded-2xl border px-3 py-2.5 text-left transition duration-150 ease-out",
         is_active
-          ? "border-blue-200 bg-blue-50/40 shadow-sm"
-          : "border-slate-200/80 bg-white",
+          ? "border-sky-200/85 bg-sky-50/75 shadow-[0_10px_22px_rgb(59_130_246/0.08)]"
+          : "border-slate-200/80 bg-white/95 hover:bg-slate-50/85",
       )}
     >
       {/* Agent 头像 */}
-      <div className={cn(
-        "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border",
-        is_active
-          ? "border-blue-200 bg-blue-50 text-blue-600"
-          : "border-slate-200 bg-slate-50 text-slate-500",
-      )}>
+      <div
+        className={cn(
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] border",
+          is_active
+            ? "border-sky-200/85 bg-sky-50/85 text-blue-600"
+            : "border-slate-200/90 bg-slate-50/90 text-slate-500/90",
+        )}
+      >
         <Bot className="h-3.5 w-3.5" />
       </div>
 
@@ -102,7 +98,7 @@ export const AgentCard = memo(function AgentCard({
             e.stopPropagation();
             on_stop();
           }}
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-slate-400 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-600 group-hover:opacity-100"
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-slate-400/90 opacity-0 transition duration-150 ease-out group-hover:opacity-100 hover:bg-slate-100/90 hover:text-slate-600/90"
         >
           <Square className="h-3 w-3 fill-current" />
         </button>
@@ -110,7 +106,7 @@ export const AgentCard = memo(function AgentCard({
 
       {/* 展开箭头提示 */}
       <svg
-        className="h-4 w-4 shrink-0 text-slate-300 transition-colors group-hover:text-slate-500"
+        className="h-4 w-4 shrink-0 text-slate-300 transition-colors duration-150 ease-out group-hover:text-slate-500"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"

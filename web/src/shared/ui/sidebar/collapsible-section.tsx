@@ -15,6 +15,17 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/shared/i18n/i18n-context";
 import { useSidebarStore } from "@/store/sidebar";
 
+const CONTEXT_MENU_CLASS_NAME =
+  "fixed z-[9990] w-36 rounded-xl border border-slate-200/70 bg-white/95 py-1 shadow-[0_16px_32px_rgba(15,23,42,0.12)] backdrop-blur-[16px] animate-in fade-in zoom-in-95 duration-100";
+const CONTEXT_MENU_ITEM_CLASS_NAME =
+  "flex w-full items-center gap-2 px-3 py-1.5 text-[12px] transition-[background,color] duration-150";
+const SIDEBAR_LIST_ITEM_CLASS_NAME =
+  "group/item flex w-full items-center gap-2.5 rounded-[14px] px-2.5 py-[7px] text-left text-[12px] transition-[background,color,box-shadow] duration-150";
+const SIDEBAR_SECTION_TRIGGER_CLASS_NAME =
+  "flex flex-1 items-center gap-1 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500/84 transition-colors duration-150 hover:text-slate-600/96";
+const SIDEBAR_SECTION_ACTION_CLASS_NAME =
+  "flex h-5.5 w-5.5 shrink-0 items-center justify-center rounded-full text-slate-400 transition-[background,color] duration-150 hover:bg-white/40 hover:text-slate-600";
+
 interface CollapsibleSectionProps {
   section_id: string;
   title: string;
@@ -77,22 +88,22 @@ export function SidebarListItem({
     <>
       <button
         className={cn(
-          "group/item flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] transition-all duration-150",
+          SIDEBAR_LIST_ITEM_CLASS_NAME,
           is_active
-            ? "bg-white/60 font-semibold text-slate-900 shadow-sm"
-            : "text-slate-600 hover:bg-white/30 hover:text-slate-800",
+            ? "chip-default font-medium text-slate-950/96"
+            : "text-slate-700/90 hover:bg-white/34 hover:text-slate-950/96",
         )}
         onClick={on_click}
         onContextMenu={handle_context_menu}
         type="button"
       >
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center text-slate-500">
+        <span className="flex h-4.5 w-4.5 shrink-0 items-center justify-center text-slate-500">
           {icon}
         </span>
         <span className="min-w-0 flex-1 truncate">{label}</span>
         {has_actions ? (
           <span
-            className="flex h-4 w-4 shrink-0 items-center justify-center rounded text-slate-400 opacity-0 transition-all hover:text-slate-700 group-hover/item:opacity-100"
+            className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded text-slate-400 opacity-0 transition-all hover:text-slate-700 group-hover/item:opacity-100"
             onClick={handle_more_click}
             role="button"
             tabIndex={-1}
@@ -100,19 +111,19 @@ export function SidebarListItem({
             <MoreHorizontal className="h-3 w-3" />
           </span>
         ) : meta ? (
-          <span className="shrink-0 text-[10px] text-slate-400">{meta}</span>
+          <span className="shrink-0 text-[10px] font-medium tabular-nums text-slate-400">{meta}</span>
         ) : null}
       </button>
 
       {menu_pos ? createPortal(
         <div
-          className="fixed z-[9990] w-36 rounded-xl border border-slate-200/60 bg-white/95 py-1 shadow-lg backdrop-blur-md animate-in fade-in zoom-in-95 duration-100"
+          className={CONTEXT_MENU_CLASS_NAME}
           style={{ top: menu_pos.y, left: menu_pos.x }}
           onMouseDown={(e) => e.stopPropagation()}
         >
           {on_rename ? (
             <button
-              className="flex w-full items-center gap-2 px-3 py-1.5 text-[12px] text-slate-700 hover:bg-slate-50"
+              className={cn(CONTEXT_MENU_ITEM_CLASS_NAME, "text-slate-700 hover:bg-slate-50/90")}
               onClick={() => {
                 set_menu_pos(null);
                 on_rename();
@@ -126,7 +137,7 @@ export function SidebarListItem({
 
           {on_delete ? (
             <button
-              className="flex w-full items-center gap-2 px-3 py-1.5 text-[12px] text-red-600 hover:bg-red-50"
+              className={cn(CONTEXT_MENU_ITEM_CLASS_NAME, "text-red-600 hover:bg-red-50/90")}
               onClick={() => {
                 set_menu_pos(null);
                 on_delete();
@@ -160,10 +171,10 @@ export function CollapsibleSection({
   const toggle = useSidebarStore((s) => s.toggle_section);
 
   return (
-    <section className="border-b border-white/10 pb-1">
-      <div className="group/section flex w-full items-center justify-between px-2 py-2">
+    <section className="border-b glass-divider pb-1.5 last:border-b-0">
+      <div className="group/section flex w-full items-center justify-between px-2.5 py-2">
         <button
-          className="flex flex-1 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500 transition-colors hover:text-slate-700"
+          className={SIDEBAR_SECTION_TRIGGER_CLASS_NAME}
           onClick={() => toggle(section_id)}
           type="button"
         >
@@ -175,14 +186,14 @@ export function CollapsibleSection({
           {icon ? <span className="flex items-center">{icon}</span> : null}
           <span>{title}</span>
           {typeof count === "number" ? (
-            <span className="text-[10px] text-slate-400">{count}</span>
+            <span className="text-[10px] font-medium tabular-nums text-slate-400">{count}</span>
           ) : null}
         </button>
 
         {/* 右侧操作按钮，固定宽度占位保证对齐 */}
         {on_action ? (
           <button
-            className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-slate-400 transition-colors hover:bg-white/40 hover:text-slate-600"
+            className={SIDEBAR_SECTION_ACTION_CLASS_NAME}
             onClick={(e) => { e.stopPropagation(); on_action(); }}
             title={action_title}
             type="button"
@@ -195,7 +206,7 @@ export function CollapsibleSection({
       </div>
 
       {!is_collapsed ? (
-        <div className="flex flex-col gap-0.5 pb-1">{children}</div>
+        <div className="flex flex-col gap-0.5 pb-1.5">{children}</div>
       ) : null}
     </section>
   );

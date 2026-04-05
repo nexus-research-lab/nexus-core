@@ -2,6 +2,15 @@
 
 import { FolderKanban, MessageSquarePlus, Sparkles } from "lucide-react";
 
+import { getStageGlowStyle } from "@/shared/ui/layout/stage-glow";
+import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
+
+const EMPTY_STATE_SHELL_CLASS_NAME =
+  "surface-card radius-shell-xl relative w-full overflow-hidden p-10 text-center";
+const EMPTY_STATE_ICON_CLASS_NAME =
+  "chip-default radius-shell-md relative inline-flex h-24 w-24 items-center justify-center text-slate-900/76";
+const METRIC_CARD_CLASS_NAME = "surface-card radius-shell-md px-4 py-4";
+
 interface RoomConversationEmptyStateProps {
   on_create_conversation: (title?: string) => void | Promise<string | null>;
 }
@@ -11,12 +20,18 @@ export function RoomConversationEmptyState({
 }: RoomConversationEmptyStateProps) {
   return (
     <div className="flex flex-1 items-center justify-center p-8">
-      <div className="radius-shell-xl relative w-full max-w-2xl overflow-hidden p-10 text-center">
-        <div className="pointer-events-none absolute inset-0 home-glass-grid opacity-16" />
-        <div className="pointer-events-none absolute left-12 top-12 h-28 w-28 rounded-full glow-lilac opacity-32" />
-        <div className="pointer-events-none absolute bottom-10 right-12 h-28 w-28 rounded-full glow-green opacity-28" />
+      <div className={EMPTY_STATE_SHELL_CLASS_NAME}>
+        <div className="pointer-events-none absolute inset-0 glass-grid opacity-16" />
+        <div
+          className="pointer-events-none absolute left-12 top-12 h-28 w-28 rounded-full opacity-32 blur-[8px]"
+          style={getStageGlowStyle("lilac")}
+        />
+        <div
+          className="pointer-events-none absolute bottom-10 right-12 h-28 w-28 rounded-full opacity-28 blur-[14px]"
+          style={getStageGlowStyle("green")}
+        />
         <div className="flex justify-center">
-          <div className="workspace-chip radius-shell-md relative inline-flex h-24 w-24 items-center justify-center text-slate-900/76">
+          <div className={EMPTY_STATE_ICON_CLASS_NAME}>
             <div className="absolute -right-2 -top-2 rounded-full bg-[linear-gradient(135deg,rgba(255,194,148,0.92),rgba(255,155,86,0.88))] p-2 text-[#8a4409] shadow-[0_14px_24px_rgba(255,157,86,0.24)]">
               <FolderKanban className="h-4 w-4" />
             </div>
@@ -37,29 +52,32 @@ export function RoomConversationEmptyState({
         </div>
 
         <div className="mt-8 grid gap-3 text-sm text-slate-700/62 md:grid-cols-3">
-          <div className="workspace-card radius-shell-md px-4 py-4">
+          <div className={METRIC_CARD_CLASS_NAME}>
             <div className="mx-auto mb-2 h-2 w-2 rounded-full bg-primary" />
             <span>按 Room 承接协作任务</span>
           </div>
-          <div className="workspace-card radius-shell-md px-4 py-4">
+          <div className={METRIC_CARD_CLASS_NAME}>
             <div className="mx-auto mb-2 h-2 w-2 rounded-full bg-primary" />
             <span>对话线程自动保存</span>
           </div>
-          <div className="workspace-card radius-shell-md px-4 py-4">
+          <div className={METRIC_CARD_CLASS_NAME}>
             <div className="mx-auto mb-2 h-2 w-2 rounded-full bg-primary" />
             <span>上下文围绕同一任务展开</span>
           </div>
         </div>
 
-        <button
-          className="mt-8 inline-flex items-center gap-2 rounded-full bg-[linear-gradient(135deg,rgba(166,255,194,0.94),rgba(102,217,143,0.90))] px-7 py-3.5 text-sm font-bold text-[#18653a] shadow-[0_20px_34px_rgba(102,217,143,0.22)] transition-transform hover:-translate-y-0.5"
-          onClick={() => {
-            void on_create_conversation();
-          }}
-        >
-          <MessageSquarePlus className="h-5 w-5" />
-          <span>创建新会话</span>
-        </button>
+        <div className="mt-8 flex justify-center">
+          <WorkspacePillButton
+            onClick={() => {
+              void on_create_conversation();
+            }}
+            size="lg"
+            variant="success"
+          >
+            <MessageSquarePlus className="h-5 w-5" />
+            <span>创建新会话</span>
+          </WorkspacePillButton>
+        </div>
 
         <p className="mt-5 text-xs text-slate-700/52">
           先进入目标 room，再创建第一条对话

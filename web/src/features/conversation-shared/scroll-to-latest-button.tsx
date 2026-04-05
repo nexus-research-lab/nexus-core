@@ -1,5 +1,8 @@
 import { ArrowDown } from "lucide-react";
 
+const FLOATING_ACTION_CHIP_CLASS_NAME =
+  "absolute bottom-24 z-20 inline-flex items-center gap-2 rounded-full border border-[var(--chip-default-border)] bg-[var(--chip-default-background)] px-3 py-2 text-sm font-semibold text-slate-900/80 shadow-[0_10px_20px_rgba(106,124,158,0.14)] backdrop-blur-[16px] transition-[transform,color,box-shadow] duration-150 hover:-translate-y-[0.5px] hover:text-slate-900/96 hover:shadow-[0_14px_24px_rgba(106,124,158,0.16)]";
+
 interface ScrollToLatestButtonProps {
   is_loading: boolean;
   is_mobile_layout: boolean;
@@ -17,8 +20,8 @@ export function ScrollToLatestButton({
       onClick={on_click}
       className={
         is_mobile_layout
-          ? "workspace-chip absolute bottom-24 right-2 z-20 inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-slate-900/80 transition hover:-translate-y-0.5 hover:text-slate-950"
-          : "workspace-chip absolute bottom-24 right-3 z-20 inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-slate-900/80 transition hover:-translate-y-0.5 hover:text-slate-950 sm:bottom-30 sm:right-8 sm:px-4 sm:py-2.5"
+          ? `${FLOATING_ACTION_CHIP_CLASS_NAME} right-2`
+          : `${FLOATING_ACTION_CHIP_CLASS_NAME} right-3 sm:bottom-30 sm:right-8 sm:px-4 sm:py-2.5`
       }
     >
       <ArrowDown className={is_loading ? "h-4 w-4 animate-bounce" : "h-4 w-4"} />

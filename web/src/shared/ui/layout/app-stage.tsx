@@ -1,8 +1,21 @@
+/**
+ * =====================================================
+ * @File   : app-stage.tsx
+ * @Date   : 2026-04-04 18:06
+ * @Author : leemysw
+ * 2026-04-04 18:06   Create
+ * =====================================================
+ */
+
+"use client";
+
 import { ReactNode } from "react";
 
 import { HOME_PAGE_PADDING_CLASS } from "@/lib/home-layout";
+import { useTheme } from "@/shared/theme/theme-context";
+import { AppStageBackdrop } from "@/shared/ui/layout/app-stage-backdrop";
 
-import { AppSidebar } from "./app-sidebar";
+import { SidebarWidePanel } from "@/shared/ui/sidebar/sidebar-wide-panel";
 
 interface AppStageProps {
   children: ReactNode;
@@ -14,16 +27,16 @@ export function AppStage({
   children,
   show_sidebar = true,
 }: AppStageProps) {
+  const { theme } = useTheme();
+  const is_sunny = theme === "sunny";
+
   return (
-    <main className="relative flex h-screen w-full overflow-hidden bg-background text-foreground bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.36),transparent_38%),radial-gradient(circle_at_bottom,rgba(255,255,255,0.24),transparent_32%)]">
-      <div className="pointer-events-none absolute left-[5%] top-[8%] h-72 w-72 rounded-full glow-lilac opacity-55" />
-      <div className="pointer-events-none absolute bottom-[6%] left-[22%] h-80 w-80 rounded-full bg-white/40 blur-3xl" />
-      <div className="pointer-events-none absolute right-[8%] top-[18%] h-72 w-72 rounded-full glow-peach opacity-35" />
-      <div className="pointer-events-none absolute right-[12%] bottom-[8%] h-80 w-80 rounded-full glow-green opacity-40" />
+    <main className="app-stage relative flex h-screen w-full overflow-hidden bg-background text-foreground">
+      <AppStageBackdrop is_sunny={is_sunny} />
 
-      {show_sidebar ? <AppSidebar /> : null}
+      {show_sidebar ? <div className="relative z-10"><SidebarWidePanel /></div> : null}
 
-      <div className={`relative flex min-h-0 flex-1 flex-col ${HOME_PAGE_PADDING_CLASS}`}>{children}</div>
+      <div className={`relative z-10 flex min-h-0 flex-1 flex-col ${HOME_PAGE_PADDING_CLASS}`}>{children}</div>
     </main>
   );
 }

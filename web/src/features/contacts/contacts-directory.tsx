@@ -6,6 +6,11 @@ import { useMemo, useState } from "react";
 import { useI18n } from "@/shared/i18n/i18n-context";
 import { WorkspaceSearchInput } from "@/shared/ui/workspace/workspace-search-input";
 import { WorkspaceSurfaceHeader } from "@/shared/ui/workspace/workspace-surface-header";
+import {
+  WorkspaceCatalogEmptyShell,
+  WorkspaceCatalogGhostCard,
+  WorkspaceCatalogMedia,
+} from "@/shared/ui/workspace/workspace-catalog-card";
 import { Agent } from "@/types/agent";
 import { Conversation } from "@/types/conversation";
 
@@ -85,6 +90,7 @@ export function ContactsDirectory({
       <WorkspaceSurfaceHeader
         active_tab={active_tab}
         badge="AGENTS"
+        density="compact"
         leading={<Users className="h-4 w-4 text-slate-800/72"/>}
         on_change_tab={set_active_tab}
         subtitle={t("contacts.subtitle")}
@@ -97,21 +103,21 @@ export function ContactsDirectory({
       <div className="soft-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-5 xl:px-6">
         <div className="grid grid-cols-3 gap-6 md:grid-cols-3 xl:grid-cols-4">
           {/* 首张卡片 — New Agent */}
-          {active_tab != "task_generated" && (<article
-              className="workspace-card flex cursor-pointer flex-col items-center justify-center rounded-[26px] border border-dashed border-slate-300/40 px-6 py-8 text-center transition-all hover:border-slate-400/50 hover:bg-white/34"
+          {active_tab != "task_generated" && (
+            <WorkspaceCatalogGhostCard
+              class_name="px-6 py-8"
               onClick={on_create_agent}
             >
-              <div
-                className="flex h-16 w-16 items-center justify-center rounded-full border border-white/44 bg-white/64">
+              <WorkspaceCatalogMedia class_name="h-16 w-16" shape="round">
                 <Plus className="h-7 w-7 text-slate-600"/>
-              </div>
+              </WorkspaceCatalogMedia>
               <p className="mt-4 text-[18px] font-bold tracking-[-0.03em] text-slate-950/80">
                 {t("contacts.new_agent")}
               </p>
               <p className="mt-2 text-[13px] leading-5 text-slate-700/60">
                 {t("contacts.new_agent_description")}
               </p>
-            </article>
+            </WorkspaceCatalogGhostCard>
           )}
 
           {/* Agent 卡片列表 */}
@@ -129,8 +135,7 @@ export function ContactsDirectory({
 
         {/* Task Generated 空状态 */}
         {active_tab === "task_generated" && (
-          <div
-            className="workspace-card mt-6 flex min-h-80 items-center justify-center rounded-[28px] px-8 text-center">
+          <WorkspaceCatalogEmptyShell class_name="mt-6">
             <div>
               <p className="text-[22px] font-bold tracking-[-0.04em] text-slate-950/90">
                 {t("contacts.empty_generated_title")}
@@ -139,7 +144,7 @@ export function ContactsDirectory({
                 {t("contacts.empty_generated_description")}
               </p>
             </div>
-          </div>
+          </WorkspaceCatalogEmptyShell>
         )}
       </div>
     </div>

@@ -1,5 +1,10 @@
 import { Download, Loader2 } from "lucide-react";
 
+import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
+import {
+  WorkspaceCatalogBadge,
+  WorkspaceCatalogCard,
+} from "@/shared/ui/workspace/workspace-catalog-card";
 import type { ExternalSkillSearchItem } from "@/types/skill";
 
 import { formatInstalls } from "@/hooks/use-skill-marketplace";
@@ -21,7 +26,7 @@ export function SkillsExternalResults({ ctrl }: SkillsExternalResultsProps) {
 
   if (ctrl.external_query && !ctrl.external_results.length) {
     return (
-      <div className="rounded-[18px] border border-dashed border-white/40 bg-white/40 px-5 py-8 text-center text-sm text-slate-500">
+      <div className="surface-inset radius-shell-md px-5 py-8 text-center text-sm text-slate-500">
         暂无匹配结果，试试更具体的关键词
       </div>
     );
@@ -74,8 +79,8 @@ function ExternalResultCard({
   const is_busy = busy_skill_name === item.skill_slug;
 
   return (
-    <div
-      className="workspace-card flex cursor-pointer flex-col rounded-[20px] px-5 py-4 transition-all hover:bg-white/40"
+    <WorkspaceCatalogCard
+      class_name="cursor-pointer rounded-[20px] px-5 py-4"
       onClick={on_preview}
     >
       {/* 标题行 */}
@@ -92,15 +97,16 @@ function ExternalResultCard({
         </div>
         <div className="flex shrink-0 items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
           {already_imported ? (
-            <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-600">
+            <WorkspaceCatalogBadge tone="success">
               已导入
-            </span>
+            </WorkspaceCatalogBadge>
           ) : (
-            <button
-              className="inline-flex items-center gap-1 rounded-full border border-white/40 bg-white/70 px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition-all hover:bg-sky-50 hover:text-sky-600 disabled:opacity-50"
+            <WorkspacePillButton
               disabled={is_busy}
+              density="compact"
               onClick={on_import}
-              type="button"
+              size="sm"
+              variant="strong"
             >
               {is_busy ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -108,7 +114,7 @@ function ExternalResultCard({
                 <Download className="h-3 w-3" />
               )}
               导入
-            </button>
+            </WorkspacePillButton>
           )}
         </div>
       </div>
@@ -117,6 +123,6 @@ function ExternalResultCard({
       <p className="mt-2.5 line-clamp-2 flex-1 text-[12px] leading-[1.6] text-slate-600/70">
         {item.readme_markdown || item.description}
       </p>
-    </div>
+    </WorkspaceCatalogCard>
   );
 }

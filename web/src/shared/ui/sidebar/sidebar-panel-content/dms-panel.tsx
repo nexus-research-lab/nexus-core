@@ -13,6 +13,7 @@ import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { AppRouteBuilders } from "@/app/router/route-paths";
+import { get_dm_display_name } from "@/lib/dm-utils";
 import { deleteRoom, listRooms } from "@/lib/room-api";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { ConfirmDialog } from "@/shared/ui/dialog/confirm-dialog";
@@ -21,21 +22,9 @@ import { useSidebarStore } from "@/store/sidebar";
 import { Agent } from "@/types/agent";
 import { RoomAggregate } from "@/types/room";
 
-/** 获取 DM 的显示名称 */
-function get_dm_name(room: RoomAggregate, agents: Agent[]): string {
-  const agent_member = room.members.find((m) => m.member_type === "agent");
-  if (agent_member?.member_agent_id) {
-    const matched = agents.find(
-      (a) => a.agent_id === agent_member.member_agent_id,
-    );
-    if (matched) return matched.name;
-  }
-  return room.room.name?.trim() || "未命名 DM";
-}
-
 /** 获取 DM Agent 名称首字母作为头像 */
 function get_dm_avatar_letter(room: RoomAggregate, agents: Agent[]): string {
-  const name = get_dm_name(room, agents);
+  const name = get_dm_display_name(room, agents);
   return name.charAt(0).toUpperCase();
 }
 
@@ -78,7 +67,7 @@ export const DmsPanelContent = memo(function DmsPanelContent() {
     if (!search_query.trim()) return sorted;
     const q = search_query.toLowerCase();
     return sorted.filter((room) =>
-      get_dm_name(room, agents).toLowerCase().includes(q),
+      get_dm_display_name(room, agents).toLowerCase().includes(q),
     );
   }, [agents, rooms, search_query]);
 
@@ -109,7 +98,7 @@ export const DmsPanelContent = memo(function DmsPanelContent() {
       <div className="flex flex-col gap-0.5">
         {dm_rooms.length > 0 ? (
           dm_rooms.map((room) => {
-            const name = get_dm_name(room, agents);
+            const name = get_dm_display_name(room, agents);
             const avatar = get_dm_avatar_letter(room, agents);
             const timestamp = new Date(
               room.room.updated_at ?? room.room.created_at ?? 0,

@@ -14,6 +14,7 @@ import type {
   AgentNameValidationResult,
   AgentOptions as AgentConfigOptions,
 } from "@/types/agent";
+import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 
 import { AgentOptionsNav, type TabKey } from "./agent-options-nav";
 import { AgentOptionsIdentityTab } from "./agent-options-identity-tab";
@@ -198,7 +199,7 @@ export function AgentOptions({
   if (!is_open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="dialog-backdrop animate-in fade-in duration-200">
       <div className="modal-dialog-surface radius-shell-xl flex h-[85vh] w-full max-w-[980px] flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         {/* 头部 */}
         <div className="flex items-center justify-between border-b modal-divider px-6 py-5">
@@ -215,13 +216,15 @@ export function AgentOptions({
               ) : null}
             </div>
           </div>
-          <button
+          <WorkspacePillButton
             aria-label="关闭对话框"
             onClick={on_close}
-            className="modal-btn-secondary rounded-xl p-2 text-slate-400 transition-colors hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-primary/50"
+            density="compact"
+            size="icon"
+            variant="default"
           >
             <X className="h-5 w-5" />
-          </button>
+          </WorkspacePillButton>
         </div>
 
         {/* 主体：左导航 + 右内容 */}

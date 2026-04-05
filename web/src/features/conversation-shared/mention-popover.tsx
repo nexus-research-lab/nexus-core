@@ -98,10 +98,7 @@ export const MentionPopover = memo(({
 
     const popover = (
         <div
-            className={cn(
-                "fixed z-[9999] max-h-48 overflow-y-auto rounded-xl",
-                "border border-slate-200 bg-white shadow-xl",
-            )}
+            className="fixed z-[9999] max-h-48 overflow-y-auto rounded-2xl border border-slate-200/82 bg-white/94 shadow-[0_18px_36px_rgb(15_23_42/0.16)] backdrop-blur-[18px]"
             style={{
                 top,
                 left,
@@ -113,11 +110,8 @@ export const MentionPopover = memo(({
                     <button
                         key={member.agent_id}
                         className={cn(
-                            "flex w-full items-center gap-2 px-3 py-2 text-left text-sm",
-                            "transition-colors duration-100",
-                            index === active_index
-                                ? "bg-slate-100 text-slate-900"
-                                : "text-slate-600 hover:bg-slate-50",
+                            "flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors duration-150",
+                            index === active_index ? "bg-slate-100/92 text-slate-900/94" : "text-slate-600/90 hover:bg-slate-50/92",
                         )}
                         onMouseDown={(e) => {
                             e.preventDefault();
@@ -126,7 +120,7 @@ export const MentionPopover = memo(({
                         onMouseEnter={() => set_active_index(index)}
                         type="button"
                     >
-                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-xs font-medium text-emerald-700">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100/92 text-xs font-semibold text-emerald-700">
                             {member.name.charAt(0).toUpperCase()}
                         </span>
                         <span className="truncate font-medium">{member.name}</span>

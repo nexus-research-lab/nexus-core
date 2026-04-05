@@ -229,6 +229,15 @@ DM 必须区分“实时态”和“归档态”。
 - 主区只显示最终结果
 - 若没有 `result`，回退到最后一个 assistant turn
 
+### 7.4 AskUserQuestion 展示规则
+
+- `AskUserQuestion` 是内嵌问答块，不是额外的权限确认条
+- 它仍然依赖后端 `permission_request` 提供 `request_id`
+- 但前端只允许通过问答块本身提交 `allow + user_answers`
+- 不能在消息底部再渲染一条通用 `允许 / 拒绝` 条
+- 同一问题若因超时被模型重试，前端只保留最新那一条挂起请求
+- `AskUserQuestion` 超时后应直接失败并结束当前交互，不应再自动补发下一条相同问题
+
 ## 8. 无 result 场景
 
 有些终端类或特殊执行链不会产出 `ResultMessage`。

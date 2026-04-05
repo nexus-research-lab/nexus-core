@@ -1,10 +1,10 @@
 "use client";
 
-import { Link2, Search } from "lucide-react";
-
-import { cn } from "@/lib/utils";
+import { Link2 } from "lucide-react";
 
 import type { ConnectorController } from "@/hooks/use-connector-controller";
+import { cn } from "@/lib/utils";
+import { WorkspaceSearchInput } from "@/shared/ui/workspace/workspace-search-input";
 
 /** 类别列表 */
 const CATEGORIES = [
@@ -18,6 +18,9 @@ const CATEGORIES = [
   { key: "automation", label: "自动化" },
 ];
 
+const FILTER_CHIP_CLASS_NAME =
+  "inline-flex items-center gap-1.5 rounded-full px-[0.82rem] py-[0.38rem] text-[12px] font-semibold transition-[background,color,box-shadow] duration-150";
+
 interface ConnectorsSearchBarProps {
   ctrl: ConnectorController;
 }
@@ -27,16 +30,12 @@ export function ConnectorsSearchBar({ ctrl }: ConnectorsSearchBarProps) {
     <div className="mb-5 flex flex-col gap-3">
       {/* 搜索行 */}
       <div className="flex items-center gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input
-            className="home-glass-input w-full rounded-full py-2.5 pl-10 pr-4 text-sm placeholder:text-slate-400"
-            onChange={(e) => ctrl.set_search_query(e.target.value)}
-            placeholder="搜索应用授权..."
-            type="text"
-            value={ctrl.search_query}
-          />
-        </div>
+        <WorkspaceSearchInput
+          class_name="flex-1"
+          on_change={ctrl.set_search_query}
+          placeholder="搜索应用授权..."
+          value={ctrl.search_query}
+        />
         <div className="flex items-center gap-1.5 text-xs text-slate-500">
           <Link2 className="h-3.5 w-3.5" />
           <span>{ctrl.connectors.length} 个应用授权</span>
@@ -49,10 +48,10 @@ export function ConnectorsSearchBar({ ctrl }: ConnectorsSearchBarProps) {
           <button
             key={cat.key}
             className={cn(
-              "rounded-full px-3 py-1 text-xs font-medium transition-all",
+              FILTER_CHIP_CLASS_NAME,
               ctrl.active_category === cat.key
-                ? "workspace-chip text-slate-900"
-                : "text-slate-500 hover:bg-white/40 hover:text-slate-700",
+                ? "chip-default text-slate-950/96"
+                : "text-slate-500/84 hover:bg-white/40 hover:text-slate-950/94",
             )}
             onClick={() => ctrl.set_active_category(cat.key)}
             type="button"

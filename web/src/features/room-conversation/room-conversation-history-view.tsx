@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { Check, Clock3, MessageSquarePlus, Pencil, Trash2, X } from "lucide-react";
 
-import { formatRelativeTime } from "@/lib/utils";
+import { cn, formatRelativeTime } from "@/lib/utils";
 import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import { WorkspaceSurfaceView } from "@/shared/ui/workspace/workspace-surface-view";
 import { RoomConversationView } from "@/types/conversation";
@@ -50,16 +50,16 @@ export function RoomConversationHistoryView({
     >
       {conversations.map((conversation) => {
         return (
-        <ConversationHistoryItem
-          key={conversation.conversation_id}
-          can_delete={can_manage_conversations && conversation.conversation_type === "topic"}
-          can_rename={can_manage_conversations && on_update_conversation_title !== undefined}
-          conversation={conversation}
-          is_active={conversation.conversation_id === conversation_id}
-          on_delete={() => void on_delete_conversation(conversation.conversation_id)}
-          on_rename={(title) => void on_update_conversation_title?.(conversation.conversation_id, title)}
-          on_select={() => on_select_conversation(conversation.conversation_id)}
-        />
+          <ConversationHistoryItem
+            key={conversation.conversation_id}
+            can_delete={can_manage_conversations && conversation.conversation_type === "topic"}
+            can_rename={can_manage_conversations && on_update_conversation_title !== undefined}
+            conversation={conversation}
+            is_active={conversation.conversation_id === conversation_id}
+            on_delete={() => void on_delete_conversation(conversation.conversation_id)}
+            on_rename={(title) => void on_update_conversation_title?.(conversation.conversation_id, title)}
+            on_select={() => on_select_conversation(conversation.conversation_id)}
+          />
         );
       })}
     </WorkspaceSurfaceView>
@@ -107,17 +107,21 @@ function ConversationHistoryItem({
 
   return (
     <div
-      className={`group flex w-full items-center justify-between gap-4 rounded-[14px] border px-4 py-2.5 text-left transition-all duration-300 ${is_active
-          ? "border-white/32 bg-white/22 shadow-[0_10px_18px_rgba(111,126,162,0.08)]"
-          : "border-white/14 bg-white/8 hover:bg-white/12"
-        }`}
+      className={cn(
+        "group flex w-full items-center justify-between gap-4 rounded-2xl border px-4 py-[0.7rem] text-left transition duration-150 ease-out",
+        is_active
+          ? "border-white/55 bg-white/45 shadow-[0_12px_24px_rgb(106_124_158/0.12)]"
+          : "border-[color:var(--card-default-border)] bg-[var(--card-default-background)] hover:border-white/45 hover:bg-white/38",
+      )}
+      style={!is_active ? { boxShadow: "var(--card-default-shadow)" } : undefined}
     >
       <div className="min-w-0 flex-1">
         {is_editing ? (
           <div className="flex items-center gap-1.5">
             <input
               autoFocus
-              className="min-w-0 flex-1 rounded-md border border-slate-200/60 bg-white/60 px-2 py-0.5 text-[13px] font-semibold text-slate-950/86 outline-none focus:border-primary/40"
+              className="min-w-0 flex-1 rounded-[10px] border border-[color:var(--input-shell-border)] bg-[var(--input-shell-background)] px-3 py-1.5 text-[13px] font-semibold text-slate-900 outline-none transition focus:border-sky-200/90 focus:ring-4 focus:ring-sky-500/10"
+              style={{ boxShadow: "var(--input-shell-shadow)" }}
               maxLength={64}
               onChange={(e) => set_edit_value(e.target.value)}
               onKeyDown={(e) => {
@@ -128,16 +132,19 @@ function ConversationHistoryItem({
             />
             <WorkspacePillButton
               aria-label="确认"
-              class_name="rounded-lg p-1"
+              class_name="rounded-lg"
               onClick={confirm_edit}
+              density="compact"
               size="icon"
+              variant="success"
             >
               <Check className="h-3 w-3 text-emerald-600" />
             </WorkspacePillButton>
             <WorkspacePillButton
               aria-label="取消"
-              class_name="rounded-lg p-1"
+              class_name="rounded-lg"
               onClick={cancel_edit}
+              density="compact"
               size="icon"
             >
               <X className="h-3 w-3" />
@@ -149,10 +156,10 @@ function ConversationHistoryItem({
             onClick={on_select}
             type="button"
           >
-            <p className="truncate text-[13px] font-semibold text-slate-950/86">
+            <p className="truncate text-[13px] font-semibold text-slate-900/90">
               {conversation.title?.trim() || "未命名对话"}
             </p>
-            <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-700/52">
+            <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-600/60">
               <Clock3 className="h-3.5 w-3.5" />
               <span>{formatRelativeTime(conversation.last_activity_at)}</span>
               <span>·</span>
@@ -161,7 +168,7 @@ function ConversationHistoryItem({
           </button>
         )}
         {is_editing ? (
-          <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-700/52">
+          <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-600/60">
             <Clock3 className="h-3.5 w-3.5" />
             <span>{formatRelativeTime(conversation.last_activity_at)}</span>
             <span>·</span>
@@ -174,8 +181,9 @@ function ConversationHistoryItem({
         {!is_editing && can_rename ? (
           <WorkspacePillButton
             aria-label="重命名"
-            class_name="rounded-xl p-1.5 opacity-0 group-hover:opacity-100"
+            class_name="rounded-xl opacity-0 group-hover:opacity-100"
             onClick={start_edit}
+            density="compact"
             size="icon"
           >
             <Pencil className="h-3.5 w-3.5" />
@@ -184,9 +192,11 @@ function ConversationHistoryItem({
         {!is_editing && can_delete ? (
           <WorkspacePillButton
             aria-label="删除对话"
-            class_name="rounded-xl p-1.5 opacity-0 group-hover:opacity-100 hover:text-destructive"
+            class_name="rounded-xl opacity-0 group-hover:opacity-100"
             onClick={on_delete}
+            density="compact"
             size="icon"
+            variant="danger"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </WorkspacePillButton>

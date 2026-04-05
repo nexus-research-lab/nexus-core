@@ -64,8 +64,8 @@ export function MessageStats(
             <button
               onClick={on_copy_assistant}
               className={cn(
-                "rounded p-1 text-slate-500 transition-colors hover:bg-slate-100",
-                copied_assistant ? "text-green-500" : "text-slate-700/50 hover:text-slate-950"
+                "rounded-lg p-1 text-slate-500/80 transition-colors duration-150 hover:bg-slate-100/92 hover:text-slate-900/92",
+                copied_assistant && "text-green-500",
               )}
               title="复制回答"
             >

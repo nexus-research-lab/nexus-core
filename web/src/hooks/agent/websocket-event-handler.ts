@@ -13,6 +13,7 @@ import {
   RoomEventPayload,
 } from '@/types/agent-conversation';
 import { WorkspaceEventPayload } from '@/types/workspace-live';
+import { buildPermissionSignature } from '@/types/permission';
 
 import { applyStreamMessage, upsertMessage } from './message-helpers';
 
@@ -36,6 +37,12 @@ export function handleAgentConversationWebSocketMessage({
   track_assistant_message,
   track_result_message,
 }: HandleAgentConversationWebSocketMessageParams): void {
+  const clearTimedOutQuestionPermissions = (incoming_session: string | null) => {
+    set_pending_permissions((prev) => prev.filter((item) => !(
+      (item.interaction_mode === 'question' || item.tool_name === 'AskUserQuestion') &&
+      (item.session_key ?? null) === incoming_session
+    )));
+  };
   const event = backend_message as EventMessage;
   const incoming_session_key = event.session_key || null;
 
@@ -66,14 +73,37 @@ export function handleAgentConversationWebSocketMessage({
         agent_id: event.agent_id ?? null,
         message_id: event.message_id ?? null,
         caused_by: event.caused_by ?? null,
+        interaction_mode: data.interaction_mode
+          ?? (data.tool_name === 'AskUserQuestion' ? 'question' : 'permission'),
         risk_level: data.risk_level,
         risk_label: data.risk_label,
         summary: data.summary,
         suggestions: data.suggestions || [],
         expires_at: data.expires_at,
       };
+      const next_signature = buildPermissionSignature(
+        next_permission.tool_name,
+        next_permission.tool_input,
+      );
       return [
-        ...prev.filter((item) => item.request_id !== data.request_id),
+        ...prev.filter((item) => {
+          if (item.request_id === data.request_id) {
+            return false;
+          }
+          if (
+            (next_permission.interaction_mode !== 'question' && next_permission.tool_name !== 'AskUserQuestion') ||
+            (item.interaction_mode !== 'question' && item.tool_name !== 'AskUserQuestion')
+          ) {
+            return true;
+          }
+          if ((item.session_key ?? null) !== (next_permission.session_key ?? null)) {
+            return true;
+          }
+          if ((item.agent_id ?? null) !== (next_permission.agent_id ?? null)) {
+            return true;
+          }
+          return buildPermissionSignature(item.tool_name, item.tool_input) !== next_signature;
+        }),
         next_permission,
       ];
     });
@@ -193,6 +223,10 @@ export function handleAgentConversationWebSocketMessage({
   const message_session_key = payload?.session_key || incoming_session_key;
   if (!payload || !message_session_key) {
     return;
+  }
+  const tool_use_result = (payload as { tool_use_result?: string }).tool_use_result;
+  if (payload.role === 'user' && tool_use_result === 'Error: Permission request timeout') {
+    clearTimedOutQuestionPermissions(message_session_key);
   }
 
   if (!is_current_session_event(message_session_key)) {

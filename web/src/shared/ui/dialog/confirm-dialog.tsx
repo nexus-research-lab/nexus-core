@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 
+import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
+
 interface ConfirmDialogProps {
   is_open: boolean;
   title: string;
@@ -58,48 +60,48 @@ export function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-150"
+      className="dialog-backdrop animate-in fade-in duration-150"
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-dialog-title"
       aria-describedby="confirm-dialog-message"
     >
-      <div className="soft-ring radius-shell-lg panel-surface w-full max-w-md p-5 animate-in zoom-in-95 duration-150">
-        <div className="flex items-start justify-between gap-3 pb-3">
-          <h3 id="confirm-dialog-title" className="text-base font-semibold text-foreground">
-            {title}
-          </h3>
-          <button
+      <div className="dialog-shell soft-ring radius-shell-lg w-full max-w-md animate-in zoom-in-95 duration-150">
+        <div className="dialog-header">
+          <div className="min-w-0 flex-1">
+            <h3 id="confirm-dialog-title" className="dialog-title">
+              {title}
+            </h3>
+          </div>
+          <WorkspacePillButton
             aria-label="关闭"
-            className="neo-pill radius-shell-sm p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/50"
+            density="compact"
             onClick={on_cancel}
+            size="icon"
+            variant="default"
           >
             <X className="h-4 w-4" />
-          </button>
+          </WorkspacePillButton>
         </div>
 
-        <p id="confirm-dialog-message" className="text-sm text-muted-foreground">
-          {message}
-        </p>
+        <div className="dialog-body">
+          <p id="confirm-dialog-message" className="text-sm leading-6 text-muted-foreground">
+            {message}
+          </p>
+        </div>
 
-        <div className="mt-4 flex justify-end gap-2">
-          <button
-            className="neo-pill radius-shell-sm px-4 py-2 text-sm font-medium text-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/50"
-            onClick={on_cancel}
-          >
+        <div className="dialog-footer">
+          <WorkspacePillButton onClick={on_cancel} size="md" variant="default">
             {cancel_text}
-          </button>
-          <button
+          </WorkspacePillButton>
+          <WorkspacePillButton
             ref={confirmButtonRef}
-            className={`radius-shell-sm px-4 py-2 text-sm font-medium text-primary-foreground transition-colors focus-visible:ring-2 focus-visible:ring-primary/50 ${
-              variant === "danger"
-                ? "bg-destructive shadow-[0_16px_28px_rgba(235,90,81,0.22)] hover:bg-destructive/90"
-                : "bg-primary shadow-[0_16px_28px_rgba(133,119,255,0.22)] hover:bg-primary/90"
-            }`}
             onClick={on_confirm}
+            size="md"
+            variant={variant === "danger" ? "danger" : "strong"}
           >
             {confirm_text}
-          </button>
+          </WorkspacePillButton>
         </div>
       </div>
     </div>
@@ -134,17 +136,17 @@ export function PromptDialog({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-    if (!is_open) return;
-    if (e.key === "Escape") {
-      e.preventDefault();
-      on_cancel();
-      setValue(default_value);
-    }
-    if (e.key === "Enter") {
-      e.preventDefault();
-      on_confirm(value);
-    }
-  };
+      if (!is_open) return;
+      if (e.key === "Escape") {
+        e.preventDefault();
+        on_cancel();
+        setValue(default_value);
+      }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        on_confirm(value);
+      }
+    };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [is_open, on_cancel, on_confirm, value, default_value]);
@@ -153,57 +155,61 @@ export function PromptDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-150"
+      className="dialog-backdrop animate-in fade-in duration-150"
       role="dialog"
       aria-modal="true"
       aria-labelledby="prompt-dialog-title"
     >
-      <div className="soft-ring radius-shell-lg panel-surface w-full max-w-md p-5 animate-in zoom-in-95 duration-150">
-        <div className="flex items-start justify-between gap-3 pb-3">
-          <h3 id="prompt-dialog-title" className="text-base font-semibold text-foreground">
-            {title}
-          </h3>
-          <button
+      <div className="dialog-shell soft-ring radius-shell-lg w-full max-w-md animate-in zoom-in-95 duration-150">
+        <div className="dialog-header">
+          <div className="min-w-0 flex-1">
+            <h3 id="prompt-dialog-title" className="dialog-title">
+              {title}
+            </h3>
+          </div>
+          <WorkspacePillButton
             aria-label="关闭"
-            className="neo-pill radius-shell-sm p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/50"
+            density="compact"
             onClick={() => {
               setValue(default_value);
               on_cancel();
             }}
+            size="icon"
+            variant="default"
           >
             <X className="h-4 w-4" />
-          </button>
+          </WorkspacePillButton>
         </div>
 
-        {message && (
-          <p className="pb-3 text-sm text-muted-foreground">{message}</p>
-        )}
+        <div className="dialog-body">
+          {message ? (
+            <p className="pb-3 text-sm leading-6 text-muted-foreground">{message}</p>
+          ) : null}
 
-        <input
-          ref={inputRef}
-          type="text"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          placeholder={placeholder}
-          className="neo-inset radius-shell-sm w-full px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:outline-none"
-        />
+          <input
+            ref={inputRef}
+            type="text"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder={placeholder}
+            className="dialog-input radius-shell-sm w-full px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:outline-none"
+          />
+        </div>
 
-        <div className="mt-4 flex justify-end gap-2">
-          <button
-            className="neo-pill radius-shell-sm px-4 py-2 text-sm font-medium text-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/50"
+        <div className="dialog-footer">
+          <WorkspacePillButton
             onClick={() => {
               setValue(default_value);
               on_cancel();
             }}
+            size="md"
+            variant="default"
           >
             取消
-          </button>
-          <button
-            className="radius-shell-sm bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-[0_16px_28px_rgba(133,119,255,0.22)] transition-colors hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-primary/50"
-            onClick={() => on_confirm(value)}
-          >
+          </WorkspacePillButton>
+          <WorkspacePillButton onClick={() => on_confirm(value)} size="md" variant="strong">
             确认
-          </button>
+          </WorkspacePillButton>
         </div>
       </div>
     </div>

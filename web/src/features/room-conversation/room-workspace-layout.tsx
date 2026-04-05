@@ -5,9 +5,6 @@ import { Fragment, RefObject } from "react";
 import { EditorPanel } from "@/features/conversation-shared/context/editor-panel";
 import { DmChatPanel } from "@/features/dm-conversation/dm-chat-panel";
 import { DmConversationHeader } from "@/features/dm-conversation/dm-conversation-header";
-import {
-  HOME_CHAT_PANEL_CLASS,
-} from "@/lib/home-layout";
 import { cn } from "@/lib/utils";
 import { WorkspaceCanvasShell } from "@/shared/ui/workspace/workspace-canvas-shell";
 import { Agent } from "@/types/agent";
@@ -132,7 +129,7 @@ function RoomWorkspaceLayoutInner({
           is_resizing_editor && "cursor-col-resize select-none",
         )}
       >
-        <WorkspaceCanvasShell class_name={HOME_CHAT_PANEL_CLASS}>
+        <WorkspaceCanvasShell>
           <div className="flex min-h-0 min-w-0 flex-1 flex-col">
             {is_dm ? (
               <DmConversationHeader
@@ -261,7 +258,7 @@ function RoomThreadOverlaySlot({
 
   return (
     <div className="pointer-events-none absolute inset-y-3 right-3 z-30 flex w-[clamp(320px,34vw,436px)] max-w-[calc(100%-1.5rem)] justify-end">
-      <div className="pointer-events-auto flex h-full w-full min-w-0 overflow-hidden rounded-[30px] border border-white/70 bg-white/92 shadow-[0_24px_60px_rgba(92,107,134,0.22)] backdrop-blur-xl">
+      <div className="pointer-events-auto flex h-full w-full min-w-0 overflow-hidden rounded-[30px] border border-white/70 bg-white/92 shadow-[0_24px_60px_rgba(92,107,134,0.22)] backdrop-blur-[20px]">
         <ThreadDetailPanel
           round_id={active_thread.round_id}
           agent_id={active_thread.agent_id}

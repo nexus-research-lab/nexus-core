@@ -64,7 +64,7 @@ export function RoomMobileWorkspace({
       <div className="px-2 pb-2 pt-2">
         <div className="radius-shell-lg flex items-center gap-2 px-2 py-2">
           <button
-            className="workspace-chip inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-slate-900/82 transition hover:text-slate-950"
+            className="glass-chip inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-slate-900/82 transition hover:text-slate-950"
             onClick={on_back_to_directory}
             type="button"
           >
@@ -72,11 +72,11 @@ export function RoomMobileWorkspace({
           </button>
 
           <button
-            className="workspace-card flex min-w-0 flex-1 items-center gap-3 rounded-[24px] px-3 py-2 text-left transition hover:bg-white/18"
+            className="glass-card flex min-w-0 flex-1 items-center gap-3 rounded-[24px] px-3 py-2 text-left transition hover:bg-white/18"
             onClick={() => setIsConversationSheetOpen(true)}
             type="button"
           >
-            <div className="workspace-chip flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-700/56">
+            <div className="glass-chip flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-700/56">
               <Search className="h-4 w-4" />
             </div>
 
@@ -90,7 +90,7 @@ export function RoomMobileWorkspace({
             <ChevronDown className="h-4 w-4 shrink-0 text-slate-700/50" />
           </button>
 
-          <div className="workspace-chip inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-slate-700/44">
+          <div className="glass-chip inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-slate-700/44">
             <MessageSquare className="h-4 w-4" />
           </div>
         </div>
@@ -148,7 +148,7 @@ export function RoomMobileWorkspace({
               </div>
 
               <button
-                className="workspace-chip inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-700/54 transition hover:text-slate-950"
+                className="glass-chip inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-700/54 transition hover:text-slate-950"
                 onClick={() => setIsConversationSheetOpen(false)}
                 type="button"
               >
@@ -162,14 +162,14 @@ export function RoomMobileWorkspace({
                 return (
                   <button
                     key={conversation.conversation_id}
-                    className="workspace-card flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-white/18"
+                    className="glass-card flex w-full items-start gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-white/18"
                     onClick={() => {
                       on_select_conversation(conversation.conversation_id);
                       setIsConversationSheetOpen(false);
                     }}
                     type="button"
                   >
-                    <div className="workspace-chip mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-900/76">
+                    <div className="glass-chip mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-900/76">
                       {is_active ? <Check className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
                     </div>
 

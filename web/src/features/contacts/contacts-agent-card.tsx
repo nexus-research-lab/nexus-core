@@ -3,6 +3,10 @@
 import { Bot, MessageSquareText, Users } from "lucide-react";
 
 import { useI18n } from "@/shared/i18n/i18n-context";
+import {
+  WorkspaceCatalogCard,
+  WorkspaceCatalogMedia,
+} from "@/shared/ui/workspace/workspace-catalog-card";
 import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 
 interface ContactsAgentCardProps {
@@ -28,14 +32,14 @@ export function ContactsAgentCard({
 }: ContactsAgentCardProps) {
   const { t } = useI18n();
   return (
-    <article
-      className="workspace-card cursor-pointer rounded-[26px] border border-white/24 px-6 py-6 text-center transition-all hover:border-white/30 hover:bg-white/34"
+    <WorkspaceCatalogCard
+      class_name="cursor-pointer rounded-[26px] px-6 py-6 text-center"
       onClick={on_open_profile}
     >
       {/* 居中头像 */}
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-white/44 bg-white/64">
+      <WorkspaceCatalogMedia class_name="mx-auto h-16 w-16" shape="round">
         <Bot className="h-7 w-7 text-slate-900/88" />
-      </div>
+      </WorkspaceCatalogMedia>
 
       {/* 名称 */}
       <p className="mt-4 truncate text-[18px] font-bold tracking-[-0.03em] text-slate-950/92">
@@ -58,6 +62,6 @@ export function ContactsAgentCard({
           {t("contacts.create_team")}
         </WorkspacePillButton>
       </div>
-    </article>
+    </WorkspaceCatalogCard>
   );
 }

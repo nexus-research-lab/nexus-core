@@ -5,6 +5,10 @@ import { Settings, Trash2, X } from "lucide-react";
 
 import { useI18n } from "@/shared/i18n/i18n-context";
 import { ConfirmDialog } from "@/shared/ui/dialog/confirm-dialog";
+import {
+  DIALOG_HEADER_ICON_CLASS_NAME,
+  DIALOG_HEADER_LEADING_CLASS_NAME,
+} from "@/shared/ui/dialog/dialog-styles";
 import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import { UpdateRoomParams } from "@/types/room";
 
@@ -87,33 +91,39 @@ export function RoomSettingsPanel({
   return (
     <>
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-150"
+        className="dialog-backdrop animate-in fade-in duration-150"
         role="dialog"
         aria-modal="true"
       >
-        <div className="soft-ring radius-shell-lg panel-surface w-full max-w-lg p-6 animate-in zoom-in-95 duration-150">
-          {/* 标题栏 */}
-          <div className="flex items-start justify-between gap-3 pb-4">
-            <div className="flex items-center gap-2">
-              <Settings className="h-4.5 w-4.5 text-slate-700" />
-              <h2 className="text-lg font-semibold text-slate-900">
-                {t("room.settings_title")}
-              </h2>
+          <div className="dialog-shell soft-ring radius-shell-lg w-full max-w-lg animate-in zoom-in-95 duration-150">
+            <div className="dialog-header">
+              <div className={DIALOG_HEADER_LEADING_CLASS_NAME}>
+                <div className={DIALOG_HEADER_ICON_CLASS_NAME}>
+                  <Settings className="h-4.5 w-4.5" />
+                </div>
+              <div className="min-w-0">
+                <h2 className="dialog-title">
+                  {t("room.settings_title")}
+                </h2>
+                <p className="dialog-subtitle">
+                  调整房间名称、描述和成员协作信息。
+                </p>
+              </div>
             </div>
-            <button
+            <WorkspacePillButton
               aria-label={t("common.close")}
-              className="neo-pill radius-shell-sm p-1.5 text-slate-500 transition-colors hover:text-slate-700"
+              density="compact"
               onClick={on_close}
+              size="icon"
+              variant="default"
             >
               <X className="h-4 w-4" />
-            </button>
+            </WorkspacePillButton>
           </div>
 
-          {/* 内容区 */}
-          <div className="space-y-4 pb-6">
-            {/* 名称设置 */}
+          <div className="dialog-body space-y-4">
             <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-700/64">
+              <label className="dialog-label">
                 {t("room.name")}
               </label>
               {is_editing_name ? (
@@ -131,18 +141,19 @@ export function RoomSettingsPanel({
                     }}
                     placeholder={t("room.name_placeholder")}
                     maxLength={64}
-                    className="neo-inset radius-shell-sm flex-1 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400/50 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:outline-none"
+                    className="dialog-input radius-shell-sm flex-1 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400/50 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:outline-none"
                   />
                   <WorkspacePillButton
                     size="sm"
                     onClick={() => handle_update_name(edit_name_value)}
                     disabled={is_updating}
+                    variant="strong"
                   >
                     {t("common.save")}
                   </WorkspacePillButton>
                 </div>
               ) : (
-                <div className="flex items-center justify-between gap-3 rounded-lg bg-slate-50/50 px-4 py-3">
+                <div className="surface-inset radius-shell-sm flex items-center justify-between gap-3 px-4 py-3">
                   <p className="text-sm text-slate-900">{room_name || t("room.untitled_room")}</p>
                   <WorkspacePillButton
                     size="sm"
@@ -154,9 +165,8 @@ export function RoomSettingsPanel({
               )}
             </div>
 
-            {/* 描述设置 */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-700/64">
+              <label className="dialog-label">
                 {t("room.description")}
               </label>
               {is_editing_description ? (
@@ -173,19 +183,20 @@ export function RoomSettingsPanel({
                     placeholder={t("room.description_placeholder")}
                     maxLength={256}
                     rows={3}
-                    className="neo-inset radius-shell-sm flex-1 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400/50 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:outline-none resize-none"
+                    className="dialog-input radius-shell-sm flex-1 resize-none px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400/50 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:outline-none"
                   />
                   <WorkspacePillButton
                     size="sm"
                     onClick={() => handle_update_description(edit_description_value)}
                     disabled={is_updating}
+                    variant="strong"
                   >
                     {t("common.save")}
                   </WorkspacePillButton>
                 </div>
               ) : (
-                <div className="flex items-center justify-between gap-3 rounded-lg bg-slate-50/50 px-4 py-3">
-                  <p className="text-sm text-slate-900 min-w-0 flex-1 truncate">
+                <div className="surface-inset radius-shell-sm flex items-center justify-between gap-3 px-4 py-3">
+                  <p className="min-w-0 flex-1 truncate text-sm text-slate-900">
                     {room_description || t("room.no_description")}
                   </p>
                   <WorkspacePillButton
@@ -198,13 +209,12 @@ export function RoomSettingsPanel({
               )}
             </div>
 
-            {/* 危险操作区 */}
-            <div className="pt-4 border-t border-slate-200/40">
+            <div className="dialog-footer px-0 pb-0">
               <WorkspacePillButton
                 variant="danger"
                 size="md"
                 onClick={() => set_is_delete_confirm_open(true)}
-                class_name="w-full justify-center"
+                stretch
               >
                 <Trash2 className="h-4 w-4" />
                 {t("room.delete_title")}

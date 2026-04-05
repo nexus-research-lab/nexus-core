@@ -9,6 +9,7 @@ interface WorkspaceSurfaceViewProps {
   title: string;
   action?: ReactNode;
   children: ReactNode;
+  /** 中文注释：这里只允许滚动区和内容宽度的布局调整，不再承担视觉覆写。 */
   body_class_name?: string;
   content_class_name?: string;
   max_width_class_name?: string;
@@ -25,7 +26,7 @@ export function WorkspaceSurfaceView({
 }: WorkspaceSurfaceViewProps) {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent">
-      <div className="border-b workspace-divider px-5 py-2.5 xl:px-6">
+      <div className="border-b glass-divider px-5 py-2.5 xl:px-6">
         <div className={cn("mx-auto flex w-full items-center justify-between gap-3", max_width_class_name)}>
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-700/44">

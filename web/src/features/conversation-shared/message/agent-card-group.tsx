@@ -11,6 +11,7 @@ import {
   groupRoundByAgent,
 } from "@/features/conversation-shared/utils";
 import { AgentCard } from "./agent-card";
+import { MessageAvatar, MessageShell } from "./message-primitives";
 
 /** Thread 标识 */
 export interface ActiveThread {
@@ -57,21 +58,18 @@ export const AgentCardGroup = memo(function AgentCardGroup({
   );
 
   return (
-    <div
-      className={cn(
-        "w-full min-w-0 animate-in fade-in slide-in-from-bottom-2 duration-300",
-        "space-y-2 py-3",
-        !compact && "border-b border-slate-200/75",
-      )}
+    <MessageShell
+      class_name="animate-in fade-in slide-in-from-bottom-2 space-y-2 py-3 duration-300"
+      separated={!compact}
     >
       {/* ═══════════════════════ 用户消息 ═══════════════════════ */}
       {user_message ? (
         <div className={cn("w-full", compact ? "px-0.5" : "px-2 sm:px-3")}>
           <div className={cn("mx-auto w-full", compact ? "max-w-full" : "max-w-[980px]")}>
             <div className="group grid min-w-0 grid-cols-[40px_minmax(0,1fr)] gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600">
+              <MessageAvatar>
                 <User className="h-4 w-4" />
-              </div>
+              </MessageAvatar>
               <div className="relative min-w-0">
                 <div className={cn("flex items-center gap-2", compact ? "h-[26px]" : "h-7")}>
                   <span className="shrink-0 text-sm font-bold text-slate-900">你</span>
@@ -133,6 +131,6 @@ export const AgentCardGroup = memo(function AgentCardGroup({
           </div>
         </div>
       </div>
-    </div>
+    </MessageShell>
   );
 });

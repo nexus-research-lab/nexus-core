@@ -33,6 +33,57 @@ interface LauncherAppConversationPanelProps {
 }
 
 const BOTTOM_THRESHOLD_PX = 80;
+const SMOOTH_SCROLL_DURATION_MS = 420;
+const EASE_X1 = 0.23;
+const EASE_Y1 = 1;
+const EASE_X2 = 0.32;
+const EASE_Y2 = 1;
+
+function sample_cubic(a: number, b: number, c: number, t: number): number {
+  return ((a * t + b) * t + c) * t;
+}
+
+function sample_cubic_derivative(a: number, b: number, c: number, t: number): number {
+  return (3 * a * t + 2 * b) * t + c;
+}
+
+function solve_bezier_progress(progress: number): number {
+  const clamped_progress = Math.min(Math.max(progress, 0), 1);
+  const cx = 3 * EASE_X1;
+  const bx = 3 * (EASE_X2 - EASE_X1) - cx;
+  const ax = 1 - cx - bx;
+  const cy = 3 * EASE_Y1;
+  const by = 3 * (EASE_Y2 - EASE_Y1) - cy;
+  const ay = 1 - cy - by;
+
+  let t = clamped_progress;
+  for (let iteration = 0; iteration < 5; iteration += 1) {
+    const x = sample_cubic(ax, bx, cx, t) - clamped_progress;
+    const derivative = sample_cubic_derivative(ax, bx, cx, t);
+    if (Math.abs(derivative) < 1e-6) {
+      break;
+    }
+    t -= x / derivative;
+  }
+
+  let lower = 0;
+  let upper = 1;
+  t = Math.min(Math.max(t, 0), 1);
+  for (let iteration = 0; iteration < 8; iteration += 1) {
+    const x = sample_cubic(ax, bx, cx, t);
+    if (Math.abs(x - clamped_progress) < 1e-5) {
+      break;
+    }
+    if (x > clamped_progress) {
+      upper = t;
+    } else {
+      lower = t;
+    }
+    t = (lower + upper) / 2;
+  }
+
+  return sample_cubic(ay, by, cy, t);
+}
 
 function group_messages_by_round(messages: Message[]): Map<string, Message[]> {
   const groups = new Map<string, Message[]>();
@@ -66,6 +117,8 @@ export function LauncherAppConversationPanel({
   const textarea_ref = useRef<HTMLTextAreaElement>(null);
   const is_composing_ref = useRef(false);
   const should_follow_latest_ref = useRef(true);
+  const pending_scroll_frame_ref = useRef<number | null>(null);
+  const pending_scroll_inner_frame_ref = useRef<number | null>(null);
   const [show_scroll_to_bottom, set_show_scroll_to_bottom] = useState(false);
   const message_groups = useMemo(
     () => group_messages_by_round(app_conversation_messages),
@@ -127,27 +180,64 @@ export function LauncherAppConversationPanel({
     set_show_scroll_to_bottom(!is_near_bottom);
   }, []);
 
+  const cancel_pending_scroll = useCallback(() => {
+    if (pending_scroll_frame_ref.current !== null) {
+      cancelAnimationFrame(pending_scroll_frame_ref.current);
+      pending_scroll_frame_ref.current = null;
+    }
+    if (pending_scroll_inner_frame_ref.current !== null) {
+      cancelAnimationFrame(pending_scroll_inner_frame_ref.current);
+      pending_scroll_inner_frame_ref.current = null;
+    }
+  }, []);
+
   const scroll_to_bottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     const container = scroll_ref.current;
     if (!container) {
       return;
     }
 
+    cancel_pending_scroll();
     should_follow_latest_ref.current = true;
     set_show_scroll_to_bottom(false);
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        container.scrollTo({
-          top: container.scrollHeight,
-          behavior,
-        });
-        bottom_anchor_ref.current?.scrollIntoView({
-          behavior,
-          block: "end",
-        });
-      });
+    pending_scroll_frame_ref.current = requestAnimationFrame(() => {
+      const next = scroll_ref.current;
+      if (!next) {
+        return;
+      }
+
+      const target_top = next.scrollHeight;
+      if (behavior === "auto") {
+        next.scrollTop = target_top;
+        return;
+      }
+
+      const start_top = next.scrollTop;
+      const distance = target_top - start_top;
+      if (Math.abs(distance) < 1) {
+        next.scrollTop = target_top;
+        return;
+      }
+
+      const start_time = performance.now();
+
+      const step = (now: number) => {
+        const elapsed = now - start_time;
+        const progress = Math.min(elapsed / SMOOTH_SCROLL_DURATION_MS, 1);
+        const eased_progress = solve_bezier_progress(progress);
+
+        next.scrollTop = start_top + distance * eased_progress;
+
+        if (progress < 1) {
+          pending_scroll_inner_frame_ref.current = requestAnimationFrame(step);
+        } else {
+          pending_scroll_inner_frame_ref.current = null;
+        }
+      };
+
+      pending_scroll_inner_frame_ref.current = requestAnimationFrame(step);
     });
-  }, []);
+  }, [cancel_pending_scroll]);
 
   useEffect(() => {
     if (!should_follow_latest_ref.current) {
@@ -157,6 +247,10 @@ export function LauncherAppConversationPanel({
 
     scroll_to_bottom(is_loading ? "auto" : "smooth");
   }, [app_conversation_messages, is_loading, scroll_to_bottom, update_follow_state]);
+
+  useEffect(() => {
+    return () => cancel_pending_scroll();
+  }, [cancel_pending_scroll]);
 
   useTextareaHeight(textarea_ref, app_conversation_draft, {
     minHeight: 28,
@@ -199,7 +293,7 @@ export function LauncherAppConversationPanel({
           <div className="min-w-0">
             <HeroActionPillShell class_name="w-fit">
               <span
-                className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-800/72">
+                className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/72">
                 <span className={cn("h-3 w-3 rounded-full", connection_meta.dot_class_name)}/>
                 Nexus
               </span>
@@ -217,7 +311,7 @@ export function LauncherAppConversationPanel({
               type="button"
             >
               <HeroActionOrbShell class_name="h-[46px] w-[46px]">
-                <RotateCcw className="h-4 w-4 text-slate-900/76"/>
+                <RotateCcw className="h-4 w-4 text-foreground/76"/>
               </HeroActionOrbShell>
             </button>
             <button
@@ -227,14 +321,14 @@ export function LauncherAppConversationPanel({
               type="button"
             >
               <HeroActionOrbShell class_name="h-[54px] w-[54px]">
-                <X className="h-4 w-4 text-slate-900/76"/>
+                <X className="h-4 w-4 text-foreground/76"/>
               </HeroActionOrbShell>
             </button>
           </div>
         </div>
 
         <div className="border-b border-white/10 px-3 pt-4">
-          <p className="truncate text-[22px] font-black tracking-[-0.04em] text-slate-950/90">
+          <p className="truncate text-[22px] font-black tracking-[-0.04em] text-foreground/92">
             Nexus
           </p>
         </div>
@@ -268,10 +362,10 @@ export function LauncherAppConversationPanel({
               />
             ) : (
               <div className="flex min-h-80 flex-col justify-center px-5 py-6">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700/44">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/42">
                   Nexus Chat
                 </p>
-                <p className="mt-3 text-base font-semibold text-slate-950/84">
+                <p className="mt-3 text-base font-semibold text-foreground/84">
                   告诉 Nexus 你要推进什么
                 </p>
               </div>
@@ -293,7 +387,7 @@ export function LauncherAppConversationPanel({
               <div className="flex min-w-0 items-end gap-3">
                 <textarea
                   ref={textarea_ref}
-                  className="max-h-36 min-h-7 flex-1 resize-none overflow-y-auto bg-transparent text-sm leading-6 text-slate-900/84 outline-none placeholder:text-slate-700/42"
+                  className="max-h-36 min-h-7 flex-1 resize-none overflow-y-auto bg-transparent text-sm leading-6 text-[color:var(--launcher-input-text)] outline-none placeholder:text-[color:var(--launcher-input-placeholder)]"
                   onChange={(event) => on_change_draft(event.target.value)}
                   onCompositionEnd={() => {
                     is_composing_ref.current = false;
@@ -307,9 +401,14 @@ export function LauncherAppConversationPanel({
                   value={app_conversation_draft}
                 />
                 <button
-                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/84 text-slate-900 shadow-[0_10px_20px_rgba(255,255,255,0.16)] transition-transform duration-300 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform duration-300 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
                   disabled={!is_loading && !can_send_message}
                   onClick={is_loading ? on_stop_generation : handle_submit}
+                  style={{
+                    background: "var(--launcher-submit-background)",
+                    boxShadow: "var(--launcher-submit-shadow)",
+                    color: "var(--launcher-submit-color)",
+                  }}
                   type="button"
                 >
                   {is_loading ? (
@@ -323,7 +422,7 @@ export function LauncherAppConversationPanel({
               </div>
             </div>
           </HeroInputShell>
-          <div className="flex items-center justify-between gap-2 px-8 pb-1 text-[11px] text-slate-700/44">
+          <div className="flex items-center justify-between gap-2 px-8 pb-1 text-[11px] text-foreground/42">
             <span>
               {ws_state === "connected"
                 ? "Enter 发送，Shift + Enter 换行"

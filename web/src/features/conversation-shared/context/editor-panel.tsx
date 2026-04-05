@@ -7,6 +7,7 @@ import { getWorkspaceFileContentApi, updateWorkspaceFileContentApi } from "@/lib
 import { cn } from "@/lib/utils";
 import { useWorkspaceLiveStore } from "@/store/workspace-live";
 import { TypewriterFileView } from "@/shared/ui/feedback/typewriter-file-view";
+import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 
 interface EditorPanelProps {
   agent_id: string;
@@ -135,7 +136,7 @@ export function EditorPanel({
     <section
       className={cn(
         "relative flex min-h-0 min-w-0 shrink-0 flex-col overflow-hidden transition-[width,opacity,transform,border-color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
-        embedded ? "border-l workspace-divider shadow-none" : "workspace-card radius-shell-lg",
+        embedded ? "border-l glass-divider shadow-none" : "glass-card radius-shell-lg",
         is_open ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-3 opacity-0",
         embedded && !is_open && "border-l-transparent",
         class_name,
@@ -170,7 +171,7 @@ export function EditorPanel({
             </button>
           ) : null}
 
-          <div className="flex h-14 min-w-0 items-center justify-between overflow-hidden border-b workspace-divider px-4">
+          <div className="flex h-14 min-w-0 items-center justify-between overflow-hidden border-b glass-divider px-4">
             <div className="min-w-0 flex-1 overflow-hidden pr-3">
               <p
                 className="w-full truncate text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground"
@@ -201,27 +202,25 @@ export function EditorPanel({
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
-              <button
-                className={cn(
-                  "inline-flex h-10 items-center gap-2 rounded-full px-4 text-sm font-semibold transition-all duration-300",
-                  is_dirty
-                    ? "bg-[linear-gradient(135deg,rgba(166,255,194,0.92),rgba(102,217,143,0.88))] text-[#18653a] shadow-[0_14px_24px_rgba(102,217,143,0.22)]"
-                    : "workspace-chip text-slate-700/58",
-                )}
+              <WorkspacePillButton
                 disabled={!is_dirty || is_saving || is_external_writing}
+                density="compact"
                 onClick={() => void handle_save()}
-                type="button"
+                size="md"
+                variant={is_dirty ? "success" : "default"}
               >
                 <Save className="h-4 w-4" />
                 {is_saving ? "保存中" : "保存"}
-              </button>
-              <button
-                className="workspace-chip flex h-10 w-10 items-center justify-center rounded-2xl text-slate-700/58 transition-colors hover:text-slate-950"
+              </WorkspacePillButton>
+              <WorkspacePillButton
+                aria-label="关闭编辑器"
+                density="compact"
                 onClick={on_close}
-                type="button"
+                size="icon"
+                variant="default"
               >
                 <Minimize2 className="h-4 w-4" />
-              </button>
+              </WorkspacePillButton>
             </div>
           </div>
 
@@ -238,7 +237,7 @@ export function EditorPanel({
               />
             ) : (
               <textarea
-                className="soft-scrollbar workspace-card h-full w-full resize-none rounded-[28px] p-5 font-mono text-sm leading-6 text-slate-900/82 outline-none disabled:opacity-70"
+                className="soft-scrollbar surface-card h-full w-full resize-none rounded-[28px] p-5 font-mono text-sm leading-6 text-slate-900/82 outline-none disabled:opacity-70"
                 disabled={is_loading}
                 onChange={(event) => setDraftContent(event.target.value)}
                 value={is_loading ? "加载中..." : draft_content}

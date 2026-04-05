@@ -79,7 +79,7 @@ export function DmsPage() {
       <div className="relative flex min-h-0 flex-1 items-center justify-center px-4 py-6 sm:px-6">
         <section className="max-w-md text-center">
           {/* 图标 */}
-          <div className="workspace-chip mx-auto flex h-16 w-16 items-center justify-center rounded-2xl">
+          <div className="glass-chip mx-auto flex h-16 w-16 items-center justify-center rounded-2xl">
             <MessageCircle className="h-7 w-7 text-slate-500/80" />
           </div>
 

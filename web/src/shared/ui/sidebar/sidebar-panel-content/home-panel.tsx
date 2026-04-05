@@ -21,6 +21,7 @@ import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { AppRouteBuilders } from "@/app/router/route-paths";
+import { get_dm_display_name } from "@/lib/dm-utils";
 import { CreateRoomDialog } from "@/features/room-members/create-room-dialog";
 import { createRoom, deleteRoom, listRooms, updateRoom } from "@/lib/room-api";
 import { useI18n } from "@/shared/i18n/i18n-context";
@@ -28,7 +29,6 @@ import { ConfirmDialog, PromptDialog } from "@/shared/ui/dialog/confirm-dialog";
 import { CollapsibleSection, SidebarListItem } from "@/shared/ui/sidebar/collapsible-section";
 import { useAgentStore } from "@/store/agent";
 import { useSidebarStore } from "@/store/sidebar";
-import { Agent } from "@/types/agent";
 import { RoomAggregate } from "@/types/room";
 
 // ==================== 置顶项 localStorage 管理 ====================
@@ -52,22 +52,6 @@ function load_starred_items(): StarredItem[] {
 }
 
 // ==================== 辅助函数 ====================
-
-/** 获取 DM 的显示名称（优先使用 Agent 名称） */
-function get_dm_display_name(
-  room: RoomAggregate,
-  agents: Agent[],
-  fallback_label: string,
-): string {
-  const agent_member = room.members.find((m) => m.member_type === "agent");
-  if (agent_member?.member_agent_id) {
-    const matched = agents.find(
-      (a) => a.agent_id === agent_member.member_agent_id,
-    );
-    if (matched) return matched.name;
-  }
-  return room.room.name?.trim() || fallback_label;
-}
 
 /** 获取 Room 的时间戳用于排序 */
 function get_room_timestamp(room: RoomAggregate): number {

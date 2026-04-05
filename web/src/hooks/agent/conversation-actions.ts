@@ -191,6 +191,14 @@ export function sendSessionPermissionResponse(
     set_error('WebSocket未连接，无法提交权限决策');
     return false;
   }
+  if (
+    pending_permission.interaction_mode === 'question' &&
+    payload.decision === 'allow' &&
+    !payload.user_answers?.length
+  ) {
+    set_error('请先完成问题回答');
+    return false;
+  }
 
   const response: WebSocketMessage = {
     type: 'permission_response',
