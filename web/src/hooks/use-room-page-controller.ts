@@ -94,6 +94,11 @@ export function useRoomPageController({
   const [dialog_mode, set_dialog_mode] = useState<"create" | "edit">("create");
   const [editing_agent_id, set_editing_agent_id] = useState<string | null>(null);
 
+  const scoped_room_contexts = useMemo(
+    () => room_contexts.filter((context) => context.room.id === room_id),
+    [room_contexts, room_id],
+  );
+
   useEffect(() => {
     let cancelled = false;
 
@@ -158,16 +163,21 @@ export function useRoomPageController({
       set_room_contexts([]);
       set_room_error(null);
       set_is_room_loading(false);
+      set_selected_member_agent_id(null);
       return;
     }
 
     let cancelled = false;
     set_is_room_loading(true);
     set_room_error(null);
+    set_selected_member_agent_id(null);
 
     const load_room_context = async () => {
       try {
-        const contexts = await load_room_contexts(room_id);
+        const [contexts] = await Promise.all([
+          load_room_contexts(room_id),
+          load_conversations_from_server(),
+        ]);
         if (cancelled) {
           return;
         }
@@ -190,26 +200,26 @@ export function useRoomPageController({
     return () => {
       cancelled = true;
     };
-  }, [load_room_contexts, room_id]);
+  }, [load_conversations_from_server, load_room_contexts, room_id]);
 
   const current_room = useMemo(
-    () => room_contexts[0]?.room ?? null,
-    [room_contexts],
+    () => scoped_room_contexts[0]?.room ?? null,
+    [scoped_room_contexts],
   );
 
   const room_member_agents = useMemo(() => {
     const agent_ids = new Set(
-      room_contexts[0]?.members
+      scoped_room_contexts[0]?.members
         .filter((member) => member.member_type === "agent")
         .map((member) => member.member_agent_id)
         .filter((member_agent_id): member_agent_id is string => Boolean(member_agent_id)) ?? [],
     );
 
     return agents.filter((agent) => agent_ids.has(agent.agent_id));
-  }, [agents, room_contexts]);
+  }, [agents, scoped_room_contexts]);
 
   const room_conversations = useMemo<RoomConversationView[]>(() => {
-    return room_contexts
+    return scoped_room_contexts
       .filter((context) => Boolean(context.conversation.id))
       .map((context) => {
         const session_conversations = conversations.filter(
@@ -263,12 +273,20 @@ export function useRoomPageController({
         } satisfies RoomConversationView;
       })
       .sort((left, right) => right.last_activity_at - left.last_activity_at);
-  }, [conversations, room_contexts]);
+  }, [conversations, scoped_room_contexts]);
 
-  const selected_conversation_id = useMemo(
-    () => conversation_id ?? room_conversations[0]?.conversation_id ?? null,
-    [conversation_id, room_conversations],
-  );
+  const selected_conversation_id = useMemo(() => {
+    // 中文注释：切换房间时，只认当前 room 里真实存在的 conversation，
+    // 避免旧 room 的 conversation_id 被路由自动带入新房间。
+    if (
+      conversation_id &&
+      room_conversations.some((conversation) => conversation.conversation_id === conversation_id)
+    ) {
+      return conversation_id;
+    }
+
+    return room_conversations[0]?.conversation_id ?? null;
+  }, [conversation_id, room_conversations]);
 
   const current_room_conversation = useMemo(
     () =>
@@ -280,10 +298,10 @@ export function useRoomPageController({
 
   const current_room_context = useMemo(
     () =>
-      room_contexts.find((context) => context.conversation.id === selected_conversation_id) ??
-      room_contexts[0] ??
+      scoped_room_contexts.find((context) => context.conversation.id === selected_conversation_id) ??
+      scoped_room_contexts[0] ??
       null,
-    [room_contexts, selected_conversation_id],
+    [scoped_room_contexts, selected_conversation_id],
   );
 
   useEffect(() => {

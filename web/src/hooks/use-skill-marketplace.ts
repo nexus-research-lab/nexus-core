@@ -213,6 +213,20 @@ export function useSkillMarketplace() {
     }
   }, [external_query]);
 
+  const handle_catalog_search = useCallback(async () => {
+    clear_messages();
+    try {
+      set_loading(true);
+      const query = search_query.trim();
+      set_debounced_search_query(query);
+      await load_skills(query, source_filter);
+    } catch (err) {
+      set_error_message(err instanceof Error ? err.message : "搜索失败");
+    } finally {
+      set_loading(false);
+    }
+  }, [load_skills, search_query, source_filter]);
+
   const handle_import_external = useCallback(async (item: ExternalSkillSearchItem) => {
     clear_messages();
     try {
@@ -272,6 +286,7 @@ export function useSkillMarketplace() {
     handle_update_installed,
     handle_local_import,
     handle_git_import,
+    handle_catalog_search,
     handle_external_search,
     handle_import_external,
   };

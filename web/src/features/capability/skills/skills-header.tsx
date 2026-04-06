@@ -1,10 +1,14 @@
 import { Download, FolderUp, Puzzle, RefreshCw } from "lucide-react";
-
 import { useI18n } from "@/shared/i18n/i18n-context";
 import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import { WorkspaceSurfaceHeader } from "@/shared/ui/workspace/workspace-surface-header";
 
-import type { SkillMarketplaceController } from "@/hooks/use-skill-marketplace";
+import type { DiscoveryMode, SkillMarketplaceController } from "@/hooks/use-skill-marketplace";
+
+const DISCOVERY_TABS: { key: DiscoveryMode; label: string }[] = [
+  { key: "catalog", label: "库内技能" },
+  { key: "external", label: "社区技能" },
+];
 
 interface SkillsHeaderProps {
   ctrl: SkillMarketplaceController;
@@ -15,11 +19,14 @@ export function SkillsHeader({ ctrl }: SkillsHeaderProps) {
 
   return (
     <WorkspaceSurfaceHeader
+      active_tab={ctrl.discovery_mode}
       badge={t("capability.skills_badge", { count: ctrl.catalog_count })}
       density="compact"
       leading={<Puzzle className="h-4 w-4" />}
       subtitle={t("capability.skills_subtitle")}
+      tabs={DISCOVERY_TABS}
       title={t("capability.skills_title")}
+      on_change_tab={ctrl.set_discovery_mode}
       trailing={
         <div className="flex items-center gap-2">
           <WorkspacePillButton density="compact" onClick={() => ctrl.file_input_ref.current?.click()} size="sm" variant="outlined">

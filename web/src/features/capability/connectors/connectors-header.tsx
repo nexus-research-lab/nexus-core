@@ -5,6 +5,17 @@ import { WorkspaceSurfaceHeader } from "@/shared/ui/workspace/workspace-surface-
 
 import type { ConnectorController } from "@/hooks/use-connector-controller";
 
+const CONNECTOR_CATEGORIES = [
+  { key: "all", label: "全部" },
+  { key: "productivity", label: "效率工具" },
+  { key: "social", label: "社交媒体" },
+  { key: "ecommerce", label: "电商平台" },
+  { key: "development", label: "开发工具" },
+  { key: "business", label: "企业管理" },
+  { key: "marketing", label: "营销分析" },
+  { key: "automation", label: "自动化" },
+];
+
 interface ConnectorsHeaderProps {
   ctrl: ConnectorController;
 }
@@ -14,11 +25,14 @@ export function ConnectorsHeader({ ctrl }: ConnectorsHeaderProps) {
 
   return (
     <WorkspaceSurfaceHeader
+      active_tab={ctrl.active_category}
       badge={t("capability.connected_badge", { count: ctrl.connected_count })}
       density="compact"
       leading={<Link2 className="h-4 w-4" />}
       subtitle={t("capability.connectors_subtitle")}
+      tabs={CONNECTOR_CATEGORIES}
       title={t("capability.connectors_title")}
+      on_change_tab={ctrl.set_active_category}
     />
   );
 }

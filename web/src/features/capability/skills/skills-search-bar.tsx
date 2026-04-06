@@ -1,11 +1,10 @@
-import { ChevronDown, Globe2 } from "lucide-react";
+import { Globe2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { SegmentedPill } from "@/shared/ui/segmented-pill";
 import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import { WorkspaceSearchInput } from "@/shared/ui/workspace/workspace-search-input";
 
-import type { SourceFilter, SkillMarketplaceController } from "@/hooks/use-skill-marketplace";
+import type { SkillMarketplaceController, SourceFilter } from "@/hooks/use-skill-marketplace";
 import { SOURCE_LABELS } from "@/hooks/use-skill-marketplace";
 
 const CONTEXT_MENU_CLASS_NAME =
@@ -19,8 +18,8 @@ interface SkillsSearchBarProps {
 
 export function SkillsSearchBar({ ctrl }: SkillsSearchBarProps) {
   return (
-    <div className="mb-5 space-y-3">
-      {/* 搜索栏 + 模式切换 */}
+    <div className="mb-5">
+      {/* 搜索栏 */}
       <div className="flex items-center gap-2.5">
         <WorkspaceSearchInput
           class_name="flex-1"
@@ -35,51 +34,40 @@ export function SkillsSearchBar({ ctrl }: SkillsSearchBarProps) {
           }
           value={ctrl.discovery_mode === "catalog" ? ctrl.search_query : ctrl.external_query}
         />
-
-        {/* 模式切换胶囊 */}
-        <div className="flex shrink-0 items-center gap-2">
-          <SegmentedPill
-            class_name="shrink-0"
-            on_change={ctrl.set_discovery_mode}
-            options={[
-              { label: "库内技能", value: "catalog" },
-              { label: "社区技能", value: "external" },
-            ]}
-            title="技能来源模式"
-            value={ctrl.discovery_mode}
-          />
-          {ctrl.discovery_mode === "external" && (
-            <WorkspacePillButton
-              onClick={() => void ctrl.handle_external_search()}
-              density="compact"
-              size="sm"
-              variant="outlined"
-            >
-              <Globe2 className="h-3.5 w-3.5" />
-              搜索
-            </WorkspacePillButton>
-          )}
-        </div>
+        <WorkspacePillButton
+          class_name={cn("w-[76px] justify-center")}
+          density="compact"
+          onClick={() =>
+            void (
+              ctrl.discovery_mode === "external"
+                ? ctrl.handle_external_search()
+                : ctrl.handle_catalog_search()
+            )}
+          size="sm"
+          variant="outlined"
+        >
+          <Globe2 className="h-3.5 w-3.5" />
+          搜索
+        </WorkspacePillButton>
       </div>
 
-      {/* 分类标签 + 过滤器 */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="soft-scrollbar flex min-w-0 items-center gap-1 overflow-x-auto">
-          {ctrl.categories.map((cat) => (
-            <WorkspacePillButton
-              key={cat.key}
-              density="compact"
-              onClick={() => ctrl.set_active_category(cat.key)}
-              size="sm"
-              variant={ctrl.active_category === cat.key ? "tonal" : "text"}
-            >
-              {cat.label}
-            </WorkspacePillButton>
-          ))}
-        </div>
+      {ctrl.discovery_mode === "catalog" && (
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <div className="soft-scrollbar flex min-w-0 items-center gap-1 overflow-x-auto">
+            {ctrl.categories.map((cat) => (
+              <WorkspacePillButton
+                key={cat.key}
+                density="compact"
+                onClick={() => ctrl.set_active_category(cat.key)}
+                size="sm"
+                variant={ctrl.active_category === cat.key ? "tonal" : "text"}
+              >
+                {cat.label}
+              </WorkspacePillButton>
+            ))}
+          </div>
 
-        <div className="flex shrink-0 items-center gap-2">
-          <div className="relative">
+          <div className="relative shrink-0">
             <WorkspacePillButton
               density="compact"
               onClick={() => ctrl.set_source_dropdown_open(!ctrl.source_dropdown_open)}
@@ -87,7 +75,7 @@ export function SkillsSearchBar({ ctrl }: SkillsSearchBarProps) {
               variant="outlined"
             >
               {SOURCE_LABELS[ctrl.source_filter]}
-              <ChevronDown className="h-3 w-3" />
+              <span className="ml-0.5 text-[10px]">▾</span>
             </WorkspacePillButton>
             {ctrl.source_dropdown_open && (
               <>
@@ -119,7 +107,7 @@ export function SkillsSearchBar({ ctrl }: SkillsSearchBarProps) {
             )}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

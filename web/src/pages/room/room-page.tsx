@@ -89,6 +89,7 @@ export function RoomPage() {
     if (
       controller.is_hydrated &&
       params.room_id &&
+      controller.current_room?.id === params.room_id &&
       !params.conversation_id &&
       controller.conversation_id &&
       !initialDraft
@@ -107,6 +108,7 @@ export function RoomPage() {
     navigate,
     params.conversation_id,
     params.room_id,
+    controller.current_room?.id,
     controller.conversation_id,
     initialDraft,
   ]);
