@@ -14,7 +14,7 @@ interface ConnectorsGridProps {
 export function ConnectorsGrid({ ctrl }: ConnectorsGridProps) {
   if (ctrl.loading) {
     return (
-      <div className="flex min-h-40 items-center justify-center text-sm text-slate-400">
+      <div className="flex min-h-40 items-center justify-center text-sm text-[color:var(--text-muted)]">
         加载中…
       </div>
     );
@@ -22,8 +22,8 @@ export function ConnectorsGrid({ ctrl }: ConnectorsGridProps) {
 
   if (ctrl.connectors.length === 0) {
     return (
-      <div className="flex min-h-60 flex-col items-center justify-center gap-3 text-slate-400">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full border border-white/40">
+      <div className="flex min-h-60 flex-col items-center justify-center gap-3 text-[color:var(--text-muted)]">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[var(--divider-subtle-color)] bg-[var(--surface-inset-background)]">
           <Link2 className="h-6 w-6" />
         </div>
         <p className="text-sm">没有找到匹配的连接器</p>
@@ -31,13 +31,11 @@ export function ConnectorsGrid({ ctrl }: ConnectorsGridProps) {
     );
   }
 
-  // 分组：先显示可用的（按连接状态排序），再显示即将推出的
   const available = ctrl.connectors.filter((c) => c.status === "available");
   const coming_soon = ctrl.connectors.filter((c) => c.status === "coming_soon");
 
   return (
     <div className="space-y-7">
-      {/* 可用连接器 */}
       {available.length > 0 && (
         <section>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -55,15 +53,15 @@ export function ConnectorsGrid({ ctrl }: ConnectorsGridProps) {
         </section>
       )}
 
-      {/* 即将推出 */}
       {coming_soon.length > 0 && (
         <section>
-          <h3 className="mb-3 flex items-center gap-2 text-[13px] font-semibold text-slate-500">
-            即将推出
-            <span className="rounded-full bg-white/50 px-2 py-0.5 text-[11px] font-medium text-slate-400">
+          <div className="mb-3 flex items-center gap-2.5">
+            <h2 className="text-[15px] font-bold tracking-[-0.02em] text-[color:var(--text-strong)]">即将推出</h2>
+            <span className="rounded-full border border-[var(--chip-default-border)] bg-[var(--chip-default-background)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--text-muted)]">
               {coming_soon.length}
             </span>
-          </h3>
+
+          </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             {coming_soon.map((connector) => (
               <ConnectorCard

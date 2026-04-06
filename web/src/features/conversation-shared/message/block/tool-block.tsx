@@ -166,7 +166,7 @@ const getResultSummary = (content: any): string => {
 };
 
 const TOOL_TONE_STYLES: Record<string, string> = {
-  default: 'text-slate-400',
+  default: 'text-[color:var(--icon-muted)]',
   error: 'text-rose-500',
   running: 'text-sky-500',
   success: 'text-emerald-500',
@@ -174,7 +174,7 @@ const TOOL_TONE_STYLES: Record<string, string> = {
 };
 
 const TOOL_LABEL_STYLES: Record<string, string> = {
-  default: 'text-slate-600/90',
+  default: 'text-[color:var(--text-default)]',
   error: 'text-rose-500',
   running: 'text-sky-500',
   success: 'text-emerald-600',
@@ -186,7 +186,7 @@ const getPermissionChoiceClassName = (selected: boolean) =>
     "rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-colors",
     selected
       ? "border-white/12 bg-primary/8 text-primary"
-      : "border-white/12 bg-white/6 text-slate-500 hover:text-slate-700",
+      : "border-white/12 bg-white/6 text-[color:var(--text-muted)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--text-strong)]",
   );
 
 // ==================== 主组件 ====================
@@ -325,12 +325,12 @@ export function ToolBlock({
               {toolTitle}
             </span>
             {isWaiting ? (
-              <span className="shrink-0 text-[11px] text-slate-400">{waitingConfirmationText}</span>
+              <span className="shrink-0 text-[11px] text-[color:var(--text-soft)]">{waitingConfirmationText}</span>
             ) : durationText ? (
-              <span className="shrink-0 text-[11px] text-slate-400">{durationText}</span>
+              <span className="shrink-0 text-[11px] text-[color:var(--text-soft)]">{durationText}</span>
             ) : null}
           </div>
-          <div className="mt-0.5 min-w-0 text-[12px] text-slate-500">
+          <div className="mt-0.5 min-w-0 text-[12px] text-[color:var(--text-muted)]">
             {isWaiting && permissionFieldSummary ? (
               <span className="block truncate">{permissionFieldSummary}</span>
             ) : hasResult && !isExpanded && resultSummary ? (
@@ -352,7 +352,7 @@ export function ToolBlock({
                 event.stopPropagation();
                 permission_request.on_deny();
               }}
-              className="modal-btn-secondary rounded-lg px-3 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:text-slate-800"
+              className="modal-btn-secondary rounded-lg px-3 py-1.5 text-xs font-medium text-[color:var(--text-muted)] transition-colors hover:text-[color:var(--text-strong)]"
             >
               拒绝
             </button>
@@ -364,7 +364,7 @@ export function ToolBlock({
                   : undefined;
                 permission_request.on_allow(selectedUpdate);
               }}
-              className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-[0_8px_20px_rgba(133,119,255,0.2)] transition-colors hover:bg-primary/90"
+              className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               允许
             </button>
@@ -380,7 +380,7 @@ export function ToolBlock({
               "rounded px-1.5 py-0.5 text-[10px] transition-all",
               copied
                 ? "bg-green-50 text-green-500"
-                : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                : "text-[color:var(--icon-muted)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--text-strong)]"
             )}
           >
             {copied ? '✓' : '复制'}
@@ -389,7 +389,7 @@ export function ToolBlock({
 
         {/* 展开指示器 */}
         {hasResult && (
-          <div className="shrink-0 text-slate-300">
+          <div className="shrink-0 text-[color:var(--icon-muted)]">
             {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
           </div>
         )}
@@ -403,20 +403,26 @@ export function ToolBlock({
       )}
 
       {!hasResult && isRunning && (
-        <div className="ml-7 mt-2 flex items-center gap-2 text-xs text-slate-500">
+        <div className="ml-7 mt-2 flex items-center gap-2 text-xs text-[color:var(--text-muted)]">
           <div className="flex gap-1">
             <div className="w-1.5 h-1.5 bg-primary rounded-full animate-[pulse_1s_ease-in-out_infinite]" />
             <div className="w-1.5 h-1.5 bg-primary rounded-full animate-[pulse_1s_ease-in-out_0.2s_infinite]" />
             <div className="w-1.5 h-1.5 bg-primary rounded-full animate-[pulse_1s_ease-in-out_0.4s_infinite]" />
           </div>
-          <span className="text-[11px] text-slate-400">处理中</span>
+          <span className="text-[11px] text-[color:var(--text-soft)]">处理中</span>
         </div>
       )}
 
       {hasResult && isExpanded && (
         <div className="ml-7 mt-2 max-h-[300px] overflow-y-auto custom-scrollbar">
             {typeof tool_result.content === 'string' ? (
-              <pre className="rounded-2xl border border-slate-200/80 bg-slate-50/92 p-3 text-xs whitespace-pre-wrap break-all text-slate-800">
+              <pre
+                className="rounded-2xl border p-3 text-xs whitespace-pre-wrap break-all text-[color:var(--text-strong)]"
+                style={{
+                  background: "var(--surface-panel-subtle-background)",
+                  borderColor: "var(--surface-panel-subtle-border)",
+                }}
+              >
                 {tool_result.content}
               </pre>
             ) : (
@@ -428,7 +434,13 @@ export function ToolBlock({
       {permission_request && isWaiting && (
         <div className="ml-7 mt-1.5 space-y-1.5">
           {primaryInputDetail?.value.trim() ? (
-            <div className="rounded-xl border border-white/12 bg-white/5 px-2.5 py-1.5 text-[12px] leading-5 text-slate-700">
+            <div
+              className="rounded-xl border px-2.5 py-1.5 text-[12px] leading-5 text-[color:var(--text-default)]"
+              style={{
+                background: "var(--surface-panel-subtle-background)",
+                borderColor: "var(--surface-panel-subtle-border)",
+              }}
+            >
               <pre className="whitespace-pre-wrap break-all">
                 {primaryInputDetail.value}
               </pre>
@@ -437,7 +449,7 @@ export function ToolBlock({
 
           {readableSuggestions.length > 0 ? (
             <div className="space-y-1">
-              <div className="text-[10px] font-medium text-slate-400">权限范围</div>
+              <div className="text-[10px] font-medium text-[color:var(--text-soft)]">权限范围</div>
               <div className="flex flex-wrap items-center gap-1.5">
               <label
                 className={getPermissionChoiceClassName(selectedSuggestionIndex === -1)}

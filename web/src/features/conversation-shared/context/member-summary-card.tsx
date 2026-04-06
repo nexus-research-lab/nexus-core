@@ -16,32 +16,32 @@ export function MemberSummaryCard({
 }: MemberSummaryCardProps) {
   return (
     <section className="border-b glass-divider px-4 py-4 min-w-[240px]">
-      <div className="rounded-[24px] bg-[linear-gradient(180deg,rgba(255,255,255,0.72),rgba(240,244,255,0.60))] px-4 py-4 ring-1 ring-white/40">
+      <div className="glass-card rounded-[24px] px-4 py-4">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-700/50">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--text-soft)]">
               当前成员
             </p>
-            <p className="mt-1 text-[28px] font-black tracking-[-0.05em] text-slate-950/90">
+            <p className="mt-1 text-[28px] font-black tracking-[-0.05em] text-[color:var(--text-strong)]">
               {agent.name}
             </p>
           </div>
 
           <div className="flex flex-col items-end gap-2">
             <span className={cn(
-              "inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold",
-              runtime_status === "Running"
-                ? "bg-emerald-100 text-emerald-700"
-                : runtime_status === "Idle"
-                  ? "bg-slate-200 text-slate-700"
-                  : "bg-emerald-100 text-emerald-700",
-            )}>
+              "status-badge",
+              runtime_status === "Running" || runtime_status === "Active"
+                ? "data-[tone=running]"
+                : "data-[tone=idle]",
+            )}
+              data-tone={runtime_status === "Running" || runtime_status === "Active" ? "running" : "idle"}
+            >
               <span className="h-2 w-2 rounded-full bg-current" />
               {localized_runtime_status}
             </span>
             <button
               aria-label="打开 Agent 设置"
-              className="glass-pill inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-semibold text-slate-900/84 transition-colors hover:text-slate-950 focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1"
+              className="glass-pill inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-semibold text-[color:var(--text-default)] transition-colors hover:text-[color:var(--text-strong)] focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1"
               onClick={() => on_edit_agent(agent.agent_id)}
               type="button"
             >

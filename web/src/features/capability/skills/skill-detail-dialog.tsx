@@ -135,7 +135,7 @@ export function SkillDetailDialog({
         <div className="dialog-body dialog-body--scroll soft-scrollbar flex-1">
           {loading ? (
             <div className="flex min-h-80 items-center justify-center">
-              <Loader2 className="h-7 w-7 animate-spin text-slate-400" />
+              <Loader2 className="h-7 w-7 animate-spin text-[color:var(--text-muted)]" />
             </div>
           ) : skill ? (
             <>

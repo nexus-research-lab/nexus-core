@@ -40,7 +40,7 @@ export function ConnectorDetailDialog({
     [on_close],
   );
 
-  const colors = detail ? getConnectorColors(detail.icon) : { bg: "bg-slate-100", text: "text-slate-600" };
+  const colors = detail ? getConnectorColors(detail.icon) : { bg: "bg-[var(--surface-panel-subtle-background)]", text: "text-[color:var(--text-muted)]" };
   const letter = detail ? getConnectorLetter(detail.icon, detail.title) : "?";
   const is_connected = detail?.connection_state === "connected";
   const is_coming_soon = detail?.status === "coming_soon";
@@ -68,7 +68,7 @@ export function ConnectorDetailDialog({
             </div>
             <div className="min-w-0 flex-1">
             {loading ? (
-              <div className="h-5 w-32 animate-pulse rounded bg-slate-200" />
+              <div className="h-5 w-32 animate-pulse rounded bg-[var(--surface-panel-subtle-background)]" />
             ) : (
               <>
                 <h2 className="dialog-title" data-size="hero">
@@ -92,7 +92,7 @@ export function ConnectorDetailDialog({
 
         <div className="dialog-body dialog-body--scroll soft-scrollbar flex-1">
           {loading ? (
-            <div className="flex min-h-32 items-center justify-center text-sm text-slate-400">
+            <div className="flex min-h-32 items-center justify-center text-sm text-[color:var(--text-soft)]">
               加载中…
             </div>
           ) : detail ? (
@@ -126,12 +126,12 @@ export function ConnectorDetailDialog({
 
               {detail.features.length > 0 && (
                 <div>
-                  <h3 className="mb-2 text-[13px] font-semibold text-slate-700">支持的功能</h3>
+                  <h3 className="mb-2 text-[13px] font-semibold text-[color:var(--text-default)]">支持的功能</h3>
                   <div className="grid grid-cols-2 gap-2">
                     {detail.features.map((f) => (
                       <div
                         key={f}
-                        className="surface-card flex items-center gap-2 rounded-xl px-3 py-2 text-[12px] text-slate-600"
+                        className="surface-card flex items-center gap-2 rounded-xl px-3 py-2 text-[12px] text-[color:var(--text-muted)]"
                       >
                         <Check className="h-3 w-3 shrink-0 text-emerald-500" />
                         {f}
@@ -143,11 +143,11 @@ export function ConnectorDetailDialog({
 
               {!is_coming_soon && (
                 <div className={getDialogNoteClassName("default")}>
-                  <div className="flex items-center gap-2 text-[13px] font-medium text-slate-700">
+                  <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-default)]">
                     <Shield className="h-4 w-4" />
                     安全授权
                   </div>
-                  <p className="mt-1 text-[12px] leading-relaxed text-slate-600/84">
+                  <p className="mt-1 text-[12px] leading-relaxed text-[color:var(--text-muted)]">
                     连接后，Agent 将通过安全的 MCP 协议访问此应用。你可以随时断开连接并撤销授权。
                   </p>
                 </div>
@@ -161,7 +161,7 @@ export function ConnectorDetailDialog({
 
               {detail.docs_url && (
                 <a
-                  className="flex items-center gap-1.5 text-[12px] text-sky-600 hover:underline"
+                  className="flex items-center gap-1.5 text-[12px] text-sky-400 hover:underline"
                   href={detail.docs_url}
                   rel="noopener noreferrer"
                   target="_blank"

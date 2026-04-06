@@ -5,7 +5,10 @@
  * 后面调布局时只改这一处，不用在多个组件里到处找类名。
  */
 
-export const HOME_PAGE_PADDING_CLASS = "py-4 pr-2 pl-0";
+/** 中文注释：首页舞台上下边距基线，左右壳层统一复用这一套。 */
+export const HOME_STAGE_VERTICAL_PADDING_CLASS = "py-3";
+export const HOME_PAGE_PADDING_CLASS = `${HOME_STAGE_VERTICAL_PADDING_CLASS} pr-2.5 pl-0`;
+export const HOME_SIDEBAR_PADDING_CLASS = `px-2.5 ${HOME_STAGE_VERTICAL_PADDING_CLASS}`;
 export const HOME_WORKSPACE_SECTION_GAP_CLASS = "gap-2 xl:gap-3";
 export const HOME_WORKSPACE_MAIN_GAP_CLASS = "gap-0 lg:gap-3 xl:gap-4";
 

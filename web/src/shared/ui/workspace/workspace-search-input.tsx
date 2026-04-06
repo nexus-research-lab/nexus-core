@@ -6,9 +6,9 @@ import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const SEARCH_INPUT_SHELL_CLASS_NAME =
-  "input-shell inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm text-slate-700/86 transition duration-150 ease-out hover:border-[var(--surface-interactive-hover-border)] hover:bg-[var(--surface-interactive-hover-background)]";
+  "input-shell inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm text-[color:var(--text-default)] transition duration-150 ease-out hover:border-[var(--surface-interactive-hover-border)] hover:bg-[var(--surface-interactive-hover-background)]";
 const SEARCH_INPUT_FIELD_CLASS_NAME =
-  "min-w-0 flex-1 bg-transparent text-sm text-slate-950/98 outline-none shadow-none ring-0 placeholder:text-slate-500/80 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none";
+  "min-w-0 flex-1 bg-transparent text-sm text-[color:var(--text-strong)] outline-none shadow-none ring-0 placeholder:text-[color:var(--text-soft)] focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none";
 
 interface WorkspaceSearchInputProps {
   value: string;
@@ -36,7 +36,7 @@ export function WorkspaceSearchInput({
       SEARCH_INPUT_SHELL_CLASS_NAME,
       class_name,
     )}>
-      <Search className="h-4 w-4 text-slate-600/84" />
+      <Search className="h-4 w-4 text-[color:var(--icon-default)]" />
       <input
         className={cn(
           SEARCH_INPUT_FIELD_CLASS_NAME,

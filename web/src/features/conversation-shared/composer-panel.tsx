@@ -331,8 +331,8 @@ const ComposerPanelView = memo(({
               <textarea
                 ref={textarea_ref}
                 className={cn(
-                  "multiline-cursor min-h-6 max-h-24 w-full resize-none bg-transparent text-[14px] leading-6 text-slate-900 outline-none shadow-none ring-0",
-                  "placeholder:text-slate-400",
+                  "multiline-cursor min-h-6 max-h-24 w-full resize-none bg-transparent text-[14px] leading-6 text-[color:var(--text-strong)] outline-none shadow-none ring-0",
+                  "placeholder:text-[color:var(--text-soft)]",
                   "disabled:cursor-not-allowed disabled:opacity-50",
                   "focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none",
                   "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]",
@@ -361,12 +361,12 @@ const ComposerPanelView = memo(({
                     className={cn(
                       is_over_limit && "text-destructive",
                       is_near_limit && !is_over_limit && "text-warning",
-                      !is_near_limit && "text-slate-700/40",
+                      !is_near_limit && "text-[color:var(--text-soft)]",
                     )}
                   >
                     {char_count}
                   </span>
-                  <span className="text-slate-300">/{max_length}</span>
+                  <span className="text-[color:var(--text-soft)]">/{max_length}</span>
                 </div>
               ) : null}
 
@@ -397,12 +397,12 @@ const ComposerPanelView = memo(({
           </div>
 
           <div className={COMPOSER_FOOTER_CLASS_NAME}>
-            <div className="flex items-center gap-3 text-[10px] text-slate-400">
+            <div className="flex items-center gap-3 text-[10px] text-[color:var(--text-soft)]">
               {is_loading ? (
-                <span className="flex items-center gap-2 text-emerald-700/72">
+                <span className="flex items-center gap-2 text-emerald-500/88">
                   <LoadingOrb frames={["✽", "✻", "✶", "✢", "·"]} />
                   <span className="animate-pulse">正在回复中…</span>
-                  <span className="text-slate-700/28">[ESC 停止]</span>
+                  <span className="text-[color:var(--text-soft)]">[ESC 停止]</span>
                 </span>
               ) : (
                 <>
@@ -421,7 +421,7 @@ const ComposerPanelView = memo(({
             </div>
 
             {history_index >= 0 ? (
-              <div className="text-[10px] text-sky-700/70">
+              <div className="text-[10px] text-[color:var(--text-default)]">
                 历史 {history_index + 1}/{input_history.length}
               </div>
             ) : null}

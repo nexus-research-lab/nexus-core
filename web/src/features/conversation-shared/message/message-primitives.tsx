@@ -23,9 +23,9 @@ const AVATAR_SIZE_CLASS_MAP: Record<MessageAvatarSize, string> = {
 };
 
 const ACTION_TONE_CLASS_MAP: Record<MessageActionTone, string> = {
-  default: "hover:bg-slate-100/92 hover:text-slate-900/94",
-  success: "text-green-500 hover:bg-emerald-50/92 hover:text-emerald-600",
-  danger: "hover:bg-rose-50/92 hover:text-rose-600",
+  default: "hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--text-strong)]",
+  success: "text-green-500 hover:bg-emerald-500/10 hover:text-emerald-500",
+  danger: "hover:bg-rose-500/10 hover:text-rose-500",
 };
 
 const DOT_SIZE_CLASS_MAP: Record<MessageLoadingDotsSize, string> = {
@@ -45,7 +45,7 @@ export function MessageAvatar({
   return (
     <div
       className={cn(
-        "flex items-center justify-center border border-slate-200/88 bg-slate-50/94 text-slate-600/90",
+        "flex items-center justify-center border border-[var(--surface-avatar-border)] bg-[var(--surface-avatar-background)] text-[color:var(--surface-avatar-foreground)]",
         AVATAR_SIZE_CLASS_MAP[size],
         class_name,
       )}
@@ -68,7 +68,7 @@ export function MessageActionButton({
   return (
     <button
       className={cn(
-        "rounded-lg p-1 text-slate-500/70 transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary/50",
+        "rounded-lg p-1 text-[color:var(--icon-default)] transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary/50",
         ACTION_TONE_CLASS_MAP[tone],
         class_name,
       )}
@@ -87,7 +87,7 @@ export function MessageLoadingDots({
   class_name?: string;
 }) {
   const dot_class_name = cn(
-    "rounded-full bg-slate-400 animate-bounce",
+    "rounded-full bg-[color:var(--icon-muted)] animate-bounce",
     DOT_SIZE_CLASS_MAP[size],
   );
 
@@ -113,7 +113,7 @@ export function MessageShell({
     <div
       className={cn(
         "w-full min-w-0",
-        separated && "border-b border-slate-200/75",
+        separated && "border-b border-[var(--divider-subtle-color)]",
         class_name,
       )}
     >

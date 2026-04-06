@@ -76,7 +76,7 @@ const DmConversationHeaderView = memo(({
       active_tab={active_tab}
       badge="DM"
       density="compact"
-      leading={<Bot size={14} className="text-slate-800/72" />}
+      leading={<Bot size={14} className="text-[color:var(--icon-default)]" />}
       on_change_tab={on_change_tab}
       tabs_trailing={<WorkspaceTaskStrip todos={todos} />}
       tabs={dm_tabs}

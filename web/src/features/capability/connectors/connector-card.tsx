@@ -55,11 +55,11 @@ export function ConnectorCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="truncate text-[15px] font-semibold text-slate-950/98">
+            <h3 className="truncate text-[15px] font-semibold text-[color:var(--text-strong)]">
               {title}
             </h3>
           </div>
-          <p className="mt-0.5 line-clamp-2 text-[12px] leading-[1.55] text-slate-700/78">
+          <p className="mt-0.5 line-clamp-2 text-[12px] leading-[1.55] text-[color:var(--text-default)]">
             {is_configured ? description : config_error || description}
           </p>
         </div>

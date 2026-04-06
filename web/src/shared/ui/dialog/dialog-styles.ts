@@ -16,19 +16,19 @@ import { cn } from "@/lib/utils";
 export const DIALOG_HEADER_LEADING_CLASS_NAME = "flex min-w-0 items-start gap-3.5";
 
 export const DIALOG_HEADER_ICON_CLASS_NAME =
-  "dialog-card flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-slate-900/88";
+  "dialog-card flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-[color:var(--text-strong)]";
 
 export const DIALOG_EMPTY_CLASS_NAME =
-  "surface-inset flex items-center justify-center rounded-[20px] px-4 py-4 text-[13px] text-slate-500/78";
+  "surface-inset flex items-center justify-center rounded-[20px] px-4 py-4 text-[13px] text-[color:var(--text-muted)]";
 
 export const DIALOG_TAG_CLASS_NAME =
-  "chip-default inline-flex items-center gap-1 rounded-full px-[0.7rem] py-[0.3rem] text-[11px] font-semibold text-slate-600/86";
+  "chip-default inline-flex items-center gap-1 rounded-full px-[0.7rem] py-[0.3rem] text-[11px] font-semibold text-[color:var(--text-muted)]";
 
 export function getDialogNoteClassName(tone: "default" | "danger", class_name?: string): string {
   return cn(
     "rounded-[18px] px-4 py-[0.95rem] text-[13px] leading-[1.65]",
     tone === "default"
-      ? "surface-card text-slate-600/82"
+      ? "surface-card text-[color:var(--text-default)]"
       : "border border-rose-200/86 bg-rose-50/88 text-pink-700/88",
     class_name,
   );
@@ -39,7 +39,7 @@ export function getDialogChoiceClassName(is_active: boolean, class_name?: string
     "inline-flex items-center justify-center gap-1.5 rounded-full px-[0.9rem] py-[0.45rem] text-[12px] font-semibold transition-[background,color,box-shadow,border-color] duration-180 ease-out",
     is_active
       ? "text-[var(--primary-foreground)]"
-      : "chip-pill border border-[color:var(--chip-pill-border)] text-slate-600/84 hover:text-slate-900/94",
+      : "chip-pill border border-[color:var(--chip-pill-border)] text-[color:var(--text-muted)] hover:text-[color:var(--text-strong)]",
     class_name,
   );
 }

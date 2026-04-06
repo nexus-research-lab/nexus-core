@@ -12,7 +12,6 @@
 import { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
-import { useTheme } from "@/shared/theme/theme-context";
 
 interface CodeShellProps {
   language: string;
@@ -30,22 +29,23 @@ export function CodeShell({
   class_name,
   children,
 }: CodeShellProps) {
-  const { theme } = useTheme();
-  const is_dark_theme = theme === "dark";
-
   return (
     <div
       className={cn(
-        "relative my-4 overflow-hidden rounded-[22px] border border-slate-200/88 bg-slate-50/96",
-        is_dark_theme && "border-white/10 bg-[rgb(23_25_31_/_0.98)]",
+        "relative my-4 overflow-hidden rounded-[22px] border",
         class_name,
       )}
+      style={{
+        background: "var(--surface-panel-subtle-background)",
+        borderColor: "var(--surface-panel-subtle-border)",
+      }}
     >
       <div
-        className={cn(
-          "flex items-center justify-between border-b border-slate-200/88 bg-slate-200/70 px-4 py-2",
-          is_dark_theme && "border-white/6 bg-[rgb(32_35_43_/_0.96)]",
-        )}
+        className="flex items-center justify-between border-b px-4 py-2"
+        style={{
+          background: "var(--surface-interactive-active-background)",
+          borderColor: "var(--divider-subtle-color)",
+        }}
       >
         <div className="flex items-center gap-2">
           <div className="flex gap-1.5">
@@ -54,10 +54,8 @@ export function CodeShell({
             <div className="h-2.5 w-2.5 rounded-full border border-green-500/50 bg-green-500/18" />
           </div>
           <span
-            className={cn(
-              "ml-2 font-mono text-xs text-slate-500/90",
-              is_dark_theme && "text-slate-300/94",
-            )}
+            className="ml-2 font-mono text-xs"
+            style={{ color: "var(--text-muted)" }}
           >
             {language || "text"}
           </span>

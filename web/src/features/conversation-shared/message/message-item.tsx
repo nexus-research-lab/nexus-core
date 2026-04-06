@@ -615,7 +615,7 @@ function MessageItemInner(
     on_stop_message(firstAssistant.message_id);
   }, [on_stop_message, firstAssistant]);
   const pendingPermissionBlock = unmatchedPendingPermissions.length > 0 ? (
-    <div className="mt-3 flex flex-col gap-3 rounded-2xl bg-slate-50/72 p-3">
+    <div className="mt-3 flex flex-col gap-3 rounded-2xl bg-[var(--surface-inset-background)] p-3">
       {unmatchedPendingPermissions.map((permission) => (
         <ToolBlock
           key={permission.request_id}
@@ -729,8 +729,8 @@ function MessageItemInner(
                       <User className="h-3 w-3" />
                     </MessageAvatar>
                   ) : null}
-                  <span className="shrink-0 text-sm font-bold text-slate-900">你</span>
-                  <span className="hidden shrink-0 text-xs text-slate-500 sm:inline">
+                  <span className="shrink-0 text-sm font-bold text-[color:var(--text-strong)]">你</span>
+                  <span className="hidden shrink-0 text-xs text-[color:var(--text-muted)] sm:inline">
                     {userMessage.timestamp ? formatTime(userMessage.timestamp) : "--:--"}
                   </span>
                   <div className="flex-1" />
@@ -764,7 +764,7 @@ function MessageItemInner(
                 {/* 内容 */}
                 <div className="pb-1 pt-1">
                   <p className={cn(
-                    "whitespace-pre-wrap text-slate-900 wrap-anywhere",
+                    "whitespace-pre-wrap text-[color:var(--text-strong)] wrap-anywhere",
                     compact ? "text-[14px] leading-6" : "text-[15px] leading-7",
                   )}>
                     {userContent}
@@ -801,17 +801,17 @@ function MessageItemInner(
                       <Bot className="h-3 w-3" />
                     </MessageAvatar>
                   ) : null}
-                  <span className="shrink-0 text-sm font-bold text-slate-900">
+                  <span className="shrink-0 text-sm font-bold text-[color:var(--text-strong)]">
                     {current_agent_name || "协作成员"}
                   </span>
 
                   {/* 时间 */}
-                  <span className="hidden shrink-0 text-xs text-slate-500 sm:inline">
+                  <span className="hidden shrink-0 text-xs text-[color:var(--text-muted)] sm:inline">
                     {timestamp ? formatTime(timestamp) : "--:--"}
                   </span>
 
                   {/* 模型 */}
-                  {model ? <span className="min-w-0 truncate text-xs text-slate-400">{model}</span> : null}
+                  {model ? <span className="min-w-0 truncate text-xs text-[color:var(--text-soft)]">{model}</span> : null}
 
                   <div className="flex-1" />
 
@@ -853,7 +853,7 @@ function MessageItemInner(
 
                   {/* Room 并发：已取消标记 */}
                   {stream_status === 'cancelled' && mergedContent.length === 0 && (
-                    <span className="text-xs text-slate-400 italic">已停止</span>
+                    <span className="text-xs italic text-[color:var(--text-soft)]">已停止</span>
                   )}
 
                   {stream_status === 'error' && mergedContent.length === 0 && (
@@ -878,15 +878,15 @@ function MessageItemInner(
                   {shouldRenderProcessCallchain ? (
                     <div ref={processAnchorRef as React.RefObject<HTMLDivElement>}>
                       <button
-                        className="flex w-full items-center gap-2 py-1.5 text-left text-slate-500/86 transition-colors duration-150 hover:text-slate-700/94"
+                        className="flex w-full items-center gap-2 py-1.5 text-left text-[color:var(--text-muted)] transition-colors duration-150 hover:text-[color:var(--text-strong)]"
                         onClick={toggleProcessExpanded}
                         type="button"
                       >
-                        <Wrench className="h-3 w-3 shrink-0 text-slate-300" />
-                        <div className="min-w-0 flex-1 truncate text-[12px] font-medium text-slate-500">
+                        <Wrench className="h-3 w-3 shrink-0 text-[color:var(--icon-muted)]" />
+                        <div className="min-w-0 flex-1 truncate text-[12px] font-medium text-[color:var(--text-muted)]">
                           {processSummary}
                         </div>
-                        <div className="text-slate-300">
+                        <div className="text-[color:var(--icon-muted)]">
                           {isProcessExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
                         </div>
                       </button>

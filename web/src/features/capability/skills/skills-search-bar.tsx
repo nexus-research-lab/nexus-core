@@ -1,11 +1,11 @@
 import { Globe2 } from "lucide-react";
-
 import { cn } from "@/lib/utils";
+
+import { SOURCE_LABELS } from "@/hooks/use-skill-marketplace";
 import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import { WorkspaceSearchInput } from "@/shared/ui/workspace/workspace-search-input";
 
 import type { SkillMarketplaceController, SourceFilter } from "@/hooks/use-skill-marketplace";
-import { SOURCE_LABELS } from "@/hooks/use-skill-marketplace";
 
 const CONTEXT_MENU_CLASS_NAME =
   "absolute right-0 top-full z-50 mt-2 w-36 overflow-hidden rounded-[16px] border border-[var(--surface-popover-border)] bg-[var(--surface-popover-background)] py-1.5 shadow-[var(--surface-popover-shadow)] backdrop-blur-[18px]";
@@ -19,7 +19,6 @@ interface SkillsSearchBarProps {
 export function SkillsSearchBar({ ctrl }: SkillsSearchBarProps) {
   return (
     <div className="mb-5">
-      {/* 搜索栏 */}
       <div className="flex items-center gap-2.5">
         <WorkspaceSearchInput
           class_name="flex-1"
@@ -35,7 +34,7 @@ export function SkillsSearchBar({ ctrl }: SkillsSearchBarProps) {
           value={ctrl.discovery_mode === "catalog" ? ctrl.search_query : ctrl.external_query}
         />
         <WorkspacePillButton
-          class_name={cn("w-[76px] justify-center")}
+          class_name="w-[76px] justify-center"
           density="compact"
           onClick={() =>
             void (
@@ -51,20 +50,27 @@ export function SkillsSearchBar({ ctrl }: SkillsSearchBarProps) {
         </WorkspacePillButton>
       </div>
 
-      {ctrl.discovery_mode === "catalog" && (
-        <div className="mt-3 flex items-center justify-between gap-2">
-          <div className="soft-scrollbar flex min-w-0 items-center gap-1 overflow-x-auto">
-            {ctrl.categories.map((cat) => (
-              <WorkspacePillButton
-                key={cat.key}
-                density="compact"
-                onClick={() => ctrl.set_active_category(cat.key)}
-                size="sm"
-                variant={ctrl.active_category === cat.key ? "tonal" : "text"}
-              >
-                {cat.label}
-              </WorkspacePillButton>
-            ))}
+      {ctrl.discovery_mode === "catalog" ? (
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-1">
+            {ctrl.categories.map((category) => {
+              const is_active = ctrl.active_category === category.key;
+              return (
+                <button
+                  key={category.key}
+                  className={cn(
+                    "inline-flex h-8 items-center rounded-full border px-3 py-1 text-[11px] font-semibold transition-[background,border-color,color] duration-150",
+                    is_active
+                      ? "border-[var(--surface-interactive-active-border)] bg-[var(--surface-interactive-active-background)] text-[color:var(--text-strong)]"
+                      : "border-transparent text-[color:var(--text-default)] hover:border-[var(--surface-interactive-hover-border)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--text-strong)]",
+                  )}
+                  onClick={() => ctrl.set_active_category(category.key)}
+                  type="button"
+                >
+                  {category.label}
+                </button>
+              );
+            })}
           </div>
 
           <div className="relative shrink-0">
@@ -77,7 +83,8 @@ export function SkillsSearchBar({ ctrl }: SkillsSearchBarProps) {
               {SOURCE_LABELS[ctrl.source_filter]}
               <span className="ml-0.5 text-[10px]">▾</span>
             </WorkspacePillButton>
-            {ctrl.source_dropdown_open && (
+
+            {ctrl.source_dropdown_open ? (
               <>
                 <div
                   className="fixed inset-0 z-40"
@@ -90,8 +97,8 @@ export function SkillsSearchBar({ ctrl }: SkillsSearchBarProps) {
                       className={cn(
                         CONTEXT_MENU_ITEM_CLASS_NAME,
                         ctrl.source_filter === key
-                          ? "bg-[var(--surface-interactive-active-background)] text-slate-950"
-                          : "text-slate-600 hover:bg-[var(--surface-interactive-hover-background)]",
+                          ? "bg-[var(--surface-interactive-active-background)] text-[color:var(--text-strong)]"
+                          : "text-[color:var(--text-default)] hover:bg-[var(--surface-interactive-hover-background)]",
                       )}
                       onClick={() => {
                         ctrl.set_source_filter(key);
@@ -104,10 +111,10 @@ export function SkillsSearchBar({ ctrl }: SkillsSearchBarProps) {
                   ))}
                 </div>
               </>
-            )}
+            ) : null}
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

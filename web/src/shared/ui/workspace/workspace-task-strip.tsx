@@ -72,32 +72,32 @@ export function WorkspaceTaskStrip({
           onClick={handle_toggle_panel}
           type="button"
         >
-          <ListChecks className="h-3.5 w-3.5 text-slate-700/88"/>
-          <span className="text-[10px] font-semibold tracking-[0.08em] text-slate-700/94">
+          <ListChecks className="h-3.5 w-3.5 text-[color:var(--icon-default)]"/>
+          <span className="text-[10px] font-semibold tracking-[0.08em] text-[color:var(--text-default)]">
             {t("tasks.label")}
           </span>
-          <span className="text-[10px] font-medium tabular-nums text-slate-600/88">
+          <span className="text-[10px] font-medium tabular-nums text-[color:var(--text-muted)]">
             {completed_count}/{total_count}
           </span>
-          <div className="hidden w-14 overflow-hidden rounded-full bg-slate-200/88 sm:block">
+          <div className="hidden w-14 overflow-hidden rounded-full bg-[color:var(--surface-progress-track)] sm:block">
             <div
-              className="h-1 rounded-full bg-slate-700/74 transition-[width] duration-300"
+              className="h-1 rounded-full bg-[color:var(--surface-progress-fill)] transition-[width] duration-300"
               style={{width: `${progress}%`}}
             />
           </div>
           <span
-            className="inline-flex items-center justify-center gap-1 text-[10px] font-medium tabular-nums text-slate-600/84">
+            className="inline-flex items-center justify-center gap-1 text-[10px] font-medium tabular-nums text-[color:var(--text-muted)]">
             {has_running_task ? (
               <LoadingOrb />
             ) : active_count > 0 ? (
-              <span className="h-2 w-2 rounded-full bg-slate-400/80"/>
+              <span className="h-2 w-2 rounded-full bg-[color:var(--icon-muted)]"/>
             ) : null}
             {active_count}
           </span>
           <ChevronDown
             className={cn(
-              "h-3.5 w-3.5 shrink-0 text-slate-500 transition-transform duration-300",
-              is_open && "rotate-180 text-slate-700",
+              "h-3.5 w-3.5 shrink-0 text-[color:var(--icon-muted)] transition-transform duration-300",
+              is_open && "rotate-180 text-[color:var(--icon-default)]",
             )}
           />
         </button>
@@ -115,13 +115,13 @@ export function WorkspaceTaskStrip({
 
             <div className="max-h-[320px] overflow-y-auto px-4">
               <div
-                className="grid grid-cols-[36px_76px_minmax(0,1fr)_24px] items-center gap-3 border-b divider-subtle px-2 py-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-500/76">
+                className="grid grid-cols-[36px_76px_minmax(0,1fr)_24px] items-center gap-3 border-b divider-subtle px-2 py-1.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-[color:var(--text-soft)]">
                 <span>{t("tasks.id")}</span>
                 <span>{t("tasks.status")}</span>
                 <span>{t("tasks.subject")}</span>
                 <button
                   aria-label={t("tasks.close_panel")}
-                  className="ml-1 inline-flex h-6 w-6 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                  className="ml-1 inline-flex h-6 w-6 items-center justify-center rounded-full text-[color:var(--icon-muted)] transition-colors hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--icon-default)]"
                   onClick={() => {
                     set_expanded_task_index(null);
                     set_is_open(false);
@@ -161,7 +161,7 @@ export function WorkspaceTaskStrip({
                           }}
                           type="button"
                         >
-                          <span className="pt-0.5 text-[10px] font-semibold tabular-nums text-slate-400">
+                          <span className="pt-0.5 text-[10px] font-semibold tabular-nums text-[color:var(--text-soft)]">
                             #{index + 1}
                           </span>
 
@@ -170,7 +170,7 @@ export function WorkspaceTaskStrip({
                               "inline-flex h-fit items-center gap-1 rounded-full px-2 py-0.5 text-[9.5px] font-semibold",
                               is_completed && "bg-emerald-100/90 text-emerald-700",
                               is_running && "bg-sky-100/92 text-sky-700",
-                              todo.status === "pending" && "bg-slate-100/92 text-slate-600",
+                              todo.status === "pending" && "bg-[var(--surface-panel-subtle-background)] text-[color:var(--text-muted)]",
                             )}
                           >
                             {is_completed ? (
@@ -184,7 +184,7 @@ export function WorkspaceTaskStrip({
                           </span>
 
                           <div className="min-w-0">
-                            <p className="truncate text-[11px] font-medium text-slate-900/84">
+                            <p className="truncate text-[11px] font-medium text-[color:var(--text-strong)]">
                               {todo.content}
                             </p>
                           </div>
@@ -193,8 +193,8 @@ export function WorkspaceTaskStrip({
                             {has_detail ? (
                               <ChevronDown
                                 className={cn(
-                                  "h-3.5 w-3.5 text-slate-400 transition-transform duration-300",
-                                  is_expanded && "rotate-180 text-slate-600",
+                                  "h-3.5 w-3.5 text-[color:var(--icon-muted)] transition-transform duration-300",
+                                  is_expanded && "rotate-180 text-[color:var(--icon-default)]",
                                 )}
                               />
                             ) : null}
@@ -210,7 +210,7 @@ export function WorkspaceTaskStrip({
                           <div className="min-h-0 overflow-hidden">
                             <div className="px-[calc(36px+76px+0.75rem)] pb-1.5 pr-2">
                               <div
-                                className="rounded-[12px] px-3 py-1.5 text-[10px] leading-5 text-slate-600/82"
+                                className="rounded-[12px] px-3 py-1.5 text-[10px] leading-5 text-[color:var(--text-muted)]"
                                 style={{
                                   background: "var(--card-default-background)",
                                   border: "1px solid var(--card-default-border)",
@@ -226,7 +226,7 @@ export function WorkspaceTaskStrip({
                   })}
                 </div>
               ) : (
-                <p className="px-1 py-4 text-[11px] text-slate-500/76">
+                <p className="px-1 py-4 text-[11px] text-[color:var(--text-soft)]">
                   {t("tasks.no_active")}
                 </p>
               )}

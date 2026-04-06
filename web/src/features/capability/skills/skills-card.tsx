@@ -58,7 +58,7 @@ export function SkillsCard({
         </WorkspaceIconFrame>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="truncate text-[15px] font-bold tracking-[-0.02em] text-slate-950/98">
+            <p className="truncate text-[15px] font-bold tracking-[-0.02em] text-[color:var(--text-strong)]">
               {title}
             </p>
             <WorkspaceCatalogBadge class_name="shrink-0" tone="neutral">
@@ -74,7 +74,7 @@ export function SkillsCard({
       </div>
 
       {/* 描述 */}
-      <p className="mt-2.5 line-clamp-2 flex-1 text-[13px] leading-[1.55] text-slate-700/78">
+      <p className="mt-2.5 line-clamp-2 flex-1 text-[13px] leading-[1.55] text-[color:var(--text-default)]">
         {description || "暂无描述"}
       </p>
 

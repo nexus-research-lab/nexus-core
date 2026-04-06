@@ -49,14 +49,14 @@ export function ThreadDetailPanel({
       is_mobile ? "bg-background" : "bg-[var(--surface-popover-background)]",
     )}>
       {/* ── 头部 ────────────────────────────────────────────── */}
-      <div className="flex shrink-0 items-center gap-2 border-b border-slate-200/60 px-3 py-2.5">
+      <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2.5" style={{ borderColor: "var(--divider-subtle-color)" }}>
         {is_mobile ? (
           <button
             type="button"
             onClick={on_close}
             aria-label="关闭 Thread"
             title="关闭 Thread"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-slate-500 transition-colors hover:text-slate-700"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-[color:var(--icon-default)] transition-colors hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--icon-strong)]"
             style={{
               background: "var(--surface-panel-subtle-background)",
               borderColor: "var(--surface-panel-subtle-border)",
@@ -67,7 +67,7 @@ export function ThreadDetailPanel({
         ) : null}
 
         <div
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-slate-500"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-[color:var(--icon-default)]"
           style={{
             background: "var(--surface-avatar-background)",
             borderColor: "var(--surface-avatar-border)",
@@ -77,8 +77,8 @@ export function ThreadDetailPanel({
           <Bot className="h-3.5 w-3.5" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-slate-800">{agent_name}</p>
-          <p className="text-xs text-slate-400">Thread</p>
+          <p className="truncate text-sm font-semibold text-[color:var(--text-strong)]">{agent_name}</p>
+          <p className="text-xs text-[color:var(--text-soft)]">Thread</p>
         </div>
 
         {!is_mobile ? (
@@ -87,7 +87,7 @@ export function ThreadDetailPanel({
             onClick={on_close}
             aria-label="关闭 Thread"
             title="关闭 Thread"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-slate-500 transition-colors hover:text-slate-700"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-[color:var(--icon-default)] transition-colors hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--icon-strong)]"
             style={{
               background: "var(--surface-panel-subtle-background)",
               borderColor: "var(--surface-panel-subtle-border)",

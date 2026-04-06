@@ -237,7 +237,7 @@ export function EditorPanel({
               />
             ) : (
               <textarea
-                className="soft-scrollbar surface-card h-full w-full resize-none rounded-[28px] p-5 font-mono text-sm leading-6 text-slate-900/82 outline-none disabled:opacity-70"
+                className="soft-scrollbar surface-card h-full w-full resize-none rounded-[28px] p-5 font-mono text-sm leading-6 text-[color:var(--text-default)] outline-none disabled:opacity-70"
                 disabled={is_loading}
                 onChange={(event) => setDraftContent(event.target.value)}
                 value={is_loading ? "加载中..." : draft_content}

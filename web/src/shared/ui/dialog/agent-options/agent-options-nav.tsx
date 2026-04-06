@@ -47,8 +47,8 @@ export function AgentOptionsNav({ activeTab, onTabChange }: AgentOptionsNavProps
             className={cn(
               "relative flex w-full items-center gap-3 rounded-[18px] px-3 py-3 text-left transition-all duration-200",
               isActive
-                ? "surface-card border-white/46 text-primary shadow-none"
-                : "text-slate-500 hover:bg-white/38 hover:text-slate-900"
+                ? "dialog-card-active text-primary shadow-none"
+                : "text-[color:var(--text-muted)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--text-strong)]"
             )}
           >
             {isActive && (
@@ -59,7 +59,7 @@ export function AgentOptionsNav({ activeTab, onTabChange }: AgentOptionsNavProps
                 "flex h-9 w-9 items-center justify-center rounded-[12px]",
                 isActive
                   ? "bg-primary/10 text-primary"
-                  : "bg-transparent text-slate-600"
+                  : "bg-transparent text-[color:var(--icon-default)]"
               )}
             >
               <Icon className="h-4 w-4" />

@@ -33,11 +33,15 @@ export function CodeBlockContent({ language, value }: CodeBlockContentProps) {
       right_slot={(
         <button
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full border border-slate-200/74 bg-white/72 px-2.5 py-1 text-xs text-slate-500/88 transition-colors duration-150 hover:text-slate-900/94",
-            is_dark_theme && "border-white/8 bg-white/6 text-slate-300/90 hover:text-slate-100/96",
+            "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition-colors duration-150",
             copied && !is_dark_theme && "border-emerald-200/78 bg-emerald-100/90 text-emerald-600",
             copied && is_dark_theme && "border-green-500/22 bg-green-950/42 text-emerald-300",
           )}
+          style={copied ? undefined : {
+            background: "var(--chip-default-background)",
+            borderColor: "var(--chip-default-border)",
+            color: "var(--text-muted)",
+          }}
           onClick={handleCopy}
         >
           {copied ? (

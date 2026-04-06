@@ -20,7 +20,7 @@ export function ConnectorsSearchBar({ ctrl }: ConnectorsSearchBarProps) {
           placeholder="搜索应用授权..."
           value={ctrl.search_query}
         />
-        <div className="inline-flex items-center gap-1.5 px-1 text-xs font-medium text-slate-500/86">
+        <div className="inline-flex items-center gap-1.5 px-1 text-xs font-medium text-[color:var(--text-soft)]">
           <Link2 className="h-3.5 w-3.5" />
           <span>{ctrl.connectors.length} 个应用授权</span>
         </div>

@@ -76,14 +76,14 @@ export function AgentOptionsAdvancedTab({
       <div className="space-y-4">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--text-soft)]">
               Runtime Policy
             </p>
-            <h3 className="mt-1 text-base font-semibold text-slate-900">
+            <h3 className="mt-1 text-base font-semibold text-[color:var(--text-strong)]">
               权限控制
             </h3>
           </div>
-          <p className="max-w-[240px] text-right text-xs leading-5 text-slate-400">
+          <p className="max-w-[240px] text-right text-xs leading-5 text-[color:var(--text-soft)]">
             这里决定 Agent 在执行命令、编辑文件和联网操作时的审批边界。
           </p>
         </div>
@@ -96,7 +96,7 @@ export function AgentOptionsAdvancedTab({
                 "radius-shell-md relative overflow-hidden p-4 text-left transition-all duration-200",
                 permissionMode === pm.value
                   ? "dialog-card-active"
-                  : "dialog-card hover:border-primary/20 hover:bg-white/80"
+                  : "dialog-card hover:border-[var(--surface-interactive-hover-border)] hover:bg-[var(--surface-interactive-hover-background)]"
               )}
             >
               <div className="mb-2 flex items-center justify-between">
@@ -143,21 +143,21 @@ export function AgentOptionsAdvancedTab({
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--text-soft)]">
               Tool Access
             </p>
-            <h3 className="mt-1 text-base font-semibold text-slate-900">
+            <h3 className="mt-1 text-base font-semibold text-[color:var(--text-strong)]">
               工具预授权
             </h3>
           </div>
-          <span className="text-[11px] text-slate-400">
+          <span className="text-[11px] text-[color:var(--text-soft)]">
             已启用 {allowedTools.length} 个工具
           </span>
         </div>
 
         {/* 安全提示 */}
         <div className="radius-shell-md flex gap-3 border border-orange-500/20 bg-orange-500/10 p-4">
-          <div className="mt-0.5 text-orange-600">
+            <div className="mt-0.5 text-orange-500">
             <svg
               width="16"
               height="16"
@@ -174,8 +174,8 @@ export function AgentOptionsAdvancedTab({
             </svg>
           </div>
           <div>
-            <p className="text-sm font-medium text-orange-700">安全提示</p>
-            <p className="mt-1 text-xs leading-relaxed text-orange-600/90">
+            <p className="text-sm font-medium text-orange-300">安全提示</p>
+            <p className="mt-1 text-xs leading-relaxed text-orange-200/90">
               被选中的工具将被`预先授权`，Agent
               调用这些工具时将不会请求您的确认。请仅为您完全信任的工具开启此选项。
             </p>
@@ -193,16 +193,16 @@ export function AgentOptionsAdvancedTab({
                   "radius-shell-md flex items-center justify-between p-4 transition-all duration-200",
                   isChecked
                     ? "dialog-card-active"
-                    : "dialog-card hover:border-primary/20 hover:bg-white/80"
+                    : "dialog-card hover:border-[var(--surface-interactive-hover-border)] hover:bg-[var(--surface-interactive-hover-background)]"
                 )}
               >
                 <div className="mr-4 flex-1">
                   <div className="flex items-center gap-2 text-sm font-medium">
                     {tool.name}
                     {isChecked && (
-                      <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                        已授权
-                      </span>
+                        <span className="rounded border border-primary/18 bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                          已授权
+                        </span>
                     )}
                   </div>
                   <div className="mt-1 text-xs text-muted-foreground">
@@ -217,7 +217,7 @@ export function AgentOptionsAdvancedTab({
                     onChange={() => onToggleTool(tool.name, "allowed")}
                     className="peer sr-only"
                   />
-                  <div className="h-6 w-11 rounded-full bg-slate-200/80 peer peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20 after:absolute after:left-[2px] after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-white/60 after:bg-white after:shadow-sm after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-white" />
+                  <div className="h-6 w-11 rounded-full border border-[var(--surface-interactive-hover-border)] bg-[var(--surface-panel-subtle-background)] peer peer-checked:border-primary/40 peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20 after:absolute after:left-[2px] after:top-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-[var(--surface-popover-border)] after:bg-[var(--surface-popover-background)] after:transition-all after:content-[''] peer-checked:after:translate-x-full peer-checked:after:border-primary/30 peer-checked:after:bg-white" />
                 </label>
               </div>
             );

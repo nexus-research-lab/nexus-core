@@ -114,7 +114,7 @@ export const MentionPopover = memo(({
                         key={member.agent_id}
                         className={cn(
                             "flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors duration-150",
-                            index === active_index ? "text-slate-900/94" : "text-slate-600/90 hover:bg-[var(--surface-interactive-hover-background)]",
+                            index === active_index ? "text-[color:var(--text-strong)]" : "text-[color:var(--text-default)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--text-strong)]",
                         )}
                         style={index === active_index ? { background: "var(--surface-interactive-active-background)" } : undefined}
                         onMouseDown={(e) => {

@@ -72,14 +72,14 @@ export const AgentCardGroup = memo(function AgentCardGroup({
               </MessageAvatar>
               <div className="relative min-w-0">
                 <div className={cn("flex items-center gap-2", compact ? "h-[26px]" : "h-7")}>
-                  <span className="shrink-0 text-sm font-bold text-slate-900">你</span>
-                  <span className="hidden shrink-0 text-xs text-slate-500 sm:inline">
+                  <span className="shrink-0 text-sm font-bold text-[color:var(--text-strong)]">你</span>
+                  <span className="hidden shrink-0 text-xs text-[color:var(--text-soft)] sm:inline">
                     {user_message.timestamp ? formatTime(user_message.timestamp) : "--:--"}
                   </span>
                 </div>
                 <div className="pb-1 pt-1">
                   <p className={cn(
-                    "whitespace-pre-wrap text-slate-900 wrap-anywhere",
+                    "whitespace-pre-wrap text-[color:var(--text-strong)] wrap-anywhere",
                     compact ? "text-[13px] leading-6" : "text-[15px] leading-7",
                   )}>
                     {user_content}

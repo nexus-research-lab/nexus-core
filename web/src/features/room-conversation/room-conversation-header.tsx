@@ -77,7 +77,7 @@ function MemberAvatarStack({
     >
       <div className="ml-1 flex items-center gap-0">
         <WorkspaceIconFrame
-          class_name="ml-0 h-[27px] w-[27px] rounded-full text-[8px] font-bold text-slate-900/86"
+          class_name="ml-0 h-[27px] w-[27px] rounded-full text-[8px] font-bold text-[color:var(--text-strong)]"
           shape="round"
           size="sm"
         >
@@ -251,7 +251,7 @@ const RoomConversationHeaderView = memo(({
       active_tab={active_tab}
       badge="ROOM"
       density="compact"
-      leading={<Hash size={14} className="text-slate-800/72" />}
+      leading={<Hash size={14} className="text-[color:var(--icon-default)]" />}
       on_change_tab={on_change_tab}
       tabs_trailing={<WorkspaceTaskStrip todos={todos} />}
       tabs={room_tabs}

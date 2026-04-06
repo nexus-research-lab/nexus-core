@@ -38,16 +38,16 @@ export function ContactsAgentCard({
     >
       {/* 居中头像 */}
       <WorkspaceIconFrame class_name="mx-auto h-16 w-16" shape="round" size="lg">
-        <Bot className="h-7 w-7 text-slate-900/88" />
+        <Bot className="h-7 w-7 text-[color:var(--icon-strong)]" />
       </WorkspaceIconFrame>
 
       {/* 名称 */}
-      <p className="mt-4 truncate text-[18px] font-bold tracking-[-0.03em] text-slate-950/96">
+      <p className="mt-4 truncate text-[18px] font-bold tracking-[-0.03em] text-[color:var(--text-strong)]">
         {name}
       </p>
 
       {/* 描述：1-2 行截断 */}
-      <p className="mt-2 line-clamp-2 min-h-[40px] text-[13px] leading-5 text-slate-700/88">
+      <p className="mt-2 line-clamp-2 min-h-[40px] text-[13px] leading-5 text-[color:var(--text-default)]">
         {description}
       </p>
 

@@ -25,40 +25,40 @@ export function UsageSection({
     >
       <div className="grid grid-cols-2 gap-2">
         <div className={METRIC_CARD_CLASS_NAME}>
-          <p className="text-[11px] uppercase tracking-[0.12em] text-slate-700/50">当前 room</p>
-          <p className="mt-1 text-sm font-semibold text-slate-900/86">
+          <p className="text-[11px] uppercase tracking-[0.12em] text-[color:var(--text-soft)]">当前 room</p>
+          <p className="mt-1 text-sm font-semibold text-[color:var(--text-strong)]">
             {formatCost(conversation_cost_summary.total_cost_usd)}
           </p>
         </div>
         <div className={METRIC_CARD_CLASS_NAME}>
-          <p className="text-[11px] uppercase tracking-[0.12em] text-slate-700/50">成员累计</p>
-          <p className="mt-1 text-sm font-semibold text-slate-900/86">
+          <p className="text-[11px] uppercase tracking-[0.12em] text-[color:var(--text-soft)]">成员累计</p>
+          <p className="mt-1 text-sm font-semibold text-[color:var(--text-strong)]">
             {formatCost(agent_cost_summary.total_cost_usd)}
           </p>
         </div>
       </div>
       <div className="mt-3 space-y-1.5">
         <div className="flex justify-between gap-4">
-          <span className="text-[11px] text-slate-700/54">总 Tokens</span>
-          <span className="text-[11px] font-medium text-slate-900/84">
+          <span className="text-[11px] text-[color:var(--text-soft)]">总 Tokens</span>
+          <span className="text-[11px] font-medium text-[color:var(--text-default)]">
             {formatTokens(conversation_cost_summary.total_tokens)}
           </span>
         </div>
         <div className="flex justify-between gap-4">
-          <span className="text-[11px] text-slate-700/54">输入 / 输出</span>
-          <span className="text-[11px] font-medium text-slate-900/84">
+          <span className="text-[11px] text-[color:var(--text-soft)]">输入 / 输出</span>
+          <span className="text-[11px] font-medium text-[color:var(--text-default)]">
             {formatTokens(conversation_cost_summary.total_input_tokens)} / {formatTokens(conversation_cost_summary.total_output_tokens)}
           </span>
         </div>
         <div className="flex justify-between gap-4">
-          <span className="text-[11px] text-slate-700/54">缓存</span>
-          <span className="text-[11px] font-medium text-slate-900/84">
+          <span className="text-[11px] text-[color:var(--text-soft)]">缓存</span>
+          <span className="text-[11px] font-medium text-[color:var(--text-default)]">
             {formatTokens(conversation_cost_summary.total_cache_read_input_tokens)} / {formatTokens(conversation_cost_summary.total_cache_creation_input_tokens)}
           </span>
         </div>
         <div className="flex justify-between gap-4">
-          <span className="text-[11px] text-slate-700/54">上次耗时</span>
-          <span className="text-[11px] font-medium text-slate-900/84">
+          <span className="text-[11px] text-[color:var(--text-soft)]">上次耗时</span>
+          <span className="text-[11px] font-medium text-[color:var(--text-default)]">
             {lastRunDurationMs !== null ? `${(lastRunDurationMs / 1000).toFixed(1)}s` : "-"}
           </span>
         </div>

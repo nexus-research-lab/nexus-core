@@ -104,12 +104,6 @@ export function PermissionDialog(
     });
   }, [suggestions]);
 
-  const riskColorMap: Record<PermissionRiskLevel, string> = {
-    low: 'bg-emerald-100 text-emerald-700',
-    medium: 'bg-amber-100 text-amber-700',
-    high: 'bg-red-100 text-red-700',
-  };
-
   const readableFields = useMemo(() => {
     return Object.entries(tool_input).map(([key, value]) => ({
       key,
@@ -149,15 +143,15 @@ export function PermissionDialog(
     return (
       <div className="space-y-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Parameters</p>
-          <h3 className="mt-1 text-base font-semibold text-slate-900">参数</h3>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--text-soft)]">Parameters</p>
+          <h3 className="mt-1 text-base font-semibold text-[color:var(--text-strong)]">参数</h3>
         </div>
         {readableFields.map((field) => (
           <div key={field.key} className="dialog-card radius-shell-md px-4 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--text-soft)]">
               {field.label}
             </p>
-            <p className="mt-2 text-sm leading-7 whitespace-pre-wrap break-words text-slate-800">
+            <p className="mt-2 text-sm leading-7 whitespace-pre-wrap break-words text-[color:var(--text-default)]">
               {field.value}
             </p>
           </div>
@@ -187,9 +181,9 @@ export function PermissionDialog(
               className={cn(
                 DIALOG_HEADER_ICON_CLASS_NAME,
                 "h-14 w-14 rounded-[20px]",
-                risk_level === "high" && "bg-red-100 text-red-600",
-                risk_level === "medium" && "bg-amber-100 text-amber-600",
-                (!risk_level || risk_level === "low") && "bg-emerald-100 text-emerald-600",
+                risk_level === "high" && "border border-rose-400/24 bg-rose-500/12 text-rose-300",
+                risk_level === "medium" && "border border-amber-400/24 bg-amber-500/12 text-amber-300",
+                (!risk_level || risk_level === "low") && "border border-emerald-400/24 bg-emerald-500/12 text-emerald-300",
               )}
             >
               <AlertTriangle className="h-7 w-7" />
@@ -215,7 +209,7 @@ export function PermissionDialog(
         <div className="dialog-body dialog-body--scroll soft-scrollbar space-y-5">
           <div className="mb-1 flex flex-wrap gap-2">
             {risk_label ? (
-              <span className={cn(DIALOG_TAG_CLASS_NAME, risk_level === "high" && "text-rose-700", risk_level === "medium" && "text-amber-700", (!risk_level || risk_level === "low") && "text-emerald-700")}>
+              <span className={cn(DIALOG_TAG_CLASS_NAME, risk_level === "high" && "text-rose-300", risk_level === "medium" && "text-amber-300", (!risk_level || risk_level === "low") && "text-emerald-300")}>
                 {risk_label}
               </span>
             ) : null}
@@ -227,7 +221,7 @@ export function PermissionDialog(
           </div>
 
           <div className={getDialogNoteClassName("default")}>
-            <div className="text-[15px] leading-8 break-words text-slate-800">
+            <div className="text-[15px] leading-8 break-words text-[color:var(--text-default)]">
               {summary || "确认后继续执行"}
             </div>
           </div>
@@ -236,7 +230,7 @@ export function PermissionDialog(
             <div className="space-y-3">
               <div>
                 <p className="dialog-label">Policy</p>
-                <h3 className="mt-1 text-base font-semibold text-slate-900">授权范围</h3>
+                <h3 className="mt-1 text-base font-semibold text-[color:var(--text-strong)]">授权范围</h3>
               </div>
               <div className="space-y-2">
                 <label
@@ -244,7 +238,7 @@ export function PermissionDialog(
                     "radius-shell-md flex items-start gap-3 px-4 py-3 transition-all duration-200",
                     selectedSuggestionIndex === -1
                       ? "dialog-card-active"
-                      : "dialog-card hover:border-primary/20 hover:bg-white/80",
+                      : "dialog-card hover:border-[var(--surface-interactive-hover-border)] hover:bg-[var(--surface-interactive-hover-background)]",
                   )}
                 >
                   <input
@@ -266,7 +260,7 @@ export function PermissionDialog(
                       "radius-shell-md flex items-start gap-3 px-4 py-3 transition-all duration-200",
                       selectedSuggestionIndex === suggestion.index
                         ? "dialog-card-active"
-                        : "dialog-card hover:border-primary/20 hover:bg-white/80",
+                        : "dialog-card hover:border-[var(--surface-interactive-hover-border)] hover:bg-[var(--surface-interactive-hover-background)]",
                     )}
                   >
                     <input

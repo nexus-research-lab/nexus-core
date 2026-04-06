@@ -13,6 +13,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import { AppRouteBuilders } from "@/app/router/route-paths";
+import { HOME_SIDEBAR_PADDING_CLASS } from "@/lib/home-layout";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/shared/i18n/i18n-context";
 import { LanguageSwitch } from "@/shared/ui/i18n/language-switch";
@@ -94,7 +95,7 @@ export function SidebarWidePanel() {
 
   return (
     <div
-      className="relative flex h-full shrink-0 flex-col px-2.5 py-3"
+      className={cn("relative flex h-full shrink-0 flex-col", HOME_SIDEBAR_PADDING_CLASS)}
       style={{ width: wide_panel_width }}
     >
       <div className="surface-panel radius-shell-xl flex h-full w-full flex-col overflow-hidden">
@@ -107,15 +108,15 @@ export function SidebarWidePanel() {
                 to={AppRouteBuilders.launcher()}
                 title={t("sidebar.back_to_launcher")}
               >
-                <WorkspaceIconFrame class_name="text-[15px] font-black tracking-[-0.06em] text-slate-900" size="sm">
+                <WorkspaceIconFrame class_name="text-[15px] font-black tracking-[-0.06em] text-[color:var(--text-strong)]" size="sm">
                   N
                 </WorkspaceIconFrame>
               </Link>
               <div className="min-w-0">
-                <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-slate-500/68">
+                <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-[color:var(--text-soft)]">
                   {t("sidebar.workspace_label")}
                 </p>
-                <h2 className="truncate text-[15px] font-bold tracking-[-0.03em] text-slate-800">{t("sidebar.workspace_title")}</h2>
+                <h2 className="truncate text-[15px] font-bold tracking-[-0.03em] text-[color:var(--text-strong)]">{t("sidebar.workspace_title")}</h2>
               </div>
             </div>
           </div>
@@ -136,11 +137,11 @@ export function SidebarWidePanel() {
 
         <div className="flex items-center justify-between gap-2.5 border-t glass-divider px-3 py-2.5">
           <Link
-            className="transition-all duration-200 hover:text-slate-900"
+            className="transition-all duration-200 hover:text-[color:var(--text-strong)]"
             title={t("sidebar.settings")}
             to={AppRouteBuilders.settings()}
           >
-            <WorkspaceIconFrame class_name="h-8 w-8 text-slate-600" size="sm">
+            <WorkspaceIconFrame class_name="h-8 w-8 text-[color:var(--icon-default)]" size="sm">
               <Settings className="h-4 w-4" />
             </WorkspaceIconFrame>
           </Link>

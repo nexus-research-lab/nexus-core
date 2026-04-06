@@ -67,14 +67,14 @@ export function RoomMemberPickerDialog({
                   onClick={() => on_select(agent.agent_id)}
                   type="button"
                 >
-                  <div className="chip-default flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-slate-900/82">
+                  <div className="chip-default flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-[color:var(--text-strong)]">
                     {agent.name.slice(0, 2).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-slate-900/88">
+                    <p className="truncate text-sm font-semibold text-[color:var(--text-strong)]">
                       {agent.name}
                     </p>
-                    <p className="truncate text-[11px] text-slate-700/52">
+                    <p className="truncate text-[11px] text-[color:var(--text-soft)]">
                       {t("room.add_member_dialog_hint")}
                     </p>
                   </div>

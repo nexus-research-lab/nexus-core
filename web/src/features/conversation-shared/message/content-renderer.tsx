@@ -105,7 +105,7 @@ export function ContentRenderer(
                 <MessageCalloutTitle>
                   {block.last_tool_name || '后台任务'} 正在执行
                 </MessageCalloutTitle>
-                <div className="mt-1 whitespace-pre-wrap break-words text-slate-600">
+                <div className="mt-1 whitespace-pre-wrap break-words text-[color:var(--text-muted)]">
                   {block.description || '正在处理中…'}
                 </div>
               </MessageCallout>
@@ -204,7 +204,7 @@ export function ContentRenderer(
                 </MessageResultLabel>
                 <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
                   {typeof block.content === 'string' ? (
-                    <pre className="rounded-2xl border border-slate-200/80 bg-slate-50/92 p-3 text-xs text-slate-800/95 whitespace-pre-wrap break-words">
+                    <pre className="rounded-2xl border border-[var(--divider-subtle-color)] bg-[var(--surface-inset-background)] p-3 text-xs text-[color:var(--text-default)] whitespace-pre-wrap break-words">
                       {block.content}
                     </pre>
                   ) : (

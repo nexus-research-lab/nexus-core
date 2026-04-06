@@ -195,7 +195,7 @@ function QuestionCard({
                             <div className="border-b border-white/14">
                                 <textarea
                                     className={cn(
-                                        "h-7 min-h-7 w-full resize-none border-0 bg-transparent px-0 py-0 text-[13px] leading-7 text-slate-900 outline-none shadow-none ring-0 transition duration-150 ease-out focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none",
+                                        "h-7 min-h-7 w-full resize-none border-0 bg-transparent px-0 py-0 text-[13px] leading-7 text-[color:var(--text-strong)] outline-none shadow-none ring-0 transition duration-150 ease-out focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none",
                                         "placeholder:text-muted-foreground/70",
                                         is_submitted && "cursor-not-allowed opacity-60"
                                     )}

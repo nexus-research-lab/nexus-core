@@ -14,7 +14,7 @@ export function SkillsCatalogGrid({ ctrl }: SkillsCatalogGridProps) {
   if (ctrl.loading) {
     return (
       <div className="flex min-h-80 items-center justify-center">
-        <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+        <Loader2 className="h-5 w-5 animate-spin text-[color:var(--text-muted)]" />
       </div>
     );
   }
@@ -22,12 +22,12 @@ export function SkillsCatalogGrid({ ctrl }: SkillsCatalogGridProps) {
   if (!ctrl.grouped_skills.length) {
     return (
       <div className="flex min-h-80 flex-col items-center justify-center gap-3 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full border border-white/40 bg-white/60">
-          <Puzzle className="h-6 w-6 text-slate-400" />
+        <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[var(--divider-subtle-color)] bg-[var(--surface-inset-background)]">
+          <Puzzle className="h-6 w-6 text-[color:var(--text-muted)]" />
         </div>
         <div>
-          <p className="text-[16px] font-bold text-slate-800/80">没有符合条件的技能</p>
-          <p className="mt-1 text-[13px] text-slate-500/60">
+          <p className="text-[16px] font-bold text-[color:var(--text-default)]">没有符合条件的技能</p>
+          <p className="mt-1 text-[13px] text-[color:var(--text-soft)]">
             试试切换分类、来源或搜索条件
           </p>
         </div>
@@ -40,10 +40,10 @@ export function SkillsCatalogGrid({ ctrl }: SkillsCatalogGridProps) {
       {ctrl.grouped_skills.map(([category_name, items]: [string, SkillInfo[]]) => (
         <section key={category_name}>
           <div className="mb-3 flex items-center gap-2.5">
-            <h2 className="text-[15px] font-bold tracking-[-0.02em] text-slate-950/85">
+            <h2 className="text-[15px] font-bold tracking-[-0.02em] text-[color:var(--text-strong)]">
               {category_name}
             </h2>
-            <span className="rounded-full bg-white/60 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+            <span className="rounded-full bg-[var(--chip-default-background)] border border-[var(--chip-default-border)] px-2 py-0.5 text-[10px] font-semibold text-[color:var(--text-soft)]">
               {items.length}
             </span>
           </div>

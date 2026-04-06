@@ -141,7 +141,7 @@ export function RoomSettingsPanel({
                     }}
                     placeholder={t("room.name_placeholder")}
                     maxLength={64}
-                    className="dialog-input radius-shell-sm flex-1 px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400/50 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:outline-none"
+                    className="dialog-input radius-shell-sm flex-1 px-3.5 py-2.5 text-sm text-[color:var(--text-strong)] placeholder:text-[color:var(--text-soft)] focus-visible:outline-none"
                   />
                   <WorkspacePillButton
                     size="sm"
@@ -154,7 +154,7 @@ export function RoomSettingsPanel({
                 </div>
               ) : (
                 <div className="surface-inset radius-shell-sm flex items-center justify-between gap-3 px-4 py-3">
-                  <p className="text-sm text-slate-900">{room_name || t("room.untitled_room")}</p>
+                  <p className="text-sm text-[color:var(--text-strong)]">{room_name || t("room.untitled_room")}</p>
                   <WorkspacePillButton
                     size="sm"
                     onClick={() => set_is_editing_name(true)}
@@ -183,7 +183,7 @@ export function RoomSettingsPanel({
                     placeholder={t("room.description_placeholder")}
                     maxLength={256}
                     rows={3}
-                    className="dialog-input radius-shell-sm flex-1 resize-none px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400/50 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:outline-none"
+                    className="dialog-input radius-shell-sm flex-1 resize-none px-3.5 py-2.5 text-sm text-[color:var(--text-strong)] placeholder:text-[color:var(--text-soft)] focus-visible:outline-none"
                   />
                   <WorkspacePillButton
                     size="sm"
@@ -196,7 +196,7 @@ export function RoomSettingsPanel({
                 </div>
               ) : (
                 <div className="surface-inset radius-shell-sm flex items-center justify-between gap-3 px-4 py-3">
-                  <p className="min-w-0 flex-1 truncate text-sm text-slate-900">
+                  <p className="min-w-0 flex-1 truncate text-sm text-[color:var(--text-strong)]">
                     {room_description || t("room.no_description")}
                   </p>
                   <WorkspacePillButton

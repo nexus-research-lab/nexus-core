@@ -91,7 +91,7 @@ export function ContactsDirectory({
         active_tab={active_tab}
         badge="AGENTS"
         density="compact"
-        leading={<Users className="h-4 w-4 text-slate-800/72"/>}
+        leading={<Users className="h-4 w-4 text-[color:var(--icon-default)]"/>}
         on_change_tab={set_active_tab}
         subtitle={t("contacts.subtitle")}
         tabs={tabs}
@@ -109,12 +109,12 @@ export function ContactsDirectory({
               onClick={on_create_agent}
             >
               <WorkspaceIconFrame class_name="h-16 w-16" shape="round" size="lg">
-                <Plus className="h-7 w-7 text-slate-600"/>
+                <Plus className="h-7 w-7 text-[color:var(--icon-default)]"/>
               </WorkspaceIconFrame>
-              <p className="mt-4 text-[18px] font-bold tracking-[-0.03em] text-slate-950/92">
+              <p className="mt-4 text-[18px] font-bold tracking-[-0.03em] text-[color:var(--text-strong)]">
                 {t("contacts.new_agent")}
               </p>
-              <p className="mt-2 text-[13px] leading-5 text-slate-700/72">
+              <p className="mt-2 text-[13px] leading-5 text-[color:var(--text-default)]">
                 {t("contacts.new_agent_description")}
               </p>
             </WorkspaceCatalogGhostCard>
@@ -137,10 +137,10 @@ export function ContactsDirectory({
         {active_tab === "task_generated" && (
           <WorkspaceCatalogEmptyShell class_name="mt-6">
             <div>
-              <p className="text-[22px] font-bold tracking-[-0.04em] text-slate-950/90">
+              <p className="text-[22px] font-bold tracking-[-0.04em] text-[color:var(--text-strong)]">
                 {t("contacts.empty_generated_title")}
               </p>
-              <p className="mt-3 text-sm leading-7 text-slate-700/60">
+              <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">
                 {t("contacts.empty_generated_description")}
               </p>
             </div>

@@ -23,27 +23,27 @@ const BADGE_STYLE_MAP: Record<CatalogBadgeTone, { background: string; border: st
   neutral: {
     background: "var(--surface-panel-subtle-background)",
     border: "1px solid var(--surface-panel-subtle-border)",
-    color: "rgb(100 116 139 / 0.84)",
+    color: "var(--text-muted)",
   },
   info: {
-    background: "rgb(239 246 255 / 0.9)",
-    border: "1px solid rgb(191 219 254 / 0.82)",
-    color: "rgb(3 105 161)",
+    background: "color-mix(in srgb, var(--primary) 14%, transparent)",
+    border: "1px solid color-mix(in srgb, var(--primary) 30%, var(--surface-panel-subtle-border))",
+    color: "color-mix(in srgb, var(--primary) 78%, var(--text-strong))",
   },
   success: {
-    background: "rgb(236 253 245 / 0.92)",
-    border: "1px solid rgb(167 243 208 / 0.82)",
-    color: "rgb(4 120 87)",
+    background: "color-mix(in srgb, var(--success) 14%, transparent)",
+    border: "1px solid color-mix(in srgb, var(--success) 30%, var(--surface-panel-subtle-border))",
+    color: "color-mix(in srgb, var(--success) 78%, var(--text-strong))",
   },
   warning: {
-    background: "rgb(255 251 235 / 0.92)",
-    border: "1px solid rgb(253 230 138 / 0.82)",
-    color: "rgb(180 83 9)",
+    background: "color-mix(in srgb, var(--warning) 14%, transparent)",
+    border: "1px solid color-mix(in srgb, var(--warning) 30%, var(--surface-panel-subtle-border))",
+    color: "color-mix(in srgb, var(--warning) 82%, var(--text-strong))",
   },
 };
 
 const ICON_FRAME_TONE_CLASS_MAP: Record<IconFrameTone, string> = {
-  default: "border-[color:var(--chip-default-border)] bg-[var(--chip-default-background)] text-slate-700/90",
+  default: "border-[color:var(--chip-default-border)] bg-[var(--chip-default-background)] text-[color:var(--text-default)]",
   primary: "border-primary/14 bg-primary/8 text-primary",
   success: "border-emerald-200/70 bg-emerald-50/92 text-emerald-700",
   warning: "border-amber-200/72 bg-amber-50/92 text-amber-700",
@@ -70,7 +70,7 @@ export function WorkspaceCatalogCard({
   return (
     <article
       className={cn(
-        "relative flex flex-col overflow-hidden border border-[color:var(--card-default-border)] bg-[var(--card-default-background)] before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-20 before:bg-[linear-gradient(180deg,rgba(255,255,255,0.4),transparent)] before:opacity-100 after:pointer-events-none after:absolute after:right-[-2.5rem] after:top-[-2rem] after:h-28 after:w-28 after:rounded-full after:bg-[radial-gradient(circle,rgba(var(--primary-rgb),0.08),transparent_72%)] transition duration-150 ease-out hover:border-[var(--surface-interactive-active-border)] hover:bg-[linear-gradient(180deg,rgba(255,255,255,0.99),rgba(246,248,251,0.92))]",
+        "relative flex flex-col overflow-hidden border border-[color:var(--card-default-border)] bg-[var(--card-default-background)] transition duration-150 ease-out hover:border-[var(--surface-interactive-active-border)] hover:bg-[var(--surface-interactive-hover-background)]",
         onClick && "cursor-pointer",
         muted && "opacity-70",
         class_name,
@@ -96,7 +96,7 @@ export function WorkspaceCatalogMedia({
   return (
     <div
       className={cn(
-        "relative flex items-center justify-center overflow-hidden border border-[color:var(--chip-default-border)] bg-[var(--chip-default-background)] before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.56),transparent_68%)]",
+        "relative flex items-center justify-center overflow-hidden border border-[color:var(--chip-default-border)] bg-[var(--chip-default-background)]",
         shape === "round" ? "rounded-full" : "rounded-[14px]",
         class_name,
       )}
@@ -125,7 +125,7 @@ export function WorkspaceIconFrame({
   return (
     <div
       className={cn(
-        "relative flex shrink-0 items-center justify-center overflow-hidden border before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.56),transparent_68%)]",
+        "relative flex shrink-0 items-center justify-center overflow-hidden border",
         ICON_FRAME_SIZE_CLASS_MAP[size],
         ICON_FRAME_TONE_CLASS_MAP[tone],
         shape === "round" && "rounded-full",
@@ -152,7 +152,7 @@ export function WorkspaceCatalogAction({
   return (
     <button
       className={cn(
-        "inline-flex h-8 w-8 items-center justify-center rounded-[12px] border border-[color:var(--chip-default-border)] bg-[var(--chip-default-background)] text-slate-600/88 transition duration-150 ease-out hover:border-[var(--surface-interactive-active-border)] hover:bg-[var(--surface-interactive-active-background)] hover:text-slate-950/92",
+        "inline-flex h-8 w-8 items-center justify-center rounded-[12px] border border-[color:var(--chip-default-border)] bg-[var(--chip-default-background)] text-[color:var(--icon-default)] transition duration-150 ease-out hover:border-[var(--surface-interactive-active-border)] hover:bg-[var(--surface-interactive-active-background)] hover:text-[color:var(--icon-strong)]",
         tone === "danger" && "hover:border-rose-100 hover:bg-rose-50/92 hover:text-rose-600/90",
         class_name,
       )}
@@ -193,11 +193,11 @@ export function WorkspaceCatalogTag({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium text-slate-600/84",
+        "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-muted)]",
         class_name,
       )}
       style={{
-        background: "linear-gradient(180deg, rgba(255,255,255,0.94), rgba(247,249,252,0.84))",
+        background: "var(--surface-panel-subtle-background)",
         border: "1px solid var(--surface-panel-subtle-border)",
       }}
     >
@@ -218,7 +218,7 @@ export function WorkspaceCatalogGhostCard({
   return (
     <article
       className={cn(
-        "relative flex flex-col items-center justify-center overflow-hidden rounded-[26px] border border-dashed border-slate-400/38 bg-[var(--card-default-background)] text-center before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:h-16 before:bg-[linear-gradient(180deg,rgba(255,255,255,0.28),transparent)] transition duration-150 ease-out hover:border-[var(--surface-interactive-active-border)] hover:bg-[var(--surface-interactive-hover-background)]",
+        "relative flex flex-col items-center justify-center overflow-hidden rounded-[26px] border border-dashed border-[var(--surface-panel-subtle-border)] bg-[var(--card-default-background)] text-center transition duration-150 ease-out hover:border-[var(--surface-interactive-active-border)] hover:bg-[var(--surface-interactive-hover-background)]",
         onClick && "cursor-pointer",
         class_name,
       )}

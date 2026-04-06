@@ -5,7 +5,7 @@ import { WorkspaceSurfaceHeader } from "@/shared/ui/workspace/workspace-surface-
 
 import type { DiscoveryMode, SkillMarketplaceController } from "@/hooks/use-skill-marketplace";
 
-const DISCOVERY_TABS: { key: DiscoveryMode; label: string }[] = [
+const DISCOVERY_OPTIONS: { key: DiscoveryMode; label: string }[] = [
   { key: "catalog", label: "库内技能" },
   { key: "external", label: "社区技能" },
 ];
@@ -19,14 +19,17 @@ export function SkillsHeader({ ctrl }: SkillsHeaderProps) {
 
   return (
     <WorkspaceSurfaceHeader
-      active_tab={ctrl.discovery_mode}
       badge={t("capability.skills_badge", { count: ctrl.catalog_count })}
       density="compact"
       leading={<Puzzle className="h-4 w-4" />}
       subtitle={t("capability.skills_subtitle")}
-      tabs={DISCOVERY_TABS}
       title={t("capability.skills_title")}
-      on_change_tab={ctrl.set_discovery_mode}
+      tabs={DISCOVERY_OPTIONS}
+      active_tab={ctrl.discovery_mode}
+      on_change_tab={(next_mode) => {
+        ctrl.set_source_dropdown_open(false);
+        ctrl.set_discovery_mode(next_mode);
+      }}
       trailing={
         <div className="flex items-center gap-2">
           <WorkspacePillButton density="compact" onClick={() => ctrl.file_input_ref.current?.click()} size="sm" variant="outlined">

@@ -37,7 +37,7 @@ const WORKSPACE_FILE_PATTERN = /([A-Za-z0-9_./-]+\.[A-Za-z0-9]{1,10})/g;
 
 export const MARKDOWN_PLUGINS = [remarkGfm, remarkMath, remarkBreaks];
 export const REHYPE_PLUGINS = [rehypeKatex];
-export const MARKDOWN_BODY_CLASS_NAME = "w-full min-w-0 max-w-full overflow-x-hidden text-[14px] leading-7 text-slate-900/90 [&_strong]:font-semibold [&_strong]:text-slate-900/96 [&_em]:italic [&_hr]:my-4 [&_hr]:border-slate-200/70";
+export const MARKDOWN_BODY_CLASS_NAME = "w-full min-w-0 max-w-full overflow-x-hidden text-[14px] leading-7 text-[color:var(--text-strong)] [&_strong]:font-semibold [&_strong]:text-[color:var(--text-strong)] [&_em]:italic [&_hr]:my-4 [&_hr]:border-[var(--divider-subtle-color)]";
 
 function normalizeWorkspaceReference(value: string): string {
   return value.replace(/^[("'`【]+|[)"'`】,，。；：:!?]+$/g, "");
@@ -173,7 +173,7 @@ export function createMarkdownComponents(
     },
     blockquote({ children }) {
       return (
-        <blockquote className="my-4 w-full min-w-0 max-w-full overflow-hidden border-l-4 border-primary/30 bg-primary/6 px-1 py-2 pl-4 italic text-slate-500/90 wrap-anywhere">
+        <blockquote className="my-4 w-full min-w-0 max-w-full overflow-hidden border-l-4 border-primary/30 bg-primary/6 px-1 py-2 pl-4 italic text-[color:var(--text-muted)] wrap-anywhere">
           <div className="min-w-0 max-w-full">{children}</div>
         </blockquote>
       );
@@ -210,7 +210,7 @@ export function createMarkdownComponents(
       return <table className="my-4 w-full max-w-full table-fixed border-collapse text-left text-sm sm:table-auto">{children}</table>;
     },
     thead({ children }) {
-      return <thead className="bg-slate-100/86 uppercase text-slate-500/88">{children}</thead>;
+      return <thead className="uppercase text-[color:var(--text-muted)]" style={{ background: "var(--surface-panel-subtle-background)" }}>{children}</thead>;
     },
     tbody({ children }) {
       return <tbody className="align-top">{children}</tbody>;
@@ -222,7 +222,7 @@ export function createMarkdownComponents(
       return <th className="px-3 py-2 font-semibold sm:px-4 sm:py-3">{children}</th>;
     },
     td({ children }) {
-      return <td className="border-t border-slate-200/70 px-3 py-2 align-top whitespace-normal break-words sm:px-4 sm:py-3">{children}</td>;
+      return <td className="border-t px-3 py-2 align-top whitespace-normal break-words sm:px-4 sm:py-3" style={{ borderColor: "var(--divider-subtle-color)" }}>{children}</td>;
     },
   };
 }
