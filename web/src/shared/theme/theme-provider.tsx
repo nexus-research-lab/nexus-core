@@ -19,6 +19,7 @@ import {
   ThemeContextValue,
   THEME_STORAGE_KEY,
 } from "./theme-context";
+import { ThemeOverlay } from "./theme-overlay";
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, set_theme] = useState<Theme>(detect_initial_theme);
@@ -36,6 +37,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   return (
     <THEME_CONTEXT.Provider value={value}>
       {children}
+      <ThemeOverlay />
     </THEME_CONTEXT.Provider>
   );
 }

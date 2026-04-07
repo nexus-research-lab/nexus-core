@@ -26,6 +26,7 @@ import {
   DIALOG_HEADER_LEADING_CLASS_NAME,
   DIALOG_TAG_CLASS_NAME,
   getDialogNoteClassName,
+  getDialogNoteStyle,
 } from "@/shared/ui/dialog/dialog-styles";
 import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import { SkillDetail } from "@/types/skill";
@@ -167,13 +168,13 @@ export function SkillDetailDialog({
               </div>
 
               {skill.recommendation ? (
-                <div className={getDialogNoteClassName("default", "mb-5")}>
+                <div className={getDialogNoteClassName("default", "mb-5")} style={getDialogNoteStyle("default")}>
                   {skill.recommendation}
                 </div>
               ) : null}
 
               {error ? (
-                <div className={getDialogNoteClassName("danger", "mb-5")}>
+                <div className={getDialogNoteClassName("danger", "mb-5")} style={getDialogNoteStyle("danger")}>
                   {error}
                 </div>
               ) : null}

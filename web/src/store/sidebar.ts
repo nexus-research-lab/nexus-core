@@ -9,9 +9,9 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 /** 宽面板宽度约束 */
-export const WIDE_PANEL_MIN_WIDTH = 180;
+export const WIDE_PANEL_MIN_WIDTH = 264;
 export const WIDE_PANEL_MAX_WIDTH = 400;
-export const WIDE_PANEL_DEFAULT_WIDTH = 240;
+export const WIDE_PANEL_DEFAULT_WIDTH = 264;
 export const SIDEBAR_CAPABILITY_ITEM_IDS = {
   skills: "capability:skills",
   connectors: "capability:connectors",

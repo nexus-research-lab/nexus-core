@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import {
   DIALOG_TAG_CLASS_NAME,
   getDialogNoteClassName,
+  getDialogNoteStyle,
 } from "@/shared/ui/dialog/dialog-styles";
 import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import { ExternalSkillSearchItem } from "@/types/skill";
@@ -81,7 +82,7 @@ export function ExternalSkillPreviewDialog({
         </div>
 
         <div className="dialog-body dialog-body--scroll soft-scrollbar flex-1">
-          <div className={getDialogNoteClassName("default", "mb-5")}>
+          <div className={getDialogNoteClassName("default", "mb-5")} style={getDialogNoteStyle("default")}>
             这是来自社区的外部技能预览。导入后会进入 Nexus 的技能目录，再在 Agent 设置里为具体智能体安装。
           </div>
           <SkillMarkdown markdown={item.readme_markdown || item.description || "暂无预览内容"} />

@@ -18,6 +18,7 @@ const zh_messages = {
   "theme.light": "浅",
   "theme.dark": "暗",
   "theme.sunny": "晴",
+  "theme.rain": "雨",
   "common.cancel": "取消",
   "common.save": "保存",
   "common.close": "关闭",
@@ -156,6 +157,7 @@ const en_messages: Record<TranslationKey, string> = {
   "theme.light": "Light",
   "theme.dark": "Dark",
   "theme.sunny": "Sunny",
+  "theme.rain": "Rain",
   "common.cancel": "Cancel",
   "common.save": "Save",
   "common.close": "Close",
@@ -290,3 +292,4 @@ export const MESSAGES: Record<Locale, Record<TranslationKey, string>> = {
   zh: zh_messages,
   en: en_messages,
 };
+;

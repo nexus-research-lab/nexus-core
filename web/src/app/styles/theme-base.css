@@ -57,6 +57,20 @@
 }
 
 /* 中文注释：这里只放元素基线和浏览器层的默认行为，不承载组件视觉。 */
+/* ── Theme overlay keyframes ─────────────────────────── */
+
+@keyframes nexus-fog-drift {
+  0%   { transform: translateX(-1.5%); opacity: 0.7; }
+  100% { transform: translateX(1.5%);  opacity: 1; }
+}
+
+/* Leaf fall — single keyframe, each leaf sets --drift / --rs / --re inline */
+@keyframes nexus-leaf-fall {
+  0%   { transform: translateY(0)     rotate(var(--rs)) translateX(0);            opacity: 0; }
+  8%   { opacity: 0.78; }
+  100% { transform: translateY(110vh) rotate(var(--re)) translateX(var(--drift)); opacity: 0; }
+}
+
 @layer base {
   * {
     border-color: var(--border);

@@ -15,6 +15,7 @@ import {
   DIALOG_HEADER_LEADING_CLASS_NAME,
   DIALOG_TAG_CLASS_NAME,
   getDialogNoteClassName,
+  getDialogNoteStyle,
 } from "@/shared/ui/dialog/dialog-styles";
 import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import { PermissionRiskLevel, PermissionUpdate } from "@/types/permission";
@@ -220,7 +221,7 @@ export function PermissionDialog(
             ) : null}
           </div>
 
-          <div className={getDialogNoteClassName("default")}>
+          <div className={getDialogNoteClassName("default")} style={getDialogNoteStyle("default")}>
             <div className="text-[15px] leading-8 break-words text-[color:var(--text-default)]">
               {summary || "确认后继续执行"}
             </div>

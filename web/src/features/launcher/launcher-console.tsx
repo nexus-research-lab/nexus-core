@@ -14,8 +14,6 @@ import { cn, truncate } from "@/lib/utils";
 import { ANIMATIONS } from "@/config/animation-assets";
 import { useI18n } from "@/shared/i18n/i18n-context";
 import { LottiePlayer } from "@/shared/ui/feedback/lottie-player";
-import { LanguageSwitch } from "@/shared/ui/i18n/language-switch";
-import { ThemeSwitch } from "@/shared/ui/theme/theme-switch";
 import { useSidebarStore } from "@/store/sidebar";
 import { Agent } from "@/types/agent";
 import { Conversation } from "@/types/conversation";
@@ -435,10 +433,6 @@ export function LauncherConsole({
           <span className="text-sm font-semibold text-foreground sm:text-base">Nexus</span>
         </div>
 
-        <div className="relative z-40 flex items-center gap-1.5 sm:gap-2">
-          <ThemeSwitch />
-          <LanguageSwitch />
-        </div>
       </div>
 
       <div className="relative flex min-h-0 flex-1 items-center justify-center px-8 pb-8 pt-6">

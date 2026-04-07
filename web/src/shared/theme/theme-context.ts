@@ -11,7 +11,7 @@
 
 import { createContext, useContext } from "react";
 
-export type Theme = "light" | "dark" | "sunny";
+export type Theme = "light" | "dark" | "sunny" | "rain";
 
 export const THEME_STORAGE_KEY = "nexus-theme";
 
@@ -26,7 +26,12 @@ export function detect_initial_theme(): Theme {
   }
 
   const saved_theme = window.localStorage.getItem(THEME_STORAGE_KEY);
-  if (saved_theme === "light" || saved_theme === "dark" || saved_theme === "sunny") {
+  if (
+    saved_theme === "light" ||
+    saved_theme === "dark" ||
+    saved_theme === "sunny" ||
+    saved_theme === "rain"
+  ) {
     return saved_theme;
   }
 
@@ -43,8 +48,8 @@ export function apply_theme(theme: Theme) {
   }
 
   document.documentElement.dataset.theme = theme;
-  document.documentElement.style.colorScheme = theme === "dark" ? "dark" : "light";
-  document.body.classList.toggle("sunny", theme === "sunny");
+  document.documentElement.style.colorScheme =
+    theme === "dark" || theme === "rain" ? "dark" : "light";
 }
 
 export const THEME_CONTEXT = createContext<ThemeContextValue | null>(null);

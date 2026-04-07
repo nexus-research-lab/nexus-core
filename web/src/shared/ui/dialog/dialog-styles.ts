@@ -29,9 +29,21 @@ export function getDialogNoteClassName(tone: "default" | "danger", class_name?: 
     "rounded-[18px] px-4 py-[0.95rem] text-[13px] leading-[1.65]",
     tone === "default"
       ? "surface-card text-[color:var(--text-default)]"
-      : "border border-rose-200/86 bg-rose-50/88 text-pink-700/88",
+      : "border text-[color:var(--text-default)]",
     class_name,
   );
+}
+
+export function getDialogNoteStyle(tone: "default" | "danger"): CSSProperties | undefined {
+  if (tone !== "danger") {
+    return undefined;
+  }
+
+  return {
+    background: "color-mix(in srgb, var(--destructive) 12%, var(--modal-card-background))",
+    borderColor: "color-mix(in srgb, var(--destructive) 26%, var(--modal-card-border))",
+    color: "var(--text-default)",
+  };
 }
 
 export function getDialogChoiceClassName(is_active: boolean, class_name?: string): string {
@@ -50,7 +62,8 @@ export function getDialogChoiceStyle(is_active: boolean): CSSProperties | undefi
   }
 
   return {
-    background: "color-mix(in srgb, var(--primary) 82%, white)",
+    background: "color-mix(in srgb, var(--primary) 82%, var(--modal-card-background))",
+    border: "1px solid color-mix(in srgb, var(--primary) 36%, var(--modal-card-border))",
     color: "var(--primary-foreground)",
   };
 }

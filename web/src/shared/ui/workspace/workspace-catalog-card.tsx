@@ -9,7 +9,7 @@
 
 "use client";
 
-import { ButtonHTMLAttributes, HTMLAttributes, ReactNode } from "react";
+import { ButtonHTMLAttributes, CSSProperties, HTMLAttributes, ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -23,7 +23,7 @@ const BADGE_STYLE_MAP: Record<CatalogBadgeTone, { background: string; border: st
   neutral: {
     background: "var(--surface-panel-subtle-background)",
     border: "1px solid var(--surface-panel-subtle-border)",
-    color: "var(--text-muted)",
+    color: "var(--text-default)",
   },
   info: {
     background: "color-mix(in srgb, var(--primary) 14%, transparent)",
@@ -44,9 +44,27 @@ const BADGE_STYLE_MAP: Record<CatalogBadgeTone, { background: string; border: st
 
 const ICON_FRAME_TONE_CLASS_MAP: Record<IconFrameTone, string> = {
   default: "border-[color:var(--chip-default-border)] bg-[var(--chip-default-background)] text-[color:var(--text-default)]",
-  primary: "border-primary/14 bg-primary/8 text-primary",
-  success: "border-emerald-200/70 bg-emerald-50/92 text-emerald-700",
-  warning: "border-amber-200/72 bg-amber-50/92 text-amber-700",
+  primary: "",
+  success: "",
+  warning: "",
+};
+
+const ICON_FRAME_TONE_STYLE_MAP: Record<Exclude<IconFrameTone, "default">, CSSProperties> = {
+  primary: {
+    background: "color-mix(in srgb, var(--primary) 14%, var(--chip-default-background))",
+    border: "1px solid color-mix(in srgb, var(--primary) 32%, var(--chip-default-border))",
+    color: "color-mix(in srgb, var(--primary) 88%, var(--text-strong))",
+  },
+  success: {
+    background: "color-mix(in srgb, var(--success) 16%, var(--chip-default-background))",
+    border: "1px solid color-mix(in srgb, var(--success) 32%, var(--chip-default-border))",
+    color: "color-mix(in srgb, var(--success) 84%, var(--text-strong))",
+  },
+  warning: {
+    background: "color-mix(in srgb, var(--warning) 16%, var(--chip-default-background))",
+    border: "1px solid color-mix(in srgb, var(--warning) 34%, var(--chip-default-border))",
+    color: "color-mix(in srgb, var(--warning) 84%, var(--text-strong))",
+  },
 };
 
 const ICON_FRAME_SIZE_CLASS_MAP: Record<IconFrameSize, string> = {
@@ -122,6 +140,8 @@ export function WorkspaceIconFrame({
   size?: IconFrameSize;
   tone?: IconFrameTone;
 }) {
+  const tone_style = tone === "default" ? undefined : ICON_FRAME_TONE_STYLE_MAP[tone];
+
   return (
     <div
       className={cn(
@@ -131,6 +151,7 @@ export function WorkspaceIconFrame({
         shape === "round" && "rounded-full",
         class_name,
       )}
+      style={tone_style}
       {...props}
     >
       {children}
@@ -193,7 +214,7 @@ export function WorkspaceCatalogTag({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-muted)]",
+        "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-default)]",
         class_name,
       )}
       style={{

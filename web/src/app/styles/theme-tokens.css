@@ -269,75 +269,75 @@
   --glow-green: radial-gradient(circle at center, rgba(114, 211, 165, 0.14), rgba(114, 211, 165, 0.03) 58%, transparent 76%);
   --glow-peach: radial-gradient(circle at center, rgba(213, 161, 110, 0.12), rgba(213, 161, 110, 0.02) 58%, transparent 76%);
   --glow-mist: radial-gradient(circle at center, rgba(183, 198, 255, 0.16), rgba(183, 198, 255, 0.03) 58%, transparent 76%);
-  --surface-panel-background: rgba(20, 26, 36, 0.88);
-  --surface-panel-border: rgba(168, 183, 209, 0.16);
+  --surface-panel-background: rgba(24, 31, 43, 0.92);
+  --surface-panel-border: rgba(168, 183, 209, 0.22);
   --surface-panel-shadow: none;
-  --input-shell-background: rgba(18, 24, 33, 0.9);
-  --input-shell-border: rgba(168, 183, 209, 0.16);
+  --input-shell-background: rgba(20, 27, 38, 0.94);
+  --input-shell-border: rgba(168, 183, 209, 0.2);
   --input-shell-shadow: none;
   --surface-grid-background:
     linear-gradient(rgba(188, 202, 226, 0.03) 1px, transparent 1px),
     linear-gradient(90deg, rgba(188, 202, 226, 0.03) 1px, transparent 1px);
-  --surface-panel-subtle-background: rgba(18, 24, 33, 0.68);
-  --surface-panel-subtle-border: rgba(168, 183, 209, 0.12);
+  --surface-panel-subtle-background: rgba(22, 29, 40, 0.82);
+  --surface-panel-subtle-border: rgba(168, 183, 209, 0.18);
   --surface-panel-subtle-shadow: none;
-  --surface-canvas-background: rgba(12, 17, 24, 0.92);
-  --surface-canvas-border: rgba(168, 183, 209, 0.12);
-  --surface-interactive-hover-background: rgba(147, 171, 255, 0.1);
-  --surface-interactive-hover-border: rgba(168, 183, 209, 0.18);
-  --surface-interactive-active-background: rgba(147, 171, 255, 0.12);
-  --surface-interactive-active-border: rgba(147, 171, 255, 0.24);
+  --surface-canvas-background: rgba(14, 19, 28, 0.94);
+  --surface-canvas-border: rgba(168, 183, 209, 0.16);
+  --surface-interactive-hover-background: rgba(147, 171, 255, 0.12);
+  --surface-interactive-hover-border: rgba(168, 183, 209, 0.24);
+  --surface-interactive-active-background: rgba(147, 171, 255, 0.16);
+  --surface-interactive-active-border: rgba(147, 171, 255, 0.32);
   --surface-popover-background: rgba(20, 26, 36, 0.98);
-  --surface-popover-border: rgba(168, 183, 209, 0.18);
+  --surface-popover-border: rgba(168, 183, 209, 0.24);
   --surface-popover-shadow: 0 18px 36px rgba(0, 0, 0, 0.28);
-  --surface-avatar-background: rgba(26, 33, 45, 0.94);
-  --surface-avatar-border: rgba(168, 183, 209, 0.2);
+  --surface-avatar-background: rgba(29, 37, 50, 0.98);
+  --surface-avatar-border: rgba(168, 183, 209, 0.28);
   --surface-avatar-foreground: rgba(229, 236, 248, 0.9);
   --surface-avatar-shadow: none;
-  --divider-subtle-color: rgba(168, 183, 209, 0.08);
+  --divider-subtle-color: rgba(168, 183, 209, 0.12);
   --text-strong: #edf3fc;
-  --text-default: rgba(226, 234, 246, 0.94);
-  --text-muted: rgba(180, 192, 212, 0.88);
-  --text-soft: rgba(144, 158, 180, 0.76);
+  --text-default: rgba(232, 239, 248, 0.96);
+  --text-muted: rgba(194, 206, 224, 0.9);
+  --text-soft: rgba(156, 170, 191, 0.82);
   --icon-strong: rgba(235, 242, 251, 0.92);
-  --icon-default: rgba(183, 196, 218, 0.84);
-  --icon-muted: rgba(136, 150, 171, 0.68);
+  --icon-default: rgba(198, 210, 229, 0.9);
+  --icon-muted: rgba(150, 164, 184, 0.76);
   --surface-top-glow: rgba(255, 255, 255, 0.07);
   --surface-highlight-color: rgba(255, 255, 255, 0.1);
   --surface-progress-track: rgba(78, 92, 116, 0.52);
   --surface-progress-fill: rgba(198, 210, 231, 0.84);
   --card-default-background:
-    radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.04), transparent 22%),
-    linear-gradient(180deg, rgba(26, 33, 46, 0.97), rgba(18, 24, 34, 0.96));
-  --card-default-border: rgba(168, 183, 209, 0.14);
+    radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.05), transparent 22%),
+    linear-gradient(180deg, rgba(30, 38, 52, 0.98), rgba(21, 28, 39, 0.98));
+  --card-default-border: rgba(168, 183, 209, 0.24);
   --card-default-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  --modal-dialog-surface-background: rgba(20, 26, 36, 0.985);
-  --modal-dialog-surface-border: rgba(168, 183, 209, 0.2);
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --modal-dialog-surface-background: rgba(24, 31, 43, 0.985);
+  --modal-dialog-surface-border: rgba(168, 183, 209, 0.28);
   --modal-dialog-surface-shadow:
     0 32px 72px rgba(0, 0, 0, 0.46);
-  --modal-nav-background: rgba(255, 255, 255, 0.03);
-  --modal-nav-border: rgba(168, 183, 209, 0.1);
-  --modal-card-background: rgba(255, 255, 255, 0.03);
-  --modal-card-border: rgba(168, 183, 209, 0.12);
+  --modal-nav-background: rgba(255, 255, 255, 0.05);
+  --modal-nav-border: rgba(168, 183, 209, 0.16);
+  --modal-card-background: rgba(255, 255, 255, 0.05);
+  --modal-card-border: rgba(168, 183, 209, 0.18);
   --modal-card-shadow: none;
-  --modal-card-active-background: rgba(147, 171, 255, 0.08);
-  --modal-card-active-border: rgba(147, 171, 255, 0.22);
+  --modal-card-active-background: rgba(147, 171, 255, 0.12);
+  --modal-card-active-border: rgba(147, 171, 255, 0.3);
   --modal-card-active-shadow: none;
-  --modal-input-background: rgba(10, 14, 20, 0.3);
-  --modal-input-border: rgba(168, 183, 209, 0.14);
+  --modal-input-background: rgba(255, 255, 255, 0.06);
+  --modal-input-border: rgba(168, 183, 209, 0.2);
   --modal-input-shadow: none;
-  --modal-input-focus-background: rgba(10, 14, 20, 0.38);
-  --modal-input-focus-border: rgba(147, 171, 255, 0.3);
+  --modal-input-focus-background: rgba(255, 255, 255, 0.08);
+  --modal-input-focus-border: rgba(147, 171, 255, 0.36);
   --modal-input-focus-shadow: none;
-  --modal-divider-color: rgba(168, 183, 209, 0.08);
-  --modal-btn-secondary-background: rgba(147, 171, 255, 0.06);
-  --modal-btn-secondary-border: rgba(168, 183, 209, 0.1);
+  --modal-divider-color: rgba(168, 183, 209, 0.12);
+  --modal-btn-secondary-background: rgba(255, 255, 255, 0.05);
+  --modal-btn-secondary-border: rgba(168, 183, 209, 0.16);
   --modal-btn-secondary-shadow: none;
-  --modal-btn-secondary-hover-background: rgba(147, 171, 255, 0.1);
-  --modal-btn-secondary-hover-border: rgba(147, 171, 255, 0.16);
-  --chip-default-background: rgba(21, 27, 37, 0.9);
-  --chip-default-border: rgba(168, 183, 209, 0.12);
+  --modal-btn-secondary-hover-background: rgba(255, 255, 255, 0.08);
+  --modal-btn-secondary-hover-border: rgba(168, 183, 209, 0.22);
+  --chip-default-background: rgba(28, 35, 49, 0.94);
+  --chip-default-border: rgba(168, 183, 209, 0.18);
   --chip-default-shadow: none;
   --button-primary-background: color-mix(in srgb, var(--primary) 86%, #f7fbff 14%);
   --button-primary-border: color-mix(in srgb, var(--primary) 74%, #f7fbff 26%);
@@ -376,6 +376,383 @@
   --chip-segmented-option-active-shadow: none;
   --input-caret-color: rgba(147, 171, 255, 0.96);
   --input-caret-shadow: rgba(147, 171, 255, 0.18);
+}
+
+/* ─────────────────────────────────────────────────────
+   Sunny  —  warm parchment light, golden-leaf atmosphere
+   Reference palette: bg #f2efe9  text #1a1a1a  accent #8b7355
+   ───────────────────────────────────────────────────── */
+:root[data-theme="sunny"] {
+  --background: #f0ead8;
+  --foreground: #1a1714;
+  --primary: #7d72ea;
+  --primary-rgb: 125, 114, 234;
+  --primary-foreground: #ffffff;
+  --secondary: #e8e0cc;
+  --secondary-foreground: #2a1f0e;
+  --accent: #8b7355;
+  --accent-foreground: #ffffff;
+  --card: rgba(252, 249, 241, 0.98);
+  --card-foreground: #1a1714;
+  --muted: #e6ddc8;
+  --muted-foreground: #5c4f3a;
+  --border: rgba(180, 162, 128, 0.3);
+  --input: rgba(252, 249, 241, 0.98);
+  --ring: rgba(125, 114, 234, 0.2);
+  --destructive: #eb5a51;
+  --destructive-foreground: #ffffff;
+  --success: #66d98f;
+  --success-foreground: #0f172a;
+  --warning: #f59e0b;
+  --radius-lg: 36px;
+  --radius-md: 26px;
+  --radius-sm: 18px;
+  --motion-duration-fast: 180ms;
+  --motion-duration-normal: 260ms;
+  --motion-duration-slow: 560ms;
+  --motion-duration-overlay: 700ms;
+  --motion-ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-emphasized: cubic-bezier(0.23, 1, 0.32, 1);
+  --scrollbar-thumb: rgba(139, 115, 85, 0.22);
+  --scrollbar-thumb-hover: rgba(139, 115, 85, 0.36);
+  --surface-stage-background:
+    radial-gradient(circle at top, rgba(255, 248, 220, 0.6), transparent 36%),
+    radial-gradient(circle at 76% 8%, rgba(255, 220, 130, 0.12), transparent 24%),
+    radial-gradient(circle at 20% 14%, rgba(255, 235, 180, 0.1), transparent 22%);
+  --surface-body-background:
+    radial-gradient(circle at 18% 12%, rgba(255, 252, 236, 0.92) 0%, transparent 32%),
+    radial-gradient(circle at 82% 10%, rgba(255, 220, 120, 0.14) 0%, transparent 24%),
+    radial-gradient(circle at 52% 100%, rgba(240, 220, 170, 0.14) 0%, transparent 30%),
+    radial-gradient(circle at 50% 26%, rgba(255, 235, 160, 0.08) 0%, transparent 28%),
+    linear-gradient(180deg, #ede4cc 0%, #f4eedb 46%, #f0e8d0 100%);
+  --surface-body-grid:
+    linear-gradient(rgba(139, 115, 85, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139, 115, 85, 0.07) 1px, transparent 1px);
+  --text-kbd-color: #6b5a3e;
+  --surface-kbd-background: linear-gradient(180deg, #fdf7e8, #f5edda);
+  --divider-kbd-border: rgba(180, 156, 110, 0.22);
+  --surface-kbd-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 8px 16px rgba(100, 80, 40, 0.08);
+  --surface-shell-background:
+    radial-gradient(circle at 14% 14%, rgba(255, 252, 236, 0.3), transparent 24%),
+    radial-gradient(circle at 84% 12%, rgba(255, 220, 130, 0.1), transparent 28%),
+    linear-gradient(180deg, rgba(252, 247, 233, 0.88), rgba(245, 238, 218, 0.8));
+  --surface-shell-border: rgba(255, 248, 220, 0.7);
+  --surface-shell-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.4),
+    inset -1px -1px 0 rgba(180, 150, 90, 0.06),
+    0 18px 36px rgba(100, 80, 40, 0.06);
+  --surface-inset-background: rgba(237, 228, 206, 0.72);
+  --surface-inset-border: rgba(190, 168, 120, 0.2);
+  --surface-inset-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1px 0 rgba(180, 150, 90, 0.08);
+  --chip-pill-background: linear-gradient(180deg, rgba(255, 252, 240, 0.9), rgba(248, 240, 218, 0.82));
+  --chip-pill-border: rgba(196, 172, 124, 0.48);
+  --chip-pill-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.72),
+    inset -1px -1px 0 rgba(180, 148, 88, 0.1),
+    0 8px 16px rgba(100, 80, 40, 0.05);
+  --glow-lilac: radial-gradient(circle at center, rgba(154, 140, 255, 0.16), rgba(154, 140, 255, 0.03) 58%, transparent 74%);
+  --glow-green: radial-gradient(circle at center, rgba(120, 180, 80, 0.14), rgba(120, 180, 80, 0.02) 58%, transparent 74%);
+  --glow-peach: radial-gradient(circle at center, rgba(240, 180, 80, 0.16), rgba(240, 180, 80, 0.03) 58%, transparent 74%);
+  --glow-mist: radial-gradient(circle at center, rgba(255, 248, 210, 0.3), rgba(255, 248, 210, 0.06) 58%, transparent 74%);
+  --surface-panel-background:
+    radial-gradient(circle at 18% 18%, rgba(255, 255, 240, 0.4), transparent 24%),
+    linear-gradient(180deg, rgba(253, 249, 237, 0.96), rgba(246, 239, 218, 0.9));
+  --surface-panel-border: rgba(200, 178, 130, 0.62);
+  --surface-panel-shadow: none;
+  --input-shell-background: linear-gradient(180deg, rgba(255, 253, 242, 0.96), rgba(250, 244, 224, 0.9));
+  --input-shell-border: rgba(196, 172, 120, 0.56);
+  --input-shell-shadow: none;
+  --surface-grid-background:
+    linear-gradient(rgba(139, 115, 85, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139, 115, 85, 0.05) 1px, transparent 1px);
+  --surface-panel-subtle-background: linear-gradient(180deg, rgba(255, 252, 238, 0.9), rgba(248, 241, 220, 0.82));
+  --surface-panel-subtle-border: rgba(200, 178, 130, 0.56);
+  --surface-panel-subtle-shadow: none;
+  --surface-canvas-background: rgba(253, 250, 240, 0.992);
+  --surface-canvas-border: rgba(200, 178, 130, 0.48);
+  --surface-interactive-hover-background: rgba(255, 252, 230, 0.9);
+  --surface-interactive-hover-border: rgba(190, 164, 110, 0.56);
+  --surface-interactive-active-background: linear-gradient(180deg, rgba(255, 253, 238, 0.98), rgba(250, 243, 218, 0.94));
+  --surface-interactive-active-border: rgba(180, 152, 96, 0.7);
+  --surface-popover-background: rgba(253, 250, 240, 0.98);
+  --surface-popover-border: rgba(200, 176, 124, 0.72);
+  --surface-popover-shadow: 0 16px 28px rgba(100, 80, 40, 0.1);
+  --surface-avatar-background: linear-gradient(180deg, rgba(255, 253, 240, 0.98), rgba(247, 240, 218, 0.94));
+  --surface-avatar-border: rgba(220, 196, 148, 0.82);
+  --surface-avatar-foreground: rgba(56, 40, 16, 0.88);
+  --surface-avatar-shadow: none;
+  --divider-subtle-color: rgba(196, 172, 124, 0.5);
+  --text-strong: #1a1410;
+  --text-default: rgba(50, 38, 18, 0.9);
+  --text-muted: rgba(80, 62, 32, 0.76);
+  --text-soft: rgba(100, 80, 42, 0.6);
+  --icon-strong: rgba(40, 28, 10, 0.9);
+  --icon-default: rgba(90, 70, 36, 0.82);
+  --icon-muted: rgba(120, 96, 52, 0.64);
+  --surface-top-glow: rgba(255, 248, 200, 0.36);
+  --surface-highlight-color: rgba(255, 252, 220, 0.64);
+  --surface-progress-track: rgba(196, 172, 120, 0.72);
+  --surface-progress-fill: rgba(100, 78, 38, 0.72);
+  --card-default-background:
+    radial-gradient(circle at 18% 18%, rgba(255, 255, 230, 0.4), transparent 24%),
+    radial-gradient(circle at 84% 14%, rgba(255, 220, 120, 0.08), transparent 20%),
+    linear-gradient(180deg, rgba(255, 253, 240, 0.96), rgba(248, 240, 218, 0.9));
+  --card-default-border: rgba(200, 176, 124, 0.66);
+  --card-default-shadow: none;
+  --modal-dialog-surface-background:
+    radial-gradient(circle at 18% 18%, rgba(255, 255, 230, 0.24), transparent 24%),
+    linear-gradient(180deg, rgba(253, 250, 240, 0.97), rgba(247, 239, 218, 0.92));
+  --modal-dialog-surface-border: rgba(204, 180, 128, 0.74);
+  --modal-dialog-surface-shadow:
+    0 18px 40px rgba(100, 80, 40, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  --modal-nav-background: rgba(248, 242, 224, 0.7);
+  --modal-nav-border: rgba(200, 176, 124, 0.56);
+  --modal-card-background: rgba(255, 252, 238, 0.84);
+  --modal-card-border: rgba(200, 176, 124, 0.6);
+  --modal-card-shadow: none;
+  --modal-card-active-background: rgba(255, 253, 242, 0.96);
+  --modal-card-active-border: rgba(180, 152, 96, 0.78);
+  --modal-card-active-shadow: none;
+  --modal-input-background: rgba(255, 253, 242, 0.86);
+  --modal-input-border: rgba(192, 166, 110, 0.64);
+  --modal-input-shadow: none;
+  --modal-input-focus-background: rgba(255, 254, 246, 0.96);
+  --modal-input-focus-border: rgba(125, 114, 234, 0.34);
+  --modal-input-focus-shadow: none;
+  --modal-divider-color: rgba(196, 172, 124, 0.52);
+  --modal-btn-secondary-background: rgba(255, 252, 236, 0.84);
+  --modal-btn-secondary-border: rgba(196, 170, 112, 0.62);
+  --modal-btn-secondary-shadow: none;
+  --modal-btn-secondary-hover-background: rgba(255, 253, 240, 0.92);
+  --modal-btn-secondary-hover-border: rgba(190, 164, 106, 0.7);
+  --chip-default-background: rgba(255, 252, 236, 0.9);
+  --chip-default-border: rgba(190, 164, 110, 0.54);
+  --chip-default-shadow: none;
+  --button-primary-background: color-mix(in srgb, var(--primary) 88%, white 12%);
+  --button-primary-border: color-mix(in srgb, var(--primary) 70%, white 30%);
+  --button-primary-color: var(--primary-foreground);
+  --button-primary-hover-background: color-mix(in srgb, var(--primary) 92%, white 8%);
+  --button-primary-hover-border: color-mix(in srgb, var(--primary) 76%, white 24%);
+  --button-tonal-background: rgba(255, 252, 230, 0.84);
+  --button-tonal-border: rgba(190, 164, 110, 0.54);
+  --button-tonal-color: var(--text-default);
+  --button-tonal-hover-background: rgba(255, 253, 236, 0.92);
+  --button-tonal-hover-border: rgba(180, 152, 96, 0.68);
+  --button-tonal-hover-color: var(--text-strong);
+  --button-outlined-background: transparent;
+  --button-outlined-border: rgba(180, 152, 96, 0.56);
+  --button-outlined-color: var(--text-default);
+  --button-outlined-hover-background: rgba(255, 252, 220, 0.12);
+  --button-outlined-hover-border: rgba(180, 152, 96, 0.72);
+  --button-outlined-hover-color: var(--text-strong);
+  --button-text-color: var(--text-muted);
+  --button-text-hover-color: var(--text-strong);
+  --button-icon-background: rgba(255, 252, 236, 0.88);
+  --button-icon-border: rgba(190, 164, 110, 0.5);
+  --button-icon-color: var(--icon-default);
+  --button-icon-hover-background: rgba(255, 253, 240, 0.94);
+  --button-icon-hover-border: rgba(180, 152, 96, 0.66);
+  --button-icon-hover-color: var(--icon-strong);
+  --chip-segmented-shell-background: rgba(248, 240, 216, 0.82);
+  --chip-segmented-shell-border: rgba(190, 164, 110, 0.58);
+  --chip-segmented-shell-shadow: none;
+  --chip-segmented-icon-color: rgba(100, 80, 40, 0.8);
+  --chip-segmented-option-color: rgba(80, 62, 28, 0.82);
+  --chip-segmented-option-hover-background: rgba(255, 252, 230, 0.76);
+  --chip-segmented-option-hover-color: #1a1410;
+  --chip-segmented-option-active-background: rgba(255, 253, 238, 0.96);
+  --chip-segmented-option-active-color: #1a1410;
+  --chip-segmented-option-active-shadow: none;
+  --input-caret-color: rgba(125, 114, 234, 0.96);
+  --input-caret-shadow: rgba(125, 114, 234, 0.2);
+}
+
+/* ─────────────────────────────────────────────────────
+   Rain  —  slate blue-grey, misty, atmospheric
+   Reference palette: bg #4a535e  text #d8dce0  accent #a0aab4
+   ───────────────────────────────────────────────────── */
+:root[data-theme="rain"] {
+  --background: #3e4852;
+  --foreground: #d8dce2;
+  --primary: #8aa8d4;
+  --primary-rgb: 138, 168, 212;
+  --primary-foreground: #0e1820;
+  --secondary: #4a5460;
+  --secondary-foreground: #d4d8de;
+  --accent: #a0aab4;
+  --accent-foreground: #0e1820;
+  --card: rgba(58, 66, 76, 0.96);
+  --card-foreground: #d8dce2;
+  --muted: #485260;
+  --muted-foreground: #9aa4b0;
+  --border: rgba(160, 178, 200, 0.18);
+  --input: rgba(52, 60, 70, 0.94);
+  --ring: rgba(138, 168, 212, 0.24);
+  --destructive: #e07070;
+  --destructive-foreground: #ffffff;
+  --success: #72c4a0;
+  --success-foreground: #061410;
+  --warning: #d4a860;
+  --radius-lg: 36px;
+  --radius-md: 26px;
+  --radius-sm: 18px;
+  --motion-duration-fast: 180ms;
+  --motion-duration-normal: 260ms;
+  --motion-duration-slow: 560ms;
+  --motion-duration-overlay: 700ms;
+  --motion-ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --motion-ease-emphasized: cubic-bezier(0.23, 1, 0.32, 1);
+  --scrollbar-thumb: rgba(160, 178, 200, 0.18);
+  --scrollbar-thumb-hover: rgba(160, 178, 200, 0.3);
+  --surface-stage-background:
+    radial-gradient(circle at top, rgba(138, 168, 212, 0.14), transparent 34%),
+    radial-gradient(circle at 82% 10%, rgba(100, 130, 170, 0.08), transparent 22%);
+  --surface-body-background:
+    radial-gradient(circle at 18% 16%, rgba(120, 148, 180, 0.14) 0%, transparent 34%),
+    radial-gradient(circle at 78% 8%, rgba(90, 118, 155, 0.1) 0%, transparent 24%),
+    radial-gradient(circle at 50% 100%, rgba(70, 80, 95, 0.18) 0%, transparent 38%),
+    linear-gradient(180deg, #3a434e 0%, #424c58 52%, #384249 100%);
+  --surface-body-grid:
+    linear-gradient(rgba(160, 178, 200, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(160, 178, 200, 0.05) 1px, transparent 1px);
+  --text-kbd-color: #c0cad4;
+  --surface-kbd-background: linear-gradient(180deg, #4e5a68, #424e5c);
+  --divider-kbd-border: rgba(160, 178, 200, 0.14);
+  --surface-kbd-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 8px 16px rgba(0, 0, 0, 0.24);
+  --surface-shell-background:
+    radial-gradient(circle at 14% 10%, rgba(138, 168, 212, 0.1), transparent 26%),
+    radial-gradient(circle at 50% 100%, rgba(70, 80, 95, 0.15), transparent 36%),
+    linear-gradient(180deg, rgba(58, 68, 80, 0.9), rgba(50, 58, 70, 0.86));
+  --surface-shell-border: rgba(160, 178, 200, 0.18);
+  --surface-shell-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 22px 48px rgba(0, 0, 0, 0.32);
+  --surface-inset-background: rgba(38, 44, 54, 0.72);
+  --surface-inset-border: rgba(160, 178, 200, 0.1);
+  --surface-inset-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.14);
+  --chip-pill-background: rgba(50, 58, 70, 0.9);
+  --chip-pill-border: rgba(160, 178, 200, 0.16);
+  --chip-pill-shadow: none;
+  --glow-lilac: radial-gradient(circle at center, rgba(138, 168, 212, 0.2), rgba(138, 168, 212, 0.04) 60%, transparent 76%);
+  --glow-green: radial-gradient(circle at center, rgba(114, 196, 160, 0.14), rgba(114, 196, 160, 0.03) 58%, transparent 76%);
+  --glow-peach: radial-gradient(circle at center, rgba(180, 148, 100, 0.1), rgba(180, 148, 100, 0.02) 58%, transparent 76%);
+  --glow-mist: radial-gradient(circle at center, rgba(160, 178, 210, 0.2), rgba(160, 178, 210, 0.04) 58%, transparent 76%);
+  --surface-panel-background: rgba(52, 60, 72, 0.9);
+  --surface-panel-border: rgba(160, 178, 200, 0.18);
+  --surface-panel-shadow: none;
+  --input-shell-background: rgba(46, 54, 64, 0.92);
+  --input-shell-border: rgba(160, 178, 200, 0.18);
+  --input-shell-shadow: none;
+  --surface-grid-background:
+    linear-gradient(rgba(160, 178, 200, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(160, 178, 200, 0.04) 1px, transparent 1px);
+  --surface-panel-subtle-background: rgba(48, 56, 66, 0.7);
+  --surface-panel-subtle-border: rgba(160, 178, 200, 0.14);
+  --surface-panel-subtle-shadow: none;
+  --surface-canvas-background: rgba(40, 48, 58, 0.94);
+  --surface-canvas-border: rgba(160, 178, 200, 0.14);
+  --surface-interactive-hover-background: rgba(138, 168, 212, 0.1);
+  --surface-interactive-hover-border: rgba(160, 178, 200, 0.2);
+  --surface-interactive-active-background: rgba(138, 168, 212, 0.14);
+  --surface-interactive-active-border: rgba(138, 168, 212, 0.28);
+  --surface-popover-background: rgba(52, 60, 72, 0.98);
+  --surface-popover-border: rgba(160, 178, 200, 0.2);
+  --surface-popover-shadow: 0 18px 36px rgba(0, 0, 0, 0.32);
+  --surface-avatar-background: rgba(60, 70, 82, 0.96);
+  --surface-avatar-border: rgba(160, 178, 200, 0.22);
+  --surface-avatar-foreground: rgba(210, 220, 232, 0.9);
+  --surface-avatar-shadow: none;
+  --divider-subtle-color: rgba(160, 178, 200, 0.1);
+  --text-strong: #e4e8ee;
+  --text-default: rgba(212, 220, 230, 0.94);
+  --text-muted: rgba(170, 184, 200, 0.86);
+  --text-soft: rgba(136, 152, 170, 0.74);
+  --icon-strong: rgba(220, 228, 240, 0.92);
+  --icon-default: rgba(170, 186, 206, 0.82);
+  --icon-muted: rgba(130, 148, 168, 0.66);
+  --surface-top-glow: rgba(138, 168, 212, 0.1);
+  --surface-highlight-color: rgba(255, 255, 255, 0.08);
+  --surface-progress-track: rgba(80, 96, 114, 0.56);
+  --surface-progress-fill: rgba(180, 196, 216, 0.82);
+  --card-default-background:
+    radial-gradient(circle at 18% 18%, rgba(160, 178, 210, 0.07), transparent 22%),
+    linear-gradient(180deg, rgba(58, 68, 80, 0.97), rgba(50, 58, 70, 0.96));
+  --card-default-border: rgba(160, 178, 200, 0.16);
+  --card-default-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --modal-dialog-surface-background: rgba(52, 60, 72, 0.988);
+  --modal-dialog-surface-border: rgba(160, 178, 200, 0.22);
+  --modal-dialog-surface-shadow:
+    0 32px 72px rgba(0, 0, 0, 0.48);
+  --modal-nav-background: rgba(255, 255, 255, 0.03);
+  --modal-nav-border: rgba(160, 178, 200, 0.1);
+  --modal-card-background: rgba(255, 255, 255, 0.03);
+  --modal-card-border: rgba(160, 178, 200, 0.12);
+  --modal-card-shadow: none;
+  --modal-card-active-background: rgba(138, 168, 212, 0.1);
+  --modal-card-active-border: rgba(138, 168, 212, 0.26);
+  --modal-card-active-shadow: none;
+  --modal-input-background: rgba(30, 36, 46, 0.34);
+  --modal-input-border: rgba(160, 178, 200, 0.16);
+  --modal-input-shadow: none;
+  --modal-input-focus-background: rgba(30, 36, 46, 0.42);
+  --modal-input-focus-border: rgba(138, 168, 212, 0.34);
+  --modal-input-focus-shadow: none;
+  --modal-divider-color: rgba(160, 178, 200, 0.1);
+  --modal-btn-secondary-background: rgba(138, 168, 212, 0.07);
+  --modal-btn-secondary-border: rgba(160, 178, 200, 0.12);
+  --modal-btn-secondary-shadow: none;
+  --modal-btn-secondary-hover-background: rgba(138, 168, 212, 0.12);
+  --modal-btn-secondary-hover-border: rgba(138, 168, 212, 0.2);
+  --chip-default-background: rgba(50, 58, 70, 0.9);
+  --chip-default-border: rgba(160, 178, 200, 0.14);
+  --chip-default-shadow: none;
+  --button-primary-background: color-mix(in srgb, var(--primary) 86%, #cde 14%);
+  --button-primary-border: color-mix(in srgb, var(--primary) 72%, #cde 28%);
+  --button-primary-color: #08111d;
+  --button-primary-hover-background: color-mix(in srgb, var(--primary) 90%, #cde 10%);
+  --button-primary-hover-border: color-mix(in srgb, var(--primary) 78%, #cde 22%);
+  --button-tonal-background: rgba(138, 168, 212, 0.08);
+  --button-tonal-border: rgba(138, 168, 212, 0.16);
+  --button-tonal-color: rgba(212, 224, 238, 0.92);
+  --button-tonal-hover-background: rgba(138, 168, 212, 0.13);
+  --button-tonal-hover-border: rgba(138, 168, 212, 0.24);
+  --button-tonal-hover-color: #e8f0fa;
+  --button-outlined-background: transparent;
+  --button-outlined-border: rgba(160, 178, 200, 0.18);
+  --button-outlined-color: rgba(212, 224, 238, 0.9);
+  --button-outlined-hover-background: rgba(255, 255, 255, 0.04);
+  --button-outlined-hover-border: rgba(160, 178, 200, 0.26);
+  --button-outlined-hover-color: #e8f0fa;
+  --button-text-color: rgba(170, 186, 206, 0.82);
+  --button-text-hover-color: #d8e4f2;
+  --button-icon-background: rgba(255, 255, 255, 0.03);
+  --button-icon-border: rgba(160, 178, 200, 0.14);
+  --button-icon-color: rgba(200, 214, 230, 0.86);
+  --button-icon-hover-background: rgba(255, 255, 255, 0.06);
+  --button-icon-hover-border: rgba(160, 178, 200, 0.22);
+  --button-icon-hover-color: #e4eef8;
+  --chip-segmented-shell-background: rgba(44, 52, 64, 0.84);
+  --chip-segmented-shell-border: rgba(160, 178, 200, 0.12);
+  --chip-segmented-shell-shadow: none;
+  --chip-segmented-icon-color: rgba(172, 188, 208, 0.82);
+  --chip-segmented-option-color: rgba(196, 210, 228, 0.88);
+  --chip-segmented-option-hover-background: rgba(255, 255, 255, 0.05);
+  --chip-segmented-option-hover-color: #e4eef8;
+  --chip-segmented-option-active-background: rgba(138, 168, 212, 0.12);
+  --chip-segmented-option-active-color: #e8f0fa;
+  --chip-segmented-option-active-shadow: none;
+  --input-caret-color: rgba(138, 168, 212, 0.96);
+  --input-caret-shadow: rgba(138, 168, 212, 0.2);
 }
 
 @theme inline {

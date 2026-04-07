@@ -9,6 +9,7 @@ import {
   DIALOG_HEADER_LEADING_CLASS_NAME,
   DIALOG_TAG_CLASS_NAME,
   getDialogNoteClassName,
+  getDialogNoteStyle,
 } from "@/shared/ui/dialog/dialog-styles";
 import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import { ConnectorDetail } from "@/types/connector";
@@ -142,7 +143,7 @@ export function ConnectorDetailDialog({
               )}
 
               {!is_coming_soon && (
-                <div className={getDialogNoteClassName("default")}>
+                <div className={getDialogNoteClassName("default")} style={getDialogNoteStyle("default")}>
                   <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-default)]">
                     <Shield className="h-4 w-4" />
                     安全授权
@@ -154,7 +155,7 @@ export function ConnectorDetailDialog({
               )}
 
               {!is_connected && !is_coming_soon && !is_configured && detail.config_error ? (
-                <div className={getDialogNoteClassName("danger")}>
+                <div className={getDialogNoteClassName("danger")} style={getDialogNoteStyle("danger")}>
                   {detail.config_error}
                 </div>
               ) : null}

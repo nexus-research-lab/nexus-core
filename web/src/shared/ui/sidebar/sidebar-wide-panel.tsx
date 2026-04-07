@@ -8,8 +8,8 @@
  * 宽度从 store 读取，右边缘可拖拽调整（180–400px）。
  */
 
-import { Settings } from "lucide-react";
-import { useCallback, useEffect, useRef } from "react";
+import { ChevronRight, Settings } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import { AppRouteBuilders } from "@/app/router/route-paths";
@@ -35,10 +35,12 @@ const CAPABILITY_SECTION_COUNT = 5;
 export function SidebarWidePanel() {
   const { t } = useI18n();
   const location = useLocation();
+  const [settings_open, set_settings_open] = useState(false);
   const active_panel_item_id = useSidebarStore((s) => s.active_panel_item_id);
   const set_active_panel_item = useSidebarStore((s) => s.set_active_panel_item);
   const wide_panel_width = useSidebarStore((s) => s.wide_panel_width);
   const set_wide_panel_width = useSidebarStore((s) => s.set_wide_panel_width);
+  const settings_popover_ref = useRef<HTMLDivElement | null>(null);
 
   /** 拖拽状态 ref，避免频繁 re-render */
   const is_dragging_ref = useRef(false);
@@ -93,6 +95,36 @@ export function SidebarWidePanel() {
     set_active_panel_item(next_active_item_id);
   }, [active_panel_item_id, location.pathname, set_active_panel_item]);
 
+  /** 点击外部时关闭设置弹层。 */
+  useEffect(() => {
+    if (!settings_open) {
+      return;
+    }
+
+    const handle_pointer_down = (event: PointerEvent) => {
+      if (!(event.target instanceof Node)) {
+        return;
+      }
+      if (settings_popover_ref.current?.contains(event.target)) {
+        return;
+      }
+      set_settings_open(false);
+    };
+
+    const handle_key_down = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        set_settings_open(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", handle_pointer_down);
+    document.addEventListener("keydown", handle_key_down);
+    return () => {
+      document.removeEventListener("pointerdown", handle_pointer_down);
+      document.removeEventListener("keydown", handle_key_down);
+    };
+  }, [settings_open]);
+
   return (
     <div
       className={cn("relative flex h-full shrink-0 flex-col", HOME_SIDEBAR_PADDING_CLASS)}
@@ -135,21 +167,57 @@ export function SidebarWidePanel() {
           </CollapsibleSection>
         </div>
 
-        <div className="flex items-center justify-between gap-2.5 border-t glass-divider px-3 py-2.5">
-          <Link
-            className="transition-all duration-200 hover:text-[color:var(--text-strong)]"
-            title={t("sidebar.settings")}
-            to={AppRouteBuilders.settings()}
-          >
-            <WorkspaceIconFrame class_name="h-8 w-8 text-[color:var(--icon-default)]" size="sm">
-              <Settings className="h-4 w-4" />
-            </WorkspaceIconFrame>
-          </Link>
+        <div className="relative flex items-center justify-between gap-2.5 border-t glass-divider px-3 py-2.5">
+          <div className="relative" ref={settings_popover_ref}>
+            <button
+              aria-expanded={settings_open}
+              aria-haspopup="dialog"
+              className="transition-all duration-200 hover:text-[color:var(--text-strong)]"
+              onClick={() => set_settings_open((open) => !open)}
+              title={t("sidebar.settings")}
+              type="button"
+            >
+              <WorkspaceIconFrame class_name="h-8 w-8 text-[color:var(--icon-default)]" size="sm">
+                <Settings className="h-4 w-4" />
+              </WorkspaceIconFrame>
+            </button>
 
-          <div className="flex flex-wrap items-center justify-end gap-1.5">
-            <ThemeSwitch />
-            <LanguageSwitch />
+            {settings_open ? (
+              <div
+                className="absolute bottom-[calc(100%+8px)] left-0 z-20 w-[min(220px,calc(100vw-28px))] overflow-hidden rounded-[16px] border bg-[var(--surface-popover-background)] p-1.5 mb-2"
+                style={{
+                  borderColor: "var(--surface-popover-border)",
+                }}
+              >
+                <Link
+                  className="flex items-center justify-between rounded-[12px] px-2.5 py-2 text-[11px] font-medium text-[color:var(--text-default)] transition duration-150 ease-out hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--text-strong)]"
+                  onClick={() => set_settings_open(false)}
+                  to={AppRouteBuilders.settings()}
+                >
+                  <span>{t("sidebar.settings")}</span>
+                  <ChevronRight className="h-3.5 w-3.5 text-[color:var(--icon-default)]" />
+                </Link>
+
+                <div className="mt-1.5 border-t pt-1.5" style={{ borderColor: "var(--divider-subtle-color)" }}>
+                  <div className="px-1">
+                    <p className="px-1.5 pb-1 text-[9px] font-medium uppercase tracking-[0.16em] text-[color:var(--text-soft)]">
+                      {t("theme.switch_title")}
+                    </p>
+                    <ThemeSwitch class_name="w-full" density="compact" stretch />
+                  </div>
+
+                  <div className="mt-1.5 px-1">
+                    <p className="px-1.5 pb-1 text-[9px] font-medium uppercase tracking-[0.16em] text-[color:var(--text-soft)]">
+                      {t("language.switch_title")}
+                    </p>
+                    <LanguageSwitch class_name="w-full" density="compact" show_icon={false} stretch />
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
+
+          <div className="min-w-0 flex-1" />
         </div>
       </div>
 
