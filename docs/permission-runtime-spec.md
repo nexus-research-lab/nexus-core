@@ -278,6 +278,20 @@ session_key = 当前页面活跃 session_key
 
 - 把新连接重新绑定到当前会话
 - 让挂起中的权限请求有机会重投到新连接
+- 让后端按 `last_seen_session_seq` 回放断线期间的 DM 增量
+
+补充字段：
+
+```text
+last_seen_session_seq = 当前前端已收到的最后一个 session envelope 序号
+```
+
+规则：
+
+- 若后端缓冲区仍覆盖该序号，按序补发 `message / stream`
+- 若缓冲区已不完整，后端返回 `session_resync_required`
+- 前端收到 `session_resync_required` 后，执行当前会话全量重拉
+- `bind_session` 结束后，后端仍需补推一次当前 `session_status`
 
 注意：
 

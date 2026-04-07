@@ -20,9 +20,11 @@ from agent.service.channels.ws.handlers.interrupt_handler import InterruptHandle
 from agent.service.channels.ws.handlers.permission_handler import PermissionHandler
 from agent.service.channels.ws.handlers.ping_handler import PingHandler
 from agent.service.channels.ws.websocket_sender import WebSocketSender
+from agent.service.channels.ws.ws_session_routing_sender import (
+    WsSessionRoutingSender,
+)
 from agent.service.chat.chat_service import ChatService
 from agent.service.chat.room_chat_service import RoomChatService
-from agent.service.session.session_manager import session_manager
 from agent.service.permission.strategy.permission_interactive import InteractivePermissionStrategy
 from agent.utils.logger import logger
 
@@ -39,9 +41,10 @@ class WebSocketConnectionManager:
         """初始化连接级依赖并返回消息分发器。"""
         self.sender = WebSocketSender(self._websocket)
         self.permission_strategy = InteractivePermissionStrategy(self.sender)
+        routing_sender = WsSessionRoutingSender(self.sender)
 
         permission_handler = PermissionHandler(self.sender, self.permission_strategy)
-        chat_service = ChatService(self.sender, self.permission_strategy)
+        chat_service = ChatService(routing_sender, self.permission_strategy)
         room_chat_service = RoomChatService(self.sender, self.permission_strategy)
         interrupt_handler = InterruptHandler(self.sender, self.permission_strategy)
         ping_handler = PingHandler(self.sender)
@@ -66,34 +69,9 @@ class WebSocketConnectionManager:
         if self.permission_strategy:
             self.permission_strategy.close()
 
-        tasks_to_await: list[asyncio.Task] = []
-        for session_key, task in chat_tasks.items():
-            if (
-                self.permission_strategy and
-                self.permission_strategy.has_pending_request_for_session(session_key)
-            ):
-                # 中文注释：权限确认已展示给前端后，短暂断线不应把会话直接打断。
-                # 保留运行中的任务，等待重连后的 permission_response 唤醒。
-                logger.info(f"🔒 保留等待权限确认的会话任务: {session_key}")
-                continue
-
-            if not task.done():
-                logger.info(f"🛑 清理: 取消 chat 任务 {session_key}")
-                task.cancel()
-                tasks_to_await.append(task)
-
-            try:
-                client = await session_manager.get_session(session_key)
-                if client:
-                    await client.interrupt()
-                    logger.info(f"⏸️ 清理: 中断 SDK 生成 {session_key}")
-            except Exception as exc:
-                logger.warning(f"⚠️ 中断 SDK 失败 {session_key}: {exc}")
-
-        if tasks_to_await:
-            await asyncio.gather(*tasks_to_await, return_exceptions=True)
-
-        chat_tasks.clear()
+        # 中文注释：WebSocket 断线不再中断后台任务。
+        # 运行中的 DM/Room 任务继续执行，前端重连后由新的活跃 sender 接管实时推送。
+        # chat_tasks 作为全局运行表继续保留，供重连后的 interrupt 与新消息复用。
 
         if self.sender:
             self.sender.unsubscribe_all_workspace()

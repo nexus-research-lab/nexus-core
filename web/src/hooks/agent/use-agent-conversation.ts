@@ -54,6 +54,7 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
 
   const active_session_key_ref = useRef<string | null>(null);
   const load_request_id_ref = useRef(0);
+  const session_seq_cursor_ref = useRef(0);
   const room_seq_cursor_ref = useRef(0);
   const pending_round_ids_ref = useRef<Set<string>>(new Set());
   const active_message_tracker_ref = useRef<Map<string, ActiveMessageTracker>>(new Map());
@@ -107,7 +108,7 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
       return;
     }
 
-    await loadAgentSession(active_session_key, lifecycle_context);
+    await loadAgentSession(active_session_key, lifecycle_context, true);
   }, [lifecycle_context]);
 
   const is_current_session_event = useCallback((incoming_session_key?: string | null) => {
@@ -281,6 +282,15 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
     const event = backend_message as EventMessage;
 
     if (
+      session_key &&
+      event.session_key === session_key &&
+      typeof event.session_seq === 'number' &&
+      event.session_seq > session_seq_cursor_ref.current
+    ) {
+      session_seq_cursor_ref.current = event.session_seq;
+    }
+
+    if (
       room_id &&
       event.room_id === room_id &&
       typeof event.room_seq === 'number' &&
@@ -301,6 +311,22 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
         );
       }
       on_room_event_callback?.(event.event_type, event.data ?? {});
+      void reload_current_session();
+      return;
+    }
+
+    if (
+      event.event_type === 'session_resync_required' &&
+      event.session_key &&
+      is_current_session_event(event.session_key)
+    ) {
+      const latest_session_seq = event.data?.latest_session_seq;
+      if (typeof latest_session_seq === 'number') {
+        session_seq_cursor_ref.current = Math.max(
+          session_seq_cursor_ref.current,
+          latest_session_seq,
+        );
+      }
       void reload_current_session();
       return;
     }
@@ -331,6 +357,7 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
     on_room_event,
     on_room_event_callback,
     room_id,
+    session_key,
     reload_current_session,
     track_assistant_message,
     track_chat_ack,
@@ -376,22 +403,12 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
     },
   });
 
-  const previous_ws_state_ref = useRef(ws_state);
-
   useEffect(() => {
-    const previous_ws_state = previous_ws_state_ref.current;
     if (ws_state === 'connected') {
       has_connected_ref.current = true;
       set_error(null);
-
-      // 中文注释：WebSocket 短暂重连后，旧 sender 推送的增量消息可能已经落库但未送达当前页面。
-      // 这里在重连成功后主动回拉一次当前会话，补齐断线期间遗漏的消息与工具结果。
-      if (previous_ws_state !== 'connected') {
-        void reload_current_session();
-      }
     }
-    previous_ws_state_ref.current = ws_state;
-  }, [reload_current_session, ws_state]);
+  }, [ws_state]);
 
   useEffect(() => {
     if (!agent_id || ws_state !== 'connected') {
@@ -421,6 +438,7 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
     ws_send({
       type: 'bind_session',
       session_key,
+      ...(session_seq_cursor_ref.current > 0 ? { last_seen_session_seq: session_seq_cursor_ref.current } : {}),
       ...(agent_id ? { agent_id } : {}),
       ...(room_id ? { room_id } : {}),
       ...(conversation_id ? { conversation_id } : {}),
@@ -429,8 +447,9 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
 
   // Subscribe to room-level events (member changes, deletions, etc.) when in a Room context
   useEffect(() => {
+    session_seq_cursor_ref.current = 0;
     room_seq_cursor_ref.current = 0;
-  }, [room_id]);
+  }, [room_id, session_key]);
 
   useEffect(() => {
     if (!room_id || ws_state !== 'connected') {

@@ -246,6 +246,10 @@ class PermissionRuntimeContext:
             self.unregister_sender(sender)
             return None
         return sender
+
+    def resolve_session_sender(self, session_key: str) -> MessageSender | None:
+        """对外暴露当前 session 的活跃发送通道。"""
+        return self._resolve_sender(session_key)
     def _cleanup_request(self, request_id: str) -> None:
         """清理单个权限请求。"""
         self._permission_requests.pop(request_id, None)

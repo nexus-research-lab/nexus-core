@@ -7,15 +7,19 @@ import { sortMessages } from './message-helpers';
 
 /**
  * 重置当前会话视图状态。
+ * preserve_loading=true 时保留 is_loading 态（重连 reload 场景下由 session_status 事件控制）。
  */
 export function resetSessionView(
   context: AgentConversationLifecycleContext,
   next_error: string | null = null,
+  preserve_loading: boolean = false,
 ): void {
   context.set_messages([]);
   context.set_pending_agent_slots([]);
   context.set_pending_permissions([]);
-  context.set_is_loading(false);
+  if (!preserve_loading) {
+    context.set_is_loading(false);
+  }
   context.set_error(next_error);
 }
 
@@ -38,10 +42,12 @@ export function startAgentSession(context: AgentConversationLifecycleContext): v
  * 加载现有会话消息。
  * 如果 bg_message_cache_ref 中有该 session 的缓存消息，先用缓存预填充（避免 loading 闪烁）。
  * API 返回后用服务端数据覆盖，并清除 cache。
+ * is_reload=true 时保留 loading 态，由后续 session_status 事件控制。
  */
 export async function loadAgentSession(
   session_key: string,
   context: AgentConversationLifecycleContext,
+  is_reload: boolean = false,
 ): Promise<void> {
   const request_id = context.load_request_id_ref.current + 1;
   context.load_request_id_ref.current = request_id;
@@ -53,10 +59,12 @@ export async function loadAgentSession(
   if (cached && cached.length > 0) {
     context.set_messages(sortMessages(cached));
     context.set_pending_permissions([]);
-    context.set_is_loading(false);
+    if (!is_reload) {
+      context.set_is_loading(false);
+    }
     context.set_error(null);
   } else {
-    resetSessionView(context);
+    resetSessionView(context, null, is_reload);
   }
 
   try {

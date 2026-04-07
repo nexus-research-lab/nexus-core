@@ -202,6 +202,7 @@ class EventMessage(BaseModel):
     )
     event_type: str = Field(..., description="事件类型")
     session_key: Optional[str] = Field(default=None, description="会话路由键")
+    session_seq: Optional[int] = Field(default=None, description="Session 内递增序号")
     room_id: Optional[str] = Field(default=None, description="Room ID")
     room_seq: Optional[int] = Field(default=None, description="Room 内递增序号")
     conversation_id: Optional[str] = Field(default=None, description="对话 ID")

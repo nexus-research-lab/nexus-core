@@ -10,11 +10,12 @@
 """WebSocket 连接处理器。"""
 
 import asyncio
-from typing import Dict, Optional
+from typing import Optional
 
 from fastapi import WebSocket, WebSocketDisconnect
 
 from agent.service.channels.ws.manager import WebSocketConnectionManager
+from agent.service.channels.ws.ws_chat_task_registry import ws_chat_task_registry
 from agent.utils.logger import logger
 
 
@@ -23,7 +24,7 @@ class WebSocketHandler:
 
     def __init__(self) -> None:
         self.websocket: Optional[WebSocket] = None
-        self.chat_tasks: Dict[str, asyncio.Task] = {}
+        self.chat_tasks = ws_chat_task_registry.tasks
         self._connection_manager: Optional[WebSocketConnectionManager] = None
 
     async def handle_websocket_connection(self, websocket: WebSocket) -> None:

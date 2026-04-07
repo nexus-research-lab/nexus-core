@@ -258,36 +258,53 @@ DM 必须区分“实时态”和“归档态”。
 | 场景 | 主区显示 | 调用链 / 过程区 | 是否显示完整执行链 |
 | --- | --- | --- | --- |
 | Room 主时间线 | `result`，无则最后一个 assistant | 不显示 | 否 |
-| Room Thread | 不单独拆主区 | 不折叠，直接顺序显示 | 是 |
-| DM 实时态 | 当前全部实时内容 | 不单独拆调用链 | 是 |
-| DM 归档态 | `result`，无则最后一个 assistant | 显示中间过程，默认折叠，不包含最后一个 assistant | 否 |
 
-## 10. 明确禁止的做法
+## 10. WebSocket 重连补流
+
+### 10.1 DM / 单会话补流
+
+- DM 断线重连后，后台任务不应停止
+- 非 Room 会话的实时 envelope 需要带 `session_seq`
+- 前端重连时通过 `bind_session + last_seen_session_seq` 申请补发
+- 后端若缓冲区仍覆盖该游标，按序回放：
+  - `message`
+  - `stream`
+- 若缓冲区已经不够，后端发送 `session_resync_required`
+- 前端收到 `session_resync_required` 后，必须回源重拉当前会话
+- `bind_session` 完成后，后端还需要额外推送一次当前 `session_status`
+
+### 10.2 Room 补流
+
+- Room 继续使用现有 `room_seq`
+- Room 的实时回放与重拉规则不变
+- `session_seq` 不替代 `room_seq`
+
+## 11. 明确禁止的做法
 
 以下做法应明确禁止：
 
-### 10.1 把整轮 assistant 内容直接合并成单条最终回答
+### 11.1 把整轮 assistant 内容直接合并成单条最终回答
 
 - 这会丢失 turn 边界
 - 会让 DM 和 Room 相互打架
 
-### 10.2 把所有 assistant text 都直接当成最终输出
+### 11.2 把所有 assistant text 都直接当成最终输出
 
 - 中间 assistant text 应该进入过程区
 - 只有最后一个 assistant turn 才有资格成为最终输出候选
 
-### 10.3 让 Room 主时间线承担 Thread 职责
+### 11.3 让 Room 主时间线承担 Thread 职责
 
 - 主时间线是结果视图
 - Thread 才是执行视图
 
-### 10.4 强制让实时态与归档态长得完全一样
+### 11.4 强制让实时态与归档态长得完全一样
 
 - 实时态首先保证“看得到最新输出”
 - 归档态首先保证“历史足够干净”
 - 两者目标不同，允许不同展示
 
-## 11. 推荐实现边界
+## 12. 推荐实现边界
 
 推荐把前端消息层收敛成 4 种显示模式：
 
@@ -307,7 +324,7 @@ DM 必须区分“实时态”和“归档态”。
 - `room_result`
   - 只显示 result，无 result 时回退最后一个 assistant
 
-## 12. 规范结论
+## 13. 规范结论
 
 消息展示的根问题不是“块怎么拼”，而是先回答这三个问题：
 

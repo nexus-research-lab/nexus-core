@@ -86,7 +86,7 @@ class RoomChatService:
         task = asyncio.create_task(self._handle_room_message(message, chat_tasks))
         chat_tasks[task_key] = task
         task.add_done_callback(
-            lambda t: self._on_task_done(task_key, t)
+            lambda t: self._on_task_done(task_key, t, chat_tasks)
         )
 
     async def _handle_room_message(self, message: Dict[str, Any], chat_tasks: Dict[str, Any]) -> None:
@@ -604,8 +604,13 @@ class RoomChatService:
         )
 
     @staticmethod
-    def _on_task_done(task_key: str, task: asyncio.Task) -> None:
+    def _on_task_done(
+        task_key: str,
+        task: asyncio.Task,
+        chat_tasks: Dict[str, Any],
+    ) -> None:
         """任务完成回调。"""
+        chat_tasks.pop(task_key, None)
         if task.cancelled():
             logger.info(f"🛑 Room 任务被取消: {task_key}")
         elif task.exception():

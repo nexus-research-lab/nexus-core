@@ -76,7 +76,16 @@ class SessionService:
             self._normalize_session_datetimes(session)
             for session in await self._list_room_sessions()
         ]
-        all_sessions = [*sessions, *room_sessions]
+        # 中文注释：Room agent 会话的文件元数据与 SQL 视图可能同时存在。
+        # 这里必须按 session_key 折叠成唯一集合，并以 SQL 视图为准，
+        # 否则前端会把同一会话渲染两次。
+        unique_sessions: dict[str, ASession] = {
+            session.session_key: session for session in sessions
+        }
+        for room_session in room_sessions:
+            unique_sessions[room_session.session_key] = room_session
+
+        all_sessions = list(unique_sessions.values())
         all_sessions.sort(key=lambda item: item.last_activity.timestamp(), reverse=True)
         return await session_context_resolver.enrich_sessions(all_sessions)
 

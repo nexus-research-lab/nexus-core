@@ -11,11 +11,16 @@
 
 from typing import Any, Dict
 
+from agent.schema.model_message import EventMessage
 from agent.service.channels.ws.handlers.error_handler import ErrorHandler
 from agent.service.channels.ws.handlers.interrupt_handler import InterruptHandler
 from agent.service.channels.ws.handlers.permission_handler import PermissionHandler
 from agent.service.channels.ws.handlers.ping_handler import PingHandler
 from agent.service.channels.ws.websocket_sender import WebSocketSender
+from agent.service.channels.ws.ws_session_replay_registry import (
+    ws_session_replay_registry,
+)
+from agent.service.channels.ws.ws_chat_task_registry import ws_chat_task_registry
 from agent.service.channels.ws.ws_connection_registry import ws_connection_registry
 from agent.service.chat.chat_service import ChatService
 from agent.service.chat.room_chat_service import RoomChatService
@@ -80,6 +85,17 @@ class ChannelDispatcher:
             return
 
         if msg_type == "bind_session":
+            # 中文注释：前端重连后需要知道后台是否仍在生成，以恢复 loading 态。
+            session_key = message.get("session_key", "")
+            if isinstance(session_key, str) and session_key:
+                last_seen_session_seq = message.get("last_seen_session_seq")
+                if isinstance(last_seen_session_seq, int) and last_seen_session_seq > 0:
+                    await ws_session_replay_registry.replay_session_events(
+                        sender=self._sender,
+                        session_key=session_key,
+                        last_seen_session_seq=last_seen_session_seq,
+                    )
+                await self._push_session_status(session_key)
             return
 
         if msg_type == "subscribe_workspace":
@@ -191,3 +207,14 @@ class ChannelDispatcher:
             )
         )
         return True
+
+    async def _push_session_status(self, session_key: str) -> None:
+        """向当前连接推送 session 运行状态，供前端恢复 loading 态。"""
+        is_generating = ws_chat_task_registry.is_running(session_key)
+        await self._sender.send_event_message(
+            EventMessage(
+                event_type="session_status",
+                session_key=session_key,
+                data={"is_generating": is_generating},
+            )
+        )

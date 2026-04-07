@@ -50,7 +50,9 @@ class ChatService:
 
         task = asyncio.create_task(self.handle_chat_message(message))
         chat_tasks[session_key] = task
-        task.add_done_callback(lambda current_task: self._on_task_done(session_key, current_task))
+        task.add_done_callback(
+            lambda current_task: self._on_task_done(session_key, current_task, chat_tasks)
+        )
 
     async def handle_chat_message(self, message: Dict[str, Any]) -> None:
         """处理聊天消息并推动 Claude 对话循环。"""
@@ -131,8 +133,13 @@ class ChatService:
         return session_key
 
     @staticmethod
-    def _on_task_done(session_key: str, task: asyncio.Task) -> None:
+    def _on_task_done(
+        session_key: str,
+        task: asyncio.Task,
+        chat_tasks: Dict[str, Any],
+    ) -> None:
         """聊天任务完成回调。"""
+        chat_tasks.pop(session_key, None)
         if task.cancelled():
             logger.info(f"🛑 任务被取消: {session_key}")
         elif task.exception():

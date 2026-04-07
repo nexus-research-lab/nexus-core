@@ -148,6 +148,7 @@ export interface EventMessage {
   envelope_id?: string;
   protocol_version?: number;
   delivery_mode?: 'durable' | 'ephemeral';
+  session_seq?: number;
   room_seq?: number;
   event_type:
   | 'message'
@@ -163,10 +164,12 @@ export interface EventMessage {
   | 'room_member_removed'
   | 'room_deleted'
   | 'room_resync_required'
+  | 'session_resync_required'
   | 'chat_ack'
   | 'stream_start'
   | 'stream_end'
-  | 'stream_cancelled';
+  | 'stream_cancelled'
+  | 'session_status';
   session_key?: string | null;
   room_id?: string | null;
   conversation_id?: string | null;

@@ -147,6 +147,17 @@ export function handleAgentConversationWebSocketMessage({
     return;
   }
 
+  // session_status: 重连后后端告知该 session 是否仍在生成，恢复 loading 态
+  if (event.event_type === 'session_status') {
+    if (!is_current_session_event(incoming_session_key)) {
+      return;
+    }
+    if (event.data?.is_generating) {
+      set_is_loading(true);
+    }
+    return;
+  }
+
   // chat_ack: 仅登记 Room 占位槽位，不再插入假 assistant 消息
   if (event.event_type === 'chat_ack') {
     if (!is_current_session_event(incoming_session_key)) {

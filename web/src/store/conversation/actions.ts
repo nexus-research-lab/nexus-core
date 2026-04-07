@@ -22,6 +22,26 @@ type ConversationStoreSetter = (
     | ((state: ConversationStoreState) => Partial<ConversationStoreState>)
 ) => void;
 
+function dedupe_conversations_by_session_key(
+  conversations: Conversation[],
+): Conversation[] {
+  const unique_conversations = new Map<string, Conversation>();
+  for (const conversation of conversations) {
+    const existing_conversation = unique_conversations.get(conversation.session_key);
+    if (!existing_conversation) {
+      unique_conversations.set(conversation.session_key, conversation);
+      continue;
+    }
+
+    // 中文注释：同一 session_key 必须只保留一条。
+    // 冲突时优先使用最近活跃的记录，避免首页和 Launcher 出现重复 key。
+    if (conversation.last_activity_at >= existing_conversation.last_activity_at) {
+      unique_conversations.set(conversation.session_key, conversation);
+    }
+  }
+  return Array.from(unique_conversations.values());
+}
+
 export const createConversationAction = (
   set: ConversationStoreSetter,
 ) => async (params?: CreateConversationParams): Promise<string> => {
@@ -163,7 +183,8 @@ export const loadConversationsFromServerAction = (
     const conversations = await getConversations();
 
     if (conversations && Array.isArray(conversations)) {
-      const sorted_conversations = [...conversations].sort((a, b) => b.last_activity_at - a.last_activity_at);
+      const sorted_conversations = dedupe_conversations_by_session_key(conversations)
+        .sort((a, b) => b.last_activity_at - a.last_activity_at);
       console.debug(`[ConversationStore] Loaded ${sorted_conversations.length} conversations`);
       set({ conversations: sorted_conversations, loading: false, error: null });
     } else {
