@@ -11,6 +11,9 @@ from alembic import context
 # 添加项目根目录到Python路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# 导入应用配置，确保迁移与运行时读取同一份 DATABASE_URL
+from agent.config.config import settings
+
 # 导入当前仓库的 Base 和 ORM 模型
 from agent.infra.database.async_sqlalchemy import Base
 from agent.infra.database.models import load_models  # noqa: F401
@@ -48,6 +51,12 @@ def _normalize_database_url(database_url: str) -> str:
     return url
 
 
+def _resolve_database_url() -> str:
+    """优先读取运行时环境变量，避免部署时改写 alembic.ini。"""
+    database_url = os.getenv("DATABASE_URL") or settings.DATABASE_URL
+    return database_url or config.get_main_option("sqlalchemy.url")
+
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
 
@@ -60,7 +69,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = _normalize_database_url(config.get_main_option("sqlalchemy.url"))
+    url = _normalize_database_url(_resolve_database_url())
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -80,8 +89,7 @@ def do_run_migrations(connection: Connection) -> None:
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
     # 确保 SQLite 数据库目录存在
-    db_url = config.get_main_option("sqlalchemy.url")
-    normalized_url = _normalize_database_url(db_url)
+    normalized_url = _normalize_database_url(_resolve_database_url())
     config.set_main_option("sqlalchemy.url", normalized_url)
     if normalized_url.startswith("sqlite:///"):
         db_path = Path(normalized_url.replace("sqlite:///", "")).expanduser()

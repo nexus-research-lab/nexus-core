@@ -19,7 +19,8 @@ import { RoomConversationHeader } from "./room-conversation-header";
 import { RoomConversationHistoryView } from "./room-conversation-history-view";
 import { RoomWorkspaceView } from "./room-workspace-view";
 import { RoomAgentAboutView } from "./room-agent-about-view";
-import { RoomThreadContextProvider, useRoomThread, useThreadPanelData } from "./thread/room-thread-context";
+import { RoomThreadContextProvider } from "./thread/room-thread-context";
+import { useRoomThread, useThreadPanelData } from "./thread/room-thread-state";
 import { ThreadDetailPanel } from "./thread-detail-panel";
 
 const ChatBoundary = import.meta.env.DEV ? RoomChatErrorBoundary : Fragment;

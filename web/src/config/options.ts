@@ -13,6 +13,8 @@ export const initialOptions = {
 export let DEFAULT_AGENT_ID = "";
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "0.0.0.0", "::1"]);
+const DEFAULT_API_PATH = "/agent/v1";
+const DEFAULT_WS_PATH = "/agent/v1/chat/ws";
 
 function isLocalHost(hostname: string): boolean {
   return LOCAL_HOSTS.has(hostname);
@@ -34,8 +36,34 @@ function getBrowserHost(): string {
   return normalizeHost(window.location.hostname);
 }
 
+function getBrowserOrigin(): string {
+  if (typeof window === "undefined") {
+    return "http://localhost";
+  }
+
+  return window.location.origin;
+}
+
+function getBrowserWsOrigin(): string {
+  if (typeof window === "undefined") {
+    return "ws://localhost";
+  }
+
+  const ws_protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return `${ws_protocol}//${window.location.host}`;
+}
+
+function buildBrowserUrl(pathname: string, use_websocket_protocol: boolean): string {
+  const origin = use_websocket_protocol ? getBrowserWsOrigin() : getBrowserOrigin();
+  return `${origin}${pathname}`;
+}
+
 function alignUrlHost(rawUrl: string): string {
   if (typeof window === "undefined") {
+    return rawUrl;
+  }
+
+  if (rawUrl.startsWith("/")) {
     return rawUrl;
   }
 
@@ -51,26 +79,38 @@ function alignUrlHost(rawUrl: string): string {
     }
 
     parsed.hostname = browserHost;
+    if (!parsed.port && window.location.port) {
+      parsed.port = window.location.port;
+    }
+    if (parsed.protocol === "ws:" || parsed.protocol === "wss:") {
+      parsed.protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    } else {
+      parsed.protocol = window.location.protocol;
+    }
     return parsed.toString();
   } catch {
     return rawUrl;
   }
 }
 
-export function getAgentApiBaseUrl(): string {
-  if (import.meta.env.VITE_API_URL) {
-    return alignUrlHost(import.meta.env.VITE_API_URL);
+function resolveRuntimeUrl(rawUrl: string | undefined, fallbackPath: string, use_websocket_protocol: boolean): string {
+  if (!rawUrl) {
+    return buildBrowserUrl(fallbackPath, use_websocket_protocol);
   }
 
-  return `http://${getBrowserHost()}:8010/agent/v1`;
+  if (rawUrl.startsWith("/")) {
+    return buildBrowserUrl(rawUrl, use_websocket_protocol);
+  }
+
+  return alignUrlHost(rawUrl);
+}
+
+export function getAgentApiBaseUrl(): string {
+  return resolveRuntimeUrl(import.meta.env.VITE_API_URL, DEFAULT_API_PATH, false);
 }
 
 export function getAgentWsUrl(): string {
-  if (import.meta.env.VITE_WS_URL) {
-    return alignUrlHost(import.meta.env.VITE_WS_URL);
-  }
-
-  return `ws://${getBrowserHost()}:8010/agent/v1/chat/ws`;
+  return resolveRuntimeUrl(import.meta.env.VITE_WS_URL, DEFAULT_WS_PATH, true);
 }
 
 export function getDefaultAgentId(): string {

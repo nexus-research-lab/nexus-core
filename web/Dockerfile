@@ -1,29 +1,27 @@
-# 多阶段构建
-# 第一阶段：构建静态资源
-FROM node:25-alpine AS builder
+FROM node:22-alpine AS builder
 
-ARG VITE_WS_URL=ws://localhost/agent/v1/chat/ws
-ARG VITE_API_URL=http://localhost/agent/v1
+ARG VITE_WS_URL=
+ARG VITE_API_URL=
 ARG VITE_DEFAULT_MODEL=glm-5
 
 ENV VITE_WS_URL=${VITE_WS_URL} \
     VITE_API_URL=${VITE_API_URL} \
     VITE_DEFAULT_MODEL=${VITE_DEFAULT_MODEL}
 
-WORKDIR /app
+WORKDIR /app/web
 
-COPY package*.json ./
+COPY web/package*.json ./
+COPY web/.npmrc ./
 RUN npm ci
 
-COPY . .
+COPY web/ ./
 RUN npm run build
 
-# 第二阶段：使用 nginx 提供静态站点
-FROM nginx:alpine AS runner
+FROM nginx:1.28-alpine AS runner
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY deploy/nginx.conf /etc/nginx/nginx.conf
+COPY --from=builder /app/web/dist /usr/share/nginx/html
 
-EXPOSE 3000
+EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]

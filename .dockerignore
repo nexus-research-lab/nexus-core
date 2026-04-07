@@ -99,3 +99,17 @@ web/
 coverage.xml
 *.cover
 .hypothesis/
+
+# 部署镜像构建需要访问这些目录
+!deploy/
+!deploy/**
+!web/
+!web/**
+!skills/
+!skills/**
+
+# 重新排除前端构建产物和本地环境文件
+web/node_modules/
+web/dist/
+web/.env
+web/.env.*

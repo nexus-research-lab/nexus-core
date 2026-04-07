@@ -105,21 +105,3 @@ function WriteCursor() {
   useEffect(() => { ensureWriteCursorStyle(); }, []);
   return <span className="nexus-write-cursor" aria-hidden />;
 }
-
-// ─── useLineCount ─────────────────────────────────────────────────────────────
-// Hook: returns pretext-measured line count for a given text + container width.
-
-export function useLineCount(text: string, containerWidth: number, font = MONO_FONT): number {
-  const [count, setCount] = useState(1);
-  useEffect(() => {
-    if (!containerWidth || containerWidth <= 0) return;
-    try {
-      const prepared = prepare(text, font);
-      const result = layout(prepared, containerWidth, LINE_HEIGHT);
-      setCount(Math.max(1, Math.round(result.height / LINE_HEIGHT)));
-    } catch {
-      setCount(text.split("\n").length);
-    }
-  }, [text, containerWidth, font]);
-  return count;
-}

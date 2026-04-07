@@ -5,72 +5,64 @@ x-logging:
       max-size: "10m"
       max-file: "3"
 
-
 services:
   nexus:
     build:
       context: ..
       dockerfile: deploy/Dockerfile
-    image: ${IMAGE:-nexus}:app-${TAG}
-    restart: always
-    environment:
-      - TZ=Asia/Shanghai
-      - SERVER_TYPE=gunicorn
-    networks:
-      - net
-    volumes:
-      - /usr/share/zoneinfo/Asia/Shanghai:/etc/localtime:ro
-      - ../logs:/opt/app/logs
-      - ../cache:/opt/app/cache
-      - ${DEFAULT_CWD:-cwd}:/opt/app/playground
+      args:
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-}
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmjs.org/}
+    image: ${IMAGE:-nexus}:app-${TAG:-latest}
+    restart: unless-stopped
     env_file:
       - ../.env
-    logging: *default-logging
-
-  # 前端服务
-  web:
-    build:
-      context: ../web
-      dockerfile: Dockerfile
-      args:
-        - VITE_WS_URL=ws://localhost/agent/v1/chat/ws
-        - VITE_API_URL=http://localhost/agent/v1
-        - VITE_DEFAULT_MODEL=glm-5
-    image: ${IMAGE:-nexus}:web-${TAG}
-    restart: always
     environment:
-      - TZ=Asia/Shanghai
-    networks:
-      - net
+      TZ: ${TZ:-Asia/Shanghai}
+      SERVER_TYPE: gunicorn
+      HOST: 0.0.0.0
+      PORT: 8010
+      WORKERS: ${WORKERS:-2}
+      DATABASE_URL: ${DATABASE_URL:-sqlite+aiosqlite:////home/agent/.nexus/data/nexus.db}
+      CACHE_FILE_DIR: ${CACHE_FILE_DIR:-/home/agent/.nexus/cache}
+      LOG_PATH: ${LOG_PATH:-/home/agent/.nexus/logs}
+      WORKSPACE_PATH: ${WORKSPACE_PATH:-/home/agent/.nexus/workspace}
     volumes:
-      - /usr/share/zoneinfo/Asia/Shanghai:/etc/localtime:ro
+      - nexus_home:/home/agent/.nexus
+    expose:
+      - "8010"
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8010/agent/v1/health').read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     logging: *default-logging
-    depends_on:
-      - nexus
 
-
-  # Nginx 反向代理
   nginx:
-    image: nginx:alpine
-    restart: always
+    build:
+      context: ..
+      dockerfile: web/Dockerfile
+      args:
+        VITE_WS_URL: ${VITE_WS_URL:-}
+        VITE_API_URL: ${VITE_API_URL:-}
+        VITE_DEFAULT_MODEL: ${VITE_DEFAULT_MODEL:-glm-5}
+    image: ${IMAGE:-nexus}:web-${TAG:-latest}
+    restart: unless-stopped
     environment:
-      - TZ=Asia/Shanghai
-    networks:
-      - net
-    volumes:
-      - /usr/share/zoneinfo/Asia/Shanghai:/etc/localtime:ro
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-    ports:
-      - "80:80"
-      - "443:443"
+      TZ: ${TZ:-Asia/Shanghai}
     depends_on:
-      - nexus
-      - web
+      nexus:
+        condition: service_healthy
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/nginx-health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     logging: *default-logging
-
-networks:
-  net:
-    external: true
 
 volumes:
-  cwd:
+  nexus_home:

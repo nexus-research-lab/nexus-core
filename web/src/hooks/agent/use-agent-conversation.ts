@@ -540,11 +540,22 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
   }, [lifecycle_context]);
 
   const bind_session_key = useCallback((key: string | null) => {
-    active_session_key_ref.current = key;
-    set_session_key(key);
-    if (!key) {
-      set_pending_agent_slots([]);
-      set_pending_permissions([]);
+    const normalized_key = key?.trim() || null;
+    if (active_session_key_ref.current === normalized_key) {
+      return;
+    }
+
+    active_session_key_ref.current = normalized_key;
+    set_session_key((current_key) => (
+      current_key === normalized_key ? current_key : normalized_key
+    ));
+    if (!normalized_key) {
+      set_pending_agent_slots((current_slots) => (
+        current_slots.length ? [] : current_slots
+      ));
+      set_pending_permissions((current_permissions) => (
+        current_permissions.length ? [] : current_permissions
+      ));
     }
   }, []);
 

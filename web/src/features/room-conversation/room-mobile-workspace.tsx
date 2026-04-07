@@ -9,7 +9,8 @@ import { Conversation, ConversationSnapshotPayload, RoomConversationView } from 
 
 import { DmChatPanel } from "@/features/dm-conversation/dm-chat-panel";
 import { RoomChatPanel } from "./room-chat-panel";
-import { RoomThreadContextProvider, useRoomThread, useThreadPanelData } from "./thread/room-thread-context";
+import { RoomThreadContextProvider } from "./thread/room-thread-context";
+import { useRoomThread, useThreadPanelData } from "./thread/room-thread-state";
 import { ThreadDetailPanel } from "./thread-detail-panel";
 
 interface RoomMobileWorkspaceProps {

@@ -56,7 +56,11 @@ export function useLauncherPageController() {
   const is_app_conversation_open = surface === "app";
 
   const set_launcher_search = useCallback((next_search: LauncherSearchParams) => {
-    set_search_params(buildLauncherSearchParams(next_search, search_params), { replace: true });
+    const next_search_params = buildLauncherSearchParams(next_search, search_params);
+    if (next_search_params.toString() === search_params.toString()) {
+      return;
+    }
+    set_search_params(next_search_params, { replace: true });
   }, [search_params, set_search_params]);
 
   const open_app_conversation = useCallback((next_prompt?: string) => {

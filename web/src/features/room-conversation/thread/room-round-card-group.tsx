@@ -17,7 +17,7 @@ import {
   isAgentRoundActive,
 } from "@/features/conversation-shared/utils";
 import { AgentStatusCard } from "./agent-status-card";
-import { useRoomThread } from "./room-thread-context";
+import { useRoomThread } from "./room-thread-state";
 
 interface RoomRoundCardGroupProps {
   round_id: string;

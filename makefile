@@ -106,15 +106,11 @@ build: ## Build Docker images
 build-backend: ## Build backend Docker image
 	docker build --progress=plain -f deploy/Dockerfile -t leemysw/nexus:app-$(TAG) .
 
-build-web: ## Build frontend Docker image
-	docker build --progress=plain -f web/Dockerfile -t leemysw/nexus:web-$(TAG) ./web
+build-web: ## Build frontend + nginx gateway image
+	docker build --progress=plain -f web/Dockerfile -t leemysw/nexus:web-$(TAG) .
 
 start: ## Start all services with Docker
-	@if ! docker network inspect net >/dev/null 2>&1; then \
-		echo "Creating Docker network 'net'..."; \
-		docker network create net; \
-	fi
-	TAG=$(TAG) docker compose -f deploy/docker-compose.yml up -d
+	TAG=$(TAG) docker compose -f deploy/docker-compose.yml up -d --build
 	@echo ""
 	@echo "✅ Nexus Core is running!"
 	@echo "🌐 Web UI: http://localhost"

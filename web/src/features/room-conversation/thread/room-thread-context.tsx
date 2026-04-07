@@ -1,65 +1,20 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
-import { Message } from "@/types/message";
-import { PendingPermission, PermissionDecisionPayload } from "@/types/permission";
+import { ReactNode, useCallback, useMemo, useRef, useState } from "react";
 
-interface ThreadTarget {
-  round_id: string;
-  agent_id: string;
-  auto_close_on_finish?: boolean;
-}
-
-interface OpenThreadOptions {
-  auto_close_on_finish?: boolean;
-}
-
-/** Thread 面板数据 — 由 RoomChatPanel 设置，由 Layout 读取用于渲染 ThreadDetailPanel */
-export interface ThreadPanelData {
-  messages: Message[];
-  agent_name: string | null;
-  is_loading: boolean;
-  pending_permissions: PendingPermission[];
-  on_permission_response?: (payload: PermissionDecisionPayload) => boolean;
-  on_stop_message?: (msg_id: string) => void;
-  on_open_workspace_file?: (path: string) => void;
-}
-
-// ── Context 1: Thread 控制状态（被 RoomChatPanel / cards 消费） ──────────────
-
-interface ThreadControlState {
-  active_thread: ThreadTarget | null;
-  open_thread: (round_id: string, agent_id: string, options?: OpenThreadOptions) => void;
-  close_thread: () => void;
-}
-
-const ThreadControlContext = createContext<ThreadControlState | null>(null);
-
-export function useRoomThread(): ThreadControlState {
-  const ctx = useContext(ThreadControlContext);
-  if (!ctx) throw new Error("useRoomThread must be used within RoomThreadContextProvider");
-  return ctx;
-}
-
-// ── Context 2: Thread 面板数据（仅被 Layout Inspector 消费） ──────────────────
-// 与控制状态分离，避免数据更新触发 RoomChatPanel 重渲染导致无限循环。
-
-interface ThreadDataState {
-  thread_panel_data: ThreadPanelData | null;
-  set_thread_panel_data: (data: ThreadPanelData | null) => void;
-}
-
-const ThreadDataContext = createContext<ThreadDataState | null>(null);
-
-export function useThreadPanelData(): ThreadDataState {
-  const ctx = useContext(ThreadDataContext);
-  if (!ctx) throw new Error("useThreadPanelData must be used within RoomThreadContextProvider");
-  return ctx;
-}
+import {
+  OpenThreadOptions,
+  ThreadControlContext,
+  ThreadControlState,
+  ThreadDataContext,
+  ThreadDataState,
+  ThreadPanelData,
+  ThreadTarget,
+} from "./room-thread-state";
 
 // ── Provider ─────────────────────────────────────────────────────────────────
 
-export function RoomThreadContextProvider({ children }: { children: React.ReactNode }) {
+export function RoomThreadContextProvider({ children }: { children: ReactNode }) {
   // 控制状态
   const [active_thread, set_active_thread] = useState<ThreadTarget | null>(null);
 

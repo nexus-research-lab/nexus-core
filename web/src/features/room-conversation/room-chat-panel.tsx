@@ -26,7 +26,7 @@ import {
   isAgentRoundActive,
 } from "@/features/conversation-shared/utils";
 import { RoomConversationFeed } from "./room-conversation-feed";
-import { useRoomThread, useThreadPanelData } from "./thread/room-thread-context";
+import { useRoomThread, useThreadPanelData } from "./thread/room-thread-state";
 import { RoomComposerPanel } from "./room-composer-panel";
 import { RoomConversationEmptyState } from "./room-conversation-empty-state";
 

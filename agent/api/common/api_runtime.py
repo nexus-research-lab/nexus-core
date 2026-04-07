@@ -18,7 +18,7 @@ router = APIRouter(tags=["runtime"])
 
 
 @router.get('/health')
-async def health(self):
+async def health():
     return resp.ok(response=resp.Resp(data={"status": "ok"}))
 
 
