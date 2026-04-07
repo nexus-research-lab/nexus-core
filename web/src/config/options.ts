@@ -13,8 +13,10 @@ export const initialOptions = {
 export let DEFAULT_AGENT_ID = "";
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "0.0.0.0", "::1"]);
+const LOCAL_FRONTEND_PORTS = new Set(["3000", "4173"]);
 const DEFAULT_API_PATH = "/agent/v1";
 const DEFAULT_WS_PATH = "/agent/v1/chat/ws";
+const DEFAULT_LOCAL_BACKEND_PORT = "8010";
 
 function isLocalHost(hostname: string): boolean {
   return LOCAL_HOSTS.has(hostname);
@@ -53,7 +55,32 @@ function getBrowserWsOrigin(): string {
   return `${ws_protocol}//${window.location.host}`;
 }
 
+function shouldUseLocalBackendOrigin(): boolean {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return (
+    isLocalHost(window.location.hostname)
+    && LOCAL_FRONTEND_PORTS.has(window.location.port)
+  );
+}
+
+function getLocalBackendOrigin(use_websocket_protocol: boolean): string {
+  const host = getBrowserHost();
+  if (use_websocket_protocol) {
+    const ws_protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return `${ws_protocol}//${host}:${DEFAULT_LOCAL_BACKEND_PORT}`;
+  }
+
+  return `${window.location.protocol}//${host}:${DEFAULT_LOCAL_BACKEND_PORT}`;
+}
+
 function buildBrowserUrl(pathname: string, use_websocket_protocol: boolean): string {
+  if (shouldUseLocalBackendOrigin()) {
+    return `${getLocalBackendOrigin(use_websocket_protocol)}${pathname}`;
+  }
+
   const origin = use_websocket_protocol ? getBrowserWsOrigin() : getBrowserOrigin();
   return `${origin}${pathname}`;
 }
@@ -129,6 +156,14 @@ export async function hydrateRuntimeOptions(): Promise<void> {
   const response = await fetch(`${getAgentApiBaseUrl()}/runtime/options`);
   if (!response.ok) {
     throw new Error(`加载运行时配置失败: ${response.status}`);
+  }
+
+  const content_type = response.headers.get("content-type") ?? "";
+  if (!content_type.includes("application/json")) {
+    const body_preview = (await response.text()).slice(0, 120).trim();
+    throw new Error(
+      `运行时配置接口返回了非 JSON 响应（content-type: ${content_type || "unknown"}）: ${body_preview}`,
+    );
   }
 
   const payload = await response.json();
