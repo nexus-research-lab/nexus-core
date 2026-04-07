@@ -20,7 +20,6 @@
     background: var(--surface-shell-background);
     border: 1px solid var(--surface-shell-border);
     box-shadow: var(--surface-shell-shadow);
-    backdrop-filter: blur(16px);
   }
 
   .surface-inset,
@@ -35,7 +34,6 @@
     background: var(--surface-panel-background);
     border: 1px solid var(--surface-panel-border);
     box-shadow: var(--surface-panel-shadow);
-    backdrop-filter: blur(8px) saturate(104%);
   }
 
   .surface-panel-subtle,
@@ -43,7 +41,6 @@
     background: var(--surface-panel-subtle-background);
     border: 1px solid var(--surface-panel-subtle-border);
     box-shadow: var(--surface-panel-subtle-shadow);
-    backdrop-filter: blur(6px) saturate(102%);
   }
 
   .surface-card,
@@ -76,7 +73,6 @@
     background: var(--chip-pill-background);
     border: 1px solid var(--chip-pill-border);
     box-shadow: var(--chip-pill-shadow);
-    backdrop-filter: blur(6px) saturate(104%);
   }
 
   .input-shell,
@@ -84,7 +80,6 @@
     background: var(--input-shell-background);
     border: 1px solid var(--input-shell-border);
     box-shadow: var(--input-shell-shadow);
-    backdrop-filter: blur(6px) saturate(104%);
   }
 
   .dialog-shell,
@@ -154,7 +149,6 @@
     align-items: center;
     justify-content: center;
     background: rgb(15 23 42 / 0.24);
-    backdrop-filter: blur(10px);
   }
 
   .dialog-header {

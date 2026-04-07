@@ -87,7 +87,6 @@ export function WorkspaceConversationSwitcher({
             style={{
               background: "var(--surface-popover-background)",
               border: "1px solid var(--surface-popover-border)",
-              backdropFilter: "blur(16px)",
             }}
           >
             {conversations.length > 0 ? (

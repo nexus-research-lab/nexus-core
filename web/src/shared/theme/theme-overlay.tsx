@@ -201,7 +201,6 @@ function SunnyLeavesVideo({ active }: { active: boolean }) {
         objectFit: "cover",
         objectPosition: "center 58%",
         mixBlendMode: "multiply",
-        filter: "saturate(0.72) brightness(0.56) contrast(1.18)",
       }}
     />
   );
@@ -214,34 +213,51 @@ function SunnyLeavesVideo({ active }: { active: boolean }) {
 export function ThemeOverlay() {
   const { theme } = useTheme();
   const T = "opacity 700ms cubic-bezier(0.23,1,0.32,1)";
+  const is_sunny = theme === "sunny";
+  const is_rain = theme === "rain";
 
   return (
     <>
       {/* ── Sunny leaves overlay：亮色底盘复用 light，只叠加轻量树荫视频层 ── */}
-      <div aria-hidden style={{
-        position: "fixed", inset: 0, pointerEvents: "none", zIndex: 995,
-        opacity: theme === "sunny" ? 0.38 : 0, transition: T,
-        WebkitMaskImage: "linear-gradient(180deg, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.9) 18%, rgba(0,0,0,0.66) 42%, rgba(0,0,0,0.28) 68%, rgba(0,0,0,0.08) 82%, transparent 92%)",
-        maskImage: "linear-gradient(180deg, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.9) 18%, rgba(0,0,0,0.66) 42%, rgba(0,0,0,0.28) 68%, rgba(0,0,0,0.08) 82%, transparent 92%)",
-      }}>
-        <SunnyLeavesVideo active={theme === "sunny"} />
-      </div>
+      {is_sunny ? (
+        <div
+          aria-hidden
+          style={{
+            position: "fixed", inset: 0, pointerEvents: "none", zIndex: 995,
+            opacity: 0.38, transition: T,
+            WebkitMaskImage: "linear-gradient(180deg, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.9) 18%, rgba(0,0,0,0.66) 42%, rgba(0,0,0,0.28) 68%, rgba(0,0,0,0.08) 82%, transparent 92%)",
+            maskImage: "linear-gradient(180deg, rgba(0,0,0,0.96) 0%, rgba(0,0,0,0.9) 18%, rgba(0,0,0,0.66) 42%, rgba(0,0,0,0.28) 68%, rgba(0,0,0,0.08) 82%, transparent 92%)",
+          }}
+        >
+          <SunnyLeavesVideo active={is_sunny} />
+        </div>
+      ) : null}
 
       {/* ── Rain fog layer ── */}
-      <div aria-hidden style={{
-        position: "fixed", inset: 0, pointerEvents: "none", zIndex: 996,
-        opacity: theme === "rain" ? 1 : 0, transition: T,
-        background: "radial-gradient(ellipse at 50% 100%,rgba(70,80,95,0.18) 0%,transparent 45%),radial-gradient(ellipse at 20% 85%,rgba(60,70,85,0.1) 0%,transparent 35%)",
-        animation: "nexus-fog-drift 25s ease-in-out infinite alternate",
-      }} />
+      {is_rain ? (
+        <div
+          aria-hidden
+          style={{
+            position: "fixed", inset: 0, pointerEvents: "none", zIndex: 996,
+            opacity: 1, transition: T,
+            background: "radial-gradient(ellipse at 50% 100%,rgba(70,80,95,0.18) 0%,transparent 45%),radial-gradient(ellipse at 20% 85%,rgba(60,70,85,0.1) 0%,transparent 35%)",
+            animation: "nexus-fog-drift 25s ease-in-out infinite alternate",
+          }}
+        />
+      ) : null}
 
       {/* ── Rain canvas ── */}
-      <div aria-hidden style={{
-        position: "fixed", inset: 0, pointerEvents: "none", zIndex: 997,
-        opacity: theme === "rain" ? 1 : 0, transition: T,
-      }}>
-        <RainCanvas active={theme === "rain"} />
-      </div>
+      {is_rain ? (
+        <div
+          aria-hidden
+          style={{
+            position: "fixed", inset: 0, pointerEvents: "none", zIndex: 997,
+            opacity: 1, transition: T,
+          }}
+        >
+          <RainCanvas active={is_rain} />
+        </div>
+      ) : null}
     </>
   );
 }

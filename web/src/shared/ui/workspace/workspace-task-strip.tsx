@@ -40,12 +40,10 @@ export function WorkspaceTaskStrip({
     ? {
       background: "var(--surface-popover-background)",
       border: "1px solid var(--surface-popover-border)",
-      backdropFilter: "blur(16px)",
     }
     : {
       background: "var(--chip-default-background)",
       border: "1px solid var(--chip-default-border)",
-      backdropFilter: "blur(16px)",
     };
 
   return (
@@ -108,7 +106,6 @@ export function WorkspaceTaskStrip({
             style={{
               background: "var(--surface-popover-background)",
               border: "1px solid var(--surface-popover-border)",
-              backdropFilter: "blur(18px)",
             }}
           >
 
