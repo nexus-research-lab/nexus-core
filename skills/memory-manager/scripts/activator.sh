@@ -17,7 +17,7 @@ cat << 'EOF'
 - 这次执行里是否可能产生可复用的新经验？
 
 如果是：
-1. 先查看近期 diary 和 MEMORY 相关记录
+1. 先查看近期 memory 和记忆文件相关记录
 2. 任务结束后，把 [LRN] / [ERR] / [FEAT] / [REF] 写入今日日记
 3. 可长期复用的规则，提升到 SOUL.md / AGENTS.md / TOOLS.md / MEMORY.md
 </memory-review-reminder>

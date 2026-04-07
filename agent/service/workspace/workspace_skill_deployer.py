@@ -13,6 +13,7 @@ import shutil
 from pathlib import Path
 
 from agent.service.agent.main_agent_profile import MainAgentProfile
+from agent.service.workspace.workspace_template_renderer import WorkspaceTemplateRenderer
 from agent.utils.logger import logger
 
 
@@ -100,6 +101,7 @@ class WorkspaceSkillDeployer:
         这里直接以仓库目录为准写入 workspace，不保留旧模板兼容逻辑。
         """
         target_dir.mkdir(parents=True, exist_ok=True)
+        renderer = WorkspaceTemplateRenderer(context)
 
         for source_path in source_dir.rglob("*"):
             relative_path = source_path.relative_to(source_dir)
@@ -111,7 +113,7 @@ class WorkspaceSkillDeployer:
 
             target_path.parent.mkdir(parents=True, exist_ok=True)
             if source_path.name == "SKILL.md":
-                content = source_path.read_text(encoding="utf-8").format(**context).strip()
+                content = renderer.render(source_path.read_text(encoding="utf-8")).strip()
                 target_path.write_text(content + "\n", encoding="utf-8")
             else:
                 shutil.copy2(source_path, target_path)

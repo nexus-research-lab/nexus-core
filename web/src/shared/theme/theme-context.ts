@@ -12,12 +12,18 @@
 import { createContext, useContext } from "react";
 
 export type Theme = "light" | "dark" | "sunny" | "rain";
+export type VisualTheme = "light" | "dark" | "rain";
 
 export const THEME_STORAGE_KEY = "nexus-theme";
 
 export interface ThemeContextValue {
   theme: Theme;
   set_theme: (theme: Theme) => void;
+}
+
+/** 中文注释：晴天主题视觉上直接复用亮色，避免维护两套几乎相同的设计令牌。 */
+export function resolve_visual_theme(theme: Theme): VisualTheme {
+  return theme === "sunny" ? "light" : theme;
 }
 
 export function detect_initial_theme(): Theme {
@@ -47,9 +53,11 @@ export function apply_theme(theme: Theme) {
     return;
   }
 
-  document.documentElement.dataset.theme = theme;
+  const visual_theme = resolve_visual_theme(theme);
+
+  document.documentElement.dataset.theme = visual_theme;
   document.documentElement.style.colorScheme =
-    theme === "dark" || theme === "rain" ? "dark" : "light";
+    visual_theme === "dark" || visual_theme === "rain" ? "dark" : "light";
 }
 
 export const THEME_CONTEXT = createContext<ThemeContextValue | null>(null);

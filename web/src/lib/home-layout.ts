@@ -10,16 +10,6 @@ export const HOME_STAGE_VERTICAL_PADDING_CLASS = "py-3";
 export const HOME_PAGE_PADDING_CLASS = `${HOME_STAGE_VERTICAL_PADDING_CLASS} pr-2.5 pl-0`;
 export const HOME_SIDEBAR_PADDING_CLASS = `px-2.5 ${HOME_STAGE_VERTICAL_PADDING_CLASS}`;
 export const HOME_WORKSPACE_SECTION_GAP_CLASS = "gap-2 xl:gap-3";
-export const HOME_WORKSPACE_MAIN_GAP_CLASS = "gap-0 lg:gap-3 xl:gap-4";
-
-export const HOME_WORKSPACE_SIDEBAR_WIDTH_CLASS =
-  "w-[220px] shrink-0 lg:w-[240px] xl:w-[clamp(248px,18vw,300px)] 2xl:w-[clamp(264px,18vw,340px)]";
-
-export const HOME_WORKSPACE_OBJECT_LIST_WIDTH_CLASS =
-  "w-[208px] shrink-0 lg:w-[220px] xl:w-[clamp(224px,16vw,272px)] 2xl:w-[clamp(232px,16vw,296px)]";
-
-export const HOME_CHAT_PANEL_CLASS =
-  "flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-transparent";
 
 export const HOME_EDITOR_DEFAULT_WIDTH_PERCENT = 42;
 export const HOME_EDITOR_MIN_WIDTH_PERCENT = 30;

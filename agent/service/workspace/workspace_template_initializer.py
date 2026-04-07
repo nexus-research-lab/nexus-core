@@ -19,6 +19,7 @@ from agent.service.workspace.workspace_templates import (
 )
 from agent.service.workspace.workspace_hook_settings import WorkspaceHookSettings
 from agent.service.workspace.workspace_skill_deployer import WorkspaceSkillDeployer
+from agent.service.workspace.workspace_template_renderer import WorkspaceTemplateRenderer
 from agent.utils.logger import logger
 
 
@@ -78,13 +79,14 @@ class WorkspaceTemplateInitializer:
             "workspace": self._workspace_path.resolve().as_posix(),
         }
         template_map = get_workspace_templates(self._agent_id)
+        renderer = WorkspaceTemplateRenderer(context)
 
         for key, filename in WORKSPACE_FILES.items():
             filepath = self._workspace_path / filename
             if filepath.exists():
                 continue
 
-            template = template_map.get(key, "").format(**context).strip()
+            template = renderer.render(template_map.get(key, "")).strip()
             if not template:
                 continue
 
@@ -96,15 +98,47 @@ class WorkspaceTemplateInitializer:
         memory_readme = self._workspace_path / "memory" / "README.md"
         if not memory_readme.exists():
             memory_readme.write_text(
-                "# memory/\n\n存放摘要、调研片段、临时结论和可复用资产，例如 `task-summary.md`。\n",
+                "# memory/\n\n存放按天日志、摘要、调研片段、临时结论和可复用资产。\n"
+                "按天日志使用 `YYYY-MM-DD.md`，其他文件名按内容自行命名。\n",
                 encoding="utf-8",
             )
             logger.info(f"🧩 初始化模板: {memory_readme}")
+        self._migrate_legacy_diary_dir()
 
-        diary_readme = self._workspace_path / "diary" / "README.md"
-        if not diary_readme.exists():
-            diary_readme.write_text(
-                "# diary/\n\n按天记录学习、错误、需求和复盘，例如 `2026-04-04.md`。\n",
-                encoding="utf-8",
-            )
-            logger.info(f"🧩 初始化模板: {diary_readme}")
+    def _migrate_legacy_diary_dir(self) -> None:
+        """迁移旧版 diary 目录到统一的 memory 目录。"""
+        diary_dir = self._workspace_path / "diary"
+        if not diary_dir.exists():
+            return
+
+        memory_dir = self._workspace_path / "memory"
+        memory_dir.mkdir(exist_ok=True)
+
+        for source_path in sorted(diary_dir.glob("*.md")):
+            if source_path.name == "README.md":
+                continue
+
+            target_path = memory_dir / source_path.name
+            if not target_path.exists():
+                source_path.rename(target_path)
+                logger.info(f"🧩 已迁移旧日志文件: {source_path} -> {target_path}")
+                continue
+
+            source_content = source_path.read_text(encoding="utf-8").strip()
+            target_content = target_path.read_text(encoding="utf-8").strip()
+            if source_content and source_content != target_content:
+                merged_content = target_content
+                if merged_content:
+                    merged_content += "\n\n"
+                merged_content += source_content
+                target_path.write_text(merged_content.rstrip() + "\n", encoding="utf-8")
+                logger.info(f"🧩 已合并旧日志文件: {source_path} -> {target_path}")
+            source_path.unlink()
+
+        readme_path = diary_dir / "README.md"
+        if readme_path.exists():
+            readme_path.unlink()
+
+        if not any(diary_dir.iterdir()):
+            diary_dir.rmdir()
+            logger.info(f"🧹 已移除旧目录: {diary_dir}")

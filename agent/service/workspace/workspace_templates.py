@@ -60,7 +60,6 @@ MAIN_AGENT_SYSTEM_PROMPT = """# Nexus System Prompt
 DEFAULT_DIR = {
     "agents": ".agents",
     "config": ".claude",
-    "diary": "diary",
     "memory": "memory",
 }
 
@@ -97,8 +96,8 @@ WORKSPACE_TEMPLATES = {
 - 回复优先给可执行结果，再补充必要说明。
 - 复杂任务使用 Todo 工具按步骤执行
 - 不清晰的问题使用工具要求用户澄清
-- 复杂任务、返工任务、易错任务开始前，先回顾 `diary/` 与 `MEMORY.md` 的相关记录。
-- 用户明确说“记住这件事”时，优先更新 `MEMORY.md`；临时过程信息写到 `diary/YYYY-MM-DD.md`。
+- 复杂任务、返工任务、易错任务开始前，先回顾 `memory/` 与 `MEMORY.md` 的相关记录。
+- 用户明确说“记住这件事”时，优先更新 `MEMORY.md`；临时过程信息写到 `memory/YYYY-MM-DD.md`。
 - 当任务失败、被用户纠正、发现更优做法或识别到缺失能力时，先写今日日记，再继续收尾。
 - 可长期复用的规则要提升到 `SOUL.md`、`AGENTS.md`、`TOOLS.md` 或 `MEMORY.md`。
 - 遇到长任务时，按阶段同步进展。
@@ -185,7 +184,7 @@ MAIN_AGENT_WORKSPACE_TEMPLATES = {
 - 用户需要找成员时，引导去 Contacts 或直接建议合适成员
 - 回复默认使用中文，保持简洁、明确、可执行
 - 当需要创建 agent、创建 room、追加 room 成员时，优先使用 `nexus-manager` skill
-- 复杂编排前先回顾近期 diary 和记忆，避免重复组织错误
+- 复杂编排前先回顾近期 memory 记录和长期记忆，避免重复组织错误
 - 被用户纠正、发现组织模式更优或遇到明显失误时，记入今日日记
 """,
     "user": """# USER.md

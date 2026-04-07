@@ -93,7 +93,7 @@ class DiaryRepository:
 
     def append_entry(self, entry: DiaryEntry) -> str:
         """追加单条日记。"""
-        diary_path = self._workspace_path / "diary" / f"{entry.created_at.strftime('%Y-%m-%d')}.md"
+        diary_path = self._workspace_path / "memory" / f"{entry.created_at.strftime('%Y-%m-%d')}.md"
         diary_path.parent.mkdir(parents=True, exist_ok=True)
 
         existing = diary_path.read_text(encoding="utf-8").rstrip() if diary_path.exists() else ""
@@ -159,15 +159,22 @@ class DiaryRepository:
         if not memory_dir.exists():
             return
         for path in sorted(memory_dir.glob("*.md"), reverse=True):
-            if path.is_file():
+            if path.is_file() and self._parse_diary_date(path) is None:
                 yield path
 
     def _iter_diary_files(self):
-        """返回所有 diary 文件。"""
-        diary_dir = self._workspace_path / "diary"
-        if not diary_dir.exists():
+        """返回 memory 目录中的按天日志文件。"""
+        memory_dir = self._workspace_path / "memory"
+        if not memory_dir.exists():
             return []
-        return sorted(diary_dir.glob("*.md"), reverse=True)
+        return sorted(
+            [
+                path
+                for path in memory_dir.glob("*.md")
+                if path.is_file() and self._parse_diary_date(path) is not None
+            ],
+            reverse=True,
+        )
 
     def _resolve_workspace_file(self, relative_path: str) -> Path:
         """解析工作区内路径。"""

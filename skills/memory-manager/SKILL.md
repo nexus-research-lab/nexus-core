@@ -1,11 +1,11 @@
 ---
 name: memory-manager
-description: 管理和检索 Agent 的长期记忆（MEMORY.md）和日记（diary/）。当需要查找过去的信息、回顾决策、或者在重要任务前进行自我提升时，使用此 skill。
+description: 管理和检索 Agent 的长期记忆（MEMORY.md）与记忆目录（memory/）。当需要查找过去的信息、回顾决策、或者在重要任务前进行自我提升时，使用此 skill。
 ---
 
 # memory-manager
 
-负责管理 Agent 的记忆系统。它不只保存长期记忆，还负责把失败、纠正、需求和复盘沉淀到日记，再把稳定规则提升到长期文件。
+负责管理 Agent 的记忆系统。它不只保存长期记忆，还负责把失败、纠正、需求和复盘沉淀到 `memory/` 的按天日志，再把稳定规则提升到长期文件。
 
 `memory-manager` 只是使用入口；真正的记忆能力已经沉到内部模块 `agent.service.memory`。  
 也就是说：
@@ -20,8 +20,8 @@ CLI 工具路径：`python3 "{project_root}/agent/memory_cli.py" --workspace "{w
 - **MEMORY.md**：跨会话的长期、高信号记忆（用户偏好、重大决策、项目里程碑）。
 - **SOUL.md**：行为准则、沟通偏好、长期执行原则。
 - **TOOLS.md**：工具坑点、命令经验、外部接口注意事项。
-- **diary/YYYY-MM-DD.md**：每日进展、错误记录、即时感悟、自我复盘。
-- **memory/**：存储任务摘要、调研片段、临时结论等资产文件，不承担按天记日志职责。
+- **memory/YYYY-MM-DD.md**：每日进展、错误记录、即时感悟、自我复盘。
+- **memory/<name>.md**：任务摘要、调研片段、临时结论等资产文件。
 
 ## 检索工具参考
 
@@ -37,7 +37,7 @@ python3 "{project_root}/agent/memory_cli.py" --workspace "{workspace}" search --
 ### get — 获取文件片段
 
 ```bash
-python3 "{project_root}/agent/memory_cli.py" --workspace "{workspace}" get --path "diary/2026-03-27.md" --from_line 1 --lines 50
+python3 "{project_root}/agent/memory_cli.py" --workspace "{workspace}" get --path "memory/2026-03-27.md" --from_line 1 --lines 50
 ```
 
 - 当 `search` 给出的片段不够完整时，使用 `get` 获取上下文内容。
@@ -140,12 +140,12 @@ python3 "{project_root}/agent/memory_cli.py" --workspace "{workspace}" set-statu
 ## 自动提醒
 
 - workspace 初始化时会自动写入 Claude hooks。
-- 每次新任务开始时会提醒是否需要先回顾近期 diary。
+- 每次新任务开始时会提醒是否需要先回顾近期 memory 记录。
 - Bash 命令失败时会提醒是否要记录 `[ERR]` 条目。
 
 ## 约束
 
 - 长期文件保持短、准、稳，不把大段过程直接堆进 `MEMORY.md`。
-- 详细过程优先写到 `diary/`，摘要和附件放到 `memory/`，需要时再提升到长期文件。
+- 详细过程优先写到 `memory/YYYY-MM-DD.md`，摘要和附件放到 `memory/<name>.md`，需要时再提升到长期文件。
 - 用户明确表达的长期偏好，不需要累计三次，直接提升。
 - 记忆模块是内部核心能力，不要把关键语义只写在 skill 文本里。

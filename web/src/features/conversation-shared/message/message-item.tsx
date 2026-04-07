@@ -710,41 +710,17 @@ function MessageItemInner(
         <div className={cn("w-full", compact ? "px-0" : "px-2 sm:px-3")}>
           <div className={cn("mx-auto w-full", compact ? "max-w-full" : "max-w-[980px]")}>
             <div className={cn(
-              "group grid min-w-0",
-              compact ? "grid-cols-[minmax(0,1fr)]" : "grid-cols-[40px_minmax(0,1fr)] gap-3",
+              "group flex min-w-0 justify-end",
+              compact ? "" : "gap-3",
             )}>
-              {!compact ? (
-                <MessageAvatar>
-                  <User className="h-4 w-4" />
-                </MessageAvatar>
-              ) : null}
-              <div className="relative min-w-0">
+              <div className="relative min-w-0 max-w-[min(100%,720px)]">
                 {/* 头部 */}
                 <div className={cn(
-                  "flex items-center gap-2",
+                  "flex items-center justify-end gap-2",
                   compact ? "h-6" : "h-7",
                 )}>
-                  {compact ? (
-                    <MessageAvatar class_name="shrink-0" size="compact">
-                      <User className="h-3 w-3" />
-                    </MessageAvatar>
-                  ) : null}
-                  <span className="shrink-0 text-sm font-bold text-[color:var(--text-strong)]">你</span>
-                  <span className="hidden shrink-0 text-xs text-[color:var(--text-muted)] sm:inline">
-                    {userMessage.timestamp ? formatTime(userMessage.timestamp) : "--:--"}
-                  </span>
-                  <div className="flex-1" />
-
-                  {/* 操作按钮 */}
-                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <MessageActionButton
-                      aria-label="复制消息"
-                      onClick={handleCopyUser}
-                      tone={copiedUser ? "success" : "default"}
-                    >
-                      {copiedUser ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                    </MessageActionButton>
-                    {on_edit_user_message && (
+                  <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                    {on_edit_user_message ? (
                       <MessageActionButton
                         aria-label="编辑消息"
                         onClick={() => {
@@ -757,14 +733,29 @@ function MessageItemInner(
                       >
                         <Edit2 className="w-3 h-3" />
                       </MessageActionButton>
-                    )}
+                    ) : null}
+                    <MessageActionButton
+                      aria-label="复制消息"
+                      onClick={handleCopyUser}
+                      tone={copiedUser ? "success" : "default"}
+                    >
+                      {copiedUser ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                    </MessageActionButton>
                   </div>
+
+                  <span className="hidden shrink-0 text-xs text-[color:var(--text-muted)] sm:inline">
+                    {userMessage.timestamp ? formatTime(userMessage.timestamp) : "--:--"}
+                  </span>
+                  <span className="shrink-0 text-sm font-bold text-[color:var(--text-strong)]">你</span>
+                  <MessageAvatar class_name="shrink-0" size={compact ? "compact" : "full"}>
+                    <User className={compact ? "h-3 w-3" : "h-4 w-4"} />
+                  </MessageAvatar>
                 </div>
 
                 {/* 内容 */}
                 <div className="pb-1 pt-1">
                   <p className={cn(
-                    "whitespace-pre-wrap text-[color:var(--text-strong)] wrap-anywhere",
+                    "whitespace-pre-wrap text-right text-[color:var(--text-strong)] wrap-anywhere",
                     compact ? "text-[14px] leading-6" : "text-[15px] leading-7",
                   )}>
                     {userContent}
