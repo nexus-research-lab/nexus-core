@@ -39,13 +39,13 @@ interface ContactsDirectoryProps {
 
 /** Contacts 全宽卡片网格 — 风格 */
 export function ContactsDirectory({
-                                    agents,
-                                    conversations,
-                                    on_open_direct_room,
-                                    on_create_agent,
-                                    on_edit_agent,
-                                    on_create_team,
-                                  }: ContactsDirectoryProps) {
+  agents,
+  conversations,
+  on_open_direct_room,
+  on_create_agent,
+  on_edit_agent,
+  on_create_team,
+}: ContactsDirectoryProps) {
   const { t } = useI18n();
   const [active_tab, set_active_tab] = useState<ContactsTabKey>("my_agents");
   const [search_query, set_search_query] = useState("");
@@ -70,8 +70,8 @@ export function ContactsDirectory({
 
   // Header tabs 定义
   const tabs: { key: ContactsTabKey; label: string }[] = [
-    {key: "my_agents", label: t("contacts.tab_my_agents")},
-    {key: "task_generated", label: t("contacts.tab_task_generated")},
+    { key: "my_agents", label: t("contacts.tab_my_agents") },
+    { key: "task_generated", label: t("contacts.tab_task_generated") },
   ];
 
   // Header 右侧：搜索框
@@ -91,9 +91,8 @@ export function ContactsDirectory({
         active_tab={active_tab}
         badge="AGENTS"
         density="compact"
-        leading={<Users className="h-4 w-4 text-[color:var(--icon-default)]"/>}
+        leading={<Users className="h-4 w-4 text-[color:var(--icon-default)]" />}
         on_change_tab={set_active_tab}
-        subtitle={t("contacts.subtitle")}
         tabs={tabs}
         title={t("contacts.title")}
         trailing={header_trailing}
@@ -109,7 +108,7 @@ export function ContactsDirectory({
               onClick={on_create_agent}
             >
               <WorkspaceIconFrame class_name="h-16 w-16" shape="round" size="lg">
-                <Plus className="h-7 w-7 text-[color:var(--icon-default)]"/>
+                <Plus className="h-7 w-7 text-[color:var(--icon-default)]" />
               </WorkspaceIconFrame>
               <p className="mt-4 text-[18px] font-bold tracking-[-0.03em] text-[color:var(--text-strong)]">
                 {t("contacts.new_agent")}

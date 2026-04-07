@@ -65,7 +65,7 @@ interface RoomWorkspaceLayoutProps {
  * Room 工作区主布局
  *
  * 右侧常驻栏已经移除，任务状态收进 Header，
- * Thread 详情改为覆盖在消息区上的悬浮层。
+ * Thread 详情与文件编辑一样，作为独立右栏展示。
  */
 export function RoomWorkspaceLayout(props: RoomWorkspaceLayoutProps) {
   if (props.current_room_type === "dm") {
@@ -125,7 +125,6 @@ function RoomWorkspaceLayoutInner({
         ref={workspace_split_ref}
         className={cn(
           "flex min-h-0 min-w-0 flex-1",
-          is_editor_open && "gap-2",
           is_resizing_editor && "cursor-col-resize select-none",
         )}
       >
@@ -225,14 +224,20 @@ function RoomWorkspaceLayoutInner({
                 <RoomAgentAboutView agent={current_agent} />
               ) : null}
 
-              {!is_dm ? <RoomThreadOverlaySlot active_surface_tab={active_surface_tab} /> : null}
             </div>
           </div>
         </WorkspaceCanvasShell>
 
+        {!is_dm ? (
+          <RoomThreadSidePanel
+            active_surface_tab={active_surface_tab}
+            class_name="hidden lg:flex lg:ml-2"
+          />
+        ) : null}
+
         <EditorPanel
           agent_id={current_agent.agent_id}
-          class_name="hidden lg:flex"
+          class_name={cn("hidden lg:flex", is_editor_open && "lg:ml-2")}
           is_open={is_editor_open}
           on_close={on_close_workspace_pane}
           on_resize_start={on_start_editor_resize}
@@ -244,10 +249,12 @@ function RoomWorkspaceLayoutInner({
   );
 }
 
-function RoomThreadOverlaySlot({
+function RoomThreadSidePanel({
   active_surface_tab,
+  class_name,
 }: {
   active_surface_tab: RoomSurfaceTabKey;
+  class_name?: string;
 }) {
   const { active_thread, close_thread } = useRoomThread();
   const { thread_panel_data } = useThreadPanelData();
@@ -257,29 +264,26 @@ function RoomThreadOverlaySlot({
   }
 
   return (
-    <div className="pointer-events-none absolute inset-y-3 right-3 z-30 flex w-[clamp(320px,34vw,436px)] max-w-[calc(100%-1.5rem)] justify-end">
-      <div
-        className="pointer-events-auto flex h-full w-full min-w-0 overflow-hidden rounded-[30px] border backdrop-blur-[20px]"
-        style={{
-          background: "var(--surface-popover-background)",
-          borderColor: "var(--surface-popover-border)",
-          boxShadow: "0 24px 56px rgb(71 85 105 / 0.16)",
-        }}
-      >
-        <ThreadDetailPanel
-          round_id={active_thread.round_id}
-          agent_id={active_thread.agent_id}
-          agent_name={thread_panel_data.agent_name ?? active_thread.agent_id}
-          messages={thread_panel_data.messages}
-          pending_permissions={thread_panel_data.pending_permissions}
-          on_permission_response={thread_panel_data.on_permission_response}
-          on_close={close_thread}
-          on_stop_message={thread_panel_data.on_stop_message}
-          on_open_workspace_file={thread_panel_data.on_open_workspace_file}
-          is_loading={thread_panel_data.is_loading}
-          layout="desktop"
-        />
-      </div>
-    </div>
+    <section
+      className={cn(
+        "glass-card radius-shell-lg min-h-0 min-w-0 shrink-0 overflow-hidden",
+        class_name,
+      )}
+      style={{ width: "clamp(320px,34vw,436px)" }}
+    >
+      <ThreadDetailPanel
+        round_id={active_thread.round_id}
+        agent_id={active_thread.agent_id}
+        agent_name={thread_panel_data.agent_name ?? active_thread.agent_id}
+        messages={thread_panel_data.messages}
+        pending_permissions={thread_panel_data.pending_permissions}
+        on_permission_response={thread_panel_data.on_permission_response}
+        on_close={close_thread}
+        on_stop_message={thread_panel_data.on_stop_message}
+        on_open_workspace_file={thread_panel_data.on_open_workspace_file}
+        is_loading={thread_panel_data.is_loading}
+        layout="desktop"
+      />
+    </section>
   );
 }

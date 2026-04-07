@@ -22,7 +22,6 @@ export function SkillsHeader({ ctrl }: SkillsHeaderProps) {
       badge={t("capability.skills_badge", { count: ctrl.catalog_count })}
       density="compact"
       leading={<Puzzle className="h-4 w-4" />}
-      subtitle={t("capability.skills_subtitle")}
       title={t("capability.skills_title")}
       tabs={DISCOVERY_OPTIONS}
       active_tab={ctrl.discovery_mode}

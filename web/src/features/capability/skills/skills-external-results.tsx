@@ -80,7 +80,7 @@ function ExternalResultCard({
 
   return (
     <WorkspaceCatalogCard
-      class_name="cursor-pointer rounded-[20px] px-5 py-4"
+      class_name="h-full min-h-[138px] cursor-pointer rounded-[20px] px-5 py-4"
       onClick={on_preview}
     >
       {/* 标题行 */}
@@ -120,7 +120,7 @@ function ExternalResultCard({
       </div>
 
       {/* 描述 */}
-      <p className="mt-2.5 line-clamp-2 flex-1 text-[12px] leading-[1.6] text-[color:var(--text-default)]">
+      <p className="mt-2.5 line-clamp-2 min-h-[38px] flex-1 text-[12px] leading-[1.6] text-[color:var(--text-default)]">
         {item.readme_markdown || item.description}
       </p>
     </WorkspaceCatalogCard>

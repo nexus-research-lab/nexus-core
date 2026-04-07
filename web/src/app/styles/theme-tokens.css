@@ -10,28 +10,28 @@
 /* 中文注释：这里只放设计令牌和 Tailwind 主题映射，不放任何具体组件样式。 */
 :root,
 :root[data-theme="light"] {
-  /* 中文注释：基础主题色，直接映射到 Tailwind 的语义颜色。 */
-  --background: #e6e2dd;
-  --foreground: #182230;
-  --primary: #7d72ea;
-  --primary-rgb: 125, 114, 234;
+  /* 中文注释：基础主题色 — 中性偏冷灰底盘，和紫色 primary 形成协调色温 */
+  --background: #e8e6e3;
+  --foreground: #1a1f28;
+  --primary: #6c63ef;
+  --primary-rgb: 108, 99, 239;
   --primary-foreground: #ffffff;
-  --secondary: #e9e4de;
-  --secondary-foreground: #273244;
-  --accent: #d59a66;
+  --secondary: #eae8e5;
+  --secondary-foreground: #2a3040;
+  --accent: #c49a6c;
   --accent-foreground: #ffffff;
-  --card: rgba(252, 249, 245, 0.98);
+  --card: rgba(253, 252, 250, 0.98);
   --card-foreground: #1f2937;
-  --muted: #e8e3dd;
-  --muted-foreground: #556173;
-  --border: rgba(165, 159, 151, 0.32);
-  --input: rgba(252, 249, 245, 0.98);
-  --ring: rgba(125, 114, 234, 0.2);
-  --destructive: #eb5a51;
+  --muted: #e5e3e0;
+  --muted-foreground: #5b6577;
+  --border: rgba(155, 158, 166, 0.26);
+  --input: rgba(253, 252, 250, 0.98);
+  --ring: rgba(108, 99, 239, 0.2);
+  --destructive: #e5544b;
   --destructive-foreground: #ffffff;
-  --success: #66d98f;
+  --success: #4dbc78;
   --success-foreground: #0f172a;
-  --warning: #f59e0b;
+  --warning: #e8960a;
   --radius-lg: 36px;
   --radius-md: 26px;
   --radius-sm: 18px;
@@ -41,149 +41,147 @@
   --motion-duration-overlay: 700ms;
   --motion-ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
   --motion-ease-emphasized: cubic-bezier(0.23, 1, 0.32, 1);
-  --scrollbar-thumb: rgba(100, 116, 139, 0.22);
-  --scrollbar-thumb-hover: rgba(100, 116, 139, 0.36);
+  --scrollbar-thumb: rgba(100, 106, 120, 0.20);
+  --scrollbar-thumb-hover: rgba(100, 106, 120, 0.34);
   /* 中文注释：surface 负责页面级容器、舞台和内凹表面。 */
   --surface-stage-background: none;
   --surface-body-background: none;
   --surface-body-grid: none;
 
   /* 中文注释：text / divider / input 是全局基础能力，不绑定具体组件名。 */
-  --text-kbd-color: #64748b;
-  --surface-kbd-background: #fbfaf7;
-  --divider-kbd-border: rgba(148, 163, 184, 0.18);
+  --text-kbd-color: #5f6b7a;
+  --surface-kbd-background: #f7f6f4;
+  --divider-kbd-border: rgba(145, 152, 164, 0.16);
   --surface-kbd-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.76),
-    0 8px 16px rgba(71, 85, 105, 0.08);
-  --surface-shell-background: rgba(247, 243, 238, 0.86);
-  --surface-shell-border: rgba(255, 255, 255, 0.62);
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    0 1px 3px rgba(60, 68, 82, 0.08);
+  --surface-shell-background: rgba(248, 247, 245, 0.88);
+  --surface-shell-border: rgba(255, 255, 255, 0.52);
   --surface-shell-shadow:
-    inset 1px 1px 0 rgba(255, 255, 255, 0.34),
-    inset -1px -1px 0 rgba(184, 177, 169, 0.08),
-    0 18px 36px rgba(105, 98, 90, 0.06);
-  --surface-inset-background: rgba(241, 238, 233, 0.82);
-  --surface-inset-border: rgba(188, 180, 172, 0.22);
+    0 1px 3px rgba(60, 68, 82, 0.04),
+    0 12px 28px rgba(60, 68, 82, 0.05);
+  --surface-inset-background: rgba(238, 236, 233, 0.80);
+  --surface-inset-border: rgba(170, 174, 182, 0.18);
   --surface-inset-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -1px 0 rgba(182, 174, 166, 0.1);
-  --chip-pill-background: rgba(249, 246, 241, 0.86);
-  --chip-pill-border: rgba(214, 207, 198, 0.54);
+    inset 0 1px 0 rgba(255, 255, 255, 0.44),
+    inset 0 -1px 0 rgba(160, 164, 172, 0.08);
+  --chip-pill-background: rgba(250, 249, 247, 0.88);
+  --chip-pill-border: rgba(180, 184, 192, 0.36);
   --chip-pill-shadow:
-    inset 1px 1px 0 rgba(255, 255, 255, 0.68),
-    inset -1px -1px 0 rgba(186, 178, 170, 0.1),
-    0 8px 16px rgba(105, 98, 90, 0.05);
-  --glow-lilac: rgba(154, 140, 255, 0.16);
-  --glow-green: rgba(148, 211, 190, 0.12);
-  --glow-peach: rgba(225, 173, 123, 0.1);
+    0 1px 2px rgba(60, 68, 82, 0.05);
+  --glow-lilac: rgba(108, 99, 239, 0.12);
+  --glow-green: rgba(77, 188, 120, 0.10);
+  --glow-peach: rgba(196, 154, 108, 0.10);
   --glow-mist: rgba(255, 255, 255, 0.18);
-  --surface-panel-background: rgba(248, 245, 240, 0.94);
-  --surface-panel-border: rgba(216, 208, 199, 0.72);
+  --surface-panel-background: rgba(250, 249, 247, 0.94);
+  --surface-panel-border: rgba(180, 184, 192, 0.42);
   --surface-panel-shadow: none;
-  --input-shell-background: rgba(251, 248, 244, 0.95);
-  --input-shell-border: rgba(208, 200, 191, 0.62);
+  --input-shell-background: rgba(253, 252, 250, 0.96);
+  --input-shell-border: rgba(175, 179, 188, 0.38);
   --input-shell-shadow: none;
   --surface-grid-background: none;
-  --surface-panel-subtle-background: rgba(245, 241, 236, 0.84);
-  --surface-panel-subtle-border: rgba(214, 206, 198, 0.64);
+  --surface-panel-subtle-background: rgba(243, 242, 239, 0.84);
+  --surface-panel-subtle-border: rgba(180, 184, 192, 0.36);
   --surface-panel-subtle-shadow: none;
-  --surface-canvas-background: rgba(252, 250, 247, 0.994);
-  --surface-canvas-border: rgba(216, 208, 199, 0.56);
-  --surface-interactive-hover-background: rgba(255, 252, 249, 0.86);
-  --surface-interactive-hover-border: rgba(204, 196, 187, 0.64);
-  --surface-interactive-active-background: rgba(255, 253, 250, 0.96);
-  --surface-interactive-active-border: rgba(191, 182, 172, 0.76);
-  --surface-popover-background: rgba(255, 252, 249, 0.98);
-  --surface-popover-border: rgba(219, 211, 201, 0.78);
-  --surface-popover-shadow: 0 16px 28px rgba(105, 98, 90, 0.1);
-  --surface-avatar-background: rgba(247, 243, 238, 0.96);
-  --surface-avatar-border: rgba(235, 228, 220, 0.92);
-  --surface-avatar-foreground: rgba(56, 68, 88, 0.92);
+  --surface-canvas-background: rgba(253, 252, 250, 0.994);
+  --surface-canvas-border: rgba(180, 184, 192, 0.36);
+  --surface-interactive-hover-background: rgba(255, 254, 252, 0.82);
+  --surface-interactive-hover-border: rgba(170, 174, 182, 0.42);
+  --surface-interactive-active-background: rgba(255, 254, 252, 0.94);
+  --surface-interactive-active-border: rgba(155, 158, 166, 0.52);
+  --surface-popover-background: rgba(255, 254, 252, 0.98);
+  --surface-popover-border: rgba(180, 184, 192, 0.48);
+  --surface-popover-shadow:
+    0 4px 12px rgba(60, 68, 82, 0.06),
+    0 16px 28px rgba(60, 68, 82, 0.08);
+  --surface-avatar-background: rgba(248, 247, 245, 0.96);
+  --surface-avatar-border: rgba(230, 228, 224, 0.88);
+  --surface-avatar-foreground: rgba(54, 62, 78, 0.92);
   --surface-avatar-shadow: none;
-  --divider-subtle-color: rgba(216, 208, 199, 0.62);
-  --text-strong: #182230;
-  --text-default: rgba(61, 74, 95, 0.92);
-  --text-muted: rgba(89, 103, 124, 0.8);
-  --text-soft: rgba(110, 124, 145, 0.68);
-  --icon-strong: rgba(36, 49, 68, 0.92);
-  --icon-default: rgba(92, 106, 128, 0.84);
-  --icon-muted: rgba(122, 136, 157, 0.68);
-  --surface-top-glow: rgba(255, 255, 255, 0.28);
-  --surface-highlight-color: rgba(255, 255, 255, 0.56);
-  --surface-progress-track: rgba(203, 213, 225, 0.88);
-  --surface-progress-fill: rgba(71, 85, 105, 0.74);
+  --divider-subtle-color: rgba(180, 184, 192, 0.38);
+  --text-strong: #1a1f28;
+  --text-default: rgba(50, 58, 74, 0.90);
+  --text-muted: rgba(80, 90, 108, 0.76);
+  --text-soft: rgba(105, 114, 130, 0.62);
+  --icon-strong: rgba(36, 44, 60, 0.92);
+  --icon-default: rgba(80, 90, 108, 0.80);
+  --icon-muted: rgba(115, 124, 140, 0.62);
+  --surface-top-glow: rgba(255, 255, 255, 0.24);
+  --surface-highlight-color: rgba(255, 255, 255, 0.48);
+  --surface-progress-track: rgba(190, 194, 204, 0.72);
+  --surface-progress-fill: rgba(60, 68, 82, 0.68);
 
   /* 中文注释：card / chip / pill / segmented 归入组件语义原料。 */
-  --card-default-background: rgba(247, 243, 238, 0.96);
-  --card-default-border: rgba(216, 208, 199, 0.74);
+  --card-default-background: rgba(250, 249, 247, 0.97);
+  --card-default-border: rgba(180, 184, 192, 0.34);
   --card-default-shadow:
-    none;
-  --modal-dialog-surface-background: rgba(248, 245, 240, 0.97);
-  --modal-dialog-surface-border: rgba(218, 210, 201, 0.8);
+    0 1px 3px rgba(60, 68, 82, 0.04),
+    0 2px 8px rgba(60, 68, 82, 0.03);
+  --modal-dialog-surface-background: rgba(252, 251, 249, 0.98);
+  --modal-dialog-surface-border: rgba(180, 184, 192, 0.44);
   --modal-dialog-surface-shadow:
-    0 18px 40px rgba(105, 98, 90, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.76);
-  --modal-nav-background: rgba(248, 245, 240, 0.68);
-  --modal-nav-border: rgba(219, 211, 202, 0.62);
-  --modal-card-background: rgba(255, 252, 249, 0.84);
-  --modal-card-border: rgba(218, 210, 201, 0.72);
+    0 4px 12px rgba(60, 68, 82, 0.06),
+    0 24px 48px rgba(60, 68, 82, 0.10);
+  --modal-nav-background: rgba(248, 247, 245, 0.68);
+  --modal-nav-border: rgba(180, 184, 192, 0.36);
+  --modal-card-background: rgba(255, 254, 252, 0.82);
+  --modal-card-border: rgba(180, 184, 192, 0.38);
   --modal-card-shadow: none;
-  --modal-card-active-background: rgba(255, 253, 250, 0.94);
-  --modal-card-active-border: rgba(203, 195, 225, 0.84);
+  --modal-card-active-background: rgba(255, 254, 252, 0.94);
+  --modal-card-active-border: rgba(108, 99, 239, 0.24);
   --modal-card-active-shadow: none;
-  --modal-input-background: rgba(255, 252, 249, 0.84);
-  --modal-input-border: rgba(208, 200, 192, 0.7);
+  --modal-input-background: rgba(255, 254, 252, 0.84);
+  --modal-input-border: rgba(175, 179, 188, 0.42);
   --modal-input-shadow: none;
-  --modal-input-focus-background: rgba(255, 253, 250, 0.96);
-  --modal-input-focus-border: rgba(125, 114, 234, 0.34);
+  --modal-input-focus-background: rgba(255, 254, 252, 0.96);
+  --modal-input-focus-border: rgba(108, 99, 239, 0.34);
   --modal-input-focus-shadow: none;
-  --modal-divider-color: rgba(216, 208, 199, 0.64);
-  --modal-btn-secondary-background: rgba(255, 252, 249, 0.82);
-  --modal-btn-secondary-border: rgba(210, 201, 192, 0.68);
+  --modal-divider-color: rgba(180, 184, 192, 0.36);
+  --modal-btn-secondary-background: rgba(255, 254, 252, 0.82);
+  --modal-btn-secondary-border: rgba(175, 179, 188, 0.42);
   --modal-btn-secondary-shadow: none;
-  --modal-btn-secondary-hover-background: rgba(255, 253, 250, 0.9);
-  --modal-btn-secondary-hover-border: rgba(206, 197, 188, 0.74);
-  --chip-default-background: rgba(255, 252, 249, 0.9);
-  --chip-default-border: rgba(198, 189, 180, 0.62);
-  --chip-default-shadow:
-    none;
-  --button-primary-background: color-mix(in srgb, var(--primary) 88%, white 12%);
-  --button-primary-border: color-mix(in srgb, var(--primary) 70%, white 30%);
+  --modal-btn-secondary-hover-background: rgba(255, 254, 252, 0.92);
+  --modal-btn-secondary-hover-border: rgba(170, 174, 182, 0.50);
+  --chip-default-background: rgba(253, 252, 250, 0.92);
+  --chip-default-border: rgba(175, 179, 188, 0.34);
+  --chip-default-shadow: none;
+  --button-primary-background: color-mix(in srgb, var(--primary) 90%, white 10%);
+  --button-primary-border: color-mix(in srgb, var(--primary) 72%, white 28%);
   --button-primary-color: var(--primary-foreground);
-  --button-primary-hover-background: color-mix(in srgb, var(--primary) 92%, white 8%);
-  --button-primary-hover-border: color-mix(in srgb, var(--primary) 76%, white 24%);
-  --button-tonal-background: rgba(255, 255, 255, 0.82);
-  --button-tonal-border: var(--chip-default-border);
+  --button-primary-hover-background: color-mix(in srgb, var(--primary) 96%, white 4%);
+  --button-primary-hover-border: color-mix(in srgb, var(--primary) 80%, white 20%);
+  --button-tonal-background: rgba(255, 255, 255, 0.78);
+  --button-tonal-border: rgba(175, 179, 188, 0.34);
   --button-tonal-color: var(--text-default);
-  --button-tonal-hover-background: rgba(255, 255, 255, 0.9);
-  --button-tonal-hover-border: color-mix(in srgb, var(--surface-interactive-active-border) 88%, white 12%);
+  --button-tonal-hover-background: rgba(255, 255, 255, 0.90);
+  --button-tonal-hover-border: rgba(155, 158, 166, 0.46);
   --button-tonal-hover-color: var(--text-strong);
   --button-outlined-background: transparent;
-  --button-outlined-border: color-mix(in srgb, var(--surface-interactive-active-border) 90%, white 10%);
+  --button-outlined-border: rgba(155, 158, 166, 0.42);
   --button-outlined-color: var(--text-default);
-  --button-outlined-hover-background: rgba(255, 255, 255, 0.08);
-  --button-outlined-hover-border: color-mix(in srgb, var(--surface-interactive-active-border) 96%, white 4%);
+  --button-outlined-hover-background: rgba(255, 255, 255, 0.06);
+  --button-outlined-hover-border: rgba(155, 158, 166, 0.56);
   --button-outlined-hover-color: var(--text-strong);
   --button-text-color: var(--text-muted);
   --button-text-hover-color: var(--text-strong);
   --button-icon-background: var(--chip-default-background);
-  --button-icon-border: color-mix(in srgb, var(--surface-interactive-active-border) 86%, white 14%);
+  --button-icon-border: rgba(175, 179, 188, 0.34);
   --button-icon-color: var(--icon-default);
-  --button-icon-hover-background: rgba(255, 255, 255, 0.9);
-  --button-icon-hover-border: color-mix(in srgb, var(--surface-interactive-active-border) 96%, white 4%);
+  --button-icon-hover-background: rgba(255, 255, 255, 0.90);
+  --button-icon-hover-border: rgba(155, 158, 166, 0.46);
   --button-icon-hover-color: var(--icon-strong);
-  --chip-segmented-shell-background: rgba(255, 255, 255, 0.78);
-  --chip-segmented-shell-border: rgba(202, 211, 226, 0.66);
+  --chip-segmented-shell-background: rgba(255, 255, 255, 0.72);
+  --chip-segmented-shell-border: rgba(175, 179, 188, 0.34);
   --chip-segmented-shell-shadow: none;
-  --chip-segmented-icon-color: rgba(71, 85, 105, 0.82);
-  --chip-segmented-option-color: rgba(71, 85, 105, 0.84);
-  --chip-segmented-option-hover-background: rgba(255, 255, 255, 0.72);
-  --chip-segmented-option-hover-color: #162032;
-  --chip-segmented-option-active-background: rgba(255, 255, 255, 0.92);
-  --chip-segmented-option-active-color: #162032;
-  --chip-segmented-option-active-shadow:
-    none;
-  --input-caret-color: rgba(125, 114, 234, 0.96);
-  --input-caret-shadow: rgba(125, 114, 234, 0.2);
+  --chip-segmented-icon-color: rgba(60, 68, 82, 0.78);
+  --chip-segmented-option-color: rgba(60, 68, 82, 0.80);
+  --chip-segmented-option-hover-background: rgba(255, 255, 255, 0.68);
+  --chip-segmented-option-hover-color: #1a1f28;
+  --chip-segmented-option-active-background: rgba(255, 255, 255, 0.90);
+  --chip-segmented-option-active-color: #1a1f28;
+  --chip-segmented-option-active-shadow: none;
+  --input-caret-color: rgba(108, 99, 239, 0.96);
+  --input-caret-shadow: rgba(108, 99, 239, 0.18);
 }
 
 :root[data-theme="dark"] {

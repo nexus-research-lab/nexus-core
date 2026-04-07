@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 type CatalogBadgeTone = "neutral" | "info" | "success" | "warning";
 type CatalogMediaShape = "round" | "rounded";
 type CatalogActionTone = "default" | "danger";
+type CatalogActionSize = "sm" | "md";
 type IconFrameTone = "default" | "primary" | "success" | "warning";
 type IconFrameSize = "sm" | "md" | "lg";
 
@@ -163,17 +164,22 @@ export function WorkspaceCatalogAction({
   children,
   class_name,
   tone = "default",
+  size = "md",
   type = "button",
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
   children: ReactNode;
   class_name?: string;
   tone?: CatalogActionTone;
+  size?: CatalogActionSize;
 }) {
   return (
     <button
       className={cn(
-        "inline-flex h-8 w-8 items-center justify-center rounded-[12px] border border-[color:var(--chip-default-border)] bg-[var(--chip-default-background)] text-[color:var(--icon-default)] transition duration-150 ease-out hover:border-[var(--surface-interactive-active-border)] hover:bg-[var(--surface-interactive-active-background)] hover:text-[color:var(--icon-strong)]",
+        "inline-flex items-center justify-center border border-[color:var(--chip-default-border)] bg-[var(--chip-default-background)] text-[color:var(--icon-default)] transition duration-150 ease-out hover:border-[var(--surface-interactive-active-border)] hover:bg-[var(--surface-interactive-active-background)] hover:text-[color:var(--icon-strong)]",
+        size === "sm"
+          ? "h-6 w-6 rounded-full"
+          : "h-8 w-8 rounded-[12px]",
         tone === "danger" && "hover:border-rose-100 hover:bg-rose-50/92 hover:text-rose-600/90",
         class_name,
       )}
@@ -196,7 +202,7 @@ export function WorkspaceCatalogBadge({
 }) {
   return (
     <span
-      className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold leading-[1.2]", class_name)}
+      className={cn("inline-flex h-6 items-center gap-1 rounded-full px-2.5 text-[10px] font-semibold leading-none", class_name)}
       style={BADGE_STYLE_MAP[tone]}
     >
       {children}
@@ -214,7 +220,7 @@ export function WorkspaceCatalogTag({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-default)]",
+        "inline-flex h-6 items-center rounded-full px-2.5 text-[10px] font-medium leading-none text-[color:var(--text-default)]",
         class_name,
       )}
       style={{

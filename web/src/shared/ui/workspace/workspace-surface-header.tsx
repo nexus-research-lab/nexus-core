@@ -31,18 +31,17 @@ interface WorkspaceSurfaceHeaderProps<TTabKey extends string> {
 }
 
 export function WorkspaceSurfaceHeader<TTabKey extends string>({
-                                                                 title,
-                                                                 badge,
-                                                                 density = "default",
-                                                                 leading,
-                                                                 title_trailing,
-                                                                 subtitle,
-                                                                 trailing,
-                                                                 tabs = [],
-                                                                 tabs_trailing,
-                                                                 active_tab,
-                                                                 on_change_tab,
-                                                               }: WorkspaceSurfaceHeaderProps<TTabKey>) {
+  title,
+  badge,
+  density = "default",
+  leading,
+  title_trailing,
+  trailing,
+  tabs = [],
+  tabs_trailing,
+  active_tab,
+  on_change_tab,
+}: WorkspaceSurfaceHeaderProps<TTabKey>) {
   const chip_style = {
     background: "var(--chip-default-background)",
     border: "1px solid var(--chip-default-border)",
@@ -92,11 +91,6 @@ export function WorkspaceSurfaceHeader<TTabKey extends string>({
                 <div className="min-w-0 shrink">{title_trailing}</div>
               ) : null}
             </div>
-            {subtitle ? (
-              <div className="mt-0.5 flex items-center gap-2 text-[11px] text-[color:var(--text-muted)]">
-                {subtitle}
-              </div>
-            ) : null}
           </div>
         </div>
 
@@ -134,7 +128,7 @@ export function WorkspaceSurfaceHeader<TTabKey extends string>({
                   onClick={() => on_change_tab?.(tab.key)}
                   type="button"
                 >
-                  {Icon ? <Icon className="h-3.5 w-3.5"/> : null}
+                  {Icon ? <Icon className="h-3.5 w-3.5" /> : null}
                   {tab.label}
                 </button>
               );

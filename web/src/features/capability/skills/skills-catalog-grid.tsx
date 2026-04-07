@@ -51,7 +51,7 @@ export function SkillsCatalogGrid({ ctrl }: SkillsCatalogGridProps) {
             {items.map((skill: SkillInfo) => (
               <div
                 key={skill.name}
-                className={ctrl.busy_skill_name === skill.name ? "opacity-60 transition-opacity" : "transition-opacity"}
+                className={ctrl.busy_skill_name === skill.name ? "h-full opacity-60 transition-opacity" : "h-full transition-opacity"}
               >
                 <SkillsCard
                   busy={ctrl.busy_skill_name === skill.name}

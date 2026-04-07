@@ -11,49 +11,49 @@
 @property --background {
   syntax: "<color>";
   inherits: true;
-  initial-value: #e6e2dd;
+  initial-value: #e8e6e3;
 }
 
 @property --foreground {
   syntax: "<color>";
   inherits: true;
-  initial-value: #211c17;
+  initial-value: #1a1f28;
 }
 
 @property --primary {
   syntax: "<color>";
   inherits: true;
-  initial-value: #7d72ea;
+  initial-value: #6c63ef;
 }
 
 @property --secondary {
   syntax: "<color>";
   inherits: true;
-  initial-value: #e9e4de;
+  initial-value: #eae8e5;
 }
 
 @property --accent {
   syntax: "<color>";
   inherits: true;
-  initial-value: #d59a66;
+  initial-value: #c49a6c;
 }
 
 @property --muted {
   syntax: "<color>";
   inherits: true;
-  initial-value: #e8e3dd;
+  initial-value: #e5e3e0;
 }
 
 @property --border {
   syntax: "<color>";
   inherits: true;
-  initial-value: rgba(165, 159, 151, 0.32);
+  initial-value: rgba(155, 158, 166, 0.26);
 }
 
 @property --input {
   syntax: "<color>";
   inherits: true;
-  initial-value: rgba(252, 249, 245, 0.98);
+  initial-value: rgba(253, 252, 250, 0.98);
 }
 
 /* 中文注释：这里只放元素基线和浏览器层的默认行为，不承载组件视觉。 */

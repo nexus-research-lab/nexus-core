@@ -44,7 +44,7 @@ export function SkillsCard({
 
   return (
     <WorkspaceCatalogCard
-      class_name="group cursor-pointer rounded-[22px] px-5 py-4"
+      class_name="group h-full min-h-[170px] cursor-pointer rounded-[22px] px-5 py-4"
       onClick={on_select}
     >
       {/* 头部：图标 + 名称 + 来源标签 */}
@@ -74,12 +74,12 @@ export function SkillsCard({
       </div>
 
       {/* 描述 */}
-      <p className="mt-2.5 line-clamp-2 flex-1 text-[13px] leading-[1.55] text-[color:var(--text-default)]">
+      <p className="mt-2.5 line-clamp-2 min-h-[40px] flex-1 text-[13px] leading-[1.55] text-[color:var(--text-default)]">
         {description || "暂无描述"}
       </p>
 
       {/* 底部：标签 + 状态 */}
-      <div className="mt-3 flex items-end justify-between gap-3">
+      <div className="mt-3 min-h-[32px] flex items-end justify-between gap-3">
         {/* 标签 */}
         <div className="flex min-w-0 flex-wrap gap-1">
           {tags.slice(0, 2).map((tag) => (
@@ -110,6 +110,7 @@ export function SkillsCard({
             <WorkspaceCatalogAction
               disabled={busy}
               onClick={on_update}
+              size="sm"
               title="更新"
             >
               <RefreshCw className="h-3.5 w-3.5" />
@@ -119,6 +120,7 @@ export function SkillsCard({
             <WorkspaceCatalogAction
               disabled={busy}
               onClick={on_delete}
+              size="sm"
               title="从技能库删除"
               tone="danger"
             >

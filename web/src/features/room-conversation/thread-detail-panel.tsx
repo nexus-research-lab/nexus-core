@@ -45,7 +45,7 @@ export function ThreadDetailPanel({
 
   return (
     <div className={cn(
-      "flex h-full min-w-0 flex-col overflow-hidden",
+      "flex h-full min-w-0 w-full flex-1 flex-col overflow-hidden",
       is_mobile ? "bg-background" : "bg-[var(--surface-popover-background)]",
     )}>
       {/* ── 头部 ────────────────────────────────────────────── */}

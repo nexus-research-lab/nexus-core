@@ -708,12 +708,12 @@ function MessageItemInner(
       {/* ═══════════════════════ 用户消息 ═══════════════════════ */}
       {userMessage && (
         <div className={cn("w-full", compact ? "px-0" : "px-2 sm:px-3")}>
-          <div className={cn("mx-auto w-full", compact ? "max-w-full" : "max-w-[980px]")}>
+          <div className="w-full">
             <div className={cn(
               "group flex min-w-0 justify-end",
               compact ? "" : "gap-3",
             )}>
-              <div className="relative min-w-0 max-w-[min(100%,720px)]">
+              <div className="relative ml-auto min-w-0 w-full max-w-[min(100%,720px)]">
                 {/* 头部 */}
                 <div className={cn(
                   "flex items-center justify-end gap-2",
@@ -755,6 +755,7 @@ function MessageItemInner(
                 {/* 内容 */}
                 <div className="pb-1 pt-1">
                   <p className={cn(
+                    "w-full",
                     "whitespace-pre-wrap text-right text-[color:var(--text-strong)] wrap-anywhere",
                     compact ? "text-[14px] leading-6" : "text-[15px] leading-7",
                   )}>
