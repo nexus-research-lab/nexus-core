@@ -8,6 +8,8 @@
 # 2024/1/22 16:16   Create
 # =====================================================
 
+import hmac
+
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from fastapi.requests import Request
@@ -48,15 +50,12 @@ def register_middleware(app: FastAPI) -> None:
                 return await call_next(request)
             authorization = request.headers.get("Authorization")
             if not authorization:
-                response_data = Unauthorized
-                response_data.code = str(401)
-                response_data.message = "Authorization header is missing"
+                response_data = Unauthorized.model_copy(update={"code": str(401), "message": "Authorization header is missing"})
                 logger.error("Authorization header is missing")
                 return JSONResponse(content=jsonable_encoder(response_data.resp_dict), status_code=401)
-            if authorization != "Bearer " + settings.ACCESS_TOKEN:
-                response_data = Unauthorized
-                response_data.code = str(401)
-                response_data.message = "Token is invalid"
+            token_value = authorization[len("Bearer "):] if authorization.startswith("Bearer ") else ""
+            if not hmac.compare_digest(token_value, settings.ACCESS_TOKEN or ""):
+                response_data = Unauthorized.model_copy(update={"code": str(401), "message": "Token is invalid"})
                 logger.error(f"Token is invalid: {authorization}")
                 return JSONResponse(content=jsonable_encoder(response_data.resp_dict), status_code=403)
             return await call_next(request)
