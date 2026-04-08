@@ -168,8 +168,10 @@ function RoomWorkspaceLayoutInner({
             )}
 
             <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
-              {active_surface_tab === "chat" ? (
-                is_dm ? (
+              <div className={cn("h-full min-h-0 min-w-0", active_surface_tab !== "chat" && "hidden")}>
+                {/* 中文注释：聊天面板必须常驻挂载，避免切换 surface tab 时卸载组件，
+                    进而触发 useWebSocket 清理并关闭连接。 */}
+                {is_dm ? (
                   <ChatBoundary>
                     <DmChatPanel
                       current_agent_name={current_agent.name}
@@ -198,8 +200,8 @@ function RoomWorkspaceLayoutInner({
                       room_members={room_members}
                     />
                   </ChatBoundary>
-                )
-              ) : null}
+                )}
+              </div>
 
               {active_surface_tab === "history" ? (
                 <RoomConversationHistoryView

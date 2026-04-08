@@ -642,6 +642,15 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
       ...(room_id ? { room_id } : {}),
       ...(conversation_id ? { conversation_id } : {}),
     });
+
+    return () => {
+      // 中文注释：共享 WebSocket 常驻于应用路由壳后，
+      // 会话组件卸载时必须显式解绑旧 session，避免权限请求和 session 状态继续路由到已离开的页面上下文。
+      ws_send({
+        type: 'unbind_session',
+        session_key,
+      });
+    };
   }, [agent_id, conversation_id, room_id, session_key, ws_send, ws_state]);
 
   // Subscribe to room-level events (member changes, deletions, etc.) when in a Room context

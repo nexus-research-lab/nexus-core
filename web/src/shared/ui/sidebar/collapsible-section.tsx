@@ -16,15 +16,15 @@ import { useI18n } from "@/shared/i18n/i18n-context";
 import { useSidebarStore } from "@/store/sidebar";
 
 const CONTEXT_MENU_CLASS_NAME =
-  "fixed z-[9990] w-36 rounded-xl py-1 backdrop-blur-[16px] animate-in fade-in zoom-in-95 duration-100";
+  "fixed z-[9990] w-40 rounded-xl py-1 backdrop-blur-[16px] animate-in fade-in zoom-in-95 duration-100";
 const CONTEXT_MENU_ITEM_CLASS_NAME =
-  "flex w-full items-center gap-2 px-3 py-1.5 text-[12px] transition-[background,color] duration-150";
+  "flex w-full items-center gap-2.5 px-3 py-2 text-[13px] transition-[background,color] duration-150";
 const SIDEBAR_LIST_ITEM_CLASS_NAME =
-  "group/item box-border flex w-full items-center gap-2.5 rounded-[14px] border border-transparent px-2.5 py-[7px] text-left text-[13px] transition-[background,color,box-shadow,border-color] duration-150";
+  "group/item box-border flex w-full items-center gap-2.5 rounded-[14px] border border-transparent px-2.5 py-[8px] text-left text-[14px] transition-[background,color,box-shadow,border-color] duration-150";
 const SIDEBAR_SECTION_TRIGGER_CLASS_NAME =
-  "flex flex-1 items-center gap-1 text-[12px] font-semibold uppercase tracking-[0.14em] text-[color:var(--text-default)] transition-colors duration-150 hover:text-[color:var(--text-strong)]";
+  "flex flex-1 items-center gap-1.5 text-[13px] font-semibold uppercase tracking-[0.12em] text-[color:var(--text-default)] transition-colors duration-150 hover:text-[color:var(--text-strong)]";
 const SIDEBAR_SECTION_ACTION_CLASS_NAME =
-  "flex h-5.5 w-5.5 shrink-0 items-center justify-center rounded-full text-[color:var(--icon-muted)] transition-[background,color] duration-150 hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--icon-default)]";
+  "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[color:var(--icon-muted)] transition-[background,color] duration-150 hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--icon-default)]";
 
 interface CollapsibleSectionProps {
   section_id: string;
@@ -103,7 +103,7 @@ export function SidebarListItem({
       >
         <span
           className={cn(
-            "flex h-4.5 w-4.5 shrink-0 items-center justify-center",
+            "flex h-5 w-5 shrink-0 items-center justify-center",
             is_active ? "text-[color:var(--icon-default)]" : "text-[color:var(--icon-muted)]",
           )}
         >
@@ -112,17 +112,17 @@ export function SidebarListItem({
         <span className="min-w-0 flex-1 truncate">{label}</span>
         {has_actions ? (
           <span
-            className="flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded text-[color:var(--icon-muted)] opacity-0 transition-all hover:text-[color:var(--icon-default)] group-hover/item:opacity-100"
+            className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[color:var(--icon-muted)] opacity-0 transition-all hover:text-[color:var(--icon-default)] group-hover/item:opacity-100"
             onClick={handle_more_click}
             role="button"
             tabIndex={-1}
           >
-            <MoreHorizontal className="h-3 w-3" />
+            <MoreHorizontal className="h-3.5 w-3.5" />
           </span>
         ) : meta ? (
           <span
             className={cn(
-              "shrink-0 text-[11px] font-medium tabular-nums",
+              "shrink-0 text-[12px] font-medium tabular-nums",
               is_active ? "text-[color:var(--text-muted)]" : "text-[color:var(--text-soft)]",
             )}
           >
@@ -151,7 +151,7 @@ export function SidebarListItem({
               }}
               type="button"
             >
-              <Pencil className="h-3 w-3" />
+              <Pencil className="h-3.5 w-3.5" />
               {t("home.rename")}
             </button>
           ) : null}
@@ -165,7 +165,7 @@ export function SidebarListItem({
               }}
               type="button"
             >
-              <Trash2 className="h-3 w-3" />
+              <Trash2 className="h-3.5 w-3.5" />
               {t("common.delete")}
             </button>
           ) : null}

@@ -149,6 +149,27 @@ class PermissionRuntimeContext:
         self._sender_sessions.setdefault(id(sender), set()).add(session_key)
         # 中文注释：重连成功后，旧请求要立即重投到新连接。
         asyncio.create_task(self._replay_pending_requests(session_key))
+
+    def unregister_session_sender(
+        self,
+        session_key: str,
+        sender: MessageSender,
+    ) -> None:
+        """移除某个 sender 对单个前端 session 的活跃绑定。"""
+        if not session_key:
+            return
+
+        if self._active_senders.get(session_key) is sender:
+            self._active_senders.pop(session_key, None)
+
+        sender_sessions = self._sender_sessions.get(id(sender))
+        if sender_sessions is None:
+            return
+
+        sender_sessions.discard(session_key)
+        if not sender_sessions:
+            self._sender_sessions.pop(id(sender), None)
+
     def bind_sender_for_runtime_session(self, session_key: str, sender: MessageSender) -> None:
         """按运行时 session 语义把 sender 绑定到正确的前端路由 session。"""
         if bool(getattr(sender, "is_closed", False)):

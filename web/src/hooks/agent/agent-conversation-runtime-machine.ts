@@ -133,6 +133,8 @@ export class AgentConversationRuntimeMachine {
         this.active_message_trackers.delete(message_id);
       }
     }
+
+    this.reconcile_server_generating_flag();
   }
 
   public update_message_status(
@@ -145,6 +147,7 @@ export class AgentConversationRuntimeMachine {
 
     if (is_terminal_assistant_status(status)) {
       this.active_message_trackers.delete(message_id);
+      this.reconcile_server_generating_flag();
       return;
     }
 
@@ -196,6 +199,7 @@ export class AgentConversationRuntimeMachine {
 
   public set_pending_permission_count(count: number): void {
     this.pending_permission_count = Math.max(0, count);
+    this.reconcile_server_generating_flag();
   }
 
   public mark_session_generating(): void {
@@ -297,5 +301,18 @@ export class AgentConversationRuntimeMachine {
     }
 
     return 'idle';
+  }
+
+  private reconcile_server_generating_flag(): void {
+    if (
+      this.pending_round_ids.size > 0 ||
+      this.active_round_ids.size > 0 ||
+      this.active_message_trackers.size > 0 ||
+      this.pending_permission_count > 0
+    ) {
+      return;
+    }
+
+    this.is_server_generating = false;
   }
 }

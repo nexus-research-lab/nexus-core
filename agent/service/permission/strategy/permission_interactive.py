@@ -91,3 +91,12 @@ class InteractivePermissionStrategy(PermissionStrategy):
     def unregister_sender(cls, sender: MessageSender) -> None:
         """注销某个连接持有的全部前端 session。"""
         permission_runtime_context.unregister_sender(sender)
+
+    @classmethod
+    def unregister_session_sender(
+        cls,
+        session_key: str,
+        sender: MessageSender,
+    ) -> None:
+        """注销某个连接持有的单个前端 session。"""
+        permission_runtime_context.unregister_session_sender(session_key, sender)

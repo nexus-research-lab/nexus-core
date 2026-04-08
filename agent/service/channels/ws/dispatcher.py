@@ -64,7 +64,8 @@ class ChannelDispatcher:
         msg_type = message.get("type")
         if await self._reject_invalid_browser_session_key(message):
             return
-        self._register_active_session(message)
+        if msg_type != "unbind_session":
+            self._register_active_session(message)
 
         if msg_type == "chat":
             # Room 消息路由到 RoomChatService
@@ -98,6 +99,15 @@ class ChannelDispatcher:
                         last_seen_session_seq=last_seen_session_seq,
                     )
                 await self._push_session_status(session_key)
+            return
+
+        if msg_type == "unbind_session":
+            session_key = message.get("session_key", "")
+            if isinstance(session_key, str) and session_key:
+                InteractivePermissionStrategy.unregister_session_sender(
+                    session_key=session_key,
+                    sender=self._sender,
+                )
             return
 
         if msg_type == "subscribe_workspace":
@@ -233,7 +243,13 @@ class ChannelDispatcher:
     ) -> bool:
         """拒绝浏览器直接发送的非法 session_key。"""
         msg_type = message.get("type")
-        if msg_type not in {"chat", "interrupt", "permission_response", "bind_session"}:
+        if msg_type not in {
+            "chat",
+            "interrupt",
+            "permission_response",
+            "bind_session",
+            "unbind_session",
+        }:
             return False
 
         raw_session_key = message.get("session_key")
