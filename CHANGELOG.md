@@ -11,12 +11,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 新增 `capability` 能力模块，统一管理技能市场、连接器、定时任务、渠道与配对能力。
 - 技能系统数据持久化：新增 `pool_skills` / `agent_skills` 数据库表与 Alembic 迁移，技能安装状态、全局开关、Agent-Skill 关联全部写入 SQLite，取代旧 JSON 文件存储。
 - 新增 `SkillSqlRepository` 与 `SkillRepository` 数据访问层。
-- 新增浏览器密码登录能力：后端支持签发 `HttpOnly` 会话 Cookie，前端新增登录页、路由守卫与退出登录入口，HTTP / WebSocket 统一受登录态保护。
+- 新增浏览器密码登录能力：后端签发 `HttpOnly` 会话 Cookie，前端新增登录页、路由守卫与退出登录入口，HTTP / WebSocket 统一受登录态保护。
+- 新增服务端会话持久化：登录令牌 SHA-256 摘要存入 `auth_sessions` 表，支持即时撤销；移除 `AUTH_SESSION_SECRET` 配置项。
+- 新增 `PermissionDispatchRouter`：Room 权限请求优先走 `subscribe_room` 广播通道，DM 走 sender 直投。
+- 新增 Room 重连恢复：`subscribe_room` 后从 DB 查询活跃 slot 补发 `chat_ack`，slot 携带真实 `round_id` / `status` / `timestamp`。
+- 新增 `MessageActivityStatus` 组件：按当前工具阶段展示 thinking / browsing / executing / waiting_permission / waiting_input 五种状态，替代旧 `MessageLoadingDots`。
+- 新增 `request_api` 统一 HTTP 客户端：自动 `credentials: "include"`、401 事件广播、JSON 响应校验，全部 API 文件从 raw `fetch` 迁移。
+- 新增 `AgentConversationRuntimeMachine` 状态机：集中管理 pending/active round、message tracker、permission count，`snapshot()` 计算 `phase` 与 `is_loading`。
+- 新增 `AgentConversationIdentity` 统一身份对象，替代散落的 `agent_id` / `room_id` / `conversation_id` / `chat_type` 四元组。
+- 新增 Docker 部署配置：单阶段 Dockerfile、nginx 网关（WS 代理 + SPA 路由）、docker-compose（nexus + nginx 双服务 + 健康检查）。
+- 新增 Vite dev proxy：`/agent` 代理到 `127.0.0.1:8010`，含 WebSocket 支持。
+- 新增 main agent 编排 CLI（`agent/cli.py`），支持 `list_agents`、`create_agent`、`validate_agent_name`、`list_rooms`、`create_room`、`add_room_member` 命令。
+- 新增 main agent 编排服务层，对外暴露多 Agent 与 Room 管理能力。
+- 新增 `nexus-manager` skill，规范化 YAML frontmatter、命令参考、Workspace 规则与操作流程文档。
+- 首页 App 对话交互完整打通：双态过渡、消息收发、权限决策、中断/重试、创建协作直达首条对话。
+- 支持 `AskUserQuestion` 自定义回答选项。
+- 新增 `room conversation` CRUD API，并接通 room 页面真实的新建/删除对话、重命名 room、增删成员与删除 room 管理能力。
 
 ### Changed
 - 技能市场代码从 `service/workspace/` 迁移至 `service/capability/skills/`，API 从 `api/agent/` 迁移至 `api/capability/`。
 - `SkillCatalog` 改为无状态设计，状态由调用方通过数据库查询后传入。
 - `SkillService` 全面改用 `skill_repository` 进行状态读写。
+- 优化 Skills 页面交互与布局：搜索置顶、分类降级为轻筛选、操作反馈改为自动消失的轻量提示，能力侧栏改为总览卡片并显示全局已安装能力数量。
+- capability 后端正式接入主路由，技能市场与连接器读写统一走新的 SQLite repository 与 capability service。
+- Skill catalog 自动补齐本地可发现但未手工编目的 builtin skills，避免能力页内容缺漏。
+- 更新 `makefile`，新增 `db-init` / `check` / `lint-web` / `typecheck-web` / `check-backend` 目标，并在本地启动后端前自动执行迁移。
+- 主智能体 ID 与名称统一为 `nexus`，移除 `main` 硬编码，后端通过 `settings.DEFAULT_AGENT_ID` 统一引用，前端新增 `DEFAULT_AGENT_ID` 常量。
+- 前端品牌文案从"真格 App"更新为"Nexus"。
+- `persistence` 包重命名为 `repository`（`agent/service/persistence` → `agent/service/repository`，`agent/api/persistence` → `agent/api/repository`）。
+- 前端配置文件合并 `options.ts` + `runtime-config.ts` 为统一的 `options.ts`。
+- 前端 URL 解析简化为纯同源相对路径，开发环境由 Vite proxy 转发，移除 localhost 检测与端口自动路由逻辑。
+- CORS 配置禁止 `*` 通配符，改为显式白名单（默认 `localhost:3000` / `4173`）。
+- 首页 `Nexus` 侧边面板收敛为单一 chat 入口，移除 `Workspace / About / 推荐动作` 等非必要工作区结构，减少首页干扰。
+- 扩展 `agent/cli.py` 与 `nexus-manager` skill，新增 agent / room / workspace / skill 系统操作指令，支持 Nexus 直接完成更多平台管理动作。
+- `fail()` 不再修改共享 Resp 模板，改为构建独立 payload；4xx 响应使用 `logger.warning` 而非 `error`。
+- Loading 态从 `useState` + 手动 set 改为运行时状态机派生，移除所有 `set_is_loading` 调用。
+- Room Page Controller 拆分为三层：`core` 纯函数 + `data` hook + `agent dialog` hook。
+- Conversation Store 移除 `current_session_key`、CRUD actions 与 `utils`，会话管理上升到页面层。
+- 前端 sidebar 字号微调（10→11、11→12、12→13），Launcher placeholder 精简。
+- Launcher 页面控制器移除 `use-home-agent-conversation-controller` 和 `use-initialize-conversations`，直接使用 store + agent dialog hook。
 
 ### Fixed
 - 修复 `session_repository` / `cost_repository` 模块级初始化产生的导入副作用（#11）。
@@ -24,25 +57,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 修复 `make dev` / `make db-init` 因 Alembic 双 `head` 与后端启动旧导入路径导致的本地启动失败问题。
 - 修复 `web` 依赖安装失败：移除失效且未使用的 `@anthropic-ai/claude-code` 遗留依赖，并增加项目级 npm registry 配置。
 - 修复技能市场与能力侧栏的多处状态不一致问题，包括全局开关/更新不同步、Agent 技能配置保存不生效、详情弹窗安装状态误显示，以及 DM 跳转后侧栏高亮错误。
-
-### Changed
-- 优化 Skills 页面交互与布局：搜索置顶、分类降级为轻筛选、操作反馈改为自动消失的轻量提示，能力侧栏改为总览卡片并显示全局已安装能力数量。
-- capability 后端正式接入主路由，技能市场与连接器读写统一走新的 SQLite repository 与 capability service。
-- Skill catalog 自动补齐本地可发现但未手工编目的 builtin skills，避免能力页内容缺漏。
-
-### Docs
-- 更新根目录 `README.md`，同步当前 React + Vite 前端、混合持久化、Memory、Room/DM 页面结构与配置说明。
-- 更新 `web/README.md`，修正前端技术栈、目录结构、路由与 `VITE_*` 环境变量说明。
-- 更新 `env.example` 与部署说明，补充公网部署场景的 `AUTH_LOGIN_*` / Cookie 配置项。
-
-### Changed
-- 更新 `makefile`，新增 `db-init` / `check` / `lint-web` / `typecheck-web` / `check-backend` 目标，并在本地启动后端前自动执行迁移。
-- 主智能体 ID 与名称统一为 `nexus`，移除 `main` 硬编码，后端通过 `settings.DEFAULT_AGENT_ID` 统一引用，前端新增 `DEFAULT_AGENT_ID` 常量。
-- 前端品牌文案从"真格 App"更新为"Nexus"。
-- `persistence` 包重命名为 `repository`（`agent/service/persistence` → `agent/service/repository`，`agent/api/persistence` → `agent/api/repository`）。
-- 前端配置文件合并 `options.ts` + `runtime-config.ts` 为统一的 `options.ts`。
-- 首页 `Nexus` 侧边面板收敛为单一 chat 入口，移除 `Workspace / About / 推荐动作` 等非必要工作区结构，减少首页干扰。
-- 扩展 `agent/cli.py` 与 `nexus-manager` skill，新增 agent / room / workspace / skill 系统操作指令，支持 Nexus 直接完成更多平台管理动作。
+- 修复首页主对话长内容溢出与自动贴底滚动问题。
+- 修复 `AskUserQuestion` 回答后被中断的问题。
+- 修复 Room 刷新后半截历史被误判为"仍在协作"：Room 的活跃态只信 WS 事件，不根据历史消息推断。
+- 修复 Room `session_status.is_generating=false` 时前端残留态未收口。
+- 修复 `getAgentRoundStatus` 在无 pending slot 时将已结束的 assistant 误判为 streaming。
+- 修复 `skill_import_service` Zip Slip 路径遍历安全漏洞（#45）。
+- 修复 Token 比较使用 `!=` 的时序侧信道，改用 `hmac.compare_digest`（#46）。
+- 修复异常处理器直接修改 Resp 全局单例导致的并发安全问题（#28, #36）。
+- 修复 `Settings.__str__()` 未脱敏敏感配置（#38）。
+- 修复 `repeat_even` 异常处理中 `except as e` 与后续 `exc` 引用不一致的 `NameError`（#34）。
+- 修复 bare except 替换为 `except Exception` 并补充 `exc_info`（#37）。
+- 修复定时任务类型缺失导致类型检查失败。
+- 修正 `credentials` 字段误导注释（#25）。
+- 移除 `requirements.txt` 中重复的 `alembic>=1.14.0`（#29）。
+- 移除与 `requires-python>=3.11` 矛盾的 Python 3.10 classifier（#30）。
 
 ### Removed
 - 删除 `backfill_service` 旧数据回填服务及全部回填调用链。
@@ -54,18 +83,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 删除 `legacy_db_path` 死属性、`LEGACY_MAIN_AGENT_SKILL_NAMES` 空操作。
 - 删除 `agent_service` 中向 SQL 双写同步的 `ensure_main_agent_ready` / `_sync_agent_to_sql` 路径。
 - 删除 `session_store` 中向 SQL 双写同步的 `_sync_session_to_sql` / `_sync_message_to_sql` 路径。
+- 删除 `StreamingCursor` / `InlineStreamingCursor` 组件，由 `MessageActivityStatus` 替代。
+- 删除 `use-home-agent-conversation-controller`、`use-initialize-conversations`、`store/conversation/utils`。
 
-### Added
-- 新增 main agent 编排 CLI（`agent/cli.py`），支持 `list_agents`、`create_agent`、`validate_agent_name`、`list_rooms`、`create_room`、`add_room_member` 命令。
-- 新增 main agent 编排服务层，对外暴露多 Agent 与 Room 管理能力。
-- 新增 `nexus-manager` skill，规范化 YAML frontmatter、命令参考、Workspace 规则与操作流程文档。
-- 首页 App 对话交互完整打通：双态过渡、消息收发、权限决策、中断/重试、创建协作直达首条对话。
-- 支持 `AskUserQuestion` 自定义回答选项。
-- 新增 `room conversation` CRUD API，并接通 room 页面真实的新建/删除对话、重命名 room、增删成员与删除 room 管理能力。
-
-### Fixed
-- 修复首页主对话长内容溢出与自动贴底滚动问题。
-- 修复 `AskUserQuestion` 回答后被中断的问题。
+### Docs
+- 更新根目录 `README.md`，同步当前 React + Vite 前端、混合持久化、Memory、Room/DM 页面结构与配置说明。
+- 更新 `web/README.md`，修正前端技术栈、目录结构、路由与 `VITE_*` 环境变量说明。
+- 更新 `env.example` 与部署说明，补充公网部署场景的 `AUTH_LOGIN_*` / Cookie / `BACKEND_CORS_ORIGINS` 配置项。
+- 更新 `docs/message-processing-spec.md`、`docs/permission-runtime-spec.md`、`docs/room-spec.md` 补充 Room slot 恢复与权限派发规范。
 
 ## [0.0.3] - 2026-03-18
 
