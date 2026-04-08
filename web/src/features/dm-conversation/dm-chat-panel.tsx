@@ -6,6 +6,7 @@ import { useAgentConversation } from "@/hooks/agent";
 import { useSessionLoader } from "@/hooks/use-session-loader";
 import { useExtractTodos } from "@/hooks/use-extract-todos";
 import { useFollowScroll } from "@/hooks/use-follow-scroll";
+import { AgentConversationIdentity } from "@/types/agent-conversation";
 import { SessionSnapshotPayload } from "@/types/conversation";
 import { TodoItem } from "@/types/todo";
 
@@ -15,9 +16,8 @@ import { ScrollToLatestButton } from "@/features/conversation-shared/scroll-to-l
 import { groupMessagesByRound, get_latest_reply_timestamp } from "@/features/conversation-shared/utils";
 
 export interface DmChatPanelProps {
-  agent_id: string | null;
   current_agent_name?: string | null;
-  session_key: string | null;
+  session_identity: AgentConversationIdentity | null;
   layout?: "desktop" | "mobile";
   initial_draft?: string | null;
   on_open_workspace_file?: (path: string) => void;
@@ -27,9 +27,8 @@ export interface DmChatPanelProps {
 }
 
 export function DmChatPanel({
-  agent_id,
   current_agent_name,
-  session_key,
+  session_identity,
   layout = "desktop",
   initial_draft = null,
   on_open_workspace_file,
@@ -38,6 +37,7 @@ export function DmChatPanel({
   on_conversation_snapshot_change,
 }: DmChatPanelProps) {
   const is_mobile_layout = layout === "mobile";
+  const session_key = session_identity?.session_key ?? null;
 
   const {
     error,
@@ -49,7 +49,7 @@ export function DmChatPanel({
     load_session,
     send_permission_response,
   } = useAgentConversation({
-    agent_id,
+    identity: session_identity,
     on_error: (err) => {
       console.error("DM conversation error:", err);
     },
@@ -83,6 +83,10 @@ export function DmChatPanel({
     const latest_reply_timestamp = get_latest_reply_timestamp(messages);
     const snapshot = {
       session_key,
+      agent_id: session_identity?.agent_id ?? null,
+      room_id: session_identity?.room_id ?? null,
+      conversation_id: session_identity?.conversation_id ?? null,
+      room_session_id: session_identity?.room_session_id ?? null,
       message_count: messages.length,
       ...(latest_reply_timestamp ? { last_activity_at: latest_reply_timestamp } : {}),
       session_id: last?.session_id ?? null,
@@ -96,7 +100,7 @@ export function DmChatPanel({
 
     last_snapshot_key_ref.current = snapshot_key;
     on_conversation_snapshot_change?.(snapshot);
-  }, [session_key, messages, on_conversation_snapshot_change]);
+  }, [session_identity, session_key, messages, on_conversation_snapshot_change]);
 
   useSessionLoader({
     session_key,

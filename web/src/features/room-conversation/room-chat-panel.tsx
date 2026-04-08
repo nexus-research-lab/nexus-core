@@ -7,6 +7,7 @@ import { useSessionLoader } from "@/hooks/use-session-loader";
 import { useExtractTodos } from "@/hooks/use-extract-todos";
 import { useFollowScroll } from "@/hooks/use-follow-scroll";
 import { buildRoomSharedSessionKey } from "@/lib/session-key";
+import { AgentConversationIdentity } from "@/types/agent-conversation";
 import { RoomConversationSnapshotPayload } from "@/types/conversation";
 import { AssistantMessage, Message } from "@/types/message";
 import { PendingPermission, PermissionDecisionPayload } from "@/types/permission";
@@ -154,6 +155,19 @@ export function RoomChatPanel({
   const thread_loading_ref = useRef(false);
 
   const session_key = conversation_id ? buildRoomSharedSessionKey(conversation_id) : null;
+  const session_identity = useMemo<AgentConversationIdentity | null>(() => {
+    if (!conversation_id) {
+      return null;
+    }
+
+    return {
+      session_key,
+      agent_id,
+      room_id,
+      conversation_id,
+      chat_type: "group",
+    };
+  }, [agent_id, conversation_id, room_id, session_key]);
 
   const agent_name_map = useMemo(() => {
     if (room_members.length === 0) return undefined;
@@ -175,10 +189,7 @@ export function RoomChatPanel({
     load_session,
     send_permission_response,
   } = useAgentConversation({
-    agent_id,
-    room_id,
-    conversation_id,
-    chat_type: "group",
+    identity: session_identity,
     on_error: (err) => {
       console.error("Room conversation error:", err);
     },

@@ -3,7 +3,9 @@
 import { SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
-import { useHomeAgentConversationController } from "@/hooks/use-home-agent-conversation-controller";
+import { useRoomPageAgentDialog } from "@/hooks/room-page-controller/use-room-page-agent-dialog";
+import { useConversationStore } from "@/store/conversation";
+import { useAgentStore } from "@/store/agent";
 import { useAppConversationStore } from "@/store/app-conversation";
 import { LauncherSearchParams } from "@/types/route";
 
@@ -31,17 +33,56 @@ function buildLauncherSearchParams(
 }
 
 export function useLauncherPageController() {
-  const agent_conversation = useHomeAgentConversationController();
   const [search_params, set_search_params] = useSearchParams();
+  const agents = useAgentStore((state) => state.agents);
+  const current_agent_id = useAgentStore((state) => state.current_agent_id);
+  const create_agent = useAgentStore((state) => state.create_agent);
+  const update_agent = useAgentStore((state) => state.update_agent);
+  const delete_agent = useAgentStore((state) => state.delete_agent);
+  const set_current_agent = useAgentStore((state) => state.set_current_agent);
+  const load_agents_from_server = useAgentStore((state) => state.load_agents_from_server);
+  const conversations = useConversationStore((state) => state.conversations);
+  const load_conversations_from_server = useConversationStore((state) => state.load_conversations_from_server);
   const {
     session_key: app_session_key,
     set_session_key: set_app_session_key,
     clear_session_key: clear_app_session_key,
   } = useAppConversationStore();
+  const [is_hydrated, set_is_hydrated] = useState(false);
+  const agent_dialog = useRoomPageAgentDialog({
+    agents,
+    create_agent: async (params) => {
+      const next_agent_id = await create_agent(params);
+      set_current_agent(next_agent_id);
+      return next_agent_id;
+    },
+    update_agent,
+  });
 
   const surface: LauncherSurface = search_params.get("surface") === "app" ? "app" : "launcher";
   const route_app_prompt = search_params.get("app_prompt")?.trim() ?? "";
   const [app_conversation_draft, set_app_conversation_draft] = useState("");
+
+  useEffect(() => {
+    let is_cancelled = false;
+
+    void Promise.all([
+      load_agents_from_server(),
+      load_conversations_from_server(),
+    ])
+      .catch((error) => {
+        console.error("[useLauncherPageController] 初始化 Launcher 数据失败:", error);
+      })
+      .finally(() => {
+        if (!is_cancelled) {
+          set_is_hydrated(true);
+        }
+      });
+
+    return () => {
+      is_cancelled = true;
+    };
+  }, [load_agents_from_server, load_conversations_from_server]);
 
   useEffect(() => {
     if (search_params.get("blobDebug") !== "1" || surface === "app") {
@@ -102,30 +143,42 @@ export function useLauncherPageController() {
   }, [route_app_prompt, set_launcher_search]);
 
   return useMemo(() => ({
-    ...agent_conversation,
+    agents,
+    conversations,
+    current_agent_id,
+    is_hydrated,
     surface,
     route_app_prompt,
     is_app_conversation_open,
     app_session_key,
     app_conversation_draft,
+    handle_select_agent: set_current_agent,
+    handle_delete_agent: delete_agent,
     open_app_conversation,
     close_app_conversation,
     clear_route_app_prompt,
     set_app_session_key,
     clear_app_session_key,
     set_app_conversation_draft: handle_change_app_conversation_draft,
+    ...agent_dialog,
   }), [
-    agent_conversation,
+    agents,
+    conversations,
+    current_agent_id,
+    is_hydrated,
     surface,
     route_app_prompt,
     is_app_conversation_open,
     app_session_key,
     app_conversation_draft,
+    set_current_agent,
+    delete_agent,
     open_app_conversation,
     close_app_conversation,
     clear_route_app_prompt,
     set_app_session_key,
     clear_app_session_key,
     handle_change_app_conversation_draft,
+    agent_dialog,
   ]);
 }

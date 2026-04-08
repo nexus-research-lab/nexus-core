@@ -25,7 +25,6 @@ export function handleAgentConversationWebSocketMessage({
   apply_workspace_event,
   is_current_session_event,
   set_error,
-  set_is_loading,
   set_messages,
   set_pending_agent_slots,
   set_pending_permissions,
@@ -36,6 +35,7 @@ export function handleAgentConversationWebSocketMessage({
   update_message_status,
   clear_round_tracking,
   reset_loading_tracking,
+  mark_session_generating,
   reconcile_stopped_session,
   track_chat_ack,
   track_assistant_message,
@@ -59,9 +59,6 @@ export function handleAgentConversationWebSocketMessage({
       clear_round_tracking?.(event.caused_by ?? event.data?.round_id ?? null);
     } else {
       reset_loading_tracking?.();
-      if (!reset_loading_tracking) {
-        set_is_loading(false);
-      }
     }
     set_error(event.data?.message || 'Unknown error');
     return;
@@ -161,7 +158,7 @@ export function handleAgentConversationWebSocketMessage({
       return;
     }
     if (event.data?.is_generating) {
-      set_is_loading(true);
+      mark_session_generating?.();
       return;
     }
     set_agent_thinking?.(null);
@@ -174,7 +171,6 @@ export function handleAgentConversationWebSocketMessage({
           : { ...slot, status: 'cancelled' }
       )));
       set_pending_permissions([]);
-      set_is_loading(false);
     }
     return;
   }
@@ -189,7 +185,6 @@ export function handleAgentConversationWebSocketMessage({
       return;
     }
     track_chat_ack?.(ack, incoming_session_key);
-    set_is_loading(true);
     return;
   }
 
@@ -247,7 +242,6 @@ export function handleAgentConversationWebSocketMessage({
       enqueue_stream_payload(payload);
     } else {
       set_messages((prev) => applyStreamMessage(prev, payload));
-      set_is_loading(true);
     }
     return;
   }
@@ -275,15 +269,9 @@ export function handleAgentConversationWebSocketMessage({
   if (payload.role === 'result') {
     set_pending_permissions([]);
     track_result_message?.(payload as ResultMessage);
-    if (!track_result_message) {
-      set_is_loading(false);
-    }
     return;
   }
   if (payload.role === 'assistant') {
     track_assistant_message?.(payload as AssistantMessage);
-    if (!track_assistant_message) {
-      set_is_loading(!(payload.is_complete || payload.stop_reason));
-    }
   }
 }

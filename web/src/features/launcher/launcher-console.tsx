@@ -399,6 +399,14 @@ export function LauncherConsole({
       try {
         if (entry.type === "dm" && entry.agent_id) {
           on_select_agent(entry.agent_id);
+          const context = await ensureDirectRoom(entry.agent_id);
+          set_active_panel_item(context.room.id);
+          navigate(
+            AppRouteBuilders.room_conversation(
+              context.room.id,
+              context.conversation.id,
+            ),
+          );
           return;
         }
 

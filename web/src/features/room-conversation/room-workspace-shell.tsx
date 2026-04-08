@@ -6,7 +6,8 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { HOME_WORKSPACE_SECTION_GAP_CLASS } from "@/lib/home-layout";
 import { cn } from "@/lib/utils";
 import { Agent } from "@/types/agent";
-import { Conversation, ConversationSnapshotPayload, RoomConversationView } from "@/types/conversation";
+import { AgentConversationIdentity } from "@/types/agent-conversation";
+import { ConversationSnapshotPayload, RoomConversationView } from "@/types/conversation";
 import { RoomSurfaceTabKey } from "@/types/room-surface";
 import { TodoItem } from "@/types/todo";
 import { UpdateRoomParams } from "@/types/room";
@@ -23,8 +24,7 @@ interface RoomWorkspaceShellProps {
   available_room_agents: Agent[];
   current_room_title: string;
   current_room_conversation: RoomConversationView | null;
-  current_agent_conversation: Conversation | null;
-  current_agent_session_key: string | null;
+  current_agent_session_identity: AgentConversationIdentity | null;
   conversation_id: string | null;
   current_room_conversations: RoomConversationView[];
   active_workspace_path: string | null;
@@ -61,8 +61,7 @@ export function RoomWorkspaceShell({
   available_room_agents,
   current_room_title,
   current_room_conversation,
-  current_agent_conversation,
-  current_agent_session_key,
+  current_agent_session_identity,
   conversation_id,
   current_room_conversations,
   active_workspace_path,
@@ -117,7 +116,7 @@ export function RoomWorkspaceShell({
         room_id={room_id}
         room_members={room_members}
         current_room_conversation={current_room_conversation}
-        current_agent_conversation={current_agent_conversation}
+        current_agent_session_identity={current_agent_session_identity}
         conversation_id={conversation_id}
         current_room_conversations={current_room_conversations}
         current_room_title={current_room_title}
@@ -144,7 +143,7 @@ export function RoomWorkspaceShell({
         room_description={room_description}
         room_members={room_members}
         current_room_title={current_room_title}
-        current_agent_session_key={current_agent_session_key}
+        current_agent_session_identity={current_agent_session_identity}
         conversation_id={conversation_id}
         current_room_conversations={current_room_conversations}
         initial_draft={initial_draft}

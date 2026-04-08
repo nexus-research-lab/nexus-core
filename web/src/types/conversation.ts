@@ -55,6 +55,10 @@ interface BaseSnapshotPayload {
 
 export interface SessionSnapshotPayload extends BaseSnapshotPayload {
   session_key: string;
+  agent_id?: string | null;
+  room_id?: string | null;
+  conversation_id?: string | null;
+  room_session_id?: string | null;
 }
 
 export interface RoomConversationSnapshotPayload extends BaseSnapshotPayload {
@@ -62,13 +66,6 @@ export interface RoomConversationSnapshotPayload extends BaseSnapshotPayload {
 }
 
 export type ConversationSnapshotPayload = SessionSnapshotPayload | RoomConversationSnapshotPayload;
-
-export interface InitializeConversationsOptions {
-  load_conversations_from_server: () => Promise<void>;
-  set_current_session_key: (key: string) => void;
-  auto_select_first?: boolean;
-  debug_name?: string;
-}
 
 export interface SessionLoaderOptions {
   session_key: string | null;
@@ -78,18 +75,12 @@ export interface SessionLoaderOptions {
 
 export interface ConversationStoreState {
   conversations: Conversation[];
-  current_session_key: string | null;
   loading: boolean;
   error: string | null;
-  create_conversation: (params?: CreateConversationParams) => Promise<string>;
-  delete_conversation: (key: string) => void;
-  update_conversation: (key: string, params: UpdateConversationParams) => void;
-  set_current_session_key: (key: string | null) => void;
   sync_conversation_snapshot: (
     key: string,
     patch: Partial<Pick<Conversation, "message_count" | "last_activity_at" | "session_id">>,
   ) => void;
-  get_conversation: (key: string) => Conversation | undefined;
   load_conversations_from_server: () => Promise<void>;
   clear_all_conversations: () => void;
 }

@@ -8,6 +8,7 @@ import { DmConversationHeader } from "@/features/dm-conversation/dm-conversation
 import { cn } from "@/lib/utils";
 import { WorkspaceCanvasShell } from "@/shared/ui/workspace/workspace-canvas-shell";
 import { Agent } from "@/types/agent";
+import { AgentConversationIdentity } from "@/types/agent-conversation";
 import { ConversationSnapshotPayload, RoomConversationView } from "@/types/conversation";
 import { RoomSurfaceTabKey } from "@/types/room-surface";
 import { TodoItem } from "@/types/todo";
@@ -33,7 +34,7 @@ interface RoomWorkspaceLayoutProps {
   room_members: Agent[];
   available_room_agents: Agent[];
   current_room_title: string;
-  current_agent_session_key: string | null;
+  current_agent_session_identity: AgentConversationIdentity | null;
   conversation_id: string | null;
   current_room_conversations: RoomConversationView[];
   active_workspace_path: string | null;
@@ -88,7 +89,7 @@ function RoomWorkspaceLayoutInner({
   room_members,
   available_room_agents,
   current_room_title,
-  current_agent_session_key,
+  current_agent_session_identity,
   conversation_id,
   current_room_conversations,
   active_workspace_path,
@@ -171,14 +172,13 @@ function RoomWorkspaceLayoutInner({
                 is_dm ? (
                   <ChatBoundary>
                     <DmChatPanel
-                      agent_id={current_agent.agent_id}
                       current_agent_name={current_agent.name}
                       initial_draft={initial_draft}
                       on_conversation_snapshot_change={on_conversation_snapshot_change}
                       on_loading_change={on_loading_change}
                       on_open_workspace_file={handle_open_workspace_file}
                       on_todos_change={on_todos_change}
-                      session_key={current_agent_session_key}
+                      session_identity={current_agent_session_identity}
                     />
                   </ChatBoundary>
                 ) : (

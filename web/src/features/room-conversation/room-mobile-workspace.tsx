@@ -5,7 +5,8 @@ import { ArrowLeft, Check, ChevronDown, MessageSquare, Search, X } from "lucide-
 
 import { formatRelativeTime } from "@/lib/utils";
 import { Agent } from "@/types/agent";
-import { Conversation, ConversationSnapshotPayload, RoomConversationView } from "@/types/conversation";
+import { AgentConversationIdentity } from "@/types/agent-conversation";
+import { ConversationSnapshotPayload, RoomConversationView } from "@/types/conversation";
 
 import { DmChatPanel } from "@/features/dm-conversation/dm-chat-panel";
 import { RoomChatPanel } from "./room-chat-panel";
@@ -20,7 +21,7 @@ interface RoomMobileWorkspaceProps {
   room_members: Agent[];
   current_room_title: string;
   current_room_conversation: RoomConversationView | null;
-  current_agent_conversation: Conversation | null;
+  current_agent_session_identity: AgentConversationIdentity | null;
   conversation_id: string | null;
   current_room_conversations: RoomConversationView[];
   initial_draft?: string | null;
@@ -39,7 +40,7 @@ export function RoomMobileWorkspace({
   room_members,
   current_room_title,
   current_room_conversation,
-  current_agent_conversation,
+  current_agent_session_identity,
   conversation_id,
   current_room_conversations,
   initial_draft = null,
@@ -100,13 +101,12 @@ export function RoomMobileWorkspace({
       <div className="min-h-0 min-w-0 flex-1">
         {is_dm ? (
           <DmChatPanel
-            agent_id={current_agent.agent_id}
             current_agent_name={current_agent.name}
             initial_draft={initial_draft}
             layout="mobile"
             on_conversation_snapshot_change={on_conversation_snapshot_change}
             on_loading_change={on_loading_change}
-            session_key={current_agent_conversation?.session_key ?? null}
+            session_identity={current_agent_session_identity}
           />
         ) : (
           <RoomThreadContextProvider>

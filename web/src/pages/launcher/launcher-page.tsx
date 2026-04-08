@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { AppRouteBuilders } from "@/app/router/route-paths";
@@ -32,8 +32,13 @@ export function LauncherPage() {
   const consumed_route_prompt_ref = useRef<string | null>(null);
   const skip_app_session_load_ref = useRef<string | null>(null);
   const hydrated_app_session_key_ref = useRef<string | null>(null);
-  const app_conversation = useAgentConversation({
+  const app_conversation_identity = useMemo(() => ({
+    session_key: controller.app_session_key,
     agent_id: app_agent_id,
+    chat_type: "dm" as const,
+  }), [app_agent_id, controller.app_session_key]);
+  const app_conversation = useAgentConversation({
+    identity: app_conversation_identity,
   });
   const {
     bind_session_key,

@@ -8,6 +8,7 @@
  */
 
 import { Dispatch, RefObject, SetStateAction } from 'react';
+import { getSessionKeyIdentity } from '@/lib/session-key';
 
 import {
   AssistantMessage,
@@ -21,13 +22,39 @@ import { PendingPermission, PermissionDecisionPayload } from '@/types/permission
 import { WebSocketMessage, WebSocketState } from '@/types/websocket';
 import { WorkspaceEventPayload } from '@/types/workspace-live';
 
-export interface UseAgentConversationOptions {
-  ws_url?: string;
+export type AgentConversationChatType = 'dm' | 'group';
+
+export interface AgentConversationIdentity {
+  session_key: string | null;
   agent_id?: string | null;
-  /** Room context — 传入后消息使用 room 路由 */
   room_id?: string | null;
   conversation_id?: string | null;
-  chat_type?: 'dm' | 'group';
+  room_session_id?: string | null;
+  chat_type: AgentConversationChatType;
+}
+
+export function getAgentConversationIdentityKey(
+  identity: AgentConversationIdentity | null | undefined,
+): string | null {
+  if (!identity) {
+    return null;
+  }
+
+  if (identity.room_session_id) {
+    return `room-session:${identity.room_session_id}`;
+  }
+
+  if (identity.chat_type === 'group' && identity.conversation_id) {
+    return `room-conversation:${identity.conversation_id}`;
+  }
+
+  const session_identity = getSessionKeyIdentity(identity.session_key);
+  return session_identity ? `session:${session_identity}` : null;
+}
+
+export interface UseAgentConversationOptions {
+  ws_url?: string;
+  identity?: AgentConversationIdentity | null;
   on_error?: (error: Error) => void;
   /** Called when a room-level WS event arrives (member_added/removed/room_deleted) */
   on_room_event?: (event_type: string, data: RoomEventPayload) => void;
@@ -61,12 +88,8 @@ export interface ConversationSnapshot {
 }
 
 export interface AgentConversationActionContext {
-  agent_id?: string | null;
+  identity: AgentConversationIdentity | null;
   session_key: string | null;
-  /** Room context — 传入后消息使用 room 路由 */
-  room_id?: string | null;
-  conversation_id?: string | null;
-  chat_type?: 'dm' | 'group';
   ws_state: WebSocketState;
   ws_send: (message: WebSocketMessage) => void;
   active_session_key_ref: RefObject<string | null>;
@@ -74,7 +97,6 @@ export interface AgentConversationActionContext {
   pending_agent_slots: RoomPendingAgentSlotState[];
   messages: Message[];
   set_error: Dispatch<SetStateAction<string | null>>;
-  set_is_loading: Dispatch<SetStateAction<boolean>>;
   set_messages: Dispatch<SetStateAction<Message[]>>;
   set_pending_agent_slots: Dispatch<SetStateAction<RoomPendingAgentSlotState[]>>;
   set_pending_permissions: Dispatch<SetStateAction<PendingPermission[]>>;
@@ -83,15 +105,11 @@ export interface AgentConversationActionContext {
 export interface AgentConversationLifecycleContext {
   active_session_key_ref: RefObject<string | null>;
   load_request_id_ref: RefObject<number>;
-  agent_id?: string | null;
-  room_id?: string | null;
-  conversation_id?: string | null;
-  chat_type?: 'dm' | 'group';
+  identity: AgentConversationIdentity | null;
   set_session_key: Dispatch<SetStateAction<string | null>>;
   set_messages: Dispatch<SetStateAction<Message[]>>;
   set_pending_agent_slots: Dispatch<SetStateAction<RoomPendingAgentSlotState[]>>;
   set_pending_permissions: Dispatch<SetStateAction<PendingPermission[]>>;
-  set_is_loading: Dispatch<SetStateAction<boolean>>;
   set_error: Dispatch<SetStateAction<string | null>>;
   /** Cache of background messages received for non-active sessions */
   bg_message_cache_ref?: RefObject<Map<string, Message[]>>;
@@ -127,7 +145,6 @@ export interface HandleAgentConversationWebSocketMessageParams {
   apply_workspace_event: (payload: WorkspaceEventPayload) => void;
   is_current_session_event: (incoming_session_key?: string | null) => boolean;
   set_error: Dispatch<SetStateAction<string | null>>;
-  set_is_loading: Dispatch<SetStateAction<boolean>>;
   set_messages: Dispatch<SetStateAction<Message[]>>;
   set_pending_agent_slots: Dispatch<SetStateAction<RoomPendingAgentSlotState[]>>;
   set_pending_permissions: Dispatch<SetStateAction<PendingPermission[]>>;
@@ -149,6 +166,8 @@ export interface HandleAgentConversationWebSocketMessageParams {
   clear_round_tracking?: (round_id?: string | null) => void;
   /** 清空当前 session 的 loading 跟踪 */
   reset_loading_tracking?: () => void;
+  /** 后端告知当前 session 仍在执行时，恢复运行态 */
+  mark_session_generating?: () => void;
   /** 后端明确告知当前 session 已停止时，收口前端残留运行态 */
   reconcile_stopped_session?: () => void;
   /** 记录本轮 chat_ack 预分配的活跃消息槽位 */

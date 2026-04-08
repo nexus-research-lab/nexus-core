@@ -16,19 +16,19 @@ export async function sendSessionMessage(
   context: AgentConversationActionContext,
 ): Promise<string | null> {
   const {
-    agent_id,
+    identity,
     session_key,
-    room_id,
-    conversation_id,
-    chat_type,
     ws_state,
     ws_send,
     active_session_key_ref,
     set_error,
-    set_is_loading,
     set_messages,
     set_pending_permissions,
   } = context;
+  const agent_id = identity?.agent_id;
+  const room_id = identity?.room_id;
+  const conversation_id = identity?.conversation_id;
+  const chat_type = identity?.chat_type;
   const resolved_session_key = session_key || active_session_key_ref.current;
 
   if (!content.trim()) {
@@ -62,7 +62,6 @@ export async function sendSessionMessage(
 
   set_messages((prev) => upsertMessage(prev, userMessage));
   set_pending_permissions([]);
-  set_is_loading(true);
   set_error(null);
 
   const ws_payload: Record<string, unknown> = {
@@ -95,29 +94,27 @@ export function stopSessionGeneration(
   msg_id?: string,
 ): void {
   const {
-    agent_id,
+    identity,
     session_key,
-    room_id,
-    conversation_id,
-    chat_type,
     ws_state,
     ws_send,
     active_session_key_ref,
     messages,
     pending_agent_slots,
     set_error,
-    set_is_loading,
     set_pending_permissions,
   } = context;
+  const agent_id = identity?.agent_id;
+  const room_id = identity?.room_id;
+  const conversation_id = identity?.conversation_id;
+  const chat_type = identity?.chat_type;
   const resolved_session_key = session_key || active_session_key_ref.current;
 
   if (!resolved_session_key || ws_state !== 'connected') {
-    set_is_loading(false);
     return;
   }
   if (!isStructuredSessionKey(resolved_session_key)) {
     set_error('当前会话的 session_key 非法，无法中断');
-    set_is_loading(false);
     return;
   }
 
@@ -148,8 +145,6 @@ export function stopSessionGeneration(
   }
 
   ws_send(payload as WebSocketMessage);
-
-  set_is_loading(false);
   set_pending_permissions([]);
 }
 
@@ -161,17 +156,17 @@ export function sendSessionPermissionResponse(
   context: AgentConversationActionContext,
 ): boolean {
   const {
-    agent_id,
+    identity,
     session_key,
     ws_state,
     ws_send,
     active_session_key_ref,
     pending_permissions,
     set_error,
-    set_is_loading,
     set_pending_permissions,
   } = context;
   const resolved_session_key = session_key || active_session_key_ref.current;
+  const agent_id = identity?.agent_id;
   const pending_permission = pending_permissions.find(
     (item) => item.request_id === payload.request_id,
   );
@@ -219,7 +214,6 @@ export function sendSessionPermissionResponse(
 
   ws_send(response);
   set_pending_permissions((prev) => prev.filter((item) => item.request_id !== payload.request_id));
-  set_is_loading(true);
   set_error(null);
   return true;
 }

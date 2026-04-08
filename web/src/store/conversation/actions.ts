@@ -2,19 +2,13 @@
  * Conversation Store Actions
  *
  * [INPUT]: 依赖 @/types, @/lib/agent-api
- * [OUTPUT]: 对外提供 conversation CRUD actions
+ * [OUTPUT]: 对外提供 conversation 元数据同步 actions
  * [POS]: store/conversation 模块的操作函数
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
  */
 
-import { CreateConversationParams, Conversation, ConversationStoreState, UpdateConversationParams } from '@/types/conversation';
-import { createDefaultConversation } from './utils';
-import {
-  createConversation,
-  deleteConversation,
-  getConversations,
-  updateConversation,
-} from "@/lib/agent-api";
+import { Conversation, ConversationStoreState } from '@/types/conversation';
+import { getConversations } from "@/lib/agent-api";
 
 type ConversationStoreSetter = (
   update:
@@ -41,87 +35,6 @@ function dedupe_conversations_by_session_key(
   }
   return Array.from(unique_conversations.values());
 }
-
-export const createConversationAction = (
-  set: ConversationStoreSetter,
-) => async (params?: CreateConversationParams): Promise<string> => {
-  const new_conversation = createDefaultConversation(params);
-
-  try {
-    const created = await createConversation(new_conversation.session_key, {
-      title: params?.title,
-      agent_id: params?.agent_id,
-    });
-
-    set((state) => ({
-      conversations: [created, ...state.conversations.filter((item) => item.session_key !== new_conversation.session_key)],
-      error: null,
-    }));
-    console.debug('[ConversationStore] Conversation synced:', created.session_key);
-    return created.session_key;
-  } catch (error) {
-    console.error('[ConversationStore] Failed to sync conversation:', error);
-    set((state) => ({
-      conversations: [new_conversation, ...state.conversations],
-      error: null,
-    }));
-    return new_conversation.session_key;
-  }
-};
-
-export const deleteConversationAction = (
-  set: ConversationStoreSetter,
-) => async (key: string): Promise<void> => {
-  try {
-    await deleteConversation(key);
-
-    set((state) => {
-      const next_conversations = state.conversations.filter((item) => item.session_key !== key);
-      const next_current_session_key = state.current_session_key === key
-        ? (next_conversations[0]?.session_key || null)
-        : state.current_session_key;
-
-      return {
-        conversations: next_conversations,
-        current_session_key: next_current_session_key,
-        error: null,
-      };
-    });
-  } catch (error) {
-    console.error('[ConversationStore] Failed to delete conversation:', error);
-    set(() => ({ error: 'Failed to delete conversation' }));
-  }
-};
-
-export const updateConversationAction = (
-  set: ConversationStoreSetter
-) => async (key: string, params: UpdateConversationParams): Promise<void> => {
-  try {
-    await updateConversation(key, params);
-
-    set((state) => ({
-      conversations: state.conversations.map((conversation) =>
-        conversation.session_key === key
-          ? {
-            ...conversation,
-            ...(params.title && { title: params.title }),
-            last_activity_at: Date.now(),
-          }
-          : conversation
-      ),
-      error: null,
-    }));
-  } catch (error) {
-    console.error('[ConversationStore] Failed to update conversation:', error);
-    set(() => ({ error: 'Failed to sync update with server' }));
-  }
-};
-
-export const setCurrentSessionKeyAction = (
-  set: ConversationStoreSetter
-) => (key: string | null): void => {
-  set({ current_session_key: key, error: null });
-};
 
 export const syncConversationSnapshotAction = (
   set: ConversationStoreSetter
@@ -170,10 +83,6 @@ export const syncConversationSnapshotAction = (
   });
 };
 
-export const getConversationAction = (get: () => ConversationStoreState) => (key: string): Conversation | undefined => {
-  return get().conversations.find((item) => item.session_key === key);
-};
-
 export const loadConversationsFromServerAction = (
   set: ConversationStoreSetter,
 ) => async (): Promise<void> => {
@@ -204,7 +113,6 @@ export const clearAllConversationsAction = (
 ) => (): void => {
   set({
     conversations: [],
-    current_session_key: null,
     error: null,
   });
 };

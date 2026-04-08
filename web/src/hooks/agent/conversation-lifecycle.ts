@@ -12,14 +12,10 @@ import { sortMessages } from './message-helpers';
 export function resetSessionView(
   context: AgentConversationLifecycleContext,
   next_error: string | null = null,
-  preserve_loading: boolean = false,
 ): void {
   context.set_messages([]);
   context.set_pending_agent_slots([]);
   context.set_pending_permissions([]);
-  if (!preserve_loading) {
-    context.set_is_loading(false);
-  }
   context.set_error(next_error);
 }
 
@@ -27,10 +23,13 @@ export function resetSessionView(
  * 启动一个新的会话。
  */
 export function startAgentSession(context: AgentConversationLifecycleContext): void {
+  const chat_type = context.identity?.chat_type ?? 'dm';
+  const conversation_id = context.identity?.conversation_id;
+  const agent_id = context.identity?.agent_id;
   const new_session_key = (
-    context.chat_type === 'group' && context.conversation_id
-      ? buildRoomSharedSessionKey(context.conversation_id)
-      : buildWsDmSessionKey(generateUuid(), context.agent_id)
+    chat_type === 'group' && conversation_id
+      ? buildRoomSharedSessionKey(conversation_id)
+      : buildWsDmSessionKey(generateUuid(), agent_id)
   );
   context.load_request_id_ref.current += 1;
   context.active_session_key_ref.current = new_session_key;
@@ -42,7 +41,7 @@ export function startAgentSession(context: AgentConversationLifecycleContext): v
  * 加载现有会话消息。
  * 如果 bg_message_cache_ref 中有该 session 的缓存消息，先用缓存预填充（避免 loading 闪烁）。
  * API 返回后用服务端数据覆盖，并清除 cache。
- * is_reload=true 时保留 loading 态，由后续 session_status 事件控制。
+ * is_reload=true 时只刷新消息快照，运行态由 hook 内的状态机继续维护。
  */
 export async function loadAgentSession(
   session_key: string,
@@ -64,7 +63,6 @@ export async function loadAgentSession(
     if (cached && cached.length > 0) {
       context.set_messages(sortMessages(cached));
       context.set_pending_permissions([]);
-      context.set_is_loading(false);
       context.set_error(null);
     } else {
       resetSessionView(context);
