@@ -30,19 +30,19 @@ async def log_error(
 
     if issubclass(exc.__class__, ValidationException):
         error_msg = exc.errors()
-        response = UnProcessable.model_copy()
+        response = UnProcessable
     elif issubclass(exc.__class__, ServerException):
         error_msg = exc.errors
-        response = exc.resp.model_copy()
+        response = exc.resp
     elif issubclass(exc.__class__, ValidationError):
         error_msg = exc.errors()
-        response = ServerError.model_copy()
+        response = ServerError
     elif exc.__class__ == StarletteHTTPException:
         error_msg = exc.detail
-        response = NotFound.model_copy()
+        response = NotFound
     else:
         error_msg = "[内部异常错误]" + str(exc)
-        response = ServerError.model_copy()
+        response = ServerError
 
     request_id = getattr(request.state, "request_id", "unknown")
     if request_id == "unknown":
