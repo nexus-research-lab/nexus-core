@@ -52,9 +52,17 @@ function collect_open_round_ids(messages: Message[]): Set<string> {
   const completed_round_ids = collect_completed_round_ids(messages);
   const open_round_ids = new Set<string>();
   for (const message of messages) {
-    if (message.role === 'assistant' && !completed_round_ids.has(message.round_id)) {
-      open_round_ids.add(message.round_id);
+    if (message.role !== 'assistant' || completed_round_ids.has(message.round_id)) {
+      continue;
     }
+    if (
+      message.is_complete ||
+      message.stop_reason ||
+      is_terminal_assistant_status(message.stream_status)
+    ) {
+      continue;
+    }
+    open_round_ids.add(message.round_id);
   }
   return open_round_ids;
 }
@@ -71,6 +79,8 @@ export class AgentConversationRuntimeMachine {
   private pending_round_ids = new Set<string>();
 
   private active_round_ids = new Set<string>();
+
+  private completed_round_ids = new Set<string>();
 
   private active_message_trackers = new Map<string, ActiveMessageTracker>();
 
@@ -89,12 +99,14 @@ export class AgentConversationRuntimeMachine {
   public reset(): void {
     this.pending_round_ids.clear();
     this.active_round_ids.clear();
+    this.completed_round_ids.clear();
     this.active_message_trackers.clear();
     this.pending_permission_count = 0;
     this.is_server_generating = false;
   }
 
   public queue_round(round_id: string): void {
+    this.completed_round_ids.delete(round_id);
     this.pending_round_ids.add(round_id);
     this.is_server_generating = false;
   }
@@ -141,12 +153,23 @@ export class AgentConversationRuntimeMachine {
     const current_tracker = this.active_message_trackers.get(message_id);
     const resolved_round_id = round_id ?? current_tracker?.round_id ?? '';
 
-    if (is_terminal_assistant_status(status)) {
+    if (resolved_round_id && this.completed_round_ids.has(resolved_round_id)) {
       this.active_message_trackers.delete(message_id);
+      this.drop_inactive_round(resolved_round_id);
       this.reconcile_server_generating_flag();
       return;
     }
 
+    if (is_terminal_assistant_status(status)) {
+      this.active_message_trackers.delete(message_id);
+      this.drop_inactive_round(resolved_round_id);
+      this.reconcile_server_generating_flag();
+      return;
+    }
+
+    if (resolved_round_id) {
+      this.active_round_ids.add(resolved_round_id);
+    }
     this.active_message_trackers.set(message_id, {
       round_id: resolved_round_id,
       status,
@@ -155,6 +178,9 @@ export class AgentConversationRuntimeMachine {
 
   public track_chat_ack(ack: ChatAckData): void {
     this.pending_round_ids.delete(ack.round_id);
+    if (this.completed_round_ids.has(ack.round_id)) {
+      return;
+    }
     const pending_count = ack.pending?.length ?? 0;
 
     for (const slot of ack.pending ?? []) {
@@ -162,6 +188,9 @@ export class AgentConversationRuntimeMachine {
         slot.round_id ||
         (pending_count > 1 ? `${ack.round_id}:${slot.agent_id}` : ack.round_id)
       );
+      if (this.completed_round_ids.has(agent_round_id)) {
+        continue;
+      }
       this.active_round_ids.add(agent_round_id);
       this.active_message_trackers.set(slot.msg_id, {
         round_id: agent_round_id,
@@ -172,6 +201,12 @@ export class AgentConversationRuntimeMachine {
 
   public track_assistant_message(message: AssistantMessage): void {
     this.pending_round_ids.delete(message.round_id);
+    if (this.completed_round_ids.has(message.round_id)) {
+      this.active_message_trackers.delete(message.message_id);
+      this.drop_inactive_round(message.round_id);
+      this.reconcile_server_generating_flag();
+      return;
+    }
     this.active_round_ids.add(message.round_id);
 
     if (
@@ -180,6 +215,8 @@ export class AgentConversationRuntimeMachine {
       is_terminal_assistant_status(message.stream_status)
     ) {
       this.active_message_trackers.delete(message.message_id);
+      this.drop_inactive_round(message.round_id);
+      this.reconcile_server_generating_flag();
       return;
     }
 
@@ -190,6 +227,7 @@ export class AgentConversationRuntimeMachine {
   }
 
   public track_result_message(message: ResultMessage): void {
+    this.completed_round_ids.add(message.round_id);
     this.clear_round(message.round_id, this.chat_type === 'group');
   }
 
@@ -208,6 +246,7 @@ export class AgentConversationRuntimeMachine {
 
   public reconcile_from_snapshot(messages: Message[]): void {
     const completed_round_ids = collect_completed_round_ids(messages);
+    this.completed_round_ids = completed_round_ids;
     const snapshot_open_round_ids = (
       this.chat_type === 'group' ? new Set<string>() : collect_open_round_ids(messages)
     );
@@ -258,6 +297,14 @@ export class AgentConversationRuntimeMachine {
     }
 
     this.active_message_trackers = next_trackers;
+    this.active_round_ids = new Set([
+      ...this.active_round_ids,
+      ...[...next_trackers.values()].map((tracker) => tracker.round_id).filter(Boolean),
+    ]);
+    for (const tracked_round_id of [...this.active_round_ids]) {
+      this.drop_inactive_round(tracked_round_id);
+    }
+    this.reconcile_server_generating_flag();
   }
 
   public snapshot(): AgentConversationRuntimeSnapshot {
@@ -310,5 +357,23 @@ export class AgentConversationRuntimeMachine {
     }
 
     this.is_server_generating = false;
+  }
+
+  private drop_inactive_round(round_id?: string | null): void {
+    if (!round_id || this.pending_round_ids.has(round_id)) {
+      return;
+    }
+
+    if (this.completed_round_ids.has(round_id)) {
+      this.active_round_ids.delete(round_id);
+      return;
+    }
+
+    const has_active_tracker = [...this.active_message_trackers.values()].some(
+      (tracker) => tracker.round_id === round_id,
+    );
+    if (!has_active_tracker) {
+      this.active_round_ids.delete(round_id);
+    }
   }
 }

@@ -99,7 +99,10 @@ class SessionService:
         internal_key = self.to_session_key(session_key)
         existing = await session_store.get_session_info(internal_key)
         if existing:
-            raise ValueError("Session already exists")
+            # 中文注释：Session 创建接口必须保持幂等。
+            # Launcher/Nexus 等固定会话重复请求时，直接返回现有记录，
+            # 不能把“已存在”升级成异常链路，否则前端会被迫兼容 409。
+            return await session_context_resolver.enrich_session(existing)
 
         success = await session_store.update_session(
             session_key=internal_key,
