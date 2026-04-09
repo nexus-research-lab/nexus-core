@@ -172,6 +172,13 @@ make logs
 make stop
 ```
 
+Docker 构建与启动命令默认使用当前用户执行，不需要 `sudo`。
+如果服务器上的 Docker 仍要求 `sudo`，请把当前用户加入 `docker` 组后重新登录：
+
+```bash
+sudo usermod -aG docker $USER
+```
+
 ## 关键配置
 
 ### 后端
