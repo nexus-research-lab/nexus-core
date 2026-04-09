@@ -3,11 +3,14 @@
 import { SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
+import { getDefaultAgentId } from "@/config/options";
 import { useRoomPageAgentDialog } from "@/hooks/room-page-controller/use-room-page-agent-dialog";
+import { listRooms } from "@/lib/room-api";
+import { buildLauncherAppSessionKey } from "@/lib/session-key";
 import { useConversationStore } from "@/store/conversation";
 import { useAgentStore } from "@/store/agent";
-import { useAppConversationStore } from "@/store/app-conversation";
 import { LauncherSearchParams } from "@/types/route";
+import { RoomAggregate } from "@/types/room";
 
 type LauncherSurface = NonNullable<LauncherSearchParams["surface"]>;
 
@@ -43,12 +46,9 @@ export function useLauncherPageController() {
   const load_agents_from_server = useAgentStore((state) => state.load_agents_from_server);
   const conversations = useConversationStore((state) => state.conversations);
   const load_conversations_from_server = useConversationStore((state) => state.load_conversations_from_server);
-  const {
-    session_key: app_session_key,
-    set_session_key: set_app_session_key,
-    clear_session_key: clear_app_session_key,
-  } = useAppConversationStore();
   const [is_hydrated, set_is_hydrated] = useState(false);
+  const [rooms, set_rooms] = useState<RoomAggregate[]>([]);
+  const app_session_key = buildLauncherAppSessionKey(getDefaultAgentId());
   const agent_dialog = useRoomPageAgentDialog({
     agents,
     create_agent: async (params) => {
@@ -69,6 +69,7 @@ export function useLauncherPageController() {
     void Promise.all([
       load_agents_from_server(),
       load_conversations_from_server(),
+      listRooms(200).then(set_rooms),
     ])
       .catch((error) => {
         console.error("[useLauncherPageController] 初始化 Launcher 数据失败:", error);
@@ -144,6 +145,7 @@ export function useLauncherPageController() {
 
   return useMemo(() => ({
     agents,
+    rooms,
     conversations,
     current_agent_id,
     is_hydrated,
@@ -152,17 +154,17 @@ export function useLauncherPageController() {
     is_app_conversation_open,
     app_session_key,
     app_conversation_draft,
+    refresh_conversations: load_conversations_from_server,
     handle_select_agent: set_current_agent,
     handle_delete_agent: delete_agent,
     open_app_conversation,
     close_app_conversation,
     clear_route_app_prompt,
-    set_app_session_key,
-    clear_app_session_key,
     set_app_conversation_draft: handle_change_app_conversation_draft,
     ...agent_dialog,
   }), [
     agents,
+    rooms,
     conversations,
     current_agent_id,
     is_hydrated,
@@ -171,13 +173,12 @@ export function useLauncherPageController() {
     is_app_conversation_open,
     app_session_key,
     app_conversation_draft,
+    load_conversations_from_server,
     set_current_agent,
     delete_agent,
     open_app_conversation,
     close_app_conversation,
     clear_route_app_prompt,
-    set_app_session_key,
-    clear_app_session_key,
     handle_change_app_conversation_draft,
     agent_dialog,
   ]);

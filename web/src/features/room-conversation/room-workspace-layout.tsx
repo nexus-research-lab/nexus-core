@@ -40,6 +40,7 @@ interface RoomWorkspaceLayoutProps {
   active_workspace_path: string | null;
   active_surface_tab: RoomSurfaceTabKey;
   initial_draft?: string | null;
+  on_initial_draft_consumed?: () => void;
   is_editor_open: boolean;
   editor_width_percent: number;
   is_resizing_editor: boolean;
@@ -95,6 +96,7 @@ function RoomWorkspaceLayoutInner({
   active_workspace_path,
   active_surface_tab,
   initial_draft = null,
+  on_initial_draft_consumed,
   is_editor_open,
   editor_width_percent,
   is_resizing_editor,
@@ -176,6 +178,7 @@ function RoomWorkspaceLayoutInner({
                     <DmChatPanel
                       current_agent_name={current_agent.name}
                       initial_draft={initial_draft}
+                      on_initial_draft_consumed={on_initial_draft_consumed}
                       on_conversation_snapshot_change={on_conversation_snapshot_change}
                       on_loading_change={on_loading_change}
                       on_open_workspace_file={handle_open_workspace_file}
@@ -190,6 +193,7 @@ function RoomWorkspaceLayoutInner({
                       conversation_id={conversation_id}
                       current_agent_name={current_agent.name}
                       initial_draft={initial_draft}
+                      on_initial_draft_consumed={on_initial_draft_consumed}
                       on_conversation_snapshot_change={on_conversation_snapshot_change}
                       on_create_conversation={on_create_conversation}
                       on_loading_change={on_loading_change}

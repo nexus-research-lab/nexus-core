@@ -5,7 +5,6 @@
  */
 
 export { useConversationStore } from './conversation';
-export { useAppConversationStore } from './app-conversation';
 export { useAgentStore } from './agent';
 export { useWorkspaceLiveStore } from './workspace-live';
 export { useWorkspaceFilesStore } from './workspace-files';

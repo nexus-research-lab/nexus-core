@@ -434,14 +434,32 @@ class SessionRepository:
             logger.error(f"❌ 获取会话列表失败: {exc}", exc_info=True)
             return []
 
-    async def delete_session(self, session_key: str) -> bool:
+    async def delete_session(
+        self,
+        session_key: str,
+        agent_id: Optional[str] = None,
+    ) -> bool:
         """删除会话及其所有消息。"""
         try:
-            meta_path = self._find_session_meta_path(session_key)
-            if not meta_path:
+            workspace_path = (
+                await self._resolve_workspace_path(resolve_agent_id(agent_id))
+                if agent_id
+                else None
+            )
+            meta_path = self._find_session_meta_path(session_key, workspace_path=workspace_path)
+            session_dir = (
+                meta_path.parent
+                if meta_path
+                else (
+                    self._paths.get_session_dir(workspace_path, session_key)
+                    if workspace_path is not None
+                    else None
+                )
+            )
+            if not session_dir or not session_dir.exists():
                 return False
             with self._lock:
-                shutil.rmtree(meta_path.parent, ignore_errors=True)
+                shutil.rmtree(session_dir, ignore_errors=True)
             logger.info(f"🗑️ 删除会话: key={session_key}")
             return True
         except Exception as exc:

@@ -19,6 +19,7 @@ interface ContentRendererProps {
   content: string | ContentBlock[];
   is_streaming?: boolean;
   streaming_block_indexes?: Set<number>;
+  fallback_activity_state?: MessageActivityState | null;
   pending_permissions_by_tool_use_id?: ReadonlyMap<string, PendingPermission>;
   on_permission_response?: (payload: PermissionDecisionPayload) => boolean;
   on_open_workspace_file?: (path: string) => void;
@@ -30,6 +31,7 @@ export function ContentRenderer(
     content,
     is_streaming = false,
     streaming_block_indexes,
+    fallback_activity_state,
     pending_permissions_by_tool_use_id,
     on_permission_response,
     on_open_workspace_file,
@@ -73,16 +75,15 @@ export function ContentRenderer(
       }
   });
 
-  // 中文注释：只有真实的 streaming block 才保留文本尾光标；
-  // 工具阶段、权限阶段等没有活跃文本时，统一改成块尾状态行。
-  const shouldRenderActivityStatus = (
-    is_streaming && (!streaming_block_indexes || streaming_block_indexes.size === 0)
-  );
-  const activityState = shouldRenderActivityStatus
+  // 中文注释：只要当前轮次仍在进行，就持续在块尾渲染一个状态行；
+  // 不再要求“没有 streaming block”才显示，否则纯文本回复阶段会出现状态空窗。
+  const activityState = is_streaming
     ? resolveActivityState({
       content,
+      streaming_block_indexes,
       tool_use_map: toolUseMap,
       rendered_indices: renderedIndices,
+      fallback_activity_state,
       pending_permissions_by_tool_use_id,
       hidden_tool_names,
     })
@@ -102,10 +103,11 @@ export function ContentRenderer(
           return (
             <div key={index}>
               <ContentRenderer
-                content={block.text}
-                is_streaming={blockIsStreaming}
-                on_open_workspace_file={on_open_workspace_file}
-              />
+                        content={block.text}
+                        is_streaming={blockIsStreaming}
+                        fallback_activity_state={blockIsStreaming ? "replying" : null}
+                        on_open_workspace_file={on_open_workspace_file}
+                      />
             </div>
           );
         }
@@ -247,18 +249,22 @@ export function ContentRenderer(
 
 function resolveActivityState({
   content,
+  streaming_block_indexes,
   tool_use_map,
   rendered_indices,
+  fallback_activity_state,
   pending_permissions_by_tool_use_id,
   hidden_tool_names,
 }: {
   content: ContentBlock[];
+  streaming_block_indexes?: ReadonlySet<number>;
   tool_use_map: ReadonlyMap<string, {
     use: ToolUseContent;
     result?: ToolResultContent;
     index: number;
   }>;
   rendered_indices: ReadonlySet<number>;
+  fallback_activity_state?: MessageActivityState | null;
   pending_permissions_by_tool_use_id?: ReadonlyMap<string, PendingPermission>;
   hidden_tool_names: string[];
 }): MessageActivityState {
@@ -275,6 +281,11 @@ function resolveActivityState({
       }
       return 'waiting_permission';
     }
+
+    if (latest_pending_tool.name === 'AskUserQuestion') {
+      return fallback_activity_state ?? 'thinking';
+    }
+
     return mapToolNameToActivityState(latest_pending_tool.name);
   }
 
@@ -284,7 +295,7 @@ function resolveActivityState({
     hidden_tool_names,
   );
   if (!latest_visible_block) {
-    return 'thinking';
+    return fallback_activity_state ?? 'thinking';
   }
 
   if (latest_visible_block.type === 'task_progress') {
@@ -293,12 +304,22 @@ function resolveActivityState({
 
   if (latest_visible_block.type === 'tool_use') {
     if (latest_visible_block.name === 'AskUserQuestion') {
-      return 'waiting_input';
+      return pending_permissions_by_tool_use_id?.has(latest_visible_block.id)
+        ? 'waiting_input'
+        : (fallback_activity_state ?? 'thinking');
     }
     return mapToolNameToActivityState(latest_visible_block.name);
   }
 
-  return 'thinking';
+  if (latest_visible_block.type === 'thinking') {
+    return 'thinking';
+  }
+
+  if (latest_visible_block.type === 'text') {
+    return hasStreamingTextBlock(content, streaming_block_indexes) ? 'replying' : (fallback_activity_state ?? 'replying');
+  }
+
+  return fallback_activity_state ?? 'thinking';
 }
 
 function findLatestPendingToolUse(
@@ -374,13 +395,27 @@ function mapToolNameToActivityState(tool_name?: string | null): MessageActivityS
     'WebFetch',
   ]);
 
-  if (tool_name === 'AskUserQuestion') {
-    return 'waiting_input';
-  }
-
   if (browsing_tools.has(tool_name)) {
     return 'browsing';
   }
 
   return 'executing';
+}
+
+function hasStreamingTextBlock(
+  content: ContentBlock[],
+  streaming_block_indexes?: ReadonlySet<number>,
+): boolean {
+  if (!streaming_block_indexes?.size) {
+    return false;
+  }
+
+  for (const index of streaming_block_indexes) {
+    const block = content[index];
+    if (block?.type === 'text' && block.text.trim()) {
+      return true;
+    }
+  }
+
+  return false;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { Bot, Check, Loader2, Square, AlertTriangle } from "lucide-react";
+import { Bot, Check, Square, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AgentRoundStatus } from "@/features/conversation-shared/utils";
 import { MessageLoadingDots } from "./message-primitives";
@@ -19,9 +19,9 @@ interface AgentCardProps {
 function StatusIndicator({ status }: { status: AgentRoundStatus }) {
   switch (status) {
     case "pending":
-      return <MessageLoadingDots size="sm" />;
+      return <MessageLoadingDots size="sm" name="braille" />;
     case "streaming":
-      return <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-500" />;
+      return <MessageLoadingDots size="sm" name="dna" class_name="text-blue-500" />;
     case "done":
       return <Check className="h-3.5 w-3.5 text-emerald-500" />;
     case "error":

@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef } from "react";
+import { useMemo } from "react";
 import { ArrowLeft, Bot, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useFollowScroll } from "@/hooks/use-follow-scroll";
 import { Message } from "@/types/message";
 import { PendingPermission, PermissionDecisionPayload } from "@/types/permission";
 import { MessageItem } from "@/features/conversation-shared/message";
@@ -40,8 +41,25 @@ export function ThreadDetailPanel({
   is_loading = false,
   layout = "desktop",
 }: ThreadDetailPanelProps) {
-  const scroll_ref = useRef<HTMLDivElement>(null);
   const is_mobile = layout === "mobile";
+  const thread_session_key = useMemo(
+    () => `${round_id}:${agent_id}`,
+    [agent_id, round_id],
+  );
+  const {
+    scroll_ref,
+    feed_ref,
+    bottom_anchor_ref,
+    on_scroll,
+    on_touch_end,
+    on_touch_move,
+    on_touch_start,
+    on_wheel,
+  } = useFollowScroll({
+    // 中文注释：Thread 和 DM 实时态一样，需要在过程消息、权限确认和 loading 变化时持续跟随到底部。
+    trigger_deps: [messages, is_loading, pending_permissions] as const,
+    session_key: thread_session_key,
+  });
 
   return (
     <div className={cn(
@@ -102,22 +120,30 @@ export function ThreadDetailPanel({
       <div
         ref={scroll_ref}
         className="soft-scrollbar min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-4 py-3"
+        onScroll={on_scroll}
+        onTouchEnd={on_touch_end}
+        onTouchMove={on_touch_move}
+        onTouchStart={on_touch_start}
+        onWheel={on_wheel}
       >
-        <MessageItem
-          compact
-          current_agent_name={agent_name}
-          round_id={round_id}
-          messages={messages}
-          pending_permissions={pending_permissions}
-          on_permission_response={on_permission_response}
-          assistant_content_mode="room_thread"
-          is_last_round
-          is_loading={is_loading}
-          default_process_expanded
-          on_open_workspace_file={on_open_workspace_file}
-          on_stop_message={on_stop_message}
-          class_name="max-w-full overflow-x-hidden"
-        />
+        <div ref={feed_ref}>
+          <MessageItem
+            compact
+            current_agent_name={agent_name}
+            round_id={round_id}
+            messages={messages}
+            pending_permissions={pending_permissions}
+            on_permission_response={on_permission_response}
+            assistant_content_mode="room_thread"
+            is_last_round
+            is_loading={is_loading}
+            default_process_expanded
+            on_open_workspace_file={on_open_workspace_file}
+            on_stop_message={on_stop_message}
+            class_name="max-w-full overflow-x-hidden"
+          />
+          <div ref={bottom_anchor_ref} className="h-px w-full" />
+        </div>
       </div>
     </div>
   );

@@ -9,8 +9,7 @@ import { useFollowScroll } from "@/hooks/use-follow-scroll";
 import { buildRoomSharedSessionKey } from "@/lib/session-key";
 import { AgentConversationIdentity } from "@/types/agent-conversation";
 import { RoomConversationSnapshotPayload } from "@/types/conversation";
-import { AssistantMessage, Message } from "@/types/message";
-import { PendingPermission, PermissionDecisionPayload } from "@/types/permission";
+import { PendingPermission } from "@/types/permission";
 import { TodoItem } from "@/types/todo";
 import { Agent } from "@/types/agent";
 
@@ -27,7 +26,7 @@ import {
   isAgentRoundActive,
 } from "@/features/conversation-shared/utils";
 import { RoomConversationFeed } from "./room-conversation-feed";
-import { useRoomThread, useThreadPanelData } from "./thread/room-thread-state";
+import { useRoomThread, useSetThreadPanelData } from "./thread/room-thread-state";
 import { RoomComposerPanel } from "./room-composer-panel";
 import { RoomConversationEmptyState } from "./room-conversation-empty-state";
 
@@ -40,6 +39,7 @@ export interface RoomChatPanelProps {
   room_members: Agent[];
   layout?: "desktop" | "mobile";
   initial_draft?: string | null;
+  on_initial_draft_consumed?: () => void;
   on_open_workspace_file?: (path: string) => void;
   on_todos_change?: (todos: TodoItem[]) => void;
   on_loading_change?: (is_loading: boolean) => void;
@@ -48,86 +48,30 @@ export interface RoomChatPanelProps {
   on_room_event?: (event_type: string, data: import("@/types/agent-conversation").RoomEventPayload) => void;
 }
 
-function build_permission_signature(tool_name: string, tool_input: Record<string, unknown>): string {
-  const sorted_entries = Object.entries(tool_input ?? {}).sort(([left], [right]) => left.localeCompare(right));
-  return `${tool_name}:${JSON.stringify(sorted_entries)}`;
-}
-
 function get_thread_pending_permissions(
   round_id: string,
   agent_id: string,
-  thread_messages: Message[],
   pending_permissions: PendingPermission[],
 ): PendingPermission[] {
   if (pending_permissions.length === 0) {
     return [];
   }
 
-  const direct_permissions = pending_permissions.filter((permission) => (
-    permission.agent_id === agent_id &&
-    permission.caused_by &&
-    getRoomBaseRoundId(permission.caused_by, permission.agent_id) === round_id
-  ));
-  if (direct_permissions.length > 0) {
-    return direct_permissions;
-  }
-  if (thread_messages.length === 0) {
-    return [];
-  }
-
-  const resolved_tool_use_ids = new Set<string>();
-  const unresolved_tool_signatures: string[] = [];
-
-  for (const message of thread_messages) {
-    if (message.role !== "assistant") {
-      continue;
+  return pending_permissions.filter((permission) => {
+    if (permission.agent_id !== agent_id) {
+      return false;
     }
-
-    for (const block of (message as AssistantMessage).content) {
-      if (block.type === "tool_result") {
-        resolved_tool_use_ids.add(block.tool_use_id);
-      }
+    if (!permission.caused_by) {
+      return false;
     }
-  }
-
-  for (const message of thread_messages) {
-    if (message.role !== "assistant") {
-      continue;
+    if (getRoomBaseRoundId(permission.caused_by, permission.agent_id) !== round_id) {
+      return false;
     }
-
-    for (const block of (message as AssistantMessage).content) {
-      if (block.type !== "tool_use" || resolved_tool_use_ids.has(block.id)) {
-        continue;
-      }
-
-      unresolved_tool_signatures.push(
-        build_permission_signature(block.name, block.input as Record<string, unknown>),
-      );
-    }
-  }
-
-  if (unresolved_tool_signatures.length === 0) {
-    return [];
-  }
-
-  const permission_queue_map = new Map<string, PendingPermission[]>();
-  for (const permission of pending_permissions) {
-    const signature = build_permission_signature(permission.tool_name, permission.tool_input);
-    const queue = permission_queue_map.get(signature) ?? [];
-    queue.push(permission);
-    permission_queue_map.set(signature, queue);
-  }
-
-  const matched_permissions: PendingPermission[] = [];
-  for (const signature of unresolved_tool_signatures) {
-    const queue = permission_queue_map.get(signature);
-    const permission = queue?.shift();
-    if (permission) {
-      matched_permissions.push(permission);
-    }
-  }
-
-  return matched_permissions;
+    // 中文注释：Room 的权限请求在很多场景下绑定的是占位槽位 msg_id，
+    // 不是 assistant 真正的 message_id。Thread 已经按 round_id + agent_id 收口，
+    // 这里不能再按 message_id 二次过滤，否则问答/权限会被错误吞掉。
+    return true;
+  });
 }
 
 /**
@@ -142,6 +86,7 @@ export function RoomChatPanel({
   room_members,
   layout = "desktop",
   initial_draft = null,
+  on_initial_draft_consumed,
   on_open_workspace_file,
   on_todos_change,
   on_loading_change,
@@ -151,8 +96,9 @@ export function RoomChatPanel({
 }: RoomChatPanelProps) {
   const is_mobile_layout = layout === "mobile";
   const { active_thread, close_thread } = useRoomThread();
-  const { set_thread_panel_data } = useThreadPanelData();
+  const { set_thread_panel_data } = useSetThreadPanelData();
   const thread_loading_ref = useRef(false);
+  const consumed_initial_draft_ref = useRef<string | null>(null);
 
   const session_key = conversation_id ? buildRoomSharedSessionKey(conversation_id) : null;
   const session_identity = useMemo<AgentConversationIdentity | null>(() => {
@@ -274,6 +220,29 @@ export function RoomChatPanel({
 
   const handle_stop_message = useCallback((msg_id: string) => stop_generation(msg_id), [stop_generation]);
 
+  useEffect(() => {
+    const normalized_draft = initial_draft?.trim() ?? "";
+    if (!session_key || !normalized_draft || is_loading) {
+      return;
+    }
+
+    const initial_draft_signature = `${session_key}:${normalized_draft}`;
+    if (consumed_initial_draft_ref.current === initial_draft_signature) {
+      return;
+    }
+
+    consumed_initial_draft_ref.current = initial_draft_signature;
+    scroll_to_bottom("auto");
+    void send_message(normalized_draft)
+      .then(() => {
+        on_initial_draft_consumed?.();
+      })
+      .catch((error) => {
+        consumed_initial_draft_ref.current = null;
+        console.error("Failed to auto send initial room prompt:", error);
+      });
+  }, [initial_draft, is_loading, on_initial_draft_consumed, scroll_to_bottom, send_message, session_key]);
+
   // Thread 面板数据：推送到 Context，由 Layout 读取渲染 inspector
   const thread_round_messages = useMemo(
     () => active_thread ? message_groups.get(active_thread.round_id) ?? [] : [],
@@ -308,11 +277,10 @@ export function RoomChatPanel({
       ? get_thread_pending_permissions(
         active_thread.round_id,
         active_thread.agent_id,
-        thread_messages,
         pending_permission_groups.get(active_thread.round_id) ?? [],
       )
       : [],
-    [active_thread, pending_permission_groups, thread_messages],
+    [active_thread, pending_permission_groups],
   );
   const thread_panel_data = useMemo(() => {
     if (!active_thread) {
@@ -435,7 +403,6 @@ export function RoomChatPanel({
 
           <RoomComposerPanel
             compact={is_mobile_layout}
-            initial_draft={initial_draft}
             mention_unavailable_agent_ids={mention_unavailable_agent_ids}
             on_send_message={handle_send_message}
             room_members={room_members}

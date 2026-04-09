@@ -5,9 +5,10 @@ import { useWebSocket } from '@/lib/websocket';
 import { useWorkspaceLiveStore } from '@/store/workspace-live';
 import { EventMessage, Message, StreamMessage } from '@/types';
 import {
+  collectUnresolvedToolUseCandidates,
+  matchPendingPermissionsToToolUses,
   PendingPermission,
   PermissionDecisionPayload,
-  buildPermissionSignature,
 } from '@/types/permission';
 import {
   AgentConversationActionContext,
@@ -78,34 +79,16 @@ function filterPendingPermissionsFromSnapshot(
   }
 
   const completed_round_ids = collectCompletedRoundIds(messages);
-  const unresolved_permission_queues = new Map<string, string[]>();
   const loaded_assistant_message_ids = new Set<string>();
+  const unresolved_tool_use_candidates = collectUnresolvedToolUseCandidates(messages);
+  const permission_match_result = matchPendingPermissionsToToolUses(
+    current_permissions,
+    unresolved_tool_use_candidates,
+  );
 
   for (const message of messages) {
-    if (message.role !== 'assistant') {
-      continue;
-    }
-    loaded_assistant_message_ids.add(message.message_id);
-
-    const resolved_tool_use_ids = new Set<string>();
-    for (const block of message.content) {
-      if (block.type === 'tool_result') {
-        resolved_tool_use_ids.add(block.tool_use_id);
-      }
-    }
-
-    for (const block of message.content) {
-      if (block.type !== 'tool_use' || resolved_tool_use_ids.has(block.id)) {
-        continue;
-      }
-
-      const signature = buildPermissionSignature(
-        block.name,
-        block.input as Record<string, unknown>,
-      );
-      const queue = unresolved_permission_queues.get(signature) ?? [];
-      queue.push(message.message_id);
-      unresolved_permission_queues.set(signature, queue);
+    if (message.role === 'assistant') {
+      loaded_assistant_message_ids.add(message.message_id);
     }
   }
 
@@ -114,27 +97,17 @@ function filterPendingPermissionsFromSnapshot(
       return false;
     }
 
-    const signature = buildPermissionSignature(
-      permission.tool_name,
-      permission.tool_input,
-    );
-    const queue = unresolved_permission_queues.get(signature);
-    if (permission.message_id) {
-      const matched_index = queue?.indexOf(permission.message_id) ?? -1;
-      if (matched_index < 0) {
-        return !loaded_assistant_message_ids.has(permission.message_id);
-      }
-      queue?.splice(matched_index, 1);
+    if (permission_match_result.matched_request_ids.has(permission.request_id)) {
       return true;
     }
 
-    if (!queue?.length) {
-      // 中文注释：message_id 缺失时，快照无法证明权限已经结束，
-      // 这里优先保留现有卡片，等待后续 replay / result 再收口。
+    if (!permission.message_id) {
+      // 中文注释：缺少 message_id 的旧权限事件无法做唯一绑定，
+      // 快照阶段只能保留，等待明确的 result / reload 收口。
       return true;
     }
-    queue.shift();
-    return true;
+
+    return !loaded_assistant_message_ids.has(permission.message_id);
   });
 }
 
@@ -163,6 +136,7 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
   const [messages, set_messages] = useState<Message[]>([]);
   const [error, set_error] = useState<string | null>(null);
   const [session_key, set_session_key] = useState<string | null>(identity?.session_key ?? null);
+  const [is_session_loading, set_is_session_loading] = useState(false);
   const [pending_agent_slots, set_pending_agent_slots_state] = useState<RoomPendingAgentSlotState[]>([]);
   const [pending_permissions, set_pending_permissions_state] = useState<UseAgentConversationReturn['pending_permissions']>([]);
   const [agent_thinking, set_agent_thinking] = useState<AgentThinkingPayload | null>(null);
@@ -178,6 +152,7 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
   // so they are not lost when the user switches conversations.
   const bg_message_cache_ref = useRef<Map<string, Message[]>>(new Map());
   const is_loading = runtime_snapshot.is_loading;
+  const runtime_phase = runtime_snapshot.phase;
 
   // ── Stream batching ──────────────────────────────────────────────────────
   // WebSocket fires on every token (~50-100/sec during streaming).
@@ -278,6 +253,7 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
     load_request_id_ref,
     identity,
     set_session_key,
+    set_is_session_loading,
     set_messages,
     set_pending_agent_slots,
     set_pending_permissions,
@@ -291,6 +267,7 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
     load_request_id_ref,
     identity,
     set_session_key,
+    set_is_session_loading,
     set_messages,
     set_pending_agent_slots,
     set_pending_permissions,
@@ -437,9 +414,14 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
   }, [apply_runtime_transition]);
 
   const track_result_message = useCallback((message: import('@/types').ResultMessage) => {
-    clear_round_tracking(message.round_id);
-    set_pending_agent_slots((prev) => prev.filter((slot) => slot.round_id !== message.round_id));
-  }, [clear_round_tracking, set_pending_agent_slots]);
+    apply_runtime_transition((machine) => {
+      machine.track_result_message(message);
+    });
+    set_pending_agent_slots((prev) => prev.filter((slot) => {
+      const base_round_id = slot.round_id.split(':', 1)[0];
+      return base_round_id !== message.round_id;
+    }));
+  }, [apply_runtime_transition, set_pending_agent_slots]);
 
   const handle_websocket_message = useCallback((backend_message: unknown) => {
     const event = backend_message as EventMessage;
@@ -762,6 +744,7 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
       current_key === normalized_key ? current_key : normalized_key
     ));
     if (!normalized_key) {
+      set_is_session_loading(false);
       reset_runtime_machine();
       set_pending_agent_slots((current_slots) => (
         current_slots.length ? [] : current_slots
@@ -771,7 +754,7 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
       ));
       set_agent_thinking(null);
     }
-  }, [reset_runtime_machine, set_pending_agent_slots, set_pending_permissions]);
+  }, [reset_runtime_machine, set_is_session_loading, set_pending_agent_slots, set_pending_permissions]);
 
   const reset_session = useCallback(() => {
     resetAgentSession(lifecycle_context);
@@ -785,6 +768,8 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
     session_key,
     ws_state,
     is_loading,
+    is_session_loading,
+    runtime_phase,
     pending_agent_slots,
     pending_permissions,
     agent_thinking,

@@ -34,6 +34,7 @@ export function startAgentSession(context: AgentConversationLifecycleContext): v
   context.load_request_id_ref.current += 1;
   context.active_session_key_ref.current = new_session_key;
   context.set_session_key(new_session_key);
+  context.set_is_session_loading(false);
   resetSessionView(context);
 }
 
@@ -52,6 +53,9 @@ export async function loadAgentSession(
   context.load_request_id_ref.current = request_id;
   context.active_session_key_ref.current = session_key;
   context.set_session_key(session_key);
+  if (!is_reload) {
+    context.set_is_session_loading(true);
+  }
 
   // 中文注释：同 session 重拉只刷新消息快照，不要顺手清空运行时状态，
   // 否则执行中的轮次会在前端闪断成“可输入”后再恢复。
@@ -96,6 +100,14 @@ export async function loadAgentSession(
     }
     console.error('[loadSession] 加载 session 失败:', err);
     context.set_error(err instanceof Error ? err.message : 'Failed to load session');
+  } finally {
+    if (
+      !is_reload &&
+      context.load_request_id_ref.current === request_id &&
+      context.active_session_key_ref.current === session_key
+    ) {
+      context.set_is_session_loading(false);
+    }
   }
 }
 
@@ -106,6 +118,7 @@ export function clearAgentSession(context: AgentConversationLifecycleContext): v
   context.load_request_id_ref.current += 1;
   context.active_session_key_ref.current = null;
   context.set_session_key(null);
+  context.set_is_session_loading(false);
   resetSessionView(context);
 }
 

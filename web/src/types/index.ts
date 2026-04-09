@@ -15,7 +15,6 @@ export * from './message';
 
 // 对话相关类型
 export * from './conversation';
-export * from './app-conversation';
 
 // Agent 对话交互类型
 export * from './agent-conversation';

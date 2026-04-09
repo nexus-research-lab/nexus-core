@@ -7,6 +7,7 @@
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
  */
 
+import { Message } from './message';
 import { UserQuestionAnswer } from './ask-user-question';
 
 export type PermissionRiskLevel = 'low' | 'medium' | 'high';
@@ -61,11 +62,130 @@ export interface PermissionDecisionPayload {
   interrupt?: boolean;
 }
 
-export function buildPermissionSignature(
-  tool_name: string,
-  tool_input: Record<string, unknown>,
-): string {
-  return `${tool_name}:${stableStringify(tool_input)}`;
+export interface PendingPermissionToolUseCandidate {
+  tool_use_id: string;
+  tool_name: string;
+  tool_input: Record<string, unknown>;
+  message_id: string;
+  round_id: string;
+}
+
+export interface PendingPermissionMatchResult {
+  matched_permissions_by_tool_use_id: Map<string, PendingPermission>;
+  matched_request_ids: Set<string>;
+  unmatched_permissions: PendingPermission[];
+}
+
+/**
+ * 从消息快照中提取仍未完成的 tool_use。
+ *
+ * 中文注释：权限请求的唯一上游来源是后端事件里的 `message_id / caused_by`。
+ * 这里先把当前 assistant 消息里仍未被 tool_result 收口的 tool_use 全部抽出来，
+ * 后续所有权限绑定都只允许在这批候选里做精确匹配，不再跨消息猜测。
+ */
+export function collectUnresolvedToolUseCandidates(
+  messages: Message[],
+): PendingPermissionToolUseCandidate[] {
+  const ordered_candidates: PendingPermissionToolUseCandidate[] = [];
+  const candidate_index_by_tool_use_id = new Map<string, number>();
+  const resolved_tool_use_ids = new Set<string>();
+
+  for (const message of messages) {
+    if (message.role !== 'assistant') {
+      continue;
+    }
+
+    for (const block of message.content) {
+      if (block.type === 'tool_use') {
+        const next_candidate: PendingPermissionToolUseCandidate = {
+          tool_use_id: block.id,
+          tool_name: block.name,
+          tool_input: (block.input ?? {}) as Record<string, unknown>,
+          message_id: message.message_id,
+          round_id: message.round_id,
+        };
+        const existing_index = candidate_index_by_tool_use_id.get(block.id);
+        if (existing_index == null) {
+          candidate_index_by_tool_use_id.set(block.id, ordered_candidates.length);
+          ordered_candidates.push(next_candidate);
+        } else {
+          ordered_candidates[existing_index] = next_candidate;
+        }
+        continue;
+      }
+
+      if (block.type === 'tool_result') {
+        resolved_tool_use_ids.add(block.tool_use_id);
+      }
+    }
+  }
+
+  return ordered_candidates.filter((candidate) => !resolved_tool_use_ids.has(candidate.tool_use_id));
+}
+
+/**
+ * 将 pending permission 精确绑定到唯一的 tool_use。
+ *
+ * 中文注释：绑定主键只认 `permission.message_id`。
+ * 同一条 assistant message 内如果有多个 tool_use，再用后端原样携带的工具载荷做精确定位；
+ * 一旦缺少 `message_id` 或载荷不一致，就保留成未匹配卡片，不走跨消息签名兜底。
+ */
+export function matchPendingPermissionsToToolUses(
+  pending_permissions: PendingPermission[],
+  candidates: PendingPermissionToolUseCandidate[],
+): PendingPermissionMatchResult {
+  const matched_permissions_by_tool_use_id = new Map<string, PendingPermission>();
+  const matched_request_ids = new Set<string>();
+  const candidate_queue_by_message_id = new Map<string, PendingPermissionToolUseCandidate[]>();
+
+  for (const candidate of candidates) {
+    const queue = candidate_queue_by_message_id.get(candidate.message_id) ?? [];
+    queue.push(candidate);
+    candidate_queue_by_message_id.set(candidate.message_id, queue);
+  }
+
+  for (const permission of pending_permissions) {
+    const message_id = permission.message_id?.trim();
+    if (!message_id) {
+      continue;
+    }
+
+    const queue = candidate_queue_by_message_id.get(message_id);
+    if (!queue?.length) {
+      continue;
+    }
+
+    const matched_index = queue.findIndex((candidate) => isSameToolInvocation(permission, candidate));
+    if (matched_index < 0) {
+      continue;
+    }
+
+    const [candidate] = queue.splice(matched_index, 1);
+    if (!candidate) {
+      continue;
+    }
+
+    matched_permissions_by_tool_use_id.set(candidate.tool_use_id, permission);
+    matched_request_ids.add(permission.request_id);
+  }
+
+  return {
+    matched_permissions_by_tool_use_id,
+    matched_request_ids,
+    unmatched_permissions: pending_permissions.filter(
+      (permission) => !matched_request_ids.has(permission.request_id),
+    ),
+  };
+}
+
+function isSameToolInvocation(
+  permission: PendingPermission,
+  candidate: PendingPermissionToolUseCandidate,
+): boolean {
+  return (
+    permission.tool_name === candidate.tool_name
+    && stableStringify(permission.tool_input) === stableStringify(candidate.tool_input)
+  );
 }
 
 function stableStringify(value: unknown): string {

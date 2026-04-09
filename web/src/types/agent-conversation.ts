@@ -23,6 +23,12 @@ import { WebSocketMessage, WebSocketState } from '@/types/websocket';
 import { WorkspaceEventPayload } from '@/types/workspace-live';
 
 export type AgentConversationChatType = 'dm' | 'group';
+export type AgentConversationRuntimePhase =
+  | 'idle'
+  | 'queued'
+  | 'running'
+  | 'streaming'
+  | 'awaiting_permission';
 
 export interface AgentConversationIdentity {
   session_key: string | null;
@@ -65,6 +71,8 @@ export interface UseAgentConversationReturn {
   session_key: string | null;
   ws_state: WebSocketState;
   is_loading: boolean;
+  is_session_loading: boolean;
+  runtime_phase: AgentConversationRuntimePhase;
   error: string | null;
   pending_agent_slots: RoomPendingAgentSlotState[];
   send_message: (content: string) => Promise<void>;
@@ -107,6 +115,7 @@ export interface AgentConversationLifecycleContext {
   load_request_id_ref: RefObject<number>;
   identity: AgentConversationIdentity | null;
   set_session_key: Dispatch<SetStateAction<string | null>>;
+  set_is_session_loading: Dispatch<SetStateAction<boolean>>;
   set_messages: Dispatch<SetStateAction<Message[]>>;
   set_pending_agent_slots: Dispatch<SetStateAction<RoomPendingAgentSlotState[]>>;
   set_pending_permissions: Dispatch<SetStateAction<PendingPermission[]>>;

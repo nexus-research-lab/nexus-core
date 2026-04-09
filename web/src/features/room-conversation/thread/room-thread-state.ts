@@ -41,11 +41,15 @@ interface ThreadControlState {
 
 interface ThreadDataState {
   thread_panel_data: ThreadPanelData | null;
+}
+
+interface ThreadDataDispatchState {
   set_thread_panel_data: (data: ThreadPanelData | null) => void;
 }
 
 export const ThreadControlContext = createContext<ThreadControlState | null>(null);
 export const ThreadDataContext = createContext<ThreadDataState | null>(null);
+export const ThreadDataDispatchContext = createContext<ThreadDataDispatchState | null>(null);
 
 export function useRoomThread(): ThreadControlState {
   const context = useContext(ThreadControlContext);
@@ -63,9 +67,18 @@ export function useThreadPanelData(): ThreadDataState {
   return context;
 }
 
+export function useSetThreadPanelData(): ThreadDataDispatchState {
+  const context = useContext(ThreadDataDispatchContext);
+  if (!context) {
+    throw new Error("useSetThreadPanelData must be used within RoomThreadContextProvider");
+  }
+  return context;
+}
+
 export type {
   OpenThreadOptions,
   ThreadControlState,
   ThreadDataState,
+  ThreadDataDispatchState,
   ThreadTarget,
 };

@@ -12,16 +12,23 @@ import { Bot, Check, ChevronDown, ChevronRight, Copy, Edit2, Square, User, Wrenc
 import { cn } from "@/lib/utils";
 import { useAssistantContentMerge } from "@/hooks/use-assistant-content-merge";
 import { useScrollAnchoredState } from "@/hooks/use-scroll-anchored-state";
+import { AgentConversationRuntimePhase } from "@/types/agent-conversation";
 import { AssistantMessage, ContentBlock, Message } from "@/types/message";
 import {
+  collectUnresolvedToolUseCandidates,
+  matchPendingPermissionsToToolUses,
   PendingPermission,
   PermissionDecisionPayload,
-  buildPermissionSignature,
 } from "@/types/permission";
 import { ContentRenderer } from "./content-renderer";
 import { MessageStats } from "./message-stats";
 import { ToolBlock } from "./block/tool-block";
-import { MessageActionButton, MessageActivityStatus, MessageAvatar, MessageShell } from "./message-primitives";
+import {
+  MessageActionButton,
+  MessageActivityStatus,
+  MessageAvatar,
+  MessageShell,
+} from "./message-primitives";
 
 interface OrderedAssistantEntry {
   block: ContentBlock;
@@ -44,6 +51,43 @@ interface ContentProjection {
 
 type AssistantContentMode = "dm_live" | "dm_archived" | "room_thread" | "room_result";
 
+function map_runtime_phase_to_activity_state(
+  phase?: AgentConversationRuntimePhase | null,
+) {
+  switch (phase) {
+    case "awaiting_permission":
+      return "waiting_permission" as const;
+    case "queued":
+    case "running":
+      return "thinking" as const;
+    case "streaming":
+      return "replying" as const;
+    default:
+      return null;
+  }
+}
+
+function find_latest_streaming_block(
+  content: ContentBlock[],
+  streaming_block_indexes: ReadonlySet<number>,
+): ContentBlock | null {
+  const indexes = Array.from(streaming_block_indexes).sort((left, right) => right - left);
+  for (const index of indexes) {
+    const block = content[index];
+    if (!block) {
+      continue;
+    }
+    if (block.type === "text" && !block.text.trim()) {
+      continue;
+    }
+    if (block.type === "thinking" && !block.thinking.trim()) {
+      continue;
+    }
+    return block;
+  }
+  return null;
+}
+
 interface MessageItemProps {
   compact?: boolean;
   current_agent_name?: string | null;
@@ -51,6 +95,7 @@ interface MessageItemProps {
   messages: Message[];
   is_last_round?: boolean;
   is_loading?: boolean;
+  runtime_phase?: AgentConversationRuntimePhase | null;
   pending_permissions?: PendingPermission[];
   on_permission_response?: (payload: PermissionDecisionPayload) => boolean;
   hidden_tool_names?: string[];
@@ -75,6 +120,7 @@ function MessageItemInner(
     messages,
     is_last_round,
     is_loading,
+    runtime_phase,
     pending_permissions = [],
     on_permission_response,
     hidden_tool_names = ['TodoWrite'],
@@ -148,56 +194,70 @@ function MessageItemInner(
     matchedPendingPermissionsByToolUseId,
     unmatchedPendingPermissions,
   } = useMemo(() => {
-    const matched_permissions = new Map<string, PendingPermission>();
     if (pending_permissions.length === 0) {
       return {
-        matchedPendingPermissionsByToolUseId: matched_permissions,
+        matchedPendingPermissionsByToolUseId: new Map<string, PendingPermission>(),
         unmatchedPendingPermissions: [] as PendingPermission[],
       };
     }
 
-    const resolved_tool_use_ids = new Set<string>();
-    for (const block of mergedContent) {
-      if (block.type === "tool_result") {
-        resolved_tool_use_ids.add(block.tool_use_id);
-      }
-    }
+    const unresolved_tool_use_candidates = collectUnresolvedToolUseCandidates(messages);
+    const permission_match_result = matchPendingPermissionsToToolUses(
+      pending_permissions,
+      unresolved_tool_use_candidates,
+    );
+    const matched_permissions_by_tool_use_id = new Map(
+      permission_match_result.matched_permissions_by_tool_use_id,
+    );
 
-    const permission_queue_map = new Map<string, PendingPermission[]>();
-    pending_permissions.forEach((permission) => {
-      const signature = buildPermissionSignature(permission.tool_name, permission.tool_input);
-      const queue = permission_queue_map.get(signature) ?? [];
-      queue.push(permission);
-      permission_queue_map.set(signature, queue);
-    });
+    const unmatched_question_permissions = permission_match_result.unmatched_permissions.filter(
+      (permission) => (
+        permission.interaction_mode === "question"
+        || permission.tool_name === "AskUserQuestion"
+      ),
+    );
+    const unresolved_question_candidates = unresolved_tool_use_candidates.filter(
+      (candidate) => (
+        candidate.tool_name === "AskUserQuestion"
+        && !matched_permissions_by_tool_use_id.has(candidate.tool_use_id)
+      ),
+    );
 
-    const matched_request_ids = new Set<string>();
-    for (let index = mergedContent.length - 1; index >= 0; index -= 1) {
-      const block = mergedContent[index];
-      if (block.type !== "tool_use" || resolved_tool_use_ids.has(block.id)) {
+    // 中文注释：Room 场景下 AskUserQuestion 的 permission_request 绑定的是占位槽位 msg_id，
+    // 不是实际 tool_use 所在的 assistant message_id，精确匹配会天然落空。
+    // 这里只对问答工具做安全回退：优先按 round_id 唯一匹配，否则在“单权限 + 单候选”时绑定。
+    for (const permission of unmatched_question_permissions) {
+      const candidates_by_round = unresolved_question_candidates.filter(
+        (candidate) => !matched_permissions_by_tool_use_id.has(candidate.tool_use_id)
+          && (
+            !permission.caused_by
+            || candidate.round_id === permission.caused_by
+          ),
+      );
+
+      if (candidates_by_round.length === 1) {
+        matched_permissions_by_tool_use_id.set(candidates_by_round[0].tool_use_id, permission);
         continue;
       }
-      const signature = buildPermissionSignature(block.name, block.input);
-      const queue = permission_queue_map.get(signature);
-      const permission = queue?.pop();
-      if (!permission) {
-        continue;
+
+      const remaining_candidates = unresolved_question_candidates.filter(
+        (candidate) => !matched_permissions_by_tool_use_id.has(candidate.tool_use_id),
+      );
+      if (remaining_candidates.length === 1 && unmatched_question_permissions.length === 1) {
+        matched_permissions_by_tool_use_id.set(remaining_candidates[0].tool_use_id, permission);
       }
-      matched_permissions.set(block.id, permission);
-      matched_request_ids.add(permission.request_id);
     }
 
     return {
-      matchedPendingPermissionsByToolUseId: matched_permissions,
-      unmatchedPendingPermissions: pending_permissions.filter(
+      matchedPendingPermissionsByToolUseId: matched_permissions_by_tool_use_id,
+      unmatchedPendingPermissions: permission_match_result.unmatched_permissions.filter(
         (permission) => (
-          !matched_request_ids.has(permission.request_id)
-          && permission.interaction_mode !== "question"
+          permission.interaction_mode !== "question"
           && permission.tool_name !== "AskUserQuestion"
         ),
       ),
     };
-  }, [mergedContent, pending_permissions]);
+  }, [messages, pending_permissions]);
 
   const hasInlinePendingTool = matchedPendingPermissionsByToolUseId.size > 0;
 
@@ -535,7 +595,63 @@ function MessageItemInner(
     return summaryParts.length > 0 ? summaryParts.join(" · ") : "查看过程";
   }, [pending_permissions.length, processProjection.content]);
 
+  const liveActivityState = useMemo(() => {
+    if (!is_last_round || !is_loading) {
+      return null;
+    }
+
+    if (pending_permissions.length > 0) {
+      return pending_permissions.some((permission) => (
+        permission.interaction_mode === "question" || permission.tool_name === "AskUserQuestion"
+      ))
+        ? "waiting_input"
+        : "waiting_permission";
+    }
+
+    const latest_streaming_block = find_latest_streaming_block(
+      mergedContent,
+      streamingBlockIndexes,
+    );
+    if (latest_streaming_block?.type === "thinking") {
+      return "thinking";
+    }
+    if (latest_streaming_block?.type === "text") {
+      return "replying";
+    }
+
+    const has_visible_reply_text = mergedContent.some((block) => (
+      block.type === "text" && Boolean(block.text.trim())
+    ));
+    if (has_visible_reply_text && (stream_status === "streaming" || assistantMessages.length > 0)) {
+      return "replying";
+    }
+
+    if (stream_status === "pending") {
+      return "thinking";
+    }
+
+    return map_runtime_phase_to_activity_state(runtime_phase)
+      ?? (assistantMessages.length > 0 ? "replying" : "thinking");
+  }, [
+    assistantMessages.length,
+    is_last_round,
+    is_loading,
+    mergedContent,
+    pending_permissions,
+    runtime_phase,
+    stream_status,
+    streamingBlockIndexes,
+  ]);
+
   const shouldHideAssistantContent = useMemo(() => {
+    if (liveActivityState) {
+      return false;
+    }
+
+    if (unmatchedPendingPermissions.length > 0) {
+      return false;
+    }
+
     if (
       stream_status === 'pending'
       || stream_status === 'streaming'
@@ -561,15 +677,24 @@ function MessageItemInner(
   }, [
     directOrderedProjection.content.length,
     finalAssistantContent,
+    liveActivityState,
     processProjection.content.length,
     resultMessage,
     stream_status,
+    unmatchedPendingPermissions.length,
   ]);
 
   const shouldRenderAssistantText = Boolean(
     typeof finalAssistantContent === "string"
       ? finalAssistantContent.trim()
       : finalAssistantContent?.length,
+  );
+
+  const shouldRenderStandaloneActivityStatus = Boolean(
+    liveActivityState
+    && !shouldRenderDirectAssistantContent
+    && !shouldRenderProcessCallchain
+    && !shouldRenderAssistantText
   );
 
   useEffect(() => {
@@ -852,11 +977,9 @@ function MessageItemInner(
                   )}
                   style={showCursor ? { minHeight: streamingMinHeight.current } : undefined}
                 >
-
-                  {/* Room 并发：pending 占位动画 */}
-                  {stream_status === 'pending' && mergedContent.length === 0 && (
-                    <MessageActivityStatus class_name="py-1" state="thinking" />
-                  )}
+                  {shouldRenderStandaloneActivityStatus ? (
+                    <MessageActivityStatus class_name="py-1" state={liveActivityState!} />
+                  ) : null}
 
                   {/* Room 并发：已取消标记 */}
                   {stream_status === 'cancelled' && mergedContent.length === 0 && (
@@ -873,6 +996,7 @@ function MessageItemInner(
                         content={directOrderedProjection.content}
                         is_streaming={showCursor}
                         streaming_block_indexes={directOrderedProjection.streaming_indexes}
+                        fallback_activity_state={liveActivityState}
                         pending_permissions_by_tool_use_id={matchedPendingPermissionsByToolUseId}
                         on_permission_response={on_permission_response}
                         on_open_workspace_file={on_open_workspace_file}
@@ -904,6 +1028,7 @@ function MessageItemInner(
                             content={processProjection.content}
                             is_streaming={showCursor}
                             streaming_block_indexes={processProjection.streaming_indexes}
+                            fallback_activity_state={liveActivityState}
                             pending_permissions_by_tool_use_id={matchedPendingPermissionsByToolUseId}
                             on_permission_response={on_permission_response}
                             on_open_workspace_file={on_open_workspace_file}
@@ -922,8 +1047,15 @@ function MessageItemInner(
                         content={finalAssistantContent ?? []}
                         is_streaming={finalAssistantIsStreaming}
                         streaming_block_indexes={finalAssistantStreamingIndexes}
+                        fallback_activity_state={liveActivityState}
                         on_open_workspace_file={on_open_workspace_file}
                       />
+                    </div>
+                  ) : null}
+
+                  {!shouldRenderDirectAssistantContent && !shouldRenderProcessCallchain && pendingPermissionBlock ? (
+                    <div className="pt-2">
+                      {pendingPermissionBlock}
                     </div>
                   ) : null}
                 </div>
@@ -953,6 +1085,7 @@ export const MessageItem = memo(MessageItemInner, (prev, next) => {
   if (prev.round_id !== next.round_id) return false;
   if (prev.is_last_round !== next.is_last_round) return false;
   if (prev.is_loading !== next.is_loading) return false;
+  if (prev.runtime_phase !== next.runtime_phase) return false;
   if (prev.compact !== next.compact) return false;
   if (prev.current_agent_name !== next.current_agent_name) return false;
   if (prev.pending_permissions !== next.pending_permissions) return false;

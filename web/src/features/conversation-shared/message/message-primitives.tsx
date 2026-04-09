@@ -9,9 +9,11 @@
 
 "use client";
 
-import { ButtonHTMLAttributes, ReactNode } from "react";
-import { Brain, Globe, Loader2, MessageCircleMore, ShieldAlert } from "lucide-react";
+import { ButtonHTMLAttributes, ReactNode, useEffect, useRef, useState } from "react";
+import { Brain, Globe, MessageCircleMore, MessageSquareText, ShieldAlert, Wrench } from "lucide-react";
+import spinners, { type BrailleSpinnerName } from "unicode-animations";
 
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { cn } from "@/lib/utils";
 
 type MessageAvatarSize = "full" | "compact";
@@ -19,6 +21,7 @@ type MessageActionTone = "default" | "success" | "danger";
 type MessageLoadingDotsSize = "sm" | "md";
 export type MessageActivityState =
   | "thinking"
+  | "replying"
   | "browsing"
   | "executing"
   | "waiting_permission"
@@ -35,13 +38,16 @@ const ACTION_TONE_CLASS_MAP: Record<MessageActionTone, string> = {
   danger: "hover:bg-rose-500/10 hover:text-rose-500",
 };
 
-const DOT_SIZE_CLASS_MAP: Record<MessageLoadingDotsSize, string> = {
-  sm: "h-1 w-1",
-  md: "h-1.5 w-1.5",
-};
+function getFirstVisibleSpinnerFrameIndex(name: BrailleSpinnerName): number {
+  const first_visible_frame_index = spinners[name].frames.findIndex(
+    (frame) => frame.replace(/⠀/g, "").length > 0,
+  );
+  return first_visible_frame_index >= 0 ? first_visible_frame_index : 0;
+}
 
 const ACTIVITY_LABEL_MAP: Record<MessageActivityState, string> = {
   thinking: "正在思考",
+  replying: "正在回复",
   browsing: "正在浏览",
   executing: "正在执行",
   waiting_permission: "等待确认",
@@ -49,11 +55,21 @@ const ACTIVITY_LABEL_MAP: Record<MessageActivityState, string> = {
 };
 
 const ACTIVITY_TONE_CLASS_MAP: Record<MessageActivityState, string> = {
-  thinking: "border-sky-200/70 bg-sky-50/80 text-sky-600",
-  browsing: "border-cyan-200/70 bg-cyan-50/80 text-cyan-600",
-  executing: "border-indigo-200/70 bg-indigo-50/80 text-indigo-600",
-  waiting_permission: "border-amber-200/80 bg-amber-50/90 text-amber-700",
-  waiting_input: "border-violet-200/75 bg-violet-50/85 text-violet-600",
+  thinking: "text-[color:var(--text-muted)]",
+  replying: "text-[color:var(--text-default)]",
+  browsing: "text-cyan-600",
+  executing: "text-indigo-600",
+  waiting_permission: "text-amber-700",
+  waiting_input: "text-violet-600",
+};
+
+const ACTIVITY_SPINNER_MAP: Record<MessageActivityState, BrailleSpinnerName> = {
+  thinking: "braille",
+  replying: "dna",
+  browsing: "braille",
+  executing: "dna",
+  waiting_permission: "braille",
+  waiting_input: "dna",
 };
 
 export function MessageAvatar({
@@ -105,20 +121,57 @@ export function MessageActionButton({
 export function MessageLoadingDots({
   size = "md",
   class_name,
+  name = "braille",
 }: {
   size?: MessageLoadingDotsSize;
   class_name?: string;
+  name?: BrailleSpinnerName;
 }) {
-  const dot_class_name = cn(
-    "rounded-full bg-[color:var(--icon-muted)] animate-bounce",
-    DOT_SIZE_CLASS_MAP[size],
+  const prefers_reduced_motion = usePrefersReducedMotion();
+  const spinner = spinners[name];
+  const first_visible_frame_index = getFirstVisibleSpinnerFrameIndex(name);
+  const [frame_index, setFrameIndex] = useState(first_visible_frame_index);
+
+  useEffect(() => {
+    const current_spinner = spinners[name];
+    setFrameIndex(first_visible_frame_index);
+
+    if (prefers_reduced_motion) {
+      return;
+    }
+
+    // 中文注释：帧动画完全由包内 interval 驱动，切换 spinner 时直接重置，避免旧帧残留。
+    const timer = window.setInterval(() => {
+      setFrameIndex((current_index) => (current_index + 1) % current_spinner.frames.length);
+    }, current_spinner.interval);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [first_visible_frame_index, name, prefers_reduced_motion]);
+
+  const spinner_width = Math.max(
+    ...spinner.frames.map((frame) => Array.from(frame).length),
   );
+  const current_frame = prefers_reduced_motion
+    ? spinner.frames[first_visible_frame_index] ?? spinner.frames[0]
+    : spinner.frames[frame_index] ?? spinner.frames[first_visible_frame_index] ?? spinner.frames[0];
 
   return (
-    <span className={cn("inline-flex items-center gap-1.5", class_name)}>
-      <span className={cn(dot_class_name, "[animation-delay:0ms]")} />
-      <span className={cn(dot_class_name, "[animation-delay:150ms]")} />
-      <span className={cn(dot_class_name, "[animation-delay:300ms]")} />
+    <span
+      aria-hidden="true"
+      className={cn(
+        "inline-grid h-[1em] select-none place-items-center whitespace-pre leading-[1em] text-current align-middle text-[1.4em]",
+        class_name,
+      )}
+      style={{ width: `${spinner_width}ch` }}
+    >
+      <span
+        className="block font-mono leading-none"
+        style={{ transform: "translateY(0.02em)" }}
+      >
+        {current_frame}
+      </span>
     </span>
   );
 }
@@ -126,16 +179,71 @@ export function MessageLoadingDots({
 function MessageActivityIcon({ state }: { state: MessageActivityState }) {
   switch (state) {
     case "thinking":
-      return <Brain className="h-3.5 w-3.5 animate-pulse" />;
+      return <Brain className="h-3.5 w-3.5" />;
+    case "replying":
+      return <MessageSquareText className="h-3.5 w-3.5" />;
     case "browsing":
-      return <Globe className="h-3.5 w-3.5 animate-pulse" />;
+      return <Globe className="h-3.5 w-3.5" />;
     case "executing":
-      return <Loader2 className="h-3.5 w-3.5 animate-spin" />;
+      return <Wrench className="h-3.5 w-3.5" />;
     case "waiting_permission":
-      return <ShieldAlert className="h-3.5 w-3.5 animate-pulse" />;
+      return <ShieldAlert className="h-3.5 w-3.5" />;
     case "waiting_input":
-      return <MessageCircleMore className="h-3.5 w-3.5 animate-pulse" />;
+      return <MessageCircleMore className="h-3.5 w-3.5" />;
   }
+}
+
+function MessageActivityLabel({ state }: { state: MessageActivityState }) {
+  const prefers_reduced_motion = usePrefersReducedMotion();
+  const shimmer_ref = useRef<HTMLSpanElement | null>(null);
+
+  useEffect(() => {
+    const element = shimmer_ref.current;
+    if (!element || prefers_reduced_motion || typeof element.animate !== "function") {
+      return;
+    }
+
+    // 中文注释：流光只作用在文字本身，避免整块状态条一起闪烁，信息层级更稳定。
+    const animation = element.animate(
+      [
+        { backgroundPosition: "200% 50%" },
+        { backgroundPosition: "-200% 50%" },
+      ],
+      {
+        duration: 1800,
+        easing: "linear",
+        iterations: Infinity,
+      },
+    );
+
+    return () => {
+      animation.cancel();
+    };
+  }, [prefers_reduced_motion, state]);
+
+  if (prefers_reduced_motion) {
+    return <span className="truncate">{ACTIVITY_LABEL_MAP[state]}</span>;
+  }
+
+  return (
+    <span
+      className="relative inline-flex min-w-0 truncate text-current"
+    >
+      <span className="truncate">{ACTIVITY_LABEL_MAP[state]}</span>
+      <span
+        ref={shimmer_ref}
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 truncate bg-clip-text text-transparent opacity-65 [-webkit-text-fill-color:transparent]"
+        style={{
+          backgroundImage: "linear-gradient(90deg, transparent 0%, transparent 32%, rgba(255,255,255,0.92) 50%, transparent 68%, transparent 100%)",
+          backgroundSize: "220% 100%",
+          backgroundPosition: "200% 50%",
+        }}
+      >
+        {ACTIVITY_LABEL_MAP[state]}
+      </span>
+    </span>
+  );
 }
 
 export function MessageActivityStatus({
@@ -147,17 +255,16 @@ export function MessageActivityStatus({
 }) {
   return (
     <div className={cn("flex min-w-0 items-center", class_name)}>
-      <div
-        className={cn(
-          "inline-flex min-w-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium shadow-[0_1px_2px_rgba(15,23,42,0.04)] backdrop-blur-sm transition-colors",
-          ACTIVITY_TONE_CLASS_MAP[state],
-        )}
-      >
-        <span className="shrink-0">
+      <div className={cn("inline-flex min-w-0 items-center gap-2 py-1 text-xs font-medium transition-colors", ACTIVITY_TONE_CLASS_MAP[state])}>
+        <span className="shrink-0 opacity-75">
           <MessageActivityIcon state={state} />
         </span>
-        <span className="truncate">{ACTIVITY_LABEL_MAP[state]}</span>
-        <MessageLoadingDots size="sm" class_name="shrink-0 opacity-70 [&>span]:bg-current" />
+        <MessageActivityLabel state={state} />
+        <MessageLoadingDots
+          size="sm"
+          name={ACTIVITY_SPINNER_MAP[state]}
+          class_name="shrink-0 opacity-70"
+        />
       </div>
     </div>
   );

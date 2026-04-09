@@ -32,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 技能市场代码从 `service/workspace/` 迁移至 `service/capability/skills/`，API 从 `api/agent/` 迁移至 `api/capability/`。
 - `SkillCatalog` 改为无状态设计，状态由调用方通过数据库查询后传入。
 - `SkillService` 全面改用 `skill_repository` 进行状态读写。
+- DM / Room 会话入口与运行态统一收口到同一条 room-based identity + runtime machine 链路，历史 / 工作区 / 简介切换不再丢失顶部 header 或执行上下文。
+- 聊天中的运行反馈统一为状态条，按 `thinking / replying / browsing / executing / waiting_permission / waiting_input` 展示，并接入 `unicode-animations` 动效。
 - 优化 Skills 页面交互与布局：搜索置顶、分类降级为轻筛选、操作反馈改为自动消失的轻量提示，能力侧栏改为总览卡片并显示全局已安装能力数量。
 - capability 后端正式接入主路由，技能市场与连接器读写统一走新的 SQLite repository 与 capability service。
 - Skill catalog 自动补齐本地可发现但未手工编目的 builtin skills，避免能力页内容缺漏。
@@ -55,6 +57,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 修复 `session_repository` / `cost_repository` 模块级初始化产生的导入副作用（#11）。
 - 修复 Alembic 迁移多 head 冲突问题。
 - 修复 `make dev` / `make db-init` 因 Alembic 双 `head` 与后端启动旧导入路径导致的本地启动失败问题。
+- 修复 DM / Room 在权限确认、工具执行、停止生成、AskUserQuestion 回答后等场景下输入框提前解锁、状态闪断、确认卡片丢失与光标/状态提示错位的问题。
+- 修复 `AskUserQuestion` 多选字段兼容问题，前端现在同时支持 `multi_select` 与 `multiSelect`。
+- 修复 Room / DM 删除会话时遗漏 workspace session 目录清理，以及历史页最后一个 / 主对话删除按钮缺失、说明提示被裁切的问题。
 - 修复 `web` 依赖安装失败：移除失效且未使用的 `@anthropic-ai/claude-code` 遗留依赖，并增加项目级 npm registry 配置。
 - 修复技能市场与能力侧栏的多处状态不一致问题，包括全局开关/更新不同步、Agent 技能配置保存不生效、详情弹窗安装状态误显示，以及 DM 跳转后侧栏高亮错误。
 - 修复首页主对话长内容溢出与自动贴底滚动问题。

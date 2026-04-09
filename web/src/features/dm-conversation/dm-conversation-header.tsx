@@ -59,6 +59,7 @@ const DmConversationHeaderView = memo(({
       density="compact"
       on_select_conversation={on_select_conversation}
       on_create_conversation={on_create_conversation}
+      on_view_history={() => on_change_tab("history")}
     />
   );
 

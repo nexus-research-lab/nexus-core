@@ -103,12 +103,24 @@ class MessageHistoryStore:
         """获取所有会话列表"""
         return await session_repository.get_all_sessions()
 
-    async def delete_session(self, session_key: str) -> bool:
+    async def delete_session(
+        self,
+        session_key: str,
+        agent_id: Optional[str] = None,
+    ) -> bool:
         """删除会话"""
         session_info = await session_repository.get_session(session_key)
-        success = await session_repository.delete_session(session_key)
-        if success and session_info:
-            await cost_repository.handle_session_deleted(session_key, session_info.agent_id)
+        resolved_agent_id = (
+            session_info.agent_id
+            if session_info and session_info.agent_id
+            else resolve_agent_id(agent_id)
+        )
+        success = await session_repository.delete_session(
+            session_key,
+            agent_id=resolved_agent_id,
+        )
+        if success and resolved_agent_id:
+            await cost_repository.handle_session_deleted(session_key, resolved_agent_id)
         return success
 
     # =====================================================

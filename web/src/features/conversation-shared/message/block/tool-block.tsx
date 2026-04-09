@@ -189,6 +189,9 @@ const getPermissionChoiceClassName = (selected: boolean) =>
       : "border-white/12 bg-white/6 text-[color:var(--text-muted)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--text-strong)]",
   );
 
+const TOOL_DETAIL_SCROLL_CLASS_NAME =
+  "min-w-0 max-h-[18rem] overflow-auto overscroll-contain custom-scrollbar";
+
 // ==================== 主组件 ====================
 
 export function ToolBlock({
@@ -414,7 +417,8 @@ export function ToolBlock({
       )}
 
       {hasResult && isExpanded && (
-        <div className="ml-7 mt-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+        <div className="ml-7 mt-2 min-w-0">
+          <div className={TOOL_DETAIL_SCROLL_CLASS_NAME}>
             {typeof tool_result.content === 'string' ? (
               <pre
                 className="rounded-2xl border p-3 text-xs whitespace-pre-wrap break-all text-[color:var(--text-strong)]"
@@ -428,6 +432,7 @@ export function ToolBlock({
             ) : (
               <CodeBlock language="json" value={JSON.stringify(tool_result.content, null, 2)} />
             )}
+          </div>
         </div>
       )}
 
@@ -441,9 +446,11 @@ export function ToolBlock({
                 borderColor: "var(--surface-panel-subtle-border)",
               }}
             >
-              <pre className="whitespace-pre-wrap break-all">
-                {primaryInputDetail.value}
-              </pre>
+              <div className={TOOL_DETAIL_SCROLL_CLASS_NAME}>
+                <pre className="whitespace-pre-wrap break-all">
+                  {primaryInputDetail.value}
+                </pre>
+              </div>
             </div>
           ) : null}
 

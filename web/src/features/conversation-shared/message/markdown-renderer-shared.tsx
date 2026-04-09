@@ -38,6 +38,7 @@ const WORKSPACE_FILE_PATTERN = /([A-Za-z0-9_./-]+\.[A-Za-z0-9]{1,10})/g;
 export const MARKDOWN_PLUGINS = [remarkGfm, remarkMath, remarkBreaks];
 export const REHYPE_PLUGINS = [rehypeKatex];
 export const MARKDOWN_BODY_CLASS_NAME = "w-full min-w-0 max-w-full overflow-x-hidden text-[14px] leading-7 text-[color:var(--text-strong)] [&_strong]:font-semibold [&_strong]:text-[color:var(--text-strong)] [&_em]:italic [&_hr]:my-4 [&_hr]:border-[var(--divider-subtle-color)]";
+export const MARKDOWN_SUMMARY_CLASS_NAME = "w-full min-w-0 max-w-full overflow-hidden text-[15px] leading-7 text-[color:var(--text-strong)] [&_strong]:font-semibold [&_strong]:text-[color:var(--text-strong)] [&_em]:italic";
 
 function normalizeWorkspaceReference(value: string): string {
   return value.replace(/^[("'`【]+|[)"'`】,，。；：:!?]+$/g, "");
@@ -92,7 +93,7 @@ function WorkspaceFileButton({
 }) {
   return (
     <button
-      className="inline-flex max-w-full items-center overflow-hidden rounded-lg border border-primary/20 bg-primary/10 px-2 py-0.5 text-left align-middle font-mono text-[13px] text-primary transition-colors hover:border-primary/30 hover:bg-primary/15"
+      className="inline-flex max-w-full items-center overflow-hidden rounded-[5px] border border-primary/20 bg-primary/10 px-2 py-0.4 text-left align-middle font-mono text-[13px] text-primary transition-colors hover:border-primary/30 hover:bg-primary/15"
       onClick={() => on_open_workspace_file(path)}
       title={`Open ${path}`}
       type="button"
@@ -154,7 +155,7 @@ export function createMarkdownComponents(
       }
 
       return (
-        <span className="mx-0.5 inline-flex max-w-full overflow-hidden rounded-lg border border-primary/20 bg-primary/10 px-2 py-0.5 align-middle font-mono text-[13px] text-primary">
+        <span className="mx-0.5 inline-flex max-w-full overflow-hidden rounded-[5px] border border-primary/20 bg-primary/10 px-2 py-0.3 align-middle font-mono text-[13px] text-primary">
           <span className="max-w-full whitespace-pre-wrap break-words">{value}</span>
         </span>
       );
@@ -223,6 +224,67 @@ export function createMarkdownComponents(
     },
     td({ children }) {
       return <td className="border-t px-3 py-2 align-top whitespace-normal break-words sm:px-4 sm:py-3" style={{ borderColor: "var(--divider-subtle-color)" }}>{children}</td>;
+    },
+  };
+}
+
+export function createMarkdownSummaryComponents(
+  resolve_file_path: ResolveWorkspaceFilePath,
+  on_open_workspace_file?: (path: string) => void,
+): Components {
+  const base_components = createMarkdownComponents(resolve_file_path, on_open_workspace_file);
+
+  return {
+    ...base_components,
+    // 中文注释：主时间线摘要需要保留 Markdown 的基础语义，但必须压成单行内联展示，
+    // 不能再沿用正文里的块级布局，否则会把占位卡撑高并造成跳动。
+    p({ children }) {
+      return <span className="inline min-w-0 max-w-full wrap-anywhere">{children}</span>;
+    },
+    ul({ children }) {
+      return <span className="inline min-w-0 max-w-full wrap-anywhere">{children}</span>;
+    },
+    ol({ children }) {
+      return <span className="inline min-w-0 max-w-full wrap-anywhere">{children}</span>;
+    },
+    li({ children }) {
+      return <span className="inline min-w-0 max-w-full wrap-anywhere [&_p]:inline [&_p]:m-0">• {children} </span>;
+    },
+    blockquote({ children }) {
+      return <span className="inline min-w-0 max-w-full italic text-[color:var(--text-muted)] wrap-anywhere">{children}</span>;
+    },
+    h1({ children }) {
+      return <span className="inline font-semibold text-foreground">{children}</span>;
+    },
+    h2({ children }) {
+      return <span className="inline font-semibold text-foreground">{children}</span>;
+    },
+    h3({ children }) {
+      return <span className="inline font-semibold text-foreground">{children}</span>;
+    },
+    table({ children }) {
+      return <span className="inline min-w-0 max-w-full wrap-anywhere">{children}</span>;
+    },
+    thead({ children }) {
+      return <span className="inline">{children}</span>;
+    },
+    tbody({ children }) {
+      return <span className="inline">{children}</span>;
+    },
+    tr({ children }) {
+      return <span className="inline">{children}</span>;
+    },
+    th({ children }) {
+      return <span className="inline font-medium">{children}</span>;
+    },
+    td({ children }) {
+      return <span className="inline">{children}</span>;
+    },
+    pre({ children }) {
+      return <span className="inline min-w-0 max-w-full overflow-hidden">{children}</span>;
+    },
+    br() {
+      return <span>{" "}</span>;
     },
   };
 }

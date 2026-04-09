@@ -13,6 +13,7 @@ import {
   AgentRoundStatus,
   extractAgentPreviewText,
 } from "@/features/conversation-shared/utils";
+import { MarkdownRendererContent } from "@/features/conversation-shared/message/markdown-renderer-content";
 
 interface AgentStatusCardProps {
   agent_id: string;
@@ -43,8 +44,14 @@ function AgentStatusCardInner({
 }: AgentStatusCardProps) {
   const preview = useMemo(() => extractAgentPreviewText(messages), [messages]);
   const primary_pending_permission = pending_permissions[0];
+  const is_question_pending = Boolean(
+    primary_pending_permission
+    && (
+      primary_pending_permission.interaction_mode === "question"
+      || primary_pending_permission.tool_name === "AskUserQuestion"
+    ),
+  );
   const is_waiting_permission = pending_permissions.length > 0 && (status === "pending" || status === "streaming");
-  const first_msg = messages[0];
   const last_msg = messages[messages.length - 1];
   const can_stop = on_stop_message && (status === "pending" || status === "streaming");
   const timestamp = last_msg?.timestamp ?? result_message?.timestamp ?? pending_slot?.timestamp ?? 0;
@@ -70,18 +77,28 @@ function AgentStatusCardInner({
     }
     return "";
   }, [is_waiting_permission, preview, primary_pending_permission?.summary, status]);
+  const should_render_markdown_summary = Boolean(
+    preview
+    && !is_waiting_permission
+    && status !== "cancelled"
+    && status !== "error",
+  );
 
   const handle_stop = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
-      if (first_msg && on_stop_message) {
+      if (on_stop_message) {
         on_stop_message();
       }
     },
-    [first_msg, on_stop_message],
+    [on_stop_message],
   );
   const handle_allow = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    if (is_question_pending) {
+      on_click_thread();
+      return;
+    }
     if (!primary_pending_permission || !on_permission_response) {
       on_click_thread();
       return;
@@ -90,7 +107,7 @@ function AgentStatusCardInner({
       request_id: primary_pending_permission.request_id,
       decision: "allow",
     });
-  }, [on_click_thread, on_permission_response, primary_pending_permission]);
+  }, [is_question_pending, on_click_thread, on_permission_response, primary_pending_permission]);
   const handle_deny = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     if (!primary_pending_permission || !on_permission_response) {
@@ -163,7 +180,7 @@ function AgentStatusCardInner({
                 onClick={handle_allow}
                 className="rounded-md bg-[#7c6cf2] px-2 py-1 text-[11px] font-medium text-white transition-colors hover:bg-[#6f5de8]"
               >
-                允许
+                {is_question_pending ? "去回答" : "允许"}
               </button>
             </>
           ) : null}
@@ -180,20 +197,28 @@ function AgentStatusCardInner({
         </div>
 
         <div className="min-w-0 pt-1">
-          <p
-            className={cn(
-              "truncate text-[15px] leading-7",
-              status === "error"
-                ? "text-rose-500"
-                : status === "cancelled"
-                  ? "text-slate-400 italic"
-                  : is_waiting_permission
-                    ? "text-slate-700"
-                    : "text-slate-900",
-            )}
-          >
-            {summary_text}
-          </p>
+          {should_render_markdown_summary ? (
+            <MarkdownRendererContent
+              content={preview}
+              variant="summary"
+              class_name="line-clamp-1 text-slate-900"
+            />
+          ) : (
+            <p
+              className={cn(
+                "truncate text-[15px] leading-7",
+                status === "error"
+                  ? "text-rose-500"
+                  : status === "cancelled"
+                    ? "text-slate-400 italic"
+                    : is_waiting_permission
+                      ? "text-slate-700"
+                      : "text-slate-900",
+              )}
+            >
+              {summary_text}
+            </p>
+          )}
         </div>
       </div>
     </div>

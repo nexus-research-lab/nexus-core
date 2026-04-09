@@ -14,19 +14,15 @@ import {
   Message,
   ResultMessage,
 } from '@/types';
-import { AgentConversationChatType } from '@/types/agent-conversation';
+import {
+  AgentConversationChatType,
+  AgentConversationRuntimePhase,
+} from '@/types/agent-conversation';
 
 export interface ActiveMessageTracker {
   round_id: string;
   status: AssistantMessageStatus;
 }
-
-export type AgentConversationRuntimePhase =
-  | 'idle'
-  | 'queued'
-  | 'running'
-  | 'streaming'
-  | 'awaiting_permission';
 
 export interface AgentConversationRuntimeSnapshot {
   phase: AgentConversationRuntimePhase;
@@ -194,7 +190,7 @@ export class AgentConversationRuntimeMachine {
   }
 
   public track_result_message(message: ResultMessage): void {
-    this.clear_round(message.round_id);
+    this.clear_round(message.round_id, this.chat_type === 'group');
   }
 
   public set_pending_permission_count(count: number): void {

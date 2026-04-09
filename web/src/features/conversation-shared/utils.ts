@@ -182,6 +182,7 @@ export function getAgentRoundStatus(
   let has_pending = false;
   let has_error = false;
   let has_cancelled = false;
+  let has_done = false;
 
   for (const msg of messages) {
     const status = msg.stream_status;
@@ -189,6 +190,7 @@ export function getAgentRoundStatus(
     else if (status === "pending") has_pending = true;
     else if (status === "error") has_error = true;
     else if (status === "cancelled") has_cancelled = true;
+    else if (status === "done" || msg.is_complete || Boolean(msg.stop_reason)) has_done = true;
   }
 
   // 优先级：streaming > pending > error > cancelled > done
@@ -196,10 +198,12 @@ export function getAgentRoundStatus(
   if (has_pending) return "pending";
   if (has_error) return "error";
   if (has_cancelled) return "cancelled";
+  if (has_done) return "done";
 
   // 中文注释：Room 的执行态必须由 pending slot 或 ResultMessage 驱动。
   // 仅凭“历史里留着 assistant 过程消息”不能继续判成 streaming，
-  // 否则刷新后已经结束的协作会被误判成仍在执行。
+  // 但如果 assistant 本身已经明确收口为 done，则仍应视为完成，
+  // 这样无 ResultMessage 的正常结束轮次才能正确回退显示最终 assistant。
   return "cancelled";
 }
 
@@ -315,17 +319,47 @@ export function getRoomThreadMessages(messages: Message[], agent_id: string): Me
   ));
 }
 
-/** 从 assistant 消息中提取纯文本预览（截取前 80 字符） */
+function normalize_preview_text(text: string, max_length: number): string {
+  const normalized_text = text.replace(/\s+/g, " ").trim();
+  if (!normalized_text) {
+    return "";
+  }
+
+  return normalized_text.length > max_length
+    ? normalized_text.slice(0, max_length) + "…"
+    : normalized_text;
+}
+
+/** 从 assistant 消息中提取最新的文本/思路预览（截取前 80 字符） */
 export function extractAgentPreviewText(messages: AssistantMessage[], max_length = 80): string {
-  for (const msg of messages) {
-    if (!Array.isArray(msg.content)) continue;
-    for (const block of msg.content) {
-      if (block.type === "text" && block.text?.trim()) {
-        const text = block.text.trim();
-        return text.length > max_length ? text.slice(0, max_length) + "…" : text;
+  // 中文注释：Room 主时间线的占位摘要应该跟随“最新一段 assistant 完整消息”推进，
+  // 而不是永远停在第一段文本上。这里只看 text / thinking，忽略 tool_* 块。
+  for (let message_index = messages.length - 1; message_index >= 0; message_index -= 1) {
+    const message = messages[message_index];
+    if (!Array.isArray(message.content)) {
+      continue;
+    }
+
+    for (let block_index = message.content.length - 1; block_index >= 0; block_index -= 1) {
+      const block = message.content[block_index];
+
+      if (block.type === "text") {
+        const preview = normalize_preview_text(block.text, max_length);
+        if (preview) {
+          return preview;
+        }
+        continue;
+      }
+
+      if (block.type === "thinking") {
+        const preview = normalize_preview_text(block.thinking, max_length);
+        if (preview) {
+          return preview;
+        }
       }
     }
   }
+
   return "";
 }
 

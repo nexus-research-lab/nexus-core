@@ -3,6 +3,7 @@ import type { RefObject } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 
 import { MessageItem } from "@/features/conversation-shared/message";
+import { AgentConversationRuntimePhase } from "@/types/agent-conversation";
 import { Message } from "@/types/message";
 import { PendingPermission, PermissionDecisionPayload } from "@/types/permission";
 import { estimateRoundHeights } from "@/hooks/use-message-height";
@@ -18,6 +19,7 @@ interface ConversationFeedProps {
   agent_name_map?: Record<string, string>;
   is_last_round_pending_permissions: PendingPermission[];
   is_loading: boolean;
+  runtime_phase?: AgentConversationRuntimePhase | null;
   is_mobile_layout: boolean;
   message_groups: Map<string, Message[]>;
   on_open_workspace_file?: (path: string) => void;
@@ -55,6 +57,7 @@ export const ConversationFeed = memo(function ConversationFeed({
   agent_name_map,
   is_last_round_pending_permissions,
   is_loading,
+  runtime_phase,
   is_mobile_layout,
   message_groups,
   on_open_workspace_file,
@@ -75,6 +78,7 @@ export const ConversationFeed = memo(function ConversationFeed({
         agent_name_map={agent_name_map}
         is_last_round_pending_permissions={is_last_round_pending_permissions}
         is_loading={is_loading}
+        runtime_phase={runtime_phase}
         is_mobile_layout={is_mobile_layout}
         message_groups={message_groups}
         on_open_workspace_file={on_open_workspace_file}
@@ -108,6 +112,7 @@ export const ConversationFeed = memo(function ConversationFeed({
             assistant_content_mode={should_keep_round_live ? "dm_live" : "dm_archived"}
             is_last_round={isLastRound}
             is_loading={is_loading}
+            runtime_phase={isLastRound ? runtime_phase : null}
             pending_permissions={isLastRound ? is_last_round_pending_permissions : []}
             on_permission_response={on_permission_response}
             on_open_workspace_file={on_open_workspace_file}
@@ -131,6 +136,7 @@ function VirtualFeed({
   agent_name_map,
   is_last_round_pending_permissions,
   is_loading,
+  runtime_phase,
   is_mobile_layout,
   message_groups,
   on_open_workspace_file,
@@ -214,6 +220,7 @@ function VirtualFeed({
                 assistant_content_mode={should_keep_round_live ? "dm_live" : "dm_archived"}
                 is_last_round={isLastRound}
                 is_loading={is_loading}
+                runtime_phase={isLastRound ? runtime_phase : null}
                 pending_permissions={isLastRound ? is_last_round_pending_permissions : []}
                 on_permission_response={on_permission_response}
                 on_open_workspace_file={on_open_workspace_file}

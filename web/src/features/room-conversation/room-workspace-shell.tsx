@@ -29,6 +29,7 @@ interface RoomWorkspaceShellProps {
   current_room_conversations: RoomConversationView[];
   active_workspace_path: string | null;
   initial_draft?: string | null;
+  on_initial_draft_consumed?: () => void;
   is_editor_open: boolean;
   editor_width_percent: number;
   is_resizing_editor: boolean;
@@ -66,6 +67,7 @@ export function RoomWorkspaceShell({
   current_room_conversations,
   active_workspace_path,
   initial_draft,
+  on_initial_draft_consumed,
   is_editor_open,
   editor_width_percent,
   is_resizing_editor,
@@ -121,6 +123,7 @@ export function RoomWorkspaceShell({
         current_room_conversations={current_room_conversations}
         current_room_title={current_room_title}
         initial_draft={initial_draft}
+        on_initial_draft_consumed={on_initial_draft_consumed}
         on_back_to_directory={on_back_to_directory}
         on_conversation_snapshot_change={on_conversation_snapshot_change}
         on_create_conversation={handle_create_conversation_in_shell}
@@ -147,6 +150,7 @@ export function RoomWorkspaceShell({
         conversation_id={conversation_id}
         current_room_conversations={current_room_conversations}
         initial_draft={initial_draft}
+        on_initial_draft_consumed={on_initial_draft_consumed}
         current_todos={current_todos}
         editor_width_percent={editor_width_percent}
         is_editor_open={is_editor_open}

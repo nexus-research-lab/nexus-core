@@ -31,6 +31,7 @@ from agent.service.room.room_session_keys import (
 from agent.infra.database.repositories.conversation_sql_repository import ConversationSqlRepository
 from agent.infra.database.repositories.room_sql_repository import RoomSqlRepository
 from agent.infra.database.repositories.session_sql_repository import SessionSqlRepository
+from agent.service.session.session_store import session_store
 from agent.utils.utils import random_uuid
 
 
@@ -164,12 +165,15 @@ class RoomConversationService:
         from agent.service.session.session_manager import session_manager
 
         for sql_session in target_sessions:
-            session_manager.remove_session(
-                build_room_agent_session_key(
-                    conversation_id=sql_session.conversation_id,
-                    agent_id=sql_session.agent_id,
-                    room_type=room_aggregate.room.room_type,
-                )
+            sdk_session_key = build_room_agent_session_key(
+                conversation_id=sql_session.conversation_id,
+                agent_id=sql_session.agent_id,
+                room_type=room_aggregate.room.room_type,
+            )
+            session_manager.remove_session(sdk_session_key)
+            await session_store.delete_session(
+                sdk_session_key,
+                agent_id=sql_session.agent_id,
             )
         contexts = await persistence_service.get_room_contexts(room_id)
         if not contexts:

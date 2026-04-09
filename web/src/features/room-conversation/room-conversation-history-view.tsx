@@ -19,6 +19,11 @@ interface RoomConversationHistoryViewProps {
   on_update_conversation_title?: (conversation_id: string, title: string) => Promise<void>;
 }
 
+interface ConversationDeleteState {
+  enabled: boolean;
+  reason: string | null;
+}
+
 export function RoomConversationHistoryView({
   can_manage_conversations = true,
   conversations,
@@ -49,10 +54,15 @@ export function RoomConversationHistoryView({
       title={current_room_type === "dm" ? "历史对话" : "对话历史"}
     >
       {conversations.map((conversation) => {
+        const delete_state = resolve_conversation_delete_state(
+          conversation,
+          conversations.length,
+          can_manage_conversations,
+        );
         return (
           <ConversationHistoryItem
             key={conversation.conversation_id}
-            can_delete={can_manage_conversations && conversation.conversation_type === "topic"}
+            delete_state={delete_state}
             can_rename={can_manage_conversations && on_update_conversation_title !== undefined}
             conversation={conversation}
             is_active={conversation.conversation_id === conversation_id}
@@ -68,7 +78,7 @@ export function RoomConversationHistoryView({
 
 /** 单条对话历史条目 — 支持内联重命名 */
 function ConversationHistoryItem({
-  can_delete,
+  delete_state,
   can_rename,
   conversation,
   is_active,
@@ -76,7 +86,7 @@ function ConversationHistoryItem({
   on_rename,
   on_select,
 }: {
-  can_delete: boolean;
+  delete_state: ConversationDeleteState;
   can_rename: boolean;
   conversation: RoomConversationView;
   is_active: boolean;
@@ -193,20 +203,71 @@ function ConversationHistoryItem({
             <Pencil className="h-3.5 w-3.5" />
           </WorkspacePillButton>
         ) : null}
-        {!is_editing && can_delete ? (
-          <WorkspacePillButton
-            aria-label="删除对话"
-            class_name="rounded-xl opacity-0 group-hover:opacity-100"
-            onClick={on_delete}
-            density="compact"
-            size="icon"
-            tone="danger"
-            variant="icon"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </WorkspacePillButton>
+        {!is_editing ? (
+          delete_state.enabled ? (
+            <WorkspacePillButton
+              aria-label="删除对话"
+              class_name="rounded-xl opacity-0 group-hover:opacity-100"
+              onClick={on_delete}
+              density="compact"
+              size="icon"
+              tone="danger"
+              variant="icon"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </WorkspacePillButton>
+          ) : (
+            <div className="group/delete-hint relative flex shrink-0 items-center">
+              <WorkspacePillButton
+                aria-label="当前对话不可删除"
+                class_name="rounded-xl opacity-100"
+                disabled
+                density="compact"
+                size="icon"
+                tone="danger"
+                variant="icon"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </WorkspacePillButton>
+              {delete_state.reason ? (
+                <div
+                  className={cn(
+                    "pointer-events-none absolute bottom-full right-0 z-10 mb-2 w-max max-w-52 rounded-xl border px-2.5 py-1.5 text-[11px] leading-5 text-[color:var(--text-strong)] shadow-lg",
+                    "whitespace-normal break-words",
+                    "translate-y-1 opacity-0 transition duration-150 ease-out group-hover/delete-hint:translate-y-0 group-hover/delete-hint:opacity-100",
+                  )}
+                  style={{
+                    background: "var(--surface-popover-background)",
+                    borderColor: "var(--surface-panel-subtle-border)",
+                  }}
+                >
+                  {delete_state.reason}
+                </div>
+              ) : null}
+            </div>
+          )
         ) : null}
       </div>
     </div>
   );
+}
+
+function resolve_conversation_delete_state(
+  conversation: RoomConversationView,
+  conversation_count: number,
+  can_manage_conversations: boolean,
+): ConversationDeleteState {
+  if (!can_manage_conversations) {
+    return { enabled: false, reason: "当前没有删除权限" };
+  }
+
+  if (conversation.conversation_type !== "topic") {
+    return { enabled: false, reason: "主对话不支持删除" };
+  }
+
+  if (conversation_count <= 1) {
+    return { enabled: false, reason: "至少保留一个对话" };
+  }
+
+  return { enabled: true, reason: null };
 }

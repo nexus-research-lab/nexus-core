@@ -4,6 +4,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 
 import { MessageItem } from "@/features/conversation-shared/message";
 import { hasRoomAgentRoundEntries } from "@/features/conversation-shared/utils";
+import { AgentConversationRuntimePhase } from "@/types/agent-conversation";
 import { Message, RoomPendingAgentSlotState } from "@/types/message";
 import { PendingPermission, PermissionDecisionPayload } from "@/types/permission";
 import { estimateRoundHeights } from "@/hooks/use-message-height";
@@ -20,6 +21,7 @@ interface RoomConversationFeedProps {
   agent_name_map?: Record<string, string>;
   is_last_round_pending_permissions: PendingPermission[];
   is_loading: boolean;
+  runtime_phase?: AgentConversationRuntimePhase | null;
   is_mobile_layout: boolean;
   message_groups: Map<string, Message[]>;
   pending_permission_groups: Map<string, PendingPermission[]>;
@@ -59,6 +61,7 @@ export const RoomConversationFeed = memo(function RoomConversationFeed({
   agent_name_map,
   is_last_round_pending_permissions,
   is_loading,
+  runtime_phase,
   is_mobile_layout,
   message_groups,
   pending_permission_groups,
@@ -81,6 +84,7 @@ export const RoomConversationFeed = memo(function RoomConversationFeed({
         agent_name_map={agent_name_map}
         is_last_round_pending_permissions={is_last_round_pending_permissions}
         is_loading={is_loading}
+        runtime_phase={runtime_phase}
         is_mobile_layout={is_mobile_layout}
         message_groups={message_groups}
         pending_permission_groups={pending_permission_groups}
@@ -135,6 +139,7 @@ export const RoomConversationFeed = memo(function RoomConversationFeed({
             messages={roundMessages}
             is_last_round={isLastRound}
             is_loading={is_loading}
+            runtime_phase={isLastRound ? runtime_phase : null}
             pending_permissions={isLastRound ? is_last_round_pending_permissions : []}
             on_permission_response={on_permission_response}
             on_open_workspace_file={on_open_workspace_file}
@@ -158,6 +163,7 @@ function VirtualFeed({
   agent_name_map,
   is_last_round_pending_permissions,
   is_loading,
+  runtime_phase,
   is_mobile_layout,
   message_groups,
   pending_permission_groups,
@@ -255,6 +261,7 @@ function VirtualFeed({
                   messages={roundMessages}
                   is_last_round={isLastRound}
                   is_loading={is_loading}
+                  runtime_phase={isLastRound ? runtime_phase : null}
                   pending_permissions={isLastRound ? is_last_round_pending_permissions : []}
                   on_permission_response={on_permission_response}
                   on_open_workspace_file={on_open_workspace_file}

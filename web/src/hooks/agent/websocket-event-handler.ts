@@ -13,7 +13,6 @@ import {
   RoomEventPayload,
 } from '@/types/agent-conversation';
 import { WorkspaceEventPayload } from '@/types/workspace-live';
-import { buildPermissionSignature } from '@/types/permission';
 
 import { applyStreamMessage, upsertMessage } from './message-helpers';
 
@@ -86,29 +85,8 @@ export function handleAgentConversationWebSocketMessage({
         suggestions: data.suggestions || [],
         expires_at: data.expires_at,
       };
-      const next_signature = buildPermissionSignature(
-        next_permission.tool_name,
-        next_permission.tool_input,
-      );
       return [
-        ...prev.filter((item) => {
-          if (item.request_id === data.request_id) {
-            return false;
-          }
-          if (
-            (next_permission.interaction_mode !== 'question' && next_permission.tool_name !== 'AskUserQuestion') ||
-            (item.interaction_mode !== 'question' && item.tool_name !== 'AskUserQuestion')
-          ) {
-            return true;
-          }
-          if ((item.session_key ?? null) !== (next_permission.session_key ?? null)) {
-            return true;
-          }
-          if ((item.agent_id ?? null) !== (next_permission.agent_id ?? null)) {
-            return true;
-          }
-          return buildPermissionSignature(item.tool_name, item.tool_input) !== next_signature;
-        }),
+        ...prev.filter((item) => item.request_id !== data.request_id),
         next_permission,
       ];
     });

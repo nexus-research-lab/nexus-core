@@ -20,6 +20,7 @@ export interface DmChatPanelProps {
   session_identity: AgentConversationIdentity | null;
   layout?: "desktop" | "mobile";
   initial_draft?: string | null;
+  on_initial_draft_consumed?: () => void;
   on_open_workspace_file?: (path: string) => void;
   on_todos_change?: (todos: TodoItem[]) => void;
   on_loading_change?: (is_loading: boolean) => void;
@@ -31,6 +32,7 @@ export function DmChatPanel({
   session_identity,
   layout = "desktop",
   initial_draft = null,
+  on_initial_draft_consumed,
   on_open_workspace_file,
   on_todos_change,
   on_loading_change,
@@ -73,6 +75,7 @@ export function DmChatPanel({
 
   const todos = useExtractTodos(messages, session_key);
   const last_snapshot_key_ref = useRef<string | null>(null);
+  const consumed_initial_draft_ref = useRef<string | null>(null);
 
   useEffect(() => { on_todos_change?.(todos); }, [on_todos_change, todos]);
   useEffect(() => { on_loading_change?.(is_loading); }, [is_loading, on_loading_change]);
@@ -122,6 +125,29 @@ export function DmChatPanel({
   };
 
   const handle_stop = () => stop_generation();
+
+  useEffect(() => {
+    const normalized_draft = initial_draft?.trim() ?? "";
+    if (!session_key || !normalized_draft || is_loading) {
+      return;
+    }
+
+    const initial_draft_signature = `${session_key}:${normalized_draft}`;
+    if (consumed_initial_draft_ref.current === initial_draft_signature) {
+      return;
+    }
+
+    consumed_initial_draft_ref.current = initial_draft_signature;
+    scroll_to_bottom("auto");
+    void send_message(normalized_draft)
+      .then(() => {
+        on_initial_draft_consumed?.();
+      })
+      .catch((error) => {
+        consumed_initial_draft_ref.current = null;
+        console.error("Failed to auto send initial DM prompt:", error);
+      });
+  }, [initial_draft, is_loading, on_initial_draft_consumed, scroll_to_bottom, send_message, session_key]);
 
   return (
     <div className="relative flex h-full min-w-0 flex-1 flex-col overflow-hidden bg-transparent">
@@ -188,7 +214,6 @@ export function DmChatPanel({
 
       <ComposerPanel
         compact={is_mobile_layout}
-        initial_draft={initial_draft}
         is_loading={is_loading}
         on_send_message={handle_send_message}
         on_stop={handle_stop}

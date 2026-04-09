@@ -25,6 +25,8 @@ export interface UserQuestion {
   header?: string;
   /** 是否多选，默认 false */
   multi_select?: boolean;
+  /** 兼容 Claude / SDK 直接透传的 camelCase 字段 */
+  multiSelect?: boolean;
   /** 选项列表 */
   options: QuestionOption[];
 }

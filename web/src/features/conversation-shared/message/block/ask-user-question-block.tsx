@@ -37,6 +37,14 @@ interface AskUserQuestionBlockProps {
     is_ready?: boolean;
 }
 
+function normalizeQuestion(question: UserQuestion): UserQuestion {
+    return {
+        ...question,
+        // 兼容 SDK 直接透传的 camelCase 字段，组件内部统一使用 snake_case。
+        multi_select: question.multi_select ?? question.multiSelect ?? false,
+    };
+}
+
 // ==================== 子组件 ====================
 
 /** 单个问题卡片（支持独立收起） */
@@ -232,7 +240,10 @@ export function AskUserQuestionBlock({
 }: AskUserQuestionBlockProps) {
     // 解析输入
     const input = tool_use.input as AskUserQuestionInput;
-    const questions = useMemo(() => input?.questions || [], [input?.questions]);
+    const questions = useMemo(
+        () => (input?.questions || []).map(normalizeQuestion),
+        [input?.questions],
+    );
 
     // 状态：每个问题的选中选项
     const [selections, setSelections] = useState<Map<number, Set<string>>>(() => {

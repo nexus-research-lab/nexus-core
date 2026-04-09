@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 
 import { SessionLoaderOptions } from "@/types/conversation";
 
@@ -14,7 +14,7 @@ export const useSessionLoader = ({
 }: SessionLoaderOptions) => {
   const prev_key = useRef<string | null>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (prev_key.current === session_key) {
       return;
     }
@@ -23,7 +23,7 @@ export const useSessionLoader = ({
 
     if (session_key) {
       console.debug(`[${debug_name}] Loading session:`, session_key);
-      load_session(session_key);
+      void load_session(session_key);
     }
   }, [session_key, debug_name, load_session]);
 };

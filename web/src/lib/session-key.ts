@@ -62,6 +62,11 @@ export function buildWsDmSessionKey(ref: string, agent_id?: string | null): stri
   });
 }
 
+export function buildLauncherAppSessionKey(agent_id?: string | null): string {
+  const resolved_agent_id = resolveAgentId(agent_id);
+  return buildWsDmSessionKey(`launcher-app-${resolved_agent_id}`, resolved_agent_id);
+}
+
 export function buildRoomSharedSessionKey(conversation_id: string): string {
   return `${ROOM_SHARED_SESSION_PREFIX}${conversation_id}`;
 }

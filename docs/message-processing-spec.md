@@ -186,6 +186,14 @@ Room 分成两块：
   - `caused_by`
   - `message_id`
 - 不能只靠工具名或命令文本猜测归属
+- 主绑定链必须先按 `permission.message_id` 限定到同一条 assistant message
+- 若同一条 assistant message 内有多个 `tool_use`
+  - 再按 `tool_name + tool_input` 精确定位
+- 禁止回退到跨 message 的签名队列匹配
+- Room Thread 在 `AskUserQuestion` / 权限恢复场景下，不能再强依赖
+  `permission.message_id === assistant.message_id`
+  - 因为 Room 权限事件常绑定的是占位槽位 `msg_id`
+  - Thread 归属应优先依赖 `agent_id + caused_by(round_id)`
 
 ### 6.4 Room 规则总结
 
@@ -241,6 +249,12 @@ DM 必须区分“实时态”和“归档态”。
 - 它仍然依赖后端 `permission_request` 提供 `request_id`
 - 但前端只允许通过问答块本身提交 `allow + user_answers`
 - 不能在消息底部再渲染一条通用 `允许 / 拒绝` 条
+- Room 主时间线若需要暴露入口，只能显示 `去回答`
+  - 该动作只负责打开 Thread
+  - 不能直接发送通用 `allow`
+- 问题若声明多选，前端必须支持多选提交
+  - 字段兼容 `multi_select / multiSelect`
+  - `allow` 时必须回传完整答案数组
 - 同一问题若因超时被模型重试，前端只保留最新那一条挂起请求
 - `AskUserQuestion` 超时后应直接失败并结束当前交互，不应再自动补发下一条相同问题
 
@@ -253,6 +267,12 @@ DM 必须区分“实时态”和“归档态”。
 - Room 主时间线：显示最后一个 assistant turn
 - DM 归档态：主区显示最后一个 assistant turn
 - Thread：仍按完整 assistant turn 顺序显示
+
+补充：
+
+- 若 assistant 已明确收口为 `stream_status=done`
+- 即使没有 `ResultMessage`
+- 也必须视为该 Agent 子轮次已完成，不能误判成 `cancelled`
 
 也就是说：
 

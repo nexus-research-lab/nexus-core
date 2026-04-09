@@ -230,31 +230,29 @@ export function HeroSidePanelShell({ children, class_name }: HeroBlobShellProps)
     <StaticGlassShell
       class_name={cn("w-[280px]", class_name)}
       content_class_name="flex h-full min-h-0 flex-col px-6 py-7"
-      aura_background={`radial-gradient(24% 20% at 18% 28%, rgba(255,184,124,0.10), rgba(255,184,124,0) 78%),
-        radial-gradient(24% 20% at 80% 18%, rgba(110,228,214,0.10), rgba(110,228,214,0) 78%),
-        radial-gradient(32% 18% at 46% 92%, rgba(128,118,255,0.12), rgba(128,118,255,0) 76%),
-        radial-gradient(40% 18% at 52% 8%, rgba(255,255,255,0.08), rgba(255,255,255,0) 72%)`}
-      aura_blur_class_name="blur-[34px]"
-      fill="rgba(214,224,246,0.12)"
+      aura_background={`radial-gradient(28% 22% at 80% 18%, rgba(221,228,241,0.08), rgba(221,228,241,0) 78%),
+        radial-gradient(32% 18% at 46% 88%, rgba(232,237,247,0.10), rgba(232,237,247,0) 80%)`}
+      aura_blur_class_name="blur-[10px]"
+      fill="rgba(236,240,247,0.54)"
       fill_gradient_stops={[
-        { offset: "0%", color: "rgba(245,248,255,0.18)" },
-        { offset: "42%", color: "rgba(212,224,248,0.12)" },
-        { offset: "100%", color: "rgba(182,200,235,0.14)" },
+        { offset: "0%", color: "rgba(244,247,252,0.64)" },
+        { offset: "46%", color: "rgba(236,241,248,0.56)" },
+        { offset: "100%", color: "rgba(227,233,242,0.52)" },
       ]}
-      glow_blur_deviation={5}
-      inner_fill="rgba(255,255,255,0.05)"
+      glow_blur_deviation={1.2}
+      inner_fill="rgba(248,249,252,0.40)"
       inner_fill_gradient_stops={[
-        { offset: "0%", color: "rgba(250,252,255,0.08)" },
-        { offset: "52%", color: "rgba(217,229,249,0.04)" },
-        { offset: "100%", color: "rgba(200,214,240,0.07)" },
+        { offset: "0%", color: "rgba(250,251,253,0.48)" },
+        { offset: "52%", color: "rgba(244,246,250,0.42)" },
+        { offset: "100%", color: "rgba(236,240,246,0.38)" },
       ]}
-      inner_glow_opacity={0.42}
+      inner_glow_opacity={0.08}
       inner_path={SIDE_PANEL_INNER_PATH}
-      inner_stroke="rgba(255,255,255,0.09)"
-      outer_glow_opacity={0.5}
-      outer_glow_width={13}
+      inner_stroke="rgba(250,252,255,0.26)"
+      outer_glow_opacity={0.08}
+      outer_glow_width={6}
       path={SIDE_PANEL_PATH}
-      stroke="rgba(255,255,255,0.22)"
+      stroke="rgba(226,232,241,0.66)"
       view_box_height={SIDE_PANEL_VIEWBOX_HEIGHT}
       view_box_width={SIDE_PANEL_VIEWBOX_WIDTH}
     >

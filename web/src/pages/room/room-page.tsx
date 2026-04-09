@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import { AppRouteBuilders } from "@/app/router/route-paths";
@@ -14,13 +14,30 @@ import { UpdateRoomParams } from "@/types/room";
 
 export function RoomPage() {
   const params = useParams<RoomRouteParams>();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const initialDraft = searchParams.get("initial");
+  const [pending_initial_prompt, set_pending_initial_prompt] = useState<string | null>(null);
   const controller = useRoomPageController({
     room_id: params.room_id,
     conversation_id: params.conversation_id,
   });
+
+  useEffect(() => {
+    const initial_prompt = searchParams.get("initial")?.trim() ?? "";
+    if (!initial_prompt) {
+      return;
+    }
+
+    set_pending_initial_prompt((current_prompt) => current_prompt || initial_prompt);
+
+    const next_search_params = new URLSearchParams(searchParams);
+    next_search_params.delete("initial");
+    setSearchParams(next_search_params, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  const handle_consume_initial_prompt = useCallback(() => {
+    set_pending_initial_prompt(null);
+  }, []);
 
   const handleBackToLauncher = useCallback(() => {
     controller.handle_back_to_directory();
@@ -92,7 +109,7 @@ export function RoomPage() {
       controller.current_room?.id === params.room_id &&
       !params.conversation_id &&
       controller.conversation_id &&
-      !initialDraft
+      !pending_initial_prompt
     ) {
       navigate(
         AppRouteBuilders.room_conversation(
@@ -110,7 +127,7 @@ export function RoomPage() {
     params.room_id,
     controller.current_room?.id,
     controller.conversation_id,
-    initialDraft,
+    pending_initial_prompt,
   ]);
 
   // 加载中 — 内联 loading，AppStage 由路由布局层提供
@@ -150,7 +167,7 @@ export function RoomPage() {
               conversation_id={controller.conversation_id}
               current_todos={controller.current_todos}
               editor_width_percent={controller.editor_width_percent}
-              initial_draft={initialDraft}
+              initial_draft={pending_initial_prompt}
               is_editor_open={controller.is_editor_open}
               is_resizing_editor={controller.is_resizing_editor}
               is_conversation_busy={controller.is_conversation_busy}
@@ -166,6 +183,7 @@ export function RoomPage() {
               on_update_conversation_title={handleUpdateConversationTitle}
               on_select_conversation={handleSelectConversation}
               on_conversation_snapshot_change={controller.handle_conversation_snapshot_change}
+              on_initial_draft_consumed={handle_consume_initial_prompt}
               on_start_editor_resize={controller.handle_start_editor_resize}
               on_todos_change={controller.set_current_todos}
               workspace_split_ref={controller.workspace_split_ref}

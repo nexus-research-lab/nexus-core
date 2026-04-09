@@ -228,6 +228,9 @@ Claude SDK client
   - 复用 `request_id`
   - 回传 `user_answers`
 - 前端不能再为它额外渲染一条通用的 `允许 / 拒绝` 权限条
+- Room 主时间线若需要暴露入口，只能提供 `去回答`
+  - 作用是打开对应 Thread
+  - 不能直接发送 `allow`
 - 若同一会话内同一 Agent 重试了同一条 `AskUserQuestion`，新的请求应替换旧的挂起请求
 - `AskUserQuestion` 的 `allow` 必须携带 `user_answers`，不能发送空确认
 - `AskUserQuestion` 若超时或通道不可用，应直接中断当前运行，不再继续重试
@@ -251,6 +254,14 @@ Claude SDK client
 - `interaction_mode`
 - `expires_at`
 - Room 场景下的 `room_id / conversation_id / agent_id / message_id / caused_by`
+
+前端绑定规则：
+
+- 主绑定链必须先按 `permission.message_id` 缩到同一条 assistant message
+- 若同一条 assistant message 内有多个 `tool_use`
+  - 再按 `tool_name + tool_input` 精确定位唯一调用
+- 禁止恢复旧的“跨 message 签名队列”匹配
+  - 不能只靠工具名或命令文本跨消息猜测归属
 
 ### 8.2 `permission_response`
 
@@ -326,6 +337,23 @@ runtime session_key -> route_session_key
 - Room 权限请求的主派发通道是 `subscribe_room`
 - `bind_session` 只负责回退 sender 和 pending request 重投入口
 - 只要房间重新订阅成功，后续权限卡就必须继续可见
+- Room Thread 在绑定权限请求时，不能再把 `message_id` 当成唯一归属条件
+  - 因为部分权限事件的 `message_id` 实际是 slot `msg_id`
+  - 归属应优先依赖：
+    - `agent_id`
+    - `caused_by`
+  - 这个回退只允许发生在 Room Thread 过滤阶段
+  - 不能回退成全局签名匹配
+
+### 9.3 AskUserQuestion 多选规则
+
+- `AskUserQuestion` 可能显式声明多选
+- 前端必须同时兼容：
+  - `multi_select`
+  - `multiSelect`
+- 一旦命中多选模式：
+  - UI 必须允许同一题选择多个选项
+  - `permission_response.allow` 必须回传完整 `user_answers`
 
 ## 10. DM 特殊规则
 

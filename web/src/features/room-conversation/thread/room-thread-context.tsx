@@ -7,6 +7,8 @@ import {
   ThreadControlContext,
   ThreadControlState,
   ThreadDataContext,
+  ThreadDataDispatchContext,
+  ThreadDataDispatchState,
   ThreadDataState,
   ThreadPanelData,
   ThreadTarget,
@@ -65,15 +67,22 @@ export function RoomThreadContextProvider({ children }: { children: ReactNode })
   );
 
   const data_value = useMemo<ThreadDataState>(
-    () => ({ thread_panel_data, set_thread_panel_data }),
-    [thread_panel_data, set_thread_panel_data],
+    () => ({ thread_panel_data }),
+    [thread_panel_data],
+  );
+
+  const data_dispatch_value = useMemo<ThreadDataDispatchState>(
+    () => ({ set_thread_panel_data }),
+    [set_thread_panel_data],
   );
 
   return (
-    <ThreadDataContext.Provider value={data_value}>
-      <ThreadControlContext.Provider value={control_value}>
-        {children}
-      </ThreadControlContext.Provider>
-    </ThreadDataContext.Provider>
+    <ThreadDataDispatchContext.Provider value={data_dispatch_value}>
+      <ThreadDataContext.Provider value={data_value}>
+        <ThreadControlContext.Provider value={control_value}>
+          {children}
+        </ThreadControlContext.Provider>
+      </ThreadDataContext.Provider>
+    </ThreadDataDispatchContext.Provider>
   );
 }

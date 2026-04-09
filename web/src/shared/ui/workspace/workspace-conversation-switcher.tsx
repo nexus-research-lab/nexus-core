@@ -9,8 +9,8 @@
 
 "use client";
 
-import { useState } from "react";
-import { Check, ChevronDown, LucideIcon, MessageSquare, MessageSquarePlus } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Check, ChevronDown, History, LucideIcon, MessageSquare, MessageSquarePlus } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/shared/i18n/i18n-context";
@@ -22,8 +22,11 @@ interface WorkspaceConversationSwitcherProps {
   density?: "default" | "compact";
   on_select_conversation: (conversation_id: string) => void;
   on_create_conversation?: (title?: string) => Promise<string | null>;
+  on_view_history?: () => void;
   icon?: LucideIcon;
 }
+
+const MAX_VISIBLE_CONVERSATIONS = 6;
 
 export function WorkspaceConversationSwitcher({
   conversations,
@@ -31,11 +34,36 @@ export function WorkspaceConversationSwitcher({
   density = "compact",
   on_select_conversation,
   on_create_conversation,
+  on_view_history,
   icon: Icon = MessageSquare,
 }: WorkspaceConversationSwitcherProps) {
   const { t } = useI18n();
   const [is_open, set_is_open] = useState(false);
   const [is_creating, set_is_creating] = useState(false);
+  const sorted_conversations = useMemo(
+    () => [...conversations].sort((left, right) => right.last_activity_at - left.last_activity_at),
+    [conversations],
+  );
+  const visible_conversations = useMemo(() => {
+    const recent_conversations = sorted_conversations.slice(0, MAX_VISIBLE_CONVERSATIONS);
+    if (!conversation_id || recent_conversations.some((conversation) => conversation.conversation_id === conversation_id)) {
+      return recent_conversations;
+    }
+
+    const active_conversation = sorted_conversations.find(
+      (conversation) => conversation.conversation_id === conversation_id,
+    );
+    if (!active_conversation) {
+      return recent_conversations;
+    }
+
+    // 中文注释：当前会话太旧时仍需保留在下拉中，避免选中态完全消失。
+    return [
+      active_conversation,
+      ...recent_conversations.filter((conversation) => conversation.conversation_id !== conversation_id),
+    ].slice(0, MAX_VISIBLE_CONVERSATIONS);
+  }, [conversation_id, sorted_conversations]);
+  const has_more_conversations = sorted_conversations.length > MAX_VISIBLE_CONVERSATIONS;
   const trigger_style = is_open
     ? {
       background: "var(--surface-popover-background)",
@@ -47,7 +75,7 @@ export function WorkspaceConversationSwitcher({
     };
 
   const current_title =
-    conversations.find((conversation) => conversation.conversation_id === conversation_id)?.title
+    sorted_conversations.find((conversation) => conversation.conversation_id === conversation_id)?.title
     ?? t("room.choose_conversation");
 
   const handle_create = async () => {
@@ -83,61 +111,86 @@ export function WorkspaceConversationSwitcher({
             onClick={() => set_is_open(false)}
           />
           <div
-            className="absolute left-0 top-full z-50 mt-1.5 w-56 rounded-[18px] py-1"
+            className="absolute left-0 top-[calc(100%+8px)] z-50 w-[min(18.5rem,calc(100vw-24px))] overflow-hidden rounded-[24px]"
             style={{
               background: "var(--surface-popover-background)",
               border: "1px solid var(--surface-popover-border)",
+              boxShadow: "0 20px 48px rgb(15 23 42 / 0.14)",
             }}
           >
-            {conversations.length > 0 ? (
+            {sorted_conversations.length > 0 ? (
               <>
-                {conversations.map((conversation) => {
-                  const is_active = conversation.conversation_id === conversation_id;
-                  return (
+                <div className="p-1.5">
+                  {visible_conversations.map((conversation) => {
+                    const is_active = conversation.conversation_id === conversation_id;
+                    return (
+                      <button
+                        key={conversation.conversation_id}
+                        className={cn(
+                          "group flex w-full items-center gap-2.5 rounded-[14px] border px-3.5 py-2.5 text-left text-[11.5px] transition duration-150 ease-out",
+                          is_active
+                            ? "bg-[var(--surface-interactive-active-background)] font-semibold text-[color:var(--text-strong)] hover:brightness-[0.985]"
+                            : "border-transparent text-[color:var(--text-default)] hover:border-[var(--surface-interactive-hover-border)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--text-strong)]",
+                        )}
+                        onClick={() => {
+                          on_select_conversation(conversation.conversation_id);
+                          set_is_open(false);
+                        }}
+                        type="button"
+                      >
+                        <Icon className={cn(
+                          "h-3.5 w-3.5 shrink-0 transition-colors duration-150",
+                          is_active
+                            ? "text-[color:var(--icon-default)]"
+                            : "text-[color:var(--icon-muted)] group-hover:text-[color:var(--icon-default)]",
+                        )} />
+                        <span className="min-w-0 flex-1 truncate">
+                          {conversation.title || t("room.untitled_conversation")}
+                        </span>
+                        {is_active ? (
+                          <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {(has_more_conversations && on_view_history) || on_create_conversation ? (
+                  <div className="mx-3 border-t divider-subtle" />
+                ) : null}
+
+                {has_more_conversations && on_view_history ? (
+                  <div className="p-1.5 pt-1">
                     <button
-                      key={conversation.conversation_id}
-                      className={cn(
-                        "flex w-full items-center gap-2 px-3 py-[7px] text-left text-[11px] transition duration-150 ease-out",
-                        is_active
-                          ? "border-y border-transparent font-semibold text-[color:var(--text-strong)]"
-                          : "text-[color:var(--text-default)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--text-strong)]",
-                      )}
-                      style={is_active ? {
-                        background:
-                          "var(--surface-interactive-active-background)",
-                        borderColor: "var(--surface-interactive-active-border)",
-                      } : undefined}
+                      className="flex w-full items-center gap-2.5 rounded-[14px] border border-transparent px-3.5 py-2.5 text-left text-[11.5px] font-medium text-[color:var(--text-default)] transition duration-150 ease-out hover:border-[var(--surface-interactive-hover-border)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--text-strong)]"
                       onClick={() => {
-                        on_select_conversation(conversation.conversation_id);
                         set_is_open(false);
+                        on_view_history();
                       }}
                       type="button"
                     >
-                      <Icon className={cn("h-3.5 w-3.5 shrink-0", is_active ? "text-[color:var(--icon-default)]" : "text-[color:var(--icon-muted)]")} />
-                      <span className="min-w-0 flex-1 truncate">
-                        {conversation.title || t("room.untitled_conversation")}
+                      <History className="h-3.5 w-3.5 shrink-0 text-[color:var(--icon-muted)]" />
+                      <span className="min-w-0 flex-1">
+                        {t("room.more_conversations")}
                       </span>
-                      {is_active ? (
-                        <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-                      ) : null}
                     </button>
-                  );
-                })}
-                {on_create_conversation ? (
-                  <div className="mx-3 my-1 border-t divider-subtle" />
+                  </div>
                 ) : null}
+
                 {on_create_conversation ? (
-                  <button
-                    className="flex w-full items-center gap-2 px-3 py-[7px] text-left text-[11px] font-medium text-emerald-600 transition duration-150 ease-out hover:bg-[var(--surface-interactive-hover-background)] disabled:opacity-60"
-                    disabled={is_creating}
-                    onClick={handle_create}
-                    type="button"
-                  >
-                    <MessageSquarePlus className={cn("h-3.5 w-3.5 shrink-0", is_creating && "animate-spin")} />
-                    <span className="min-w-0 flex-1">
-                      {is_creating ? t("room.creating") : t("room.new_conversation")}
-                    </span>
-                  </button>
+                  <div className="p-1.5 pt-1">
+                    <button
+                      className="flex w-full items-center gap-2.5 rounded-[14px] border border-transparent px-3.5 py-2.5 text-left text-[11.5px] font-medium text-emerald-600 transition duration-150 ease-out hover:border-emerald-500/15 hover:bg-emerald-500/8 disabled:opacity-60"
+                      disabled={is_creating}
+                      onClick={handle_create}
+                      type="button"
+                    >
+                      <MessageSquarePlus className={cn("h-3.5 w-3.5 shrink-0", is_creating && "animate-spin")} />
+                      <span className="min-w-0 flex-1">
+                        {is_creating ? t("room.creating") : t("room.new_conversation")}
+                      </span>
+                    </button>
+                  </div>
                 ) : null}
               </>
             ) : (

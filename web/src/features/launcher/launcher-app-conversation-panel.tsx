@@ -21,6 +21,7 @@ interface LauncherAppConversationPanelProps {
   app_conversation_draft: string;
   app_conversation_messages: Message[];
   error: string | null;
+  is_info_mode?: boolean;
   is_loading: boolean;
   ws_state: WebSocketState;
   on_clear_session: () => void;
@@ -99,19 +100,20 @@ function group_messages_by_round(messages: Message[]): Map<string, Message[]> {
 }
 
 export function LauncherAppConversationPanel({
-                                               app_conversation_draft,
-                                               app_conversation_messages,
-                                               error,
-                                               is_loading,
-                                               ws_state,
-                                               on_clear_session,
-                                               on_change_draft,
-                                               on_close,
-                                               on_permission_response,
-                                               on_stop_generation,
-                                               on_submit,
-                                               pending_permissions,
-                                             }: LauncherAppConversationPanelProps) {
+  app_conversation_draft,
+  app_conversation_messages,
+  error,
+  is_info_mode = false,
+  is_loading,
+  ws_state,
+  on_clear_session,
+  on_change_draft,
+  on_close,
+  on_permission_response,
+  on_stop_generation,
+  on_submit,
+  pending_permissions,
+}: LauncherAppConversationPanelProps) {
   const scroll_ref = useRef<HTMLDivElement>(null);
   const bottom_anchor_ref = useRef<HTMLDivElement>(null);
   const textarea_ref = useRef<HTMLTextAreaElement>(null);
@@ -287,14 +289,14 @@ export function LauncherAppConversationPanel({
   }, [handle_submit, is_loading, on_stop_generation]);
 
   return (
-    <HeroSidePanelShell class_name="h-full min-h-[620px] w-full max-w-[420px]">
-      <div className="flex h-full min-h-0 flex-col">
+    <HeroSidePanelShell class_name="h-full min-h-[620px] w-full max-w-[512px]">
+      <div className="flex h-full min-h-0 flex-col mx-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <HeroActionPillShell class_name="w-fit">
               <span
                 className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/72">
-                <span className={cn("h-3 w-3 rounded-full", connection_meta.dot_class_name)}/>
+                <span className={cn("h-3 w-3 rounded-full", connection_meta.dot_class_name)} />
                 Nexus
               </span>
               <span className={cn("text-[11px] font-medium", connection_meta.badge_class_name)}>
@@ -311,7 +313,7 @@ export function LauncherAppConversationPanel({
               type="button"
             >
               <HeroActionOrbShell class_name="h-[46px] w-[46px]">
-                <RotateCcw className="h-4 w-4 text-foreground/76"/>
+                <RotateCcw className="h-4 w-4 text-foreground/76" />
               </HeroActionOrbShell>
             </button>
             <button
@@ -321,24 +323,18 @@ export function LauncherAppConversationPanel({
               type="button"
             >
               <HeroActionOrbShell class_name="h-[54px] w-[54px]">
-                <X className="h-4 w-4 text-foreground/76"/>
+                <X className="h-4 w-4 text-foreground/76" />
               </HeroActionOrbShell>
             </button>
           </div>
         </div>
 
-        <div className="border-b border-white/10 px-3 pt-4">
-          <p className="truncate text-[22px] font-black tracking-[-0.04em] text-foreground/92">
-            Nexus
-          </p>
-        </div>
-
         <div
-          className="relative mt-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[28px] bg-[rgba(255,255,255,0.05)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.1)]">
+          className="relative mt-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[28px] bg-[rgba(243,246,251,0.48)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.28)]">
           {error ? (
             <div
-              className="mx-3 mt-3 flex items-start gap-2 rounded-[20px] bg-[rgba(255,120,120,0.12)] px-3 py-2 text-xs leading-5 text-red-900/84 shadow-[inset_0_0_0_1px_rgba(255,120,120,0.14)]">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0"/>
+              className="mx-3 mt-3 flex items-start gap-2 rounded-[20px] bg-[rgba(255,243,243,0.74)] px-3 py-2 text-xs leading-5 text-red-900/84 shadow-[inset_0_0_0_1px_rgba(255,120,120,0.14)]">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>{error}</span>
             </div>
           ) : null}
@@ -363,10 +359,10 @@ export function LauncherAppConversationPanel({
             ) : (
               <div className="flex min-h-80 flex-col justify-center px-5 py-6">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-foreground/42">
-                  Nexus Chat
+                  {is_info_mode ? "Nexus Status" : "Nexus Chat"}
                 </p>
                 <p className="mt-3 text-base font-semibold text-foreground/84">
-                  告诉 Nexus 你要推进什么
+                  {is_info_mode ? "这里会显示 Nexus 当前整理出的协作信息" : "告诉 Nexus 你要推进什么"}
                 </p>
               </div>
             )}
@@ -379,57 +375,6 @@ export function LauncherAppConversationPanel({
               on_click={() => scroll_to_bottom("smooth")}
             />
           ) : null}
-        </div>
-
-        <div className="mt-4">
-          <HeroInputShell class_name="w-full">
-            <div className="flex min-w-0 flex-col gap-3">
-              <div className="flex min-w-0 items-end gap-3">
-                <textarea
-                  ref={textarea_ref}
-                  className="max-h-36 min-h-7 flex-1 resize-none overflow-y-auto bg-transparent text-sm leading-6 text-[color:var(--launcher-input-text)] outline-none placeholder:text-[color:var(--launcher-input-placeholder)]"
-                  onChange={(event) => on_change_draft(event.target.value)}
-                  onCompositionEnd={() => {
-                    is_composing_ref.current = false;
-                  }}
-                  onCompositionStart={() => {
-                    is_composing_ref.current = true;
-                  }}
-                  onKeyDown={handle_key_down}
-                  placeholder="告诉 Nexus 你要推进什么..."
-                  rows={1}
-                  value={app_conversation_draft}
-                />
-                <button
-                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform duration-300 hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
-                  disabled={!is_loading && !can_send_message}
-                  onClick={is_loading ? on_stop_generation : handle_submit}
-                  style={{
-                    background: "var(--launcher-submit-background)",
-                    boxShadow: "var(--launcher-submit-shadow)",
-                    color: "var(--launcher-submit-color)",
-                  }}
-                  type="button"
-                >
-                  {is_loading ? (
-                    <RotateCcw className="h-4 w-4"/>
-                  ) : ws_state === "connected" ? (
-                    <Bot className="h-4 w-4"/>
-                  ) : (
-                    <LoaderCircle className="h-4 w-4 animate-spin"/>
-                  )}
-                </button>
-              </div>
-            </div>
-          </HeroInputShell>
-          <div className="flex items-center justify-between gap-2 px-8 pb-1 text-[11px] text-foreground/42">
-            <span>
-              {ws_state === "connected"
-                ? "Enter 发送，Shift + Enter 换行"
-                : "正在建立 Nexus 主对话连接..."}
-            </span>
-            <span>{app_conversation_messages.length ? `${app_conversation_messages.length} 条消息` : ""}</span>
-          </div>
         </div>
       </div>
     </HeroSidePanelShell>

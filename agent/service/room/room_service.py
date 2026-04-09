@@ -42,6 +42,7 @@ from agent.service.room.room_message_store import room_message_store
 from agent.service.room.room_session_keys import (
     build_room_agent_session_key,
 )
+from agent.service.session.session_store import session_store
 from agent.infra.database.repositories.conversation_sql_repository import ConversationSqlRepository
 from agent.infra.database.repositories.room_sql_repository import RoomSqlRepository
 from agent.infra.database.repositories.session_sql_repository import SessionSqlRepository
@@ -421,6 +422,10 @@ class RoomService:
                     room_type=context.room.room_type,
                 )
                 sdk_session_manager.remove_session(sdk_key)
+                await session_store.delete_session(
+                    sdk_key,
+                    agent_id=sql_session.agent_id,
+                )
 
         # 广播删除事件给所有连接的前端
         await ws_connection_registry.broadcast_to_room_subscribers(room_id, EventMessage(
