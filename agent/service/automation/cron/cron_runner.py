@@ -105,17 +105,23 @@ class CronRunner:
             "session_target_kind": job.session_target_kind,
             "trigger_kind": trigger_kind,
         }
-        await self._system_event_queue.enqueue(
+        event = await self._system_event_queue.enqueue(
             event_type="cron.trigger",
             source_type="cron",
             source_id=job.job_id,
             payload=payload,
         )
-        await self._heartbeat_service.wake(
-            agent_id=job.agent_id,
-            mode=job.wake_mode,
-            text=None,
-        )
+        try:
+            await self._heartbeat_service.wake(
+                agent_id=job.agent_id,
+                mode=job.wake_mode,
+                text=None,
+            )
+        except Exception:
+            # 中文注释：main 目标先入队再唤醒，如果唤醒失败必须把刚写入的事件标记失败，
+            # 否则 dispatcher 之后仍会消费到这条残留事件，形成幽灵执行。
+            await self._system_event_queue.mark_failed(event.event_id)
+            raise
         return CronExecutionResult(
             job_id=job.job_id,
             status="queued_to_main_session",

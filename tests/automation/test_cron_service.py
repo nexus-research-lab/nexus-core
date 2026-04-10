@@ -117,10 +117,23 @@ class FakeSystemEventQueue:
 
     def __init__(self) -> None:
         self.calls: list[dict[str, object]] = []
+        self.failed_ids: list[str] = []
+        self.pending_event_ids: list[str] = []
 
     async def enqueue(self, **fields):
-        self.calls.append(fields)
-        return SimpleNamespace(**fields)
+        event_id = str(fields.get("event_id") or f"event-{len(self.calls) + 1}")
+        payload = {
+            **fields,
+            "event_id": event_id,
+        }
+        self.calls.append(payload)
+        self.pending_event_ids.append(event_id)
+        return SimpleNamespace(**payload)
+
+    async def mark_failed(self, event_id: str):
+        self.failed_ids.append(event_id)
+        self.pending_event_ids = [item for item in self.pending_event_ids if item != event_id]
+        return None
 
 
 class FakeWakeService:
@@ -150,10 +163,11 @@ class FakeWakeService:
 class FakeHeartbeatService:
     """记录真实 heartbeat runtime 入口是否被调用。"""
 
-    def __init__(self) -> None:
+    def __init__(self, *, wake_error: Exception | None = None) -> None:
         self.start_calls = 0
         self.stop_calls = 0
         self.wake_calls: list[dict[str, object]] = []
+        self.wake_error = wake_error
 
     async def start(self) -> None:
         self.start_calls += 1
@@ -169,6 +183,8 @@ class FakeHeartbeatService:
                 "text": text,
             }
         )
+        if self.wake_error is not None:
+            raise self.wake_error
         return SimpleNamespace(agent_id=agent_id, mode=mode, scheduled=(mode == "now"))
 
     def set_channel_register(self, _channel_manager) -> None:
@@ -290,6 +306,52 @@ def test_cron_service_run_now_for_main_target_enqueues_system_event_and_wake():
             }
         ]
         assert await service.list_runs("job-main") == []
+
+    asyncio.run(scenario())
+
+
+def test_cron_service_run_now_for_main_target_marks_event_failed_when_wake_fails():
+    async def scenario():
+        from agent.service.automation.cron.cron_runner import CronRunner
+        from agent.service.automation.cron.cron_service import CronService
+
+        store = FakeCronStore()
+        event_queue = FakeSystemEventQueue()
+        heartbeat_service = FakeHeartbeatService(wake_error=RuntimeError("wake boom"))
+        runner = CronRunner(
+            store=store,
+            system_event_queue=event_queue,
+            heartbeat_service=heartbeat_service,
+            agent_run_orchestrator=FakeOrchestrator(),
+            now_fn=lambda: datetime(2026, 4, 10, 1, 20, tzinfo=timezone.utc),
+        )
+        service = CronService(
+            store=store,
+            runner=runner,
+            timer=FakeTimer(),
+            id_factory=lambda: "job-main-fail",
+            now_fn=lambda: datetime(2026, 4, 10, 1, 20, tzinfo=timezone.utc),
+        )
+
+        await service.create_job(
+            AutomationCronJobCreate(
+                name="Main Session Wake Failure",
+                agent_id="nexus",
+                schedule=AutomationCronSchedule(kind="every", interval_seconds=60),
+                instruction="follow up in main session",
+                session_target=AutomationSessionTarget(kind="main", wake_mode="now"),
+            )
+        )
+
+        try:
+            await service.run_now("job-main-fail")
+        except RuntimeError as exc:
+            assert str(exc) == "wake boom"
+        else:
+            raise AssertionError("expected wake failure to propagate")
+
+        assert event_queue.failed_ids == ["event-1"]
+        assert event_queue.pending_event_ids == []
 
     asyncio.run(scenario())
 
