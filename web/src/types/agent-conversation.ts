@@ -30,6 +30,10 @@ export type AgentConversationRuntimePhase =
   | 'running'
   | 'streaming'
   | 'awaiting_permission';
+export type AgentConversationSessionControlState =
+  | 'unknown'
+  | 'controller'
+  | 'observer';
 
 export interface AgentConversationIdentity {
   session_key: string | null;
@@ -59,6 +63,23 @@ export function getAgentConversationIdentityKey(
   return session_identity ? `session:${session_identity}` : null;
 }
 
+export function getSessionControlStatusText(
+  session_control_state: AgentConversationSessionControlState,
+  observer_count: number,
+): string {
+  if (session_control_state === 'controller') {
+    return observer_count > 0
+      ? `当前窗口是主理人，另有 ${observer_count} 个观察窗口`
+      : '当前窗口是主理人';
+  }
+
+  if (session_control_state === 'observer') {
+    return '当前窗口是观察视图';
+  }
+
+  return '正在同步控制权状态';
+}
+
 export interface UseAgentConversationOptions {
   ws_url?: string;
   identity?: AgentConversationIdentity | null;
@@ -74,6 +95,10 @@ export interface UseAgentConversationReturn {
   is_loading: boolean;
   is_session_loading: boolean;
   runtime_phase: AgentConversationRuntimePhase;
+  session_control_state: AgentConversationSessionControlState;
+  is_session_controller: boolean;
+  session_controller_client_id: string | null;
+  session_observer_count: number;
   error: string | null;
   pending_agent_slots: RoomPendingAgentSlotState[];
   send_message: (content: string) => Promise<void>;
@@ -100,6 +125,7 @@ export interface AgentConversationActionContext {
   identity: AgentConversationIdentity | null;
   session_key: string | null;
   ws_state: WebSocketState;
+  session_control_state: AgentConversationSessionControlState;
   ws_send: (message: WebSocketMessage) => void;
   active_session_key_ref: RefObject<string | null>;
   pending_permissions: PendingPermission[];

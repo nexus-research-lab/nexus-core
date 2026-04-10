@@ -23,6 +23,8 @@ interface LauncherAppConversationPanelProps {
   is_loading: boolean;
   session_key: string | null;
   ws_state: WebSocketState;
+  can_respond_to_permissions?: boolean;
+  permission_read_only_reason?: string;
   on_clear_session: () => void;
   on_close: () => void;
   on_permission_response: (payload: PermissionDecisionPayload) => boolean;
@@ -49,6 +51,8 @@ export function LauncherAppConversationPanel({
   is_loading,
   session_key,
   ws_state,
+  can_respond_to_permissions = true,
+  permission_read_only_reason,
   on_clear_session,
   on_close,
   on_permission_response,
@@ -106,7 +110,6 @@ export function LauncherAppConversationPanel({
       dot_class_name: "bg-amber-300",
     };
   }, [is_loading, ws_state]);
-
   const launcher_message_theme_style = useMemo(
     () => ({
       "--surface-canvas-background": "transparent",
@@ -259,6 +262,8 @@ export function LauncherAppConversationPanel({
                 is_mobile_layout
                 message_groups={message_groups}
                 on_permission_response={on_permission_response}
+                can_respond_to_permissions={can_respond_to_permissions}
+                permission_read_only_reason={permission_read_only_reason}
                 scroll_ref={scroll_ref}
                 round_ids={round_ids}
               />

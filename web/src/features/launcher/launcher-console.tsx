@@ -30,6 +30,8 @@ import { AnimatedHeroText, FadeSlideIn } from "@/shared/ui/feedback/animated-her
 interface LauncherConsoleProps {
   app_conversation_draft: string;
   app_conversation_loading: boolean;
+  app_conversation_can_control: boolean;
+  app_conversation_control_status_text?: string;
   agents: Agent[];
   conversations: Conversation[];
   rooms: RoomAggregate[];
@@ -47,6 +49,9 @@ interface LauncherConsoleProps {
 interface HeroStageProps {
   current_agent_id: string | null;
   decorative_tokens: SpotlightToken[];
+  input_disabled?: boolean;
+  input_placeholder?: string;
+  input_status_text?: string;
   mention_targets: MentionTargetItem[];
   on_enter_home: () => void;
   on_open_app_conversation: (initial_prompt?: string) => void;
@@ -304,6 +309,9 @@ function buildRecentLauncherEntries(
 const HeroStage = memo(function HeroStage({
   current_agent_id,
   decorative_tokens,
+  input_disabled = false,
+  input_placeholder,
+  input_status_text,
   mention_targets,
   on_enter_home,
   on_open_app_conversation,
@@ -502,15 +510,16 @@ const HeroStage = memo(function HeroStage({
                     const target = event.target as HTMLInputElement;
                     sync_mention_match(target.value, target.selectionStart ?? target.value.length);
                   }}
-                  placeholder={surface === "app" ? "告诉 Nexus 你要推进什么..." : t("launcher.query_placeholder")}
                   value={local_query}
-                  disabled={surface === "launcher" ? is_query_loading : false}
+                  placeholder={input_placeholder || (surface === "app" ? "告诉 Nexus 你要推进什么..." : t("launcher.query_placeholder"))}
+                  disabled={surface === "launcher" ? is_query_loading : input_disabled}
                 />
                 <HeroActionOrbShell class_name="shrink-0" is_active={!is_query_loading}>
                   <button
                     className={cn(
                       "inline-flex h-full w-full items-center justify-center rounded-full transition duration-150 ease-out hover:-translate-y-0.5",
-                      surface === "launcher" && is_query_loading && "cursor-not-allowed opacity-50 hover:translate-y-0",
+                      ((surface === "launcher" && is_query_loading) || (surface === "app" && input_disabled))
+                        && "cursor-not-allowed opacity-50 hover:translate-y-0",
                     )}
                     style={{
                       background: "var(--launcher-submit-background)",
@@ -519,7 +528,7 @@ const HeroStage = memo(function HeroStage({
                     }}
                     onClick={handle_submit}
                     type="button"
-                    disabled={surface === "launcher" ? is_query_loading : false}
+                    disabled={surface === "launcher" ? is_query_loading : input_disabled}
                   >
                     {surface === "app" ? (
                       is_query_loading ? (
@@ -536,6 +545,11 @@ const HeroStage = memo(function HeroStage({
                 </HeroActionOrbShell>
               </div>
             </HeroInputShell>
+            {surface === "app" && input_status_text ? (
+              <p className="mt-2 px-2 text-center text-[11px] text-[color:var(--launcher-handoff-color)]">
+                {input_status_text}
+              </p>
+            ) : null}
           </FadeSlideIn>
 
           <div className={cn(
@@ -635,6 +649,8 @@ const HeroStage = memo(function HeroStage({
 export function LauncherConsole({
   app_conversation_draft,
   app_conversation_loading,
+  app_conversation_can_control,
+  app_conversation_control_status_text,
   agents,
   conversations,
   rooms,
@@ -791,6 +807,9 @@ export function LauncherConsole({
 
   const handle_primary_action = useCallback((submitted_input: string) => {
     if (surface === "app") {
+      if (!app_conversation_can_control) {
+        return false;
+      }
       if (app_conversation_loading) {
         on_stop_app_conversation();
         return false;
@@ -819,6 +838,7 @@ export function LauncherConsole({
     void handle_submit(trimmed_query);
     return true;
   }, [
+    app_conversation_can_control,
     app_conversation_loading,
     handle_submit,
     isQueryLoading,
@@ -854,6 +874,8 @@ export function LauncherConsole({
         <HeroStage
           current_agent_id={current_agent_id}
           decorative_tokens={decorative_tokens}
+          input_disabled={surface === "app" ? !app_conversation_can_control : false}
+          input_status_text={surface === "app" ? app_conversation_control_status_text : undefined}
           mention_targets={mention_targets}
           on_enter_home={handle_enter_home}
           on_open_app_conversation={on_open_app_conversation}

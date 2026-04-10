@@ -132,6 +132,10 @@ sequenceDiagram
 - `message(result)` 负责最终结果内容
 - terminal `round_status` 负责 round 级结束语义
 - 输入框是否解锁、执行态是否收口，只能由 terminal `round_status` 驱动
+- `session_status` 只负责同步当前运行态与控制端归属
+  - 必须包含 `running_round_ids`
+  - 必须包含 `controller_client_id`
+  - 必须包含 `observer_count`
 
 #### 2.5.2 前端运行态状态机
 

@@ -1,6 +1,7 @@
 import { SetStateAction, useCallback, useEffect, useMemo, useRef, useState, startTransition } from 'react';
 import { getAgentWsUrl } from '@/config/options';
 import { areEquivalentSessionKeys } from '@/lib/session-key';
+import { getBrowserClientId } from '@/lib/uuid';
 import { useWebSocket } from '@/lib/websocket';
 import { useWorkspaceLiveStore } from '@/store/workspace-live';
 import {
@@ -21,6 +22,7 @@ import {
 import {
   AgentConversationActionContext,
   AgentConversationLifecycleContext,
+  AgentConversationSessionControlState,
   AgentThinkingPayload,
   RoomEventPayload,
   UseAgentConversationOptions,
@@ -162,9 +164,13 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
   const [pending_agent_slots, set_pending_agent_slots_state] = useState<RoomPendingAgentSlotState[]>([]);
   const [pending_permissions, set_pending_permissions_state] = useState<UseAgentConversationReturn['pending_permissions']>([]);
   const [agent_thinking, set_agent_thinking] = useState<AgentThinkingPayload | null>(null);
+  const [session_control_state, set_session_control_state] = useState<AgentConversationSessionControlState>('unknown');
+  const [session_controller_client_id, set_session_controller_client_id] = useState<string | null>(null);
+  const [session_observer_count, set_session_observer_count] = useState(0);
 
   const active_session_key_ref = useRef<string | null>(identity?.session_key ?? null);
   const active_identity_key_ref = useRef<string | null>(getAgentConversationIdentityKey(identity));
+  const browser_client_id_ref = useRef<string>(getBrowserClientId());
   const load_request_id_ref = useRef(0);
   const session_seq_cursor_ref = useRef(0);
   const room_seq_cursor_ref = useRef(0);
@@ -177,6 +183,7 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
   const bg_message_cache_ref = useRef<Map<string, Message[]>>(new Map());
   const is_loading = runtime_snapshot.is_loading;
   const runtime_phase = runtime_snapshot.phase;
+  const is_session_controller = session_control_state === 'controller';
 
   // ── Stream batching ──────────────────────────────────────────────────────
   // WebSocket fires on every token (~50-100/sec during streaming).
@@ -250,6 +257,12 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
   const on_room_event = useCallback((event_type: string, data: RoomEventPayload) => {
     on_room_event_callback?.(event_type, data);
   }, [on_room_event_callback]);
+
+  const reset_session_control = useCallback(() => {
+    set_session_control_state('unknown');
+    set_session_controller_client_id(null);
+    set_session_observer_count(0);
+  }, []);
 
   const reset_runtime_machine = useCallback(() => {
     apply_runtime_transition((machine) => {
@@ -375,6 +388,31 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
   }, [apply_runtime_transition, set_pending_agent_slots, set_pending_permissions]);
 
   const sync_session_status = useCallback((payload: SessionStatusEventPayload) => {
+    const next_controller_client_id = typeof payload.controller_client_id === 'string' && payload.controller_client_id
+      ? payload.controller_client_id
+      : null;
+    const next_observer_count = typeof payload.observer_count === 'number' && payload.observer_count >= 0
+      ? payload.observer_count
+      : 0;
+    set_session_controller_client_id((current_controller_client_id) => (
+      current_controller_client_id === next_controller_client_id
+        ? current_controller_client_id
+        : next_controller_client_id
+    ));
+    set_session_observer_count((current_observer_count) => (
+      current_observer_count === next_observer_count
+        ? current_observer_count
+        : next_observer_count
+    ));
+    set_session_control_state((current_state) => {
+      const next_state: AgentConversationSessionControlState = !next_controller_client_id
+        ? 'unknown'
+        : next_controller_client_id === browser_client_id_ref.current
+          ? 'controller'
+          : 'observer';
+      return current_state === next_state ? current_state : next_state;
+    });
+
     const running_round_ids = Array.isArray(payload.running_round_ids)
       ? payload.running_round_ids.filter((round_id): round_id is string => typeof round_id === 'string')
       : [];
@@ -486,8 +524,29 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
         };
       });
       return has_changes ? next_messages : prev;
-    });
+      });
   }, [apply_runtime_transition, set_pending_agent_slots, set_pending_permissions]);
+
+  const should_request_session_control = useCallback(() => {
+    if (typeof document === 'undefined') {
+      return true;
+    }
+    return document.visibilityState !== 'hidden' && document.hasFocus();
+  }, []);
+
+  const build_session_bind_message = useCallback((
+    target_session_key: string,
+    request_control: boolean,
+  ): WebSocketMessage => ({
+    type: 'bind_session',
+    session_key: target_session_key,
+    client_id: browser_client_id_ref.current,
+    request_control,
+    ...(session_seq_cursor_ref.current > 0 ? { last_seen_session_seq: session_seq_cursor_ref.current } : {}),
+    ...(agent_id ? { agent_id } : {}),
+    ...(room_id ? { room_id } : {}),
+    ...(conversation_id ? { conversation_id } : {}),
+  }), [agent_id, conversation_id, room_id]);
 
   const handle_websocket_message = useCallback((backend_message: unknown) => {
     const event = backend_message as EventMessage;
@@ -552,16 +611,10 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
         if (!session_key || ws_state_ref.current !== 'connected') {
           return;
         }
-        ws_send_ref.current({
-          type: 'bind_session',
+        ws_send_ref.current(build_session_bind_message(
           session_key,
-          ...(session_seq_cursor_ref.current > 0
-            ? { last_seen_session_seq: session_seq_cursor_ref.current }
-            : {}),
-          ...(agent_id ? { agent_id } : {}),
-          ...(room_id ? { room_id } : {}),
-          ...(conversation_id ? { conversation_id } : {}),
-        });
+          should_request_session_control(),
+        ));
       });
       return;
     }
@@ -593,13 +646,14 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
     on_room_event_callback,
     room_id,
     session_key,
-    agent_id,
     conversation_id,
+    build_session_bind_message,
     reload_current_session,
     apply_round_status,
     set_pending_agent_slots,
     set_pending_permissions,
     sync_session_status,
+    should_request_session_control,
     track_assistant_message,
     track_chat_ack,
     update_message_status,
@@ -620,10 +674,11 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
     session_seq_cursor_ref.current = 0;
     room_seq_cursor_ref.current = 0;
     reset_runtime_machine();
+    reset_session_control();
     set_pending_agent_slots((current_slots) => (current_slots.length ? [] : current_slots));
     set_pending_permissions((current_permissions) => (current_permissions.length ? [] : current_permissions));
     set_agent_thinking(null);
-  }, [identity, reset_runtime_machine, set_pending_agent_slots, set_pending_permissions]);
+  }, [identity, reset_runtime_machine, reset_session_control, set_pending_agent_slots, set_pending_permissions]);
 
   useEffect(() => {
     const next_session_key = identity?.session_key?.trim() || null;
@@ -703,17 +758,14 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
     if (!session_key || ws_state !== 'connected') {
       return;
     }
+    const client_id = browser_client_id_ref.current;
 
     // 中文注释：WebSocket 重连后，后端需要重新知道“当前这个连接服务哪个 session”，
     // 否则挂起中的权限请求无法重投到新连接。
-    ws_send({
-      type: 'bind_session',
+    ws_send(build_session_bind_message(
       session_key,
-      ...(session_seq_cursor_ref.current > 0 ? { last_seen_session_seq: session_seq_cursor_ref.current } : {}),
-      ...(agent_id ? { agent_id } : {}),
-      ...(room_id ? { room_id } : {}),
-      ...(conversation_id ? { conversation_id } : {}),
-    });
+      should_request_session_control(),
+    ));
 
     return () => {
       // 中文注释：共享 WebSocket 常驻于应用路由壳后，
@@ -721,9 +773,30 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
       ws_send({
         type: 'unbind_session',
         session_key,
+        client_id,
       });
     };
-  }, [agent_id, conversation_id, room_id, session_key, ws_send, ws_state]);
+  }, [build_session_bind_message, session_key, should_request_session_control, ws_send, ws_state]);
+
+  useEffect(() => {
+    if (!session_key || ws_state !== 'connected' || typeof window === 'undefined' || typeof document === 'undefined') {
+      return;
+    }
+
+    const handle_window_activation = () => {
+      if (!should_request_session_control()) {
+        return;
+      }
+      ws_send(build_session_bind_message(session_key, true));
+    };
+
+    window.addEventListener('focus', handle_window_activation);
+    document.addEventListener('visibilitychange', handle_window_activation);
+    return () => {
+      window.removeEventListener('focus', handle_window_activation);
+      document.removeEventListener('visibilitychange', handle_window_activation);
+    };
+  }, [build_session_bind_message, session_key, should_request_session_control, ws_send, ws_state]);
 
   // Subscribe to room-level events (member changes, deletions, etc.) when in a Room context
   useEffect(() => {
@@ -756,6 +829,7 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
     identity,
     session_key,
     ws_state,
+    session_control_state,
     ws_send,
     active_session_key_ref,
     pending_permissions,
@@ -765,7 +839,7 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
     set_messages,
     set_pending_agent_slots,
     set_pending_permissions,
-  }), [identity, session_key, ws_state, ws_send, pending_permissions, pending_agent_slots, messages, set_error, set_messages, set_pending_agent_slots, set_pending_permissions]);
+  }), [identity, session_key, ws_state, session_control_state, ws_send, pending_permissions, pending_agent_slots, messages, set_error, set_messages, set_pending_agent_slots, set_pending_permissions]);
 
   const send_message = useCallback(async (content: string) => {
     const round_id = await sendSessionMessage(content, action_context);
@@ -829,6 +903,7 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
     if (!normalized_key) {
       set_is_session_loading(false);
       reset_runtime_machine();
+      reset_session_control();
       set_pending_agent_slots((current_slots) => (
         current_slots.length ? [] : current_slots
       ));
@@ -837,7 +912,7 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
       ));
       set_agent_thinking(null);
     }
-  }, [reset_runtime_machine, set_is_session_loading, set_pending_agent_slots, set_pending_permissions]);
+  }, [reset_runtime_machine, reset_session_control, set_is_session_loading, set_pending_agent_slots, set_pending_permissions]);
 
   const reset_session = useCallback(() => {
     resetAgentSession(lifecycle_context);
@@ -853,6 +928,10 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
     is_loading,
     is_session_loading,
     runtime_phase,
+    session_control_state,
+    is_session_controller,
+    session_controller_client_id,
+    session_observer_count,
     pending_agent_slots,
     pending_permissions,
     agent_thinking,
