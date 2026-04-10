@@ -15,6 +15,7 @@ from typing import Any, Dict
 from fastapi import WebSocket
 
 from agent.service.channels.message_sender import MessageSender
+from agent.service.channels.ws.ws_chat_task_registry import ws_chat_task_registry
 from agent.service.workspace.workspace_event_bus import workspace_event_bus
 from agent.service.workspace.workspace_observer import workspace_observer
 from agent.schema.model_message import (
@@ -34,6 +35,7 @@ class WebSocketSender(MessageSender):
         from agent.service.channels.ws.ws_connection_registry import ws_connection_registry
         self.websocket = websocket
         self._workspace_subscriptions: Dict[str, str] = {}
+        self._agent_runtime_subscriptions: Dict[str, str] = {}
         self._is_closed = False
         self._send_lock = asyncio.Lock()
         ws_connection_registry.register(self)
@@ -84,6 +86,16 @@ class WebSocketSender(MessageSender):
         )
         await self._safe_send_json(message.model_dump(mode="json", exclude_none=True))
 
+    async def send_agent_runtime_event(self, snapshot: Dict[str, Any]) -> None:
+        """发送 agent 运行态事件。"""
+        message = EventMessage(
+            event_type="agent_runtime_event",
+            delivery_mode="ephemeral",
+            agent_id=snapshot.get("agent_id"),
+            data=snapshot,
+        )
+        await self._safe_send_json(message.model_dump(mode="json", exclude_none=True))
+
     def subscribe_workspace(self, agent_id: str) -> None:
         """订阅指定 Agent 的 workspace 事件。"""
         if not agent_id or agent_id in self._workspace_subscriptions:
@@ -103,15 +115,33 @@ class WebSocketSender(MessageSender):
         token = workspace_event_bus.subscribe(agent_id, _listener)
         token_holder["token"] = token
         self._workspace_subscriptions[agent_id] = token
+
+        runtime_token_holder: Dict[str, str] = {}
+
+        async def _runtime_listener(snapshot: Dict[str, Any]) -> None:
+            try:
+                await self.send_agent_runtime_event(snapshot)
+            except Exception as exc:
+                logger.warning(f"⚠️ agent 运行态事件推送失败: {exc}")
+                runtime_token = runtime_token_holder.get("token")
+                if runtime_token:
+                    ws_chat_task_registry.unsubscribe_agent_runtime(runtime_token)
+
+        runtime_token = ws_chat_task_registry.subscribe_agent_runtime(agent_id, _runtime_listener)
+        runtime_token_holder["token"] = runtime_token
+        self._agent_runtime_subscriptions[agent_id] = runtime_token
         workspace_observer.subscribe(agent_id)
 
     def unsubscribe_workspace(self, agent_id: str) -> None:
         """取消订阅指定 Agent 的 workspace 事件。"""
         token = self._workspace_subscriptions.pop(agent_id, None)
-        if not token:
-            return
-        workspace_event_bus.unsubscribe(token)
-        workspace_observer.unsubscribe(agent_id)
+        runtime_token = self._agent_runtime_subscriptions.pop(agent_id, None)
+        if token:
+            workspace_event_bus.unsubscribe(token)
+        if runtime_token:
+            ws_chat_task_registry.unsubscribe_agent_runtime(runtime_token)
+        if token or runtime_token:
+            workspace_observer.unsubscribe(agent_id)
 
     def unsubscribe_all_workspace(self) -> None:
         """取消当前连接的所有 workspace 事件订阅，并从全局注册表注销。"""

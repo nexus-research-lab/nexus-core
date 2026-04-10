@@ -28,6 +28,13 @@ async def get_agents():
     return resp.ok(resp.Resp(data=[agent.model_dump() for agent in agents]))
 
 
+@router.get("/agents/runtime/statuses")
+async def get_agent_runtime_statuses():
+    """获取全部 Agent 的运行态快照。"""
+    statuses = await agent_service.get_agent_runtime_statuses()
+    return resp.ok(resp.Resp(data=statuses))
+
+
 @router.post("/agents")
 async def create_agent(request: CreateAgentRequest):
     """创建新 Agent。"""

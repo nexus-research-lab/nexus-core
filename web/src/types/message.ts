@@ -98,10 +98,19 @@ export interface AssistantMessage extends BaseMessage {
   stream_status?: AssistantMessageStatus;
 }
 
+export interface SystemMessageMetadata extends Record<string, any> {
+  subtype?: string;
+  attempt?: number;
+  max_retries?: number;
+  retry_delay_ms?: number;
+  error_status?: string | null;
+  error?: string | null;
+}
+
 export interface SystemMessage extends BaseMessage {
   role: 'system';
   content: string;
-  metadata?: Record<string, any>;
+  metadata?: SystemMessageMetadata;
 }
 
 export interface ResultMessage extends BaseMessage {
@@ -171,6 +180,7 @@ export interface EventMessage {
   | 'message'
   | 'stream'
   | 'permission_request'
+  | 'agent_runtime_event'
   | 'workspace_event'
   | 'pong'
   | 'error'
@@ -234,4 +244,26 @@ export interface RoomCollaborationEvent {
     content?: string;
   };
   timestamp: number;
+}
+
+export interface SystemMessageDisplayMeta {
+  label: string;
+  tone: 'neutral' | 'warning';
+}
+
+export function getSystemMessageDisplayMeta(
+  message: SystemMessage,
+): SystemMessageDisplayMeta {
+  const subtype = message.metadata?.subtype;
+  if (subtype === 'api_retry') {
+    return {
+      label: '自动重试',
+      tone: 'warning',
+    };
+  }
+
+  return {
+    label: '系统事件',
+    tone: 'neutral',
+  };
 }

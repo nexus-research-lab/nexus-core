@@ -315,6 +315,12 @@ class RoomChatService:
             task = asyncio.current_task()
             if task:
                 chat_tasks[agent_task_key] = task
+                ws_chat_task_registry.register_agent_task(
+                    task_key=agent_task_key,
+                    agent_id=agent_id,
+                    task=task,
+                    round_id=agent_round_id,
+                )
             try:
                 await self._dispatch_to_agent(
                     room_id=room_id,
@@ -363,6 +369,7 @@ class RoomChatService:
                     room_type=room_type,
                 )
             finally:
+                ws_chat_task_registry.unregister_agent_task(agent_task_key, task)
                 chat_tasks.pop(agent_task_key, None)
 
         agent_coroutines = [
@@ -491,7 +498,7 @@ class RoomChatService:
                                 conversation_id=conversation_id,
                             )
                         )
-                    if processor.subtype in ("success", "error"):
+                    if processor.subtype in ("success", "error", "interrupted"):
                         break
 
                 # 通知前端：该 Agent 生成结束

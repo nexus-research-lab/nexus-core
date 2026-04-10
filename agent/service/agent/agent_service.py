@@ -9,10 +9,11 @@
 
 """Agent 应用服务。"""
 
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from agent.schema.model_agent import AAgent, ValidateAgentNameResponse
 from agent.schema.model_cost import AgentCostSummary
+from agent.service.channels.ws.ws_chat_task_registry import ws_chat_task_registry
 from agent.schema.model_session import ASession
 from agent.service.agent.agent_manager import agent_manager
 from agent.service.agent.main_agent_profile import MainAgentProfile
@@ -108,6 +109,12 @@ class AgentService:
         await self.get_agent(agent_id)
         all_sessions = await session_store.get_all_sessions()
         return [session for session in all_sessions if session.agent_id == agent_id]
+
+    async def get_agent_runtime_statuses(self) -> List[dict[str, Any]]:
+        """获取全部成员的运行态快照。"""
+        agents = await self.get_agents()
+        agent_ids = [agent.agent_id for agent in agents]
+        return ws_chat_task_registry.build_agent_runtime_snapshots(agent_ids)
 
     async def get_agent_cost_summary(self, agent_id: str) -> AgentCostSummary:
         """获取 Agent 成本汇总。"""

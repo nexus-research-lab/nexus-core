@@ -49,6 +49,8 @@ class ChatMessageProcessor:
         self.agent_id = resolve_agent_id(agent_id)
         self.round_id = round_id or str(uuid.uuid4())
         self.session_id = session_id
+        # 中文注释：subtype 只记录本轮最终 result 的终态，
+        # 不能再被 api_retry 这类过程性 system subtype 污染。
         self.subtype: Optional[str] = None
         self.message_count = 0
         self._is_user_message_saved = False
@@ -73,11 +75,8 @@ class ChatMessageProcessor:
 
         messages = self._dispatch(response_msg)
         payload = SdkMessageMapper.to_plain_dict(response_msg)
-        subtype = payload.get("subtype")
-        if subtype:
-            self.subtype = str(subtype)
         if isinstance(response_msg, ResultMessage):
-            self.subtype = "success" if self.subtype == "success" else "error"
+            self.subtype = self._normalize_result_subtype(payload.get("subtype"))
 
         for message in messages:
             if isinstance(message, Message):
@@ -273,12 +272,16 @@ class ChatMessageProcessor:
         return [assistant_message]
 
     def _handle_system_message(self, response_msg: SystemMessage) -> list[Message]:
-        """把任务进度系统消息并入当前执行链。"""
+        """处理可见 system 事件与任务进度事件。"""
         payload = SdkMessageMapper.to_plain_dict(response_msg)
         subtype = str(payload.get("subtype") or "")
         data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
         if subtype != "task_progress" or not data:
-            return []
+            visible_system_message = self._build_visible_system_message(
+                payload=payload,
+                subtype=subtype,
+            )
+            return [visible_system_message] if visible_system_message else []
 
         task_id = str(data.get("task_id") or "")
         if not task_id:
@@ -305,6 +308,78 @@ class ChatMessageProcessor:
         self._remember_assistant_message(message)
         return [message]
 
+    @staticmethod
+    def _normalize_result_subtype(subtype: object) -> str:
+        """把 SDK result subtype 归一化为前端可识别的终态。"""
+        normalized_subtype = str(subtype or "success")
+        if normalized_subtype in {"success", "error", "interrupted"}:
+            return normalized_subtype
+        return "error"
+
+    def _build_visible_system_message(
+        self,
+        payload: dict,
+        subtype: str,
+    ) -> Message | None:
+        """把可见的 SDK system 事件转换为统一消息。"""
+        if subtype != "api_retry":
+            return None
+
+        content = self._format_api_retry_message(payload)
+        metadata = {
+            "subtype": subtype,
+            "attempt": payload.get("attempt"),
+            "max_retries": payload.get("max_retries"),
+            "retry_delay_ms": payload.get("retry_delay_ms"),
+            "error_status": payload.get("error_status"),
+            "error": payload.get("error"),
+            "uuid": payload.get("uuid"),
+        }
+        return Message(
+            message_id=str(uuid.uuid4()),
+            session_key=self.session_key,
+            agent_id=self.agent_id,
+            round_id=self.round_id,
+            session_id=self.session_id,
+            parent_id=self._current_parent_id(),
+            role="system",
+            content=content,
+            metadata={key: value for key, value in metadata.items() if value is not None},
+        )
+
+    def _format_api_retry_message(self, payload: dict) -> str:
+        """把 SDK api_retry 事件格式化为用户可读文本。"""
+        attempt = payload.get("attempt")
+        max_retries = payload.get("max_retries")
+        retry_delay_ms = payload.get("retry_delay_ms")
+        error_status = str(payload.get("error_status") or "").strip()
+        error = str(payload.get("error") or "").strip()
+
+        if isinstance(attempt, int) and isinstance(max_retries, int) and max_retries > 0:
+            retry_progress_text = f"第 {attempt}/{max_retries} 次重试"
+        elif isinstance(attempt, int):
+            retry_progress_text = f"第 {attempt} 次重试"
+        else:
+            retry_progress_text = "下一次重试"
+
+        if isinstance(retry_delay_ms, (int, float)):
+            delay_text = (
+                f"{retry_delay_ms / 1000:.1f} 秒后"
+                if retry_delay_ms >= 1000
+                else f"{int(retry_delay_ms)} 毫秒后"
+            )
+        else:
+            delay_text = "稍后"
+
+        reason_parts: list[str] = []
+        if error_status and error_status.lower() != "none":
+            reason_parts.append(f"状态 {error_status}")
+        if error and error.lower() != "none":
+            reason_parts.append(error)
+
+        reason_text = f"（原因：{'，'.join(reason_parts)}）" if reason_parts else ""
+        return f"接口调用失败，系统将在 {delay_text} 自动进行{retry_progress_text}{reason_text}。"
+
     def _handle_tool_result_message(self, response_msg: UserMessage) -> list[Message]:
         """将工具结果回填到当前 assistant 段。"""
         payload = SdkMessageMapper.to_plain_dict(response_msg)
@@ -327,7 +402,7 @@ class ChatMessageProcessor:
         """构建结果消息。"""
         payload = SdkMessageMapper.to_plain_dict(response_msg)
         subtype = str(payload.get("subtype") or "success")
-        normalized_subtype = subtype if subtype in ("success", "error", "interrupted") else "error"
+        normalized_subtype = self._normalize_result_subtype(subtype)
         return Message(
             message_id=str(uuid.uuid4()),
             session_key=self.session_key,

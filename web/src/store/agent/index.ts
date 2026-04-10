@@ -11,10 +11,16 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Agent, CreateAgentParams, UpdateAgentParams } from '@/types/agent';
+import {
+    Agent,
+    AgentRuntimeStatus,
+    CreateAgentParams,
+    UpdateAgentParams,
+} from '@/types/agent';
 import { createBrowserJSONStorage } from '@/lib/browser-storage';
 import {
     getAgents,
+    getAgentRuntimeStatusesApi,
     createAgentApi,
     updateAgentApi,
     deleteAgentApi,
@@ -25,6 +31,7 @@ import {
 export interface AgentStoreState {
     // 数据
     agents: Agent[];
+    agent_runtime_statuses: Record<string, AgentRuntimeStatus>;
     current_agent_id: string | null;
 
     // UI 状态
@@ -42,6 +49,16 @@ export interface AgentStoreState {
 
     // 服务器同步
     load_agents_from_server: () => Promise<void>;
+    load_agent_runtime_statuses: () => Promise<void>;
+    apply_agent_runtime_status: (status: AgentRuntimeStatus) => void;
+}
+
+function build_idle_runtime_status(agent_id: string): AgentRuntimeStatus {
+    return {
+        agent_id,
+        running_task_count: 0,
+        status: 'idle',
+    };
 }
 
 // ==================== Store 创建 ====================
@@ -51,6 +68,7 @@ export const useAgentStore = create<AgentStoreState>()(
         (set, get) => ({
             // 初始状态
             agents: [],
+            agent_runtime_statuses: {},
             current_agent_id: null,
             loading: false,
             error: null,
@@ -62,6 +80,10 @@ export const useAgentStore = create<AgentStoreState>()(
                     const agent = await createAgentApi(params);
                     set((state) => ({
                         agents: [agent, ...state.agents],
+                        agent_runtime_statuses: {
+                            ...state.agent_runtime_statuses,
+                            [agent.agent_id]: build_idle_runtime_status(agent.agent_id),
+                        },
                         error: null,
                     }));
                     console.debug('[AgentStore] Agent created:', agent.agent_id);
@@ -83,6 +105,10 @@ export const useAgentStore = create<AgentStoreState>()(
                             : state.current_agent_id;
                         return {
                             agents: new_agents,
+                            agent_runtime_statuses: Object.fromEntries(
+                                Object.entries(state.agent_runtime_statuses)
+                                    .filter(([runtime_agent_id]) => runtime_agent_id !== agent_id)
+                            ),
                             current_agent_id: new_current,
                             error: null,
                         };
@@ -100,6 +126,11 @@ export const useAgentStore = create<AgentStoreState>()(
                         agents: state.agents.map(a =>
                             a.agent_id === agent_id ? updated : a
                         ),
+                        agent_runtime_statuses: {
+                            ...state.agent_runtime_statuses,
+                            [agent_id]: state.agent_runtime_statuses[agent_id]
+                                ?? build_idle_runtime_status(agent_id),
+                        },
                         error: null,
                     }));
                     console.debug('[AgentStore] Agent updated:', agent_id);
@@ -125,7 +156,18 @@ export const useAgentStore = create<AgentStoreState>()(
                 try {
                     set({ loading: true, error: null });
                     const agents = await getAgents();
-                    set({ agents, loading: false, error: null });
+                    set((state) => ({
+                        agents,
+                        agent_runtime_statuses: Object.fromEntries(
+                            agents.map((agent) => [
+                                agent.agent_id,
+                                state.agent_runtime_statuses[agent.agent_id]
+                                    ?? build_idle_runtime_status(agent.agent_id),
+                            ])
+                        ),
+                        loading: false,
+                        error: null,
+                    }));
                     console.debug(`[AgentStore] Loaded ${agents.length} agents from server`);
                 } catch (err) {
                     console.error('[AgentStore] Failed to load agents:', err);
@@ -134,6 +176,31 @@ export const useAgentStore = create<AgentStoreState>()(
                         error: err instanceof Error ? err.message : 'Unknown error',
                     });
                 }
+            },
+
+            load_agent_runtime_statuses: async (): Promise<void> => {
+                try {
+                    const statuses = await getAgentRuntimeStatusesApi();
+                    set((state) => ({
+                        agent_runtime_statuses: {
+                            ...state.agent_runtime_statuses,
+                            ...Object.fromEntries(
+                                statuses.map((status) => [status.agent_id, status])
+                            ),
+                        },
+                    }));
+                } catch (error) {
+                    console.error('[AgentStore] Failed to load agent runtime statuses:', error);
+                }
+            },
+
+            apply_agent_runtime_status: (status: AgentRuntimeStatus): void => {
+                set((state) => ({
+                    agent_runtime_statuses: {
+                        ...state.agent_runtime_statuses,
+                        [status.agent_id]: status,
+                    },
+                }));
             },
         }),
         {

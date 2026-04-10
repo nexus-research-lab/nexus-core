@@ -9,6 +9,7 @@
 
 import {
     Agent,
+    AgentRuntimeStatus,
     AgentNameValidationResult,
     ApiAgent,
     CreateAgentParams,
@@ -45,6 +46,13 @@ export const getAgents = async (): Promise<Agent[]> => {
         method: 'GET',
     });
     return result.map(transformApiAgent);
+};
+
+/** 获取 Agent 运行态快照 */
+export const getAgentRuntimeStatusesApi = async (): Promise<AgentRuntimeStatus[]> => {
+    return request_api<AgentRuntimeStatus[]>(`${AGENT_API_BASE_URL}/agents/runtime/statuses`, {
+        method: 'GET',
+    });
 };
 
 /** 创建 Agent */

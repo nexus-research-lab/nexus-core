@@ -51,6 +51,12 @@ class ChatService:
         if not session_key:
             return
         message["round_id"] = str(message.get("round_id") or uuid.uuid4())
+        existing_session = await session_store.get_session_info(session_key)
+        requested_agent_id = message.get("agent_id", "")
+        real_agent_id = resolve_agent_id(
+            existing_session.agent_id if existing_session else requested_agent_id
+        )
+        message["agent_id"] = real_agent_id
 
         if session_key in chat_tasks and not chat_tasks[session_key].done():
             logger.info(f"⚠️ 取消旧 chat 任务: {session_key}")
@@ -62,8 +68,18 @@ class ChatService:
         task = asyncio.create_task(self.handle_chat_message(message))
         chat_tasks[session_key] = task
         ws_chat_task_registry.register(session_key, task, message.get("round_id"))
+        ws_chat_task_registry.register_agent_task(
+            task_key=session_key,
+            agent_id=real_agent_id,
+            task=task,
+            round_id=message.get("round_id"),
+        )
         task.add_done_callback(
-            lambda current_task: self._on_task_done(session_key, current_task, chat_tasks)
+            lambda current_task: self._on_task_done(
+                session_key,
+                current_task,
+                chat_tasks,
+            )
         )
 
     async def handle_chat_message(self, message: Dict[str, Any]) -> None:
@@ -156,7 +172,7 @@ class ChatService:
                                 )
                             )
                             round_finished = True
-                    if processor.subtype in ["success", "error"]:
+                    if processor.subtype in ["success", "error", "interrupted"]:
                         break
             except asyncio.CancelledError:
                 raise
@@ -271,6 +287,7 @@ class ChatService:
     ) -> None:
         """聊天任务完成回调。"""
         ws_chat_task_registry.unregister(session_key, task)
+        ws_chat_task_registry.unregister_agent_task(session_key, task)
         chat_tasks.pop(session_key, None)
         if task.cancelled():
             logger.info(f"🛑 任务被取消: {session_key}")

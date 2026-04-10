@@ -35,6 +35,12 @@ export interface Agent {
     status: string;
 }
 
+export interface AgentRuntimeStatus {
+    agent_id: string;
+    running_task_count: number;
+    status: 'running' | 'idle';
+}
+
 /** API 响应中的 Agent 数据（后端格式） */
 export interface ApiAgent {
     agent_id: string;

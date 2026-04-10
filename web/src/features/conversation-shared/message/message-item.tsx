@@ -8,12 +8,12 @@
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { prepare, layout } from "@chenglou/pretext";
-import { Bot, Check, ChevronDown, ChevronRight, Copy, Edit2, Square, User, Wrench } from "lucide-react";
+import { Bot, Check, ChevronDown, ChevronRight, Copy, Edit2, RotateCcw, Square, User, Wrench } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAssistantContentMerge } from "@/hooks/use-assistant-content-merge";
 import { useScrollAnchoredState } from "@/hooks/use-scroll-anchored-state";
 import { AgentConversationRuntimePhase } from "@/types/agent-conversation";
-import { AssistantMessage, ContentBlock, Message } from "@/types/message";
+import { AssistantMessage, ContentBlock, getSystemMessageDisplayMeta, Message, SystemMessage } from "@/types/message";
 import {
   collectUnresolvedToolUseCandidates,
   matchPendingPermissionsToToolUses,
@@ -88,6 +88,20 @@ function find_latest_streaming_block(
   return null;
 }
 
+function getSystemMessageContainerClassName(tone: "neutral" | "warning"): string {
+  if (tone === "warning") {
+    return "border border-amber-200/60 bg-amber-50/70 text-amber-950/88";
+  }
+  return "border border-[var(--surface-panel-subtle-border)] bg-[var(--surface-inset-background)] text-[color:var(--text-default)]";
+}
+
+function getSystemMessageIconClassName(tone: "neutral" | "warning"): string {
+  if (tone === "warning") {
+    return "text-amber-700/80";
+  }
+  return "text-[color:var(--icon-muted)]";
+}
+
 interface MessageItemProps {
   compact?: boolean;
   current_agent_name?: string | null;
@@ -158,11 +172,18 @@ function MessageItemInner(
     is_last_round,
     is_loading,
   });
+  const systemMessages = useMemo(() => (
+    messages.filter((message): message is SystemMessage => (
+      message.role === "system"
+      && typeof message.content === "string"
+      && Boolean(message.content.trim())
+    ))
+  ), [messages]);
 
   // 元数据
   const firstAssistant = assistantMessages[0];
   const model = firstAssistant && 'model' in firstAssistant ? firstAssistant.model : undefined;
-  const timestamp = firstAssistant?.timestamp || resultMessage?.timestamp;
+  const timestamp = firstAssistant?.timestamp || systemMessages[0]?.timestamp || resultMessage?.timestamp;
 
   // Room 并发场景：读取 stream_status（仅 AssistantMessage 携带此字段）
   const stream_status = useMemo(() => {
@@ -656,6 +677,10 @@ function MessageItemInner(
       return false;
     }
 
+    if (systemMessages.length > 0) {
+      return false;
+    }
+
     if (
       stream_status === 'pending'
       || stream_status === 'streaming'
@@ -685,6 +710,7 @@ function MessageItemInner(
     processProjection.content.length,
     resultMessage,
     stream_status,
+    systemMessages.length,
     unmatchedPendingPermissions.length,
   ]);
 
@@ -985,6 +1011,38 @@ function MessageItemInner(
                 >
                   {shouldRenderStandaloneActivityStatus ? (
                     <MessageActivityStatus class_name="py-1" state={liveActivityState!} />
+                  ) : null}
+
+                  {systemMessages.length > 0 ? (
+                    <div className="mb-3 flex flex-col gap-2">
+                      {systemMessages.map((message) => {
+                        const display_meta = getSystemMessageDisplayMeta(message);
+                        return (
+                          <div
+                            key={message.message_id}
+                            className={cn(
+                              "flex items-start gap-2 rounded-2xl px-3 py-2.5",
+                              getSystemMessageContainerClassName(display_meta.tone),
+                            )}
+                          >
+                            <RotateCcw
+                              className={cn(
+                                "mt-0.5 h-3.5 w-3.5 shrink-0",
+                                getSystemMessageIconClassName(display_meta.tone),
+                              )}
+                            />
+                            <div className="min-w-0">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.14em]">
+                                {display_meta.label}
+                              </p>
+                              <p className="mt-0.5 whitespace-pre-wrap text-[13px] leading-6 wrap-anywhere">
+                                {message.content}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   ) : null}
 
                   {/* Room 并发：已取消标记 */}
