@@ -41,7 +41,7 @@ class CronRunner:
         *,
         store,
         system_event_queue=None,
-        wake_service=None,
+        heartbeat_service=None,
         agent_run_orchestrator=None,
         run_log: CronRunLog | None = None,
         now_fn=None,
@@ -50,16 +50,16 @@ class CronRunner:
             from agent.service.automation.runtime.system_event_queue import SystemEventQueue
 
             system_event_queue = SystemEventQueue()
-        if wake_service is None:
-            from agent.service.automation.runtime.wake_service import WakeService
+        if heartbeat_service is None:
+            from agent.service.automation.heartbeat.heartbeat_service import heartbeat_service as default_heartbeat_service
 
-            wake_service = WakeService()
+            heartbeat_service = default_heartbeat_service
         if agent_run_orchestrator is None:
             from agent.service.automation.runtime.agent_run_orchestrator import AgentRunOrchestrator
 
             agent_run_orchestrator = AgentRunOrchestrator()
         self._system_event_queue = system_event_queue
-        self._wake_service = wake_service
+        self._heartbeat_service = heartbeat_service
         self._agent_run_orchestrator = agent_run_orchestrator
         self._run_log = run_log or CronRunLog(store=store, now_fn=now_fn)
         self._now_fn = now_fn or (lambda: datetime.now(timezone.utc))
@@ -101,7 +101,7 @@ class CronRunner:
         payload = {
             "job_id": job.job_id,
             "agent_id": job.agent_id,
-            "instruction": job.instruction,
+            "text": job.instruction,
             "session_target_kind": job.session_target_kind,
             "trigger_kind": trigger_kind,
         }
@@ -111,14 +111,10 @@ class CronRunner:
             source_id=job.job_id,
             payload=payload,
         )
-        self._wake_service.request(
+        await self._heartbeat_service.wake(
             agent_id=job.agent_id,
-            session_key=session_key,
-            wake_mode=job.wake_mode,
-            metadata={
-                "job_id": job.job_id,
-                "trigger_kind": trigger_kind,
-            },
+            mode=job.wake_mode,
+            text=None,
         )
         return CronExecutionResult(
             job_id=job.job_id,

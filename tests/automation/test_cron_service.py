@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import os
+import sys
 from datetime import datetime, timezone
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 
 from agent.schema.model_automation import (
     AutomationCronJobCreate,
@@ -145,6 +147,34 @@ class FakeWakeService:
         return SimpleNamespace(**payload)
 
 
+class FakeHeartbeatService:
+    """记录真实 heartbeat runtime 入口是否被调用。"""
+
+    def __init__(self) -> None:
+        self.start_calls = 0
+        self.stop_calls = 0
+        self.wake_calls: list[dict[str, object]] = []
+
+    async def start(self) -> None:
+        self.start_calls += 1
+
+    async def stop(self) -> None:
+        self.stop_calls += 1
+
+    async def wake(self, *, agent_id: str, mode: str, text: str | None = None):
+        self.wake_calls.append(
+            {
+                "agent_id": agent_id,
+                "mode": mode,
+                "text": text,
+            }
+        )
+        return SimpleNamespace(agent_id=agent_id, mode=mode, scheduled=(mode == "now"))
+
+    def set_channel_register(self, _channel_manager) -> None:
+        return None
+
+
 class FakeOrchestrator:
     """记录 automation run 调用。"""
 
@@ -175,7 +205,7 @@ def test_cron_service_create_pause_resume_list_and_delete_jobs():
         runner = CronRunner(
             store=store,
             system_event_queue=FakeSystemEventQueue(),
-            wake_service=FakeWakeService(),
+            heartbeat_service=FakeHeartbeatService(),
             agent_run_orchestrator=FakeOrchestrator(),
             now_fn=lambda: datetime(2026, 4, 10, 1, 20, tzinfo=timezone.utc),
         )
@@ -219,11 +249,11 @@ def test_cron_service_run_now_for_main_target_enqueues_system_event_and_wake():
 
         store = FakeCronStore()
         event_queue = FakeSystemEventQueue()
-        wake_service = FakeWakeService()
+        heartbeat_service = FakeHeartbeatService()
         runner = CronRunner(
             store=store,
             system_event_queue=event_queue,
-            wake_service=wake_service,
+            heartbeat_service=heartbeat_service,
             agent_run_orchestrator=FakeOrchestrator(),
             now_fn=lambda: datetime(2026, 4, 10, 1, 20, tzinfo=timezone.utc),
         )
@@ -250,16 +280,13 @@ def test_cron_service_run_now_for_main_target_enqueues_system_event_and_wake():
         assert result.status == "queued_to_main_session"
         assert result.run_id is None
         assert event_queue.calls[0]["event_type"] == "cron.trigger"
-        assert event_queue.calls[0]["payload"]["instruction"] == "follow up in main session"
-        assert wake_service.calls == [
+        assert event_queue.calls[0]["payload"]["text"] == "follow up in main session"
+        assert "instruction" not in event_queue.calls[0]["payload"]
+        assert heartbeat_service.wake_calls == [
             {
                 "agent_id": "nexus",
-                "session_key": "agent:nexus:automation:dm:main",
-                "wake_mode": "now",
-                "metadata": {
-                    "job_id": "job-main",
-                    "trigger_kind": "manual",
-                },
+                "mode": "now",
+                "text": None,
             }
         ]
         assert await service.list_runs("job-main") == []
@@ -277,7 +304,7 @@ def test_cron_service_run_now_routes_non_main_targets_through_orchestrator_and_t
         runner = CronRunner(
             store=store,
             system_event_queue=FakeSystemEventQueue(),
-            wake_service=FakeWakeService(),
+            heartbeat_service=FakeHeartbeatService(),
             agent_run_orchestrator=orchestrator,
             now_fn=lambda: datetime(2026, 4, 10, 1, 20, tzinfo=timezone.utc),
         )
@@ -345,5 +372,84 @@ def test_cron_service_run_now_routes_non_main_targets_through_orchestrator_and_t
         assert isolated_runs[0].attempts == 1
         assert bound_runs[0].status == "succeeded"
         assert named_runs[0].status == "succeeded"
+
+    asyncio.run(scenario())
+
+
+def test_app_lifespan_starts_and_stops_cron_runtime(monkeypatch):
+    async def scenario():
+        os.environ["ENV_FILE"] = "/dev/null"
+        os.environ["DEBUG"] = "false"
+        sys.modules.pop("agent.config.config", None)
+        sys.modules.pop("agent.app", None)
+        sys.modules["agent.api.router"] = ModuleType("agent.api.router")
+        sys.modules["agent.api.router"].api_router = SimpleNamespace(routes=[])
+        sys.modules["agent.config.config"] = ModuleType("agent.config.config")
+        sys.modules["agent.config.config"].settings = SimpleNamespace(
+            DEBUG=False,
+            PROJECT_NAME="Nexus",
+            ENABLE_SWAGGER_DOC=False,
+        )
+        sys.modules["agent.service.channels.channel_register"] = ModuleType(
+            "agent.service.channels.channel_register"
+        )
+        sys.modules["agent.service.channels.channel_register"].ChannelRegister = lambda: SimpleNamespace(
+            stop_all=lambda: asyncio.sleep(0),
+            start_all=lambda: asyncio.sleep(0),
+            register=lambda *_args, **_kwargs: None,
+        )
+        sys.modules["agent.service.agent.agent_service"] = ModuleType("agent.service.agent.agent_service")
+        sys.modules["agent.service.agent.agent_service"].agent_service = SimpleNamespace()
+        sys.modules["agent.infra.server.register"] = ModuleType("agent.infra.server.register")
+        sys.modules["agent.infra.server.register"].register_exception = lambda _app: None
+        sys.modules["agent.infra.server.register"].register_hook = lambda _app: None
+        sys.modules["agent.infra.server.register"].register_middleware = lambda _app: None
+        sys.modules["agent.utils.logger"] = ModuleType("agent.utils.logger")
+        sys.modules["agent.utils.logger"].logger = SimpleNamespace(info=lambda *_args, **_kwargs: None)
+        sys.modules["agent.service.automation.heartbeat.heartbeat_service"] = ModuleType(
+            "agent.service.automation.heartbeat.heartbeat_service"
+        )
+        sys.modules["agent.service.automation.heartbeat.heartbeat_service"].heartbeat_service = (
+            FakeHeartbeatService()
+        )
+        sys.modules["agent.service.automation.cron.cron_service"] = ModuleType(
+            "agent.service.automation.cron.cron_service"
+        )
+        sys.modules["agent.service.automation.cron.cron_service"].get_cron_service = (
+            lambda: FakeHeartbeatService()
+        )
+        sys.modules["agent.service.session.session_repository"] = ModuleType(
+            "agent.service.session.session_repository"
+        )
+        sys.modules["agent.service.session.session_repository"].session_repository = SimpleNamespace(
+            ensure_ready=lambda: None
+        )
+        sys.modules["agent.service.session.cost_repository"] = ModuleType(
+            "agent.service.session.cost_repository"
+        )
+        sys.modules["agent.service.session.cost_repository"].cost_repository = SimpleNamespace(
+            ensure_ready=lambda: None
+        )
+
+        from agent.app import lifespan
+
+        heartbeat = FakeHeartbeatService()
+        cron = FakeHeartbeatService()
+        channel_manager = SimpleNamespace(stop_all=lambda: asyncio.sleep(0))
+
+        async def register_channels() -> None:
+            return None
+
+        monkeypatch.setattr("agent.app.heartbeat_service", heartbeat)
+        monkeypatch.setattr("agent.app.get_cron_service", lambda: cron)
+        monkeypatch.setattr("agent.app.channel_manager", channel_manager)
+        monkeypatch.setattr("agent.app._register_channels", register_channels)
+
+        async with lifespan(SimpleNamespace()):
+            assert heartbeat.start_calls == 1
+            assert cron.start_calls == 1
+
+        assert heartbeat.stop_calls == 1
+        assert cron.stop_calls == 1
 
     asyncio.run(scenario())
