@@ -124,9 +124,12 @@ export function useAutomationController(
   }, [refresh_heartbeat, refresh_tasks]);
 
   const wake_heartbeat = useCallback(async (params: WakeHeartbeatRequest = {}) => {
-    const result = await wakeHeartbeatApi(agent_id, params);
+    const request_agent_id = agent_id;
+    const result = await wakeHeartbeatApi(request_agent_id, params);
     // 中文注释：wake 只会改变运行态，不会改写持久化配置，因此触发后立即刷新 heartbeat 即可。
-    await refresh_heartbeat();
+    if (active_agent_id_ref.current === request_agent_id) {
+      await refresh_heartbeat();
+    }
     return result;
   }, [agent_id, refresh_heartbeat]);
 
