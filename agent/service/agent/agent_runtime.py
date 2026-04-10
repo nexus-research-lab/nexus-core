@@ -24,6 +24,19 @@ from agent.utils.logger import logger
 class AgentRuntime:
     """负责按 session_key 获取或初始化 Claude SDK client。"""
 
+    @staticmethod
+    def _build_connect_error_message(exc: Exception, stderr_lines: list[str]) -> str:
+        """拼接连接异常和最近的 CLI stderr，便于直接定位失败原因。"""
+        error_message = str(exc).strip() or exc.__class__.__name__
+        recent_stderr_lines = [
+            line.strip()
+            for line in stderr_lines[-3:]
+            if isinstance(line, str) and line.strip()
+        ]
+        if not recent_stderr_lines:
+            return error_message
+        return f"{error_message}; stderr={' | '.join(recent_stderr_lines)}"
+
     async def get_or_create_client(
         self,
         session_key: str,
@@ -62,13 +75,18 @@ class AgentRuntime:
         if session_id:
             sdk_options["resume"] = session_id
 
+        stderr_lines: list[str] = []
+
         def handle_sdk_stderr(line: str) -> None:
             """把 Claude CLI stderr 直接打进服务日志，便于排查异常退出原因。"""
+            normalized_line = str(line).strip()
+            if normalized_line:
+                stderr_lines.append(normalized_line)
             logger.warning(
                 "⚠️ Claude CLI stderr: key=%s, agent=%s, line=%s",
                 session_key,
                 real_agent_id,
-                line,
+                normalized_line or line,
             )
 
         sdk_options.setdefault("stderr", handle_sdk_stderr)
@@ -89,11 +107,34 @@ class AgentRuntime:
         try:
             await client.connect()
         except Exception as exc:
+            connect_error_message = self._build_connect_error_message(exc, stderr_lines)
+            if session_id and not force_fresh:
+                logger.warning(
+                    "⚠️ 恢复 SDK 会话失败，清空失效 session_id 后重建新会话: "
+                    "key=%s, agent=%s, sdk_session=%s, error=%s",
+                    session_key,
+                    real_agent_id,
+                    session_id,
+                    connect_error_message,
+                )
+                await session_store.clear_session_id(session_key)
+                session_manager.invalidate_session(
+                    session_key,
+                    reason=f"恢复 SDK 会话失败，准备降级重建: {connect_error_message}",
+                )
+                return await self.get_or_create_client(
+                    session_key=session_key,
+                    agent_id=agent_id,
+                    permission_strategy=permission_strategy,
+                    resume_session_id=None,
+                    resolved_agent_id=real_agent_id,
+                    force_fresh=True,
+                )
             session_manager.invalidate_session(
                 session_key,
-                reason=f"SDK client 连接失败: {exc}",
+                reason=f"SDK client 连接失败: {connect_error_message}",
             )
-            raise
+            raise RuntimeError(connect_error_message) from exc
 
         logger.info(f"✅ Client 就绪: key={session_key}, agent={real_agent_id}, session_id={session_id}")
         return client

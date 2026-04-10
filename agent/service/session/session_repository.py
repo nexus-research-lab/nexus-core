@@ -383,6 +383,7 @@ class SessionRepository:
         title: Optional[str] = None,
         options: Optional[Dict[str, Any]] = None,
         status: Optional[str] = None,
+        clear_session_id: bool = False,
     ) -> bool:
         """更新会话信息。"""
         try:
@@ -394,7 +395,9 @@ class SessionRepository:
                 meta = JsonFileStore.read_json(meta_path, {})
                 if not meta:
                     return False
-                if session_id is not None:
+                if clear_session_id:
+                    meta["session_id"] = None
+                elif session_id is not None:
                     meta["session_id"] = session_id
                 if title is not None:
                     meta["title"] = title
@@ -409,6 +412,13 @@ class SessionRepository:
         except Exception as exc:
             logger.error(f"❌ 更新会话失败: {exc}", exc_info=True)
             return False
+
+    async def clear_session_id(self, session_key: str) -> bool:
+        """清空持久化的 SDK session_id，避免继续恢复已损坏会话。"""
+        return await self.update_session(
+            session_key=session_key,
+            clear_session_id=True,
+        )
 
     async def get_all_sessions(self) -> List[ASession]:
         """获取所有会话。"""

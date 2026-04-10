@@ -172,12 +172,8 @@ make logs
 make stop
 ```
 
-Docker 构建与启动命令默认使用当前用户执行，不需要 `sudo`。
-如果服务器上的 Docker 仍要求 `sudo`，请把当前用户加入 `docker` 组后重新登录：
-
-```bash
-sudo usermod -aG docker $USER
-```
+Docker 构建与启动命令默认使用当前用户执行。
+如果当前用户还没有 Docker 权限，请先完成服务器上的 Docker 用户权限配置，再重新登录终端。
 
 生产部署默认把持久化目录挂载到 `${NEXUS_HOME_DIR:-./data/nexus}`，容器内路径固定为 `/home/agent/.nexus`。
 如果要挂到宿主机指定目录，例如 `/data/nexus`，启动前执行：
