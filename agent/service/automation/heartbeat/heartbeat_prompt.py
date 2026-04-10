@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable
 
 
 ACK_TOKEN = "HEARTBEAT_OK"
@@ -24,84 +23,122 @@ def parse_heartbeat_tasks(text: str) -> list[HeartbeatTask]:
     """Parse the ``tasks:`` block from HEARTBEAT.md content."""
 
     # 只提取 tasks 段落，避免把其他章节误当成定时任务。
-    tasks_block = _extract_tasks_block(text.splitlines())
-    return _parse_task_items(tasks_block)
+    lines = text.splitlines()
+    tasks: list[HeartbeatTask] = []
+    current: dict[str, str] = {}
+    in_tasks = False
+    tasks_indent = 0
+    pending_block_key: str | None = None
+    pending_block_indent = 0
+    block_lines: list[str] = []
+    block_content_indent = 0
+
+    def flush_current() -> None:
+        if current:
+            task = _build_task(current)
+            if task is not None:
+                tasks.append(task)
+            current.clear()
+
+    def finish_block() -> None:
+        nonlocal pending_block_key, pending_block_indent, block_lines, block_content_indent
+        if pending_block_key is None:
+            return
+        current[pending_block_key] = "\n".join(block_lines).rstrip()
+        pending_block_key = None
+        pending_block_indent = 0
+        block_lines = []
+        block_content_indent = 0
+
+    i = 0
+    while i < len(lines):
+        line = lines[i].rstrip()
+        stripped = line.strip()
+        indent = len(line) - len(line.lstrip())
+
+        if not in_tasks:
+            if stripped == "tasks:":
+                in_tasks = True
+                tasks_indent = indent
+            i += 1
+            continue
+
+        if pending_block_key is not None:
+            if not stripped:
+                block_lines.append("")
+                i += 1
+                continue
+            if indent <= pending_block_indent:
+                finish_block()
+                continue
+            if block_content_indent == 0:
+                block_content_indent = indent
+            if indent < block_content_indent:
+                finish_block()
+                continue
+            block_lines.append(line[block_content_indent:].rstrip())
+            i += 1
+            continue
+
+        # 任务块一旦回到更外层，就视为结束。
+        if stripped and indent <= tasks_indent and not stripped.startswith("-"):
+            break
+        if not stripped:
+            i += 1
+            continue
+
+        if stripped.startswith("-"):
+            flush_current()
+            item = stripped[1:].lstrip()
+            if item:
+                key, value = _parse_key_value(item)
+                if key:
+                    if value == "|":
+                        pending_block_key = key
+                        pending_block_indent = indent
+                    else:
+                        current[key] = value
+            i += 1
+            continue
+
+        key, value = _parse_key_value(stripped)
+        if key:
+            if value == "|":
+                pending_block_key = key
+                pending_block_indent = indent
+            else:
+                current[key] = value
+        i += 1
+
+    if pending_block_key is not None:
+        finish_block()
+    flush_current()
+    return tasks
 
 
 def filter_heartbeat_response(text: str, ack_max_chars: int = 300) -> HeartbeatFilterResult:
     """Suppress heartbeat-only acknowledgements while preserving real alerts."""
 
     normalized = text.strip()
-    # 纯 HEARTBEAT_OK 视为确认回执，直接吞掉；带额外内容则原样放行。
+    # 纯 HEARTBEAT_OK 直接吞掉；带边缘 token 的内容按剩余文本长度判断。
     if normalized == ACK_TOKEN:
         return HeartbeatFilterResult(should_deliver=False, text="")
-    return HeartbeatFilterResult(should_deliver=True, text=text)
+    stripped = normalized
+    prefix_removed = False
+    suffix_removed = False
 
+    if stripped.startswith(ACK_TOKEN):
+        stripped = stripped[len(ACK_TOKEN) :].lstrip()
+        prefix_removed = True
+    if stripped.endswith(ACK_TOKEN):
+        stripped = stripped[: -len(ACK_TOKEN)].rstrip()
+        suffix_removed = True
 
-def _extract_tasks_block(lines: Iterable[str]) -> list[str]:
-    tasks_block: list[str] = []
-    in_tasks = False
-    tasks_indent = 0
-
-    for raw_line in lines:
-        line = raw_line.rstrip()
-        stripped = line.strip()
-        if not stripped:
-            if in_tasks:
-                tasks_block.append("")
-            continue
-
-        indent = len(line) - len(line.lstrip())
-        if not in_tasks:
-            if stripped == "tasks:":
-                in_tasks = True
-                tasks_indent = indent
-            continue
-
-        # 一旦回到同级或更高层级，就说明 tasks 段落结束了。
-        if indent <= tasks_indent and not stripped.startswith("-"):
-            break
-
-        tasks_block.append(line[tasks_indent + 2 :] if line.startswith(" " * (tasks_indent + 2)) else line)
-
-    return tasks_block
-
-
-def _parse_task_items(lines: list[str]) -> list[HeartbeatTask]:
-    tasks: list[HeartbeatTask] = []
-    current: dict[str, str] | None = None
-
-    for raw_line in lines:
-        line = raw_line.rstrip()
-        stripped = line.strip()
-        if not stripped:
-            continue
-
-        # 每个短横线条目代表一个新的 task，前一个 task 先落盘。
-        if stripped.startswith("- "):
-            if current:
-                task = _build_task(current)
-                if task is not None:
-                    tasks.append(task)
-            current = {}
-            key, value = _parse_key_value(stripped[2:])
-            if key:
-                current[key] = value
-            continue
-
-        if current is None:
-            continue
-
-        key, value = _parse_key_value(stripped)
-        if key:
-            current[key] = value
-
-    if current:
-        task = _build_task(current)
-        if task is not None:
-            tasks.append(task)
-
-    return tasks
+    if not prefix_removed and not suffix_removed:
+        return HeartbeatFilterResult(should_deliver=True, text=text)
+    if len(stripped) <= ack_max_chars:
+        return HeartbeatFilterResult(should_deliver=False, text="")
+    return HeartbeatFilterResult(should_deliver=True, text=stripped)
 
 
 def _parse_key_value(line: str) -> tuple[str, str]:
