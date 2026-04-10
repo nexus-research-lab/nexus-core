@@ -71,8 +71,15 @@ function format_datetime_local_input(date: Date): string {
   return `${year}-${month}-${day}T${hour}:${minute}`;
 }
 
-function to_interval_seconds(value: string, unit: EveryUnit): number {
-  const numeric_value = Number.parseInt(value, 10);
+function to_interval_seconds(value: string, unit: EveryUnit): number | null {
+  const normalized_value = value.trim();
+  if (!/^\d+$/.test(normalized_value)) {
+    return null;
+  }
+  const numeric_value = Number(normalized_value);
+  if (!Number.isInteger(numeric_value) || numeric_value <= 0) {
+    return null;
+  }
   if (unit === "days") {
     return numeric_value * 86400;
   }
@@ -149,9 +156,13 @@ export function CreateTaskDialog({
   // 中文注释：创建接口要求 schedule / session_target 都是结构化对象，这里先统一收口表单校验，再拼出最终 payload。
   const build_schedule = (): ScheduledTaskSchedule => {
     if (schedule_kind === "every") {
+      const interval_seconds = to_interval_seconds(every_value, every_unit);
+      if (interval_seconds === null) {
+        throw new Error("循环间隔必须是大于 0 的整数");
+      }
       return {
         kind: "every",
-        interval_seconds: to_interval_seconds(every_value, every_unit),
+        interval_seconds,
         timezone: timezone.trim() || "Asia/Shanghai",
       };
     }
@@ -164,7 +175,7 @@ export function CreateTaskDialog({
     }
     return {
       kind: "at",
-      run_at: new Date(run_at).toISOString(),
+      run_at: run_at.trim(),
       timezone: timezone.trim() || "Asia/Shanghai",
     };
   };
@@ -198,8 +209,7 @@ export function CreateTaskDialog({
       return "请输入任务指令";
     }
     if (schedule_kind === "every") {
-      const interval_seconds = to_interval_seconds(every_value, every_unit);
-      if (!Number.isFinite(interval_seconds) || interval_seconds <= 0) {
+      if (to_interval_seconds(every_value, every_unit) === null) {
         return "循环间隔必须是大于 0 的整数";
       }
     }
@@ -207,8 +217,7 @@ export function CreateTaskDialog({
       return "请输入 Cron 表达式";
     }
     if (schedule_kind === "at") {
-      const timestamp = new Date(run_at).getTime();
-      if (!Number.isFinite(timestamp)) {
+      if (!run_at.trim()) {
         return "请选择有效的执行时间";
       }
     }
@@ -326,14 +335,15 @@ export function CreateTaskDialog({
                 <label className="dialog-label" htmlFor="task-every-value">
                   执行间隔
                 </label>
-                <input
-                  className="dialog-input radius-shell-sm w-full px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
-                  id="task-every-value"
-                  min="1"
-                  onChange={(e) => set_every_value(e.target.value)}
-                  type="number"
-                  value={every_value}
-                />
+              <input
+                className="dialog-input radius-shell-sm w-full px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+                id="task-every-value"
+                min="1"
+                onChange={(e) => set_every_value(e.target.value)}
+                step="1"
+                type="number"
+                value={every_value}
+              />
               </div>
               <div className="dialog-field">
                 <label className="dialog-label" htmlFor="task-every-unit">

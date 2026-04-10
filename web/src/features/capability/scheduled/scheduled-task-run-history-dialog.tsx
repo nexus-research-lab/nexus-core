@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { History, RefreshCw, X } from "lucide-react";
 
 import { listScheduledTaskRunsApi } from "@/lib/scheduled-task-api";
@@ -64,9 +64,42 @@ export function ScheduledTaskRunHistoryDialog({
   const [runs, set_runs] = useState<ScheduledTaskRunItem[]>([]);
   const [is_loading, set_is_loading] = useState(false);
   const [error_message, set_error_message] = useState<string | null>(null);
+  const active_task_job_id_ref = useRef<string | null>(null);
+  const runs_request_token_ref = useRef(0);
+  const task_job_id = task?.job_id ?? null;
+
+  const load_runs = useCallback(async (job_id: string) => {
+    const request_token = runs_request_token_ref.current + 1;
+    runs_request_token_ref.current = request_token;
+    set_is_loading(true);
+    set_error_message(null);
+    try {
+      const result = await listScheduledTaskRunsApi(job_id);
+      if (active_task_job_id_ref.current !== job_id || runs_request_token_ref.current !== request_token) {
+        return;
+      }
+      set_runs(result);
+    } catch (error) {
+      if (active_task_job_id_ref.current !== job_id || runs_request_token_ref.current !== request_token) {
+        return;
+      }
+      set_error_message(error instanceof Error ? error.message : "加载运行历史失败");
+      set_runs([]);
+    } finally {
+      if (active_task_job_id_ref.current !== job_id || runs_request_token_ref.current !== request_token) {
+        return;
+      }
+      set_is_loading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!is_open) {
+      active_task_job_id_ref.current = null;
+      runs_request_token_ref.current += 1;
+      set_runs([]);
+      set_error_message(null);
+      set_is_loading(false);
       return;
     }
     const handle_key_down = (event: KeyboardEvent) => {
@@ -82,51 +115,25 @@ export function ScheduledTaskRunHistoryDialog({
   }, [is_open, on_close]);
 
   useEffect(() => {
-    if (!is_open || !task) {
+    if (!is_open || !task_job_id) {
+      active_task_job_id_ref.current = null;
+      runs_request_token_ref.current += 1;
+      set_runs([]);
+      set_error_message(null);
+      set_is_loading(false);
       return;
     }
-    let cancelled = false;
-    // 中文注释：历史弹窗允许频繁切换任务，这里用取消标记避免旧请求覆盖当前任务的运行记录。
-    const load_runs = async () => {
-      set_is_loading(true);
-      set_error_message(null);
-      try {
-        const result = await listScheduledTaskRunsApi(task.job_id);
-        if (!cancelled) {
-          set_runs(result);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          set_error_message(error instanceof Error ? error.message : "加载运行历史失败");
-          set_runs([]);
-        }
-      } finally {
-        if (!cancelled) {
-          set_is_loading(false);
-        }
-      }
-    };
-    void load_runs();
-    return () => {
-      cancelled = true;
-    };
-  }, [is_open, task]);
+    active_task_job_id_ref.current = task_job_id;
+    set_runs([]);
+    void load_runs(task_job_id);
+  }, [is_open, load_runs, task_job_id]);
 
   if (!is_open || !task) {
     return null;
   }
 
-  const handle_refresh = async () => {
-    set_is_loading(true);
-    set_error_message(null);
-    try {
-      set_runs(await listScheduledTaskRunsApi(task.job_id));
-    } catch (error) {
-      set_error_message(error instanceof Error ? error.message : "加载运行历史失败");
-      set_runs([]);
-    } finally {
-      set_is_loading(false);
-    }
+  const handle_refresh = () => {
+    void load_runs(task_job_id ?? "");
   };
 
   return (

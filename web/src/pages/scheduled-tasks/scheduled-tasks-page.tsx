@@ -26,6 +26,15 @@ interface FeedbackState {
   message: string;
 }
 
+const SCHEDULED_TASKS_MUTATED_EVENT = "nexus:scheduled-tasks-mutated";
+
+function notify_scheduled_tasks_mutated(agent_id: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.dispatchEvent(new CustomEvent(SCHEDULED_TASKS_MUTATED_EVENT, { detail: { agent_id } }));
+}
+
 export function ScheduledTasksPage() {
   const [is_dialog_open, set_is_dialog_open] = useState(false);
   const [history_task, set_history_task] = useState<ScheduledTaskItem | null>(null);
@@ -37,6 +46,7 @@ export function ScheduledTasksPage() {
 
   const handle_create_success = async (task: ScheduledTaskItem) => {
     await automation.refresh_tasks();
+    notify_scheduled_tasks_mutated(automation.agent_id);
     set_feedback({
       tone: "success",
       title: "任务已创建",
@@ -104,6 +114,7 @@ export function ScheduledTasksPage() {
     try {
       await updateScheduledTaskStatusApi(task.job_id, { enabled: !task.enabled });
       await automation.refresh_tasks();
+      notify_scheduled_tasks_mutated(automation.agent_id);
       set_feedback({
         tone: "success",
         title: task.enabled ? "任务已暂停" : "任务已启用",
