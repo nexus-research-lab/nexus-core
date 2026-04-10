@@ -21,7 +21,9 @@ import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { AppRouteBuilders } from "@/app/router/route-paths";
+import { getAgentWsUrl } from "@/config/options";
 import { get_dm_display_name } from "@/lib/dm-utils";
+import { useWebSocket } from "@/lib/websocket";
 import { CreateRoomDialog } from "@/features/room-members/create-room-dialog";
 import { createRoom, deleteRoom, listRooms, subscribe_room_list_updates } from "@/lib/room-api";
 import { useI18n } from "@/shared/i18n/i18n-context";
@@ -29,6 +31,8 @@ import { ConfirmDialog, PromptDialog } from "@/shared/ui/dialog/confirm-dialog";
 import { CollapsibleSection, SidebarListItem } from "@/shared/ui/sidebar/collapsible-section";
 import { useAgentStore } from "@/store/agent";
 import { useSidebarStore } from "@/store/sidebar";
+import type { AgentRuntimeStatus } from "@/types/agent";
+import type { EventMessage } from "@/types/message";
 import { RoomAggregate } from "@/types/room";
 
 // ==================== 置顶项 localStorage 管理 ====================
@@ -65,8 +69,12 @@ function get_room_timestamp(room: RoomAggregate): number {
 export const HomePanelContent = memo(function HomePanelContent() {
   const { t } = useI18n();
   const navigate = useNavigate();
+  const ws_url = getAgentWsUrl();
   const agents = useAgentStore((s) => s.agents);
+  const agent_runtime_statuses = useAgentStore((s) => s.agent_runtime_statuses);
   const load_agents = useAgentStore((s) => s.load_agents_from_server);
+  const load_agent_runtime_statuses = useAgentStore((s) => s.load_agent_runtime_statuses);
+  const apply_agent_runtime_status = useAgentStore((s) => s.apply_agent_runtime_status);
   const active_item_id = useSidebarStore((s) => s.active_panel_item_id);
   const set_active_item = useSidebarStore((s) => s.set_active_panel_item);
 
@@ -92,6 +100,63 @@ export const HomePanelContent = memo(function HomePanelContent() {
   }, [load_agents, refresh_rooms]);
 
   useEffect(() => subscribe_room_list_updates(refresh_rooms), [refresh_rooms]);
+
+  const agent_ids = useMemo(() => agents.map((agent) => agent.agent_id), [agents]);
+  const has_agents = agent_ids.length > 0;
+  const agent_id_set = useMemo(() => new Set(agent_ids), [agent_ids]);
+
+  useEffect(() => {
+    if (!has_agents) {
+      return;
+    }
+    void load_agent_runtime_statuses();
+  }, [has_agents, load_agent_runtime_statuses, agent_ids]);
+
+  const handle_runtime_message = useCallback((message: unknown) => {
+    const event = message as EventMessage;
+    if (event.event_type !== "agent_runtime_event") {
+      return;
+    }
+    if (!event.agent_id || !agent_id_set.has(event.agent_id)) {
+      return;
+    }
+    const payload = event.data as AgentRuntimeStatus | undefined;
+    if (!payload?.agent_id) {
+      return;
+    }
+    apply_agent_runtime_status(payload);
+  }, [agent_id_set, apply_agent_runtime_status]);
+
+  const { state: runtime_ws_state, send: runtime_ws_send } = useWebSocket({
+    url: ws_url,
+    auto_connect: true,
+    reconnect: true,
+    heartbeat_interval: 30000,
+    on_message: handle_runtime_message,
+  });
+
+  useEffect(() => {
+    if (runtime_ws_state !== "connected" || !has_agents) {
+      return;
+    }
+
+    for (const agent_id of agent_ids) {
+      runtime_ws_send({
+        type: "subscribe_workspace",
+        agent_id,
+      });
+    }
+    void load_agent_runtime_statuses();
+
+    return () => {
+      for (const agent_id of agent_ids) {
+        runtime_ws_send({
+          type: "unsubscribe_workspace",
+          agent_id,
+        });
+      }
+    };
+  }, [agent_ids, has_agents, load_agent_runtime_statuses, runtime_ws_send, runtime_ws_state]);
 
   // 分离 Room 和 DM
   const { normal_rooms, dm_rooms } = useMemo(() => {
@@ -237,7 +302,14 @@ export const HomePanelContent = memo(function HomePanelContent() {
               icon={<Bot className="h-4 w-4" />}
               is_active={active_item_id === agent.agent_id}
               label={agent.name}
-              meta={agent.status === "running" ? "●" : t("status.idle")}
+              meta={(() => {
+                const runtime = agent_runtime_statuses[agent.agent_id];
+                const running_task_count = runtime?.running_task_count
+                  ?? (agent.status === "running" ? 1 : 0);
+                return running_task_count > 0
+                  ? `${running_task_count} 任务`
+                  : t("status.idle");
+              })()}
               on_click={() => navigate_to_agent(agent.agent_id)}
             />
           ))
