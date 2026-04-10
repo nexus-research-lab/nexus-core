@@ -10,6 +10,7 @@
 
 from fastapi import APIRouter, Depends
 
+from agent.api.automation.api_heartbeat import router as automation_heartbeat_router
 from agent.api.agent.api_agent import router as agent_router
 from agent.api.agent.api_agent_workspace import router as agent_workspace_router
 from agent.api.auth.api_auth import router as auth_router
@@ -53,3 +54,6 @@ api_router.include_router(launcher_router, prefix="/v1", dependencies=[Depends(r
 
 # Include runtime route
 api_router.include_router(runtime_router, prefix="/v1")
+
+# Include automation route
+api_router.include_router(automation_heartbeat_router, prefix="/v1", dependencies=[Depends(require_http_auth)])
