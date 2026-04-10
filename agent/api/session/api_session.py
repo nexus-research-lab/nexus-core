@@ -74,8 +74,6 @@ async def create_session(request: CreateSessionRequest):
         )
     except StructuredSessionKeyError as exc:
         _raise_invalid_session_key(str(exc))
-    except ValueError as exc:
-        raise HTTPException(status_code=409, detail="Session already exists")
     except RuntimeError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 

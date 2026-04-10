@@ -55,7 +55,7 @@ interface HeroStageProps {
   on_query_change: (value: string) => void;
   on_select_agent: (agent_id: string) => void;
   on_open_recent_entry: (entry: RecentLauncherEntry) => void;
-  on_submit: () => void;
+  on_submit: (submitted_query: string) => boolean;
   query: string;
   recent_entries: RecentLauncherEntry[];
   surface: "launcher" | "app";
@@ -304,6 +304,7 @@ const HeroStage = memo(function HeroStage({
   const { t } = useI18n();
   const is_composing_ref = useRef(false);
   const input_ref = useRef<HTMLInputElement>(null);
+  const [local_query, set_local_query] = useState(query);
   const [mention_match, set_mention_match] = useState<LauncherMentionMatch | null>(null);
 
   const visible_mention_targets = useMemo(() => {
@@ -331,6 +332,7 @@ const HeroStage = memo(function HeroStage({
   }, [on_enter_home]);
 
   const handle_query_change = useCallback((value: string) => {
+    set_local_query(value);
     on_query_change(value);
     const cursor_pos = input_ref.current?.selectionStart ?? value.length;
     sync_mention_match(value, cursor_pos);
@@ -340,10 +342,11 @@ const HeroStage = memo(function HeroStage({
     if (!mention_match) {
       return;
     }
-    const cursor_pos = input_ref.current?.selectionStart ?? query.length;
-    const before = query.slice(0, mention_match.start_pos);
-    const after = query.slice(cursor_pos);
+    const cursor_pos = input_ref.current?.selectionStart ?? local_query.length;
+    const before = local_query.slice(0, mention_match.start_pos);
+    const after = local_query.slice(cursor_pos);
     const next_query = `${before}${mention_match.trigger}${item.label} ${after}`;
+    set_local_query(next_query);
     on_query_change(next_query);
     set_mention_match(null);
 
@@ -352,13 +355,35 @@ const HeroStage = memo(function HeroStage({
       input_ref.current?.setSelectionRange(next_cursor, next_cursor);
       input_ref.current?.focus();
     });
-  }, [mention_match, on_query_change, query]);
+  }, [local_query, mention_match, on_query_change]);
 
   useEffect(() => {
-    if (!query) {
+    set_local_query(query);
+  }, [query]);
+
+  useEffect(() => {
+    if (!local_query) {
       set_mention_match(null);
     }
-  }, [query]);
+  }, [local_query]);
+
+  const handle_submit = useCallback(() => {
+    const trimmed_query = local_query.trim();
+    if (!trimmed_query) {
+      return;
+    }
+
+    const did_submit = on_submit(trimmed_query);
+    if (!did_submit) {
+      return;
+    }
+
+    // 中文注释：Hero 输入框和 DM/Room composer 一样，提交后先在本地立即清空，
+    // 再等待父层异步链路推进，避免受控值回流慢一拍导致残留。
+    set_local_query("");
+    on_query_change("");
+    set_mention_match(null);
+  }, [local_query, on_query_change, on_submit]);
   return (
     <div className="relative flex w-full max-w-[1180px] flex-col items-center" onClick={(e) => e.stopPropagation()}>
       <HeroBlobShell
@@ -453,7 +478,7 @@ const HeroStage = memo(function HeroStage({
                     }
                     if (event.key === "Enter") {
                       event.preventDefault();
-                      on_submit();
+                      handle_submit();
                     }
                   }}
                   onSelect={(event) => {
@@ -461,7 +486,7 @@ const HeroStage = memo(function HeroStage({
                     sync_mention_match(target.value, target.selectionStart ?? target.value.length);
                   }}
                   placeholder={surface === "app" ? "告诉 Nexus 你要推进什么..." : t("launcher.query_placeholder")}
-                  value={query}
+                  value={local_query}
                   disabled={surface === "launcher" ? is_query_loading : false}
                 />
                 <HeroActionOrbShell class_name="shrink-0" is_active={!is_query_loading}>
@@ -475,7 +500,7 @@ const HeroStage = memo(function HeroStage({
                       boxShadow: "var(--launcher-submit-shadow)",
                       color: "var(--launcher-submit-color)",
                     }}
-                    onClick={on_submit}
+                    onClick={handle_submit}
                     type="button"
                     disabled={surface === "launcher" ? is_query_loading : false}
                   >
@@ -651,8 +676,8 @@ export function LauncherConsole({
     })();
   }, [navigate, on_select_agent, set_active_panel_item]);
 
-  const handle_submit = useCallback(async () => {
-    const trimmed = query.trim();
+  const handle_submit = useCallback(async (next_query?: string) => {
+    const trimmed = (next_query ?? query).trim();
     if (!trimmed || isQueryLoading) {
       return;
     }
@@ -689,7 +714,6 @@ export function LauncherConsole({
           break;
         }
         case "open_app":
-          setQuery("");
           on_open_app_conversation(action.initial_message);
           break;
       }
@@ -720,21 +744,40 @@ export function LauncherConsole({
     }
   }, [query, surface]);
 
-  const handle_primary_action = useCallback(() => {
+  const handle_primary_action = useCallback((submitted_input: string) => {
     if (surface === "app") {
       if (app_conversation_loading) {
         on_stop_app_conversation();
-        return;
+        return false;
       }
-      void on_submit_app_conversation(input_value);
-      return;
+
+      const trimmed_input = submitted_input.trim();
+      if (!trimmed_input) {
+        return false;
+      }
+
+      // 中文注释：Launcher Hero 输入框复用 DM/Room 的发送语义，
+      // 在异步发送前先立即清空受控草稿，避免回车提交后残留旧文本。
+      on_change_app_conversation_draft("");
+      void on_submit_app_conversation(trimmed_input);
+      return true;
     }
 
-    void handle_submit();
+    const trimmed_query = submitted_input.trim();
+    if (!trimmed_query || isQueryLoading) {
+      return false;
+    }
+
+    // 中文注释：Launcher 查询也沿用同样的“先清空、再提交”策略，
+    // 保证 Hero 输入框行为与 DM/Room composer 一致。
+    setQuery("");
+    void handle_submit(trimmed_query);
+    return true;
   }, [
     app_conversation_loading,
     handle_submit,
-    input_value,
+    isQueryLoading,
+    on_change_app_conversation_draft,
     on_stop_app_conversation,
     on_submit_app_conversation,
     surface,

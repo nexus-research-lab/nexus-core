@@ -7,7 +7,7 @@ import { LauncherAppConversationPanel } from "@/features/launcher/launcher-app-c
 import { LauncherConsole } from "@/features/launcher/launcher-console";
 import { getLauncherSurfaceThemeStyle } from "@/features/launcher/launcher-surface-theme";
 import { useLauncherPageController } from "@/hooks/use-launcher-page-controller";
-import { createConversation, deleteConversation } from "@/lib/agent-api";
+import { deleteConversation } from "@/lib/agent-api";
 import { areEquivalentSessionKeys } from "@/lib/session-key";
 import { createRoom, ensureDirectRoom } from "@/lib/room-api";
 import { cn } from "@/lib/utils";
@@ -31,7 +31,6 @@ export function LauncherPage() {
   const [pending_room_title, set_pending_room_title] = useState<string>("");
   const consumed_route_prompt_ref = useRef<string | null>(null);
   const hydrated_app_session_key_ref = useRef<string | null>(null);
-  const ensured_app_session_key_ref = useRef<string | null>(null);
   const pending_app_prompt_ref = useRef<string | null>(null);
   const app_conversation_identity = useMemo(() => ({
     session_key: controller.app_session_key,
@@ -86,32 +85,6 @@ export function LauncherPage() {
     load_session,
   ]);
 
-  const ensure_app_session_key = useCallback(async () => {
-    const canonical_session_key = controller.app_session_key;
-    if (ensured_app_session_key_ref.current === canonical_session_key) {
-      bind_session_key(canonical_session_key);
-      return canonical_session_key;
-    }
-
-    try {
-      await createConversation(canonical_session_key, {
-        agent_id: app_agent_id,
-        title: "Nexus",
-      });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "";
-      if (message !== "Session already exists") {
-        throw error;
-      }
-    }
-
-    ensured_app_session_key_ref.current = canonical_session_key;
-    hydrated_app_session_key_ref.current = canonical_session_key;
-    bind_session_key(canonical_session_key);
-    void controller.refresh_conversations();
-    return canonical_session_key;
-  }, [app_agent_id, bind_session_key, controller]);
-
   const flush_pending_app_prompt = useCallback(async () => {
     const pending_prompt = pending_app_prompt_ref.current?.trim() ?? "";
     if (!pending_prompt || app_conversation_ws_state !== "connected") {
@@ -141,9 +114,9 @@ export function LauncherPage() {
     controller.clear_route_app_prompt();
 
     try {
-      const session_key = await ensure_app_session_key();
-      bind_session_key(session_key);
+      bind_session_key(controller.app_session_key);
       await flush_pending_app_prompt();
+      void controller.refresh_conversations();
     } catch (error) {
       pending_app_prompt_ref.current = null;
       controller.set_app_conversation_draft((current_draft) => (
@@ -151,7 +124,7 @@ export function LauncherPage() {
       ));
       throw error;
     }
-  }, [bind_session_key, controller, ensure_app_session_key, flush_pending_app_prompt]);
+  }, [bind_session_key, controller, flush_pending_app_prompt]);
 
   useEffect(() => {
     if (app_conversation_ws_state !== "connected" || !pending_app_prompt_ref.current) {
@@ -203,7 +176,6 @@ export function LauncherPage() {
       }
     }
     hydrated_app_session_key_ref.current = null;
-    ensured_app_session_key_ref.current = null;
     clear_session();
     controller.set_app_conversation_draft("");
     await controller.refresh_conversations();
@@ -302,18 +274,15 @@ export function LauncherPage() {
               )}
             >
               <LauncherAppConversationPanel
-                app_conversation_draft={controller.app_conversation_draft}
                 app_conversation_messages={app_conversation_messages}
                 error={app_conversation_error}
                 is_info_mode={controller.surface === "app"}
                 is_loading={app_conversation_loading}
+                session_key={controller.app_session_key}
                 ws_state={app_conversation_ws_state}
                 on_clear_session={handle_clear_app_session}
-                on_change_draft={controller.set_app_conversation_draft}
                 on_close={controller.close_app_conversation}
                 on_permission_response={send_permission_response}
-                on_stop_generation={stop_generation}
-                on_submit={handle_submit_app_conversation}
                 pending_permissions={pending_permissions}
               />
             </div>

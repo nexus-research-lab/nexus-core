@@ -264,7 +264,10 @@ class ChatMessageProcessor:
             round_id=self.round_id,
             session_id=self.session_id,
             parent_id=str(payload.get("parent_tool_use_id") or self.round_id),
-            is_complete=bool(self._segment.stop_reason),
+            # 中文注释：这里处理的是 SDK 给出的完整 assistant 快照，
+            # 不是逐 token 的流式片段。即使 stop_reason 未显式带回，
+            # 也必须按终态落库，否则固定 session 的历史重载会把旧回复误判成仍在执行。
+            is_complete=True,
         )
         self._remember_assistant_message(assistant_message)
         return [assistant_message]

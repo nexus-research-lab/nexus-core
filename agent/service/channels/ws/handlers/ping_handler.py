@@ -23,11 +23,11 @@ class PingHandler(BaseHandler):
         """处理心跳检测消息。"""
         session_key = message.get("session_key")
         agent_id = message.get("agent_id")
-        logger.debug(
-            "💗收到心跳检测: session_key=%s agent_id=%s",
-            session_key,
-            agent_id,
-        )
+        # logger.debug(
+        #     "💗收到心跳检测: session_key=%s agent_id=%s",
+        #     session_key,
+        #     agent_id,
+        # )
         event = EventMessage(
             event_type="pong",
             session_key=session_key,

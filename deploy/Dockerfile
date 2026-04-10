@@ -1,9 +1,9 @@
-ARG PYTHON_IMAGE=python:3.11-slim
+ARG PYTHON_IMAGE=python:3.13
 
 FROM ${PYTHON_IMAGE} AS runtime
 
 LABEL authors="leemysw"
-LABEL description="Nexus Core Backend"
+LABEL description="Nexus"
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
