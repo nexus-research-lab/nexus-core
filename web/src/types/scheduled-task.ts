@@ -8,12 +8,15 @@ export type ScheduledTaskScheduleKind = "every" | "cron" | "at";
 export type ScheduledTaskSessionTargetKind = "isolated" | "main" | "bound" | "named";
 export type ScheduledTaskWakeMode = "now" | "next-heartbeat";
 export type ScheduledTaskDeliveryMode = "none" | "last" | "explicit";
-export type ScheduledTaskRunStatus =
+export type ScheduledTaskRunLedgerStatus =
   | "pending"
   | "running"
-  | "queued_to_main_session"
   | "succeeded"
-  | "failed";
+  | "failed"
+  | "cancelled";
+export type ScheduledTaskExecutionStatus =
+  | ScheduledTaskRunLedgerStatus
+  | "queued_to_main_session";
 
 export type ScheduledTaskSchedule =
   | {
@@ -99,7 +102,7 @@ export interface CreateScheduledTaskParams {
   name: string;
   agent_id: string;
   schedule: ScheduledTaskSchedule;
-  session_target: ScheduledTaskSessionTarget;
+  session_target?: ScheduledTaskSessionTarget;
   instruction: string;
   delivery?: ScheduledTaskDeliveryTarget;
   enabled?: boolean;
@@ -125,7 +128,7 @@ export interface DeleteScheduledTaskResponse {
 export interface ApiScheduledTaskRun {
   run_id: string;
   job_id: string;
-  status: ScheduledTaskRunStatus;
+  status: ScheduledTaskRunLedgerStatus;
   scheduled_for?: string | null;
   started_at?: string | null;
   finished_at?: string | null;
@@ -142,7 +145,7 @@ export interface ScheduledTaskRunItem extends Omit<ApiScheduledTaskRun, "schedul
 export interface ApiScheduledTaskExecutionResult {
   job_id: string;
   run_id?: string | null;
-  status: ScheduledTaskRunStatus;
+  status: ScheduledTaskExecutionStatus;
   session_key: string;
   scheduled_for?: string | null;
   round_id?: string | null;

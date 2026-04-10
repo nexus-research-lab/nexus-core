@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { resolveAgentId } from "@/config/options";
 import { getHeartbeatConfigApi, wakeHeartbeatApi } from "@/lib/heartbeat-api";
@@ -37,29 +37,84 @@ export function useAutomationController(
   const [tasks_loading, set_tasks_loading] = useState(true);
   const [heartbeat_error, set_heartbeat_error] = useState<string | null>(null);
   const [tasks_error, set_tasks_error] = useState<string | null>(null);
+  const active_agent_id_ref = useRef(agent_id);
+  const heartbeat_request_token_ref = useRef(0);
+  const tasks_request_token_ref = useRef(0);
+
+  function is_active_heartbeat_request(request_agent_id: string, request_token: number): boolean {
+    return (
+      active_agent_id_ref.current === request_agent_id
+      && heartbeat_request_token_ref.current === request_token
+    );
+  }
+
+  function is_active_tasks_request(request_agent_id: string, request_token: number): boolean {
+    return (
+      active_agent_id_ref.current === request_agent_id
+      && tasks_request_token_ref.current === request_token
+    );
+  }
+
+  useEffect(() => {
+    active_agent_id_ref.current = agent_id;
+    heartbeat_request_token_ref.current += 1;
+    tasks_request_token_ref.current += 1;
+    set_heartbeat(null);
+    set_scheduled_tasks([]);
+    set_heartbeat_error(null);
+    set_tasks_error(null);
+    set_heartbeat_loading(true);
+    set_tasks_loading(true);
+  }, [agent_id]);
 
   const refresh_heartbeat = useCallback(async () => {
+    const request_agent_id = agent_id;
+    const request_token = heartbeat_request_token_ref.current + 1;
+    heartbeat_request_token_ref.current = request_token;
     set_heartbeat_loading(true);
     set_heartbeat_error(null);
     try {
-      const result = await getHeartbeatConfigApi(agent_id);
+      const result = await getHeartbeatConfigApi(request_agent_id);
+      // 中文注释：agent 切换或新的刷新请求会推进 token，旧响应必须被静默丢弃，避免串写到当前视图。
+      if (!is_active_heartbeat_request(request_agent_id, request_token)) {
+        return;
+      }
       set_heartbeat(result);
     } catch (error) {
+      if (!is_active_heartbeat_request(request_agent_id, request_token)) {
+        return;
+      }
       set_heartbeat_error(error instanceof Error ? error.message : "加载 heartbeat 失败");
     } finally {
+      if (!is_active_heartbeat_request(request_agent_id, request_token)) {
+        return;
+      }
       set_heartbeat_loading(false);
     }
   }, [agent_id]);
 
   const refresh_tasks = useCallback(async () => {
+    const request_agent_id = agent_id;
+    const request_token = tasks_request_token_ref.current + 1;
+    tasks_request_token_ref.current = request_token;
     set_tasks_loading(true);
     set_tasks_error(null);
     try {
-      const result = await listScheduledTasksApi({ agent_id });
+      const result = await listScheduledTasksApi({ agent_id: request_agent_id });
+      // 中文注释：任务列表同样按 agent_id 绑定，只允许最后一次有效请求落状态。
+      if (!is_active_tasks_request(request_agent_id, request_token)) {
+        return;
+      }
       set_scheduled_tasks(result);
     } catch (error) {
+      if (!is_active_tasks_request(request_agent_id, request_token)) {
+        return;
+      }
       set_tasks_error(error instanceof Error ? error.message : "加载定时任务失败");
     } finally {
+      if (!is_active_tasks_request(request_agent_id, request_token)) {
+        return;
+      }
       set_tasks_loading(false);
     }
   }, [agent_id]);
@@ -79,10 +134,15 @@ export function useAutomationController(
     void refresh_all();
   }, [refresh_all]);
 
+  const visible_heartbeat = heartbeat?.agent_id === agent_id ? heartbeat : null;
+  const visible_scheduled_tasks = scheduled_tasks.every((item) => item.agent_id === agent_id)
+    ? scheduled_tasks
+    : [];
+
   return {
     agent_id,
-    heartbeat,
-    scheduled_tasks,
+    heartbeat: visible_heartbeat,
+    scheduled_tasks: visible_scheduled_tasks,
     loading: heartbeat_loading || tasks_loading,
     heartbeat_loading,
     tasks_loading,
