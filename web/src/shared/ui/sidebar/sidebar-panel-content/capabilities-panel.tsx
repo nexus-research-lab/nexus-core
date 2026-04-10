@@ -19,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 
 import { AppRouteBuilders } from "@/app/router/route-paths";
 import { getConnectedCountApi } from "@/lib/connector-api";
+import { listScheduledTasksApi } from "@/lib/scheduled-task-api";
 import { getAvailableSkillsApi } from "@/lib/skill-api";
 import { useI18n } from "@/shared/i18n/i18n-context";
 import { SidebarListItem } from "@/shared/ui/sidebar/collapsible-section";
@@ -32,6 +33,7 @@ export const CapabilitiesPanelContent = memo(function CapabilitiesPanelContent()
   const set_active_panel_item = useSidebarStore((s) => s.set_active_panel_item);
   const [skills, set_skills] = useState<SkillInfo[]>([]);
   const [connector_count, set_connector_count] = useState(0);
+  const [scheduled_task_count, set_scheduled_task_count] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,6 +55,17 @@ export const CapabilitiesPanelContent = memo(function CapabilitiesPanelContent()
         }
       })
       .catch(() => { });
+    void listScheduledTasksApi()
+      .then((tasks) => {
+        if (!cancelled) {
+          set_scheduled_task_count(tasks.length);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          set_scheduled_task_count(0);
+        }
+      });
 
     return () => {
       cancelled = true;
@@ -61,7 +74,6 @@ export const CapabilitiesPanelContent = memo(function CapabilitiesPanelContent()
 
   const skill_count = useMemo(() => skills.length, [skills]);
 
-  const scheduled_task_count = 0;
   const channel_count = 0;
   const pairing_count = 0;
 
