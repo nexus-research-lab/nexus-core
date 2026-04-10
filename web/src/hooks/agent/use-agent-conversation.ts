@@ -527,21 +527,15 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
       });
   }, [apply_runtime_transition, set_pending_agent_slots, set_pending_permissions]);
 
-  const should_request_session_control = useCallback(() => {
-    if (typeof document === 'undefined') {
-      return true;
-    }
-    return document.visibilityState !== 'hidden' && document.hasFocus();
-  }, []);
-
   const build_session_bind_message = useCallback((
     target_session_key: string,
-    request_control: boolean,
   ): WebSocketMessage => ({
     type: 'bind_session',
     session_key: target_session_key,
     client_id: browser_client_id_ref.current,
-    request_control,
+    // 中文注释：自动重绑只恢复观察关系，不主动抢占控制权。
+    // 这样多窗口之间不会因为聚焦或重连把主理人被动抢走。
+    request_control: false,
     ...(session_seq_cursor_ref.current > 0 ? { last_seen_session_seq: session_seq_cursor_ref.current } : {}),
     ...(agent_id ? { agent_id } : {}),
     ...(room_id ? { room_id } : {}),
@@ -611,10 +605,7 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
         if (!session_key || ws_state_ref.current !== 'connected') {
           return;
         }
-        ws_send_ref.current(build_session_bind_message(
-          session_key,
-          should_request_session_control(),
-        ));
+        ws_send_ref.current(build_session_bind_message(session_key));
       });
       return;
     }
@@ -653,7 +644,6 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
     set_pending_agent_slots,
     set_pending_permissions,
     sync_session_status,
-    should_request_session_control,
     track_assistant_message,
     track_chat_ack,
     update_message_status,
@@ -762,10 +752,7 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
 
     // 中文注释：WebSocket 重连后，后端需要重新知道“当前这个连接服务哪个 session”，
     // 否则挂起中的权限请求无法重投到新连接。
-    ws_send(build_session_bind_message(
-      session_key,
-      should_request_session_control(),
-    ));
+    ws_send(build_session_bind_message(session_key));
 
     return () => {
       // 中文注释：共享 WebSocket 常驻于应用路由壳后，
@@ -776,27 +763,7 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
         client_id,
       });
     };
-  }, [build_session_bind_message, session_key, should_request_session_control, ws_send, ws_state]);
-
-  useEffect(() => {
-    if (!session_key || ws_state !== 'connected' || typeof window === 'undefined' || typeof document === 'undefined') {
-      return;
-    }
-
-    const handle_window_activation = () => {
-      if (!should_request_session_control()) {
-        return;
-      }
-      ws_send(build_session_bind_message(session_key, true));
-    };
-
-    window.addEventListener('focus', handle_window_activation);
-    document.addEventListener('visibilitychange', handle_window_activation);
-    return () => {
-      window.removeEventListener('focus', handle_window_activation);
-      document.removeEventListener('visibilitychange', handle_window_activation);
-    };
-  }, [build_session_bind_message, session_key, should_request_session_control, ws_send, ws_state]);
+  }, [build_session_bind_message, session_key, ws_send, ws_state]);
 
   // Subscribe to room-level events (member changes, deletions, etc.) when in a Room context
   useEffect(() => {

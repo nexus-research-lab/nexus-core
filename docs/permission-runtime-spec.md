@@ -309,7 +309,7 @@ client_id = 当前浏览器标签页稳定 ID
 
 ```text
 last_seen_session_seq = 当前前端已收到的最后一个 session envelope 序号
-request_control = 当前窗口是否请求成为控制端
+request_control = 当前窗口是否显式请求成为控制端
 ```
 
 规则：
@@ -399,12 +399,12 @@ DM 下通常：
 - `message / stream / round_status / session_status` 必须 fan-out 给全部绑定连接
 - `permission_request / permission_response / chat / interrupt` 只允许控制端处理
 - 控制端断开或解绑后，后端必须在剩余绑定中自动晋升新的控制端
-- 当前台窗口重新 `bind_session(request_control=true)` 时，允许抢占控制权
+- 只有显式 `bind_session(request_control=true)` 时，才允许抢占控制权
 
 推荐交互语义：
 
-- 当前可见窗口默认请求控制权
-- 其他已绑定窗口降级为观察视图
+- 新绑定窗口默认作为观察视图加入
+- 当前控制端保持稳定，直到断开、解绑或显式交出/被显式抢占
 - 观察视图可以实时看消息，但不能发送消息、停止生成或确认权限
 
 ## 11. 自动权限通道规则
