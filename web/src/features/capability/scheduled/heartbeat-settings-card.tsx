@@ -59,56 +59,52 @@ export function HeartbeatSettingsCard({
   on_wake,
 }: HeartbeatSettingsCardProps) {
   return (
-    <section className="glass-panel-subtle radius-shell-xl flex min-h-[280px] flex-col overflow-hidden">
-      <div className="border-b border-[var(--divider-subtle-color)] px-5 py-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <div className="glass-chip flex h-9 w-9 items-center justify-center rounded-2xl">
-                <Activity className="h-4 w-4 text-slate-900/80" />
-              </div>
-              <div>
-                <h2 className="text-[15px] font-semibold tracking-[-0.03em] text-[color:var(--text-strong)]">
-                  Heartbeat 设置
-                </h2>
-                <p className="text-xs text-[color:var(--text-default)]">
-                  查看当前自动唤醒状态并手动触发一次执行。
-                </p>
-              </div>
+    <section className="flex min-h-[280px] flex-col">
+      <div className="flex items-start justify-between gap-3 px-1 py-1">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <Activity className="h-4 w-4 text-[color:var(--icon-default)]" />
+            <div>
+              <h2 className="text-[15px] font-semibold tracking-[-0.03em] text-[color:var(--text-strong)]">
+                Heartbeat 设置
+              </h2>
+              <p className="text-xs text-[color:var(--text-default)]">
+                查看当前自动唤醒状态并手动触发一次执行。
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <WorkspacePillButton
-              density="compact"
-              disabled={is_loading}
-              onClick={() => void on_refresh()}
-              size="sm"
-              variant="outlined"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-              刷新
-            </WorkspacePillButton>
-            <WorkspacePillButton
-              density="compact"
-              disabled={is_loading || wake_pending}
-              onClick={() => void on_wake()}
-              size="sm"
-              variant="primary"
-            >
-              <Zap className="h-3.5 w-3.5" />
-              {wake_pending ? "唤醒中" : "立即唤醒"}
-            </WorkspacePillButton>
-          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <WorkspacePillButton
+            density="compact"
+            disabled={is_loading}
+            onClick={() => void on_refresh()}
+            size="sm"
+            variant="outlined"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            刷新
+          </WorkspacePillButton>
+          <WorkspacePillButton
+            density="compact"
+            disabled={is_loading || wake_pending}
+            onClick={() => void on_wake()}
+            size="sm"
+            variant="primary"
+          >
+            <Zap className="h-3.5 w-3.5" />
+            {wake_pending ? "唤醒中" : "立即唤醒"}
+          </WorkspacePillButton>
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col p-5">
+      <div className="mt-4 flex min-h-0 flex-1 flex-col gap-4">
         {is_loading ? (
           <div className="grid gap-3 sm:grid-cols-2">
             {Array.from({ length: 4 }).map((_, index) => (
               <div
                 key={index}
-                className="h-20 animate-pulse rounded-[20px] bg-white/45"
+                className="surface-card h-20 animate-pulse rounded-[20px]"
               />
             ))}
           </div>
@@ -135,8 +131,8 @@ export function HeartbeatSettingsCard({
               ) : null}
             </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-[22px] border border-[var(--divider-subtle-color)] bg-white/55 px-4 py-3 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+            <div className="grid gap-4 border-y border-[var(--divider-subtle-color)] py-4 sm:grid-cols-2">
+              <div className="min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
                   执行间隔
                 </p>
@@ -148,7 +144,7 @@ export function HeartbeatSettingsCard({
                 </p>
               </div>
 
-              <div className="rounded-[22px] border border-[var(--divider-subtle-color)] bg-white/55 px-4 py-3 shadow-[0_12px_30px_rgba(15,23,42,0.06)]">
+              <div className="min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
                   投递策略
                 </p>
@@ -161,7 +157,7 @@ export function HeartbeatSettingsCard({
               </div>
             </div>
 
-            <div className="mt-4 space-y-3 rounded-[24px] border border-[var(--divider-subtle-color)] bg-white/45 p-4">
+            <div className="space-y-3">
               <div className="flex items-center justify-between gap-3 text-sm">
                 <span className="text-[color:var(--text-default)]">最近心跳</span>
                 <span className="font-medium text-[color:var(--text-strong)]">
@@ -183,7 +179,7 @@ export function HeartbeatSettingsCard({
             </div>
 
             {heartbeat.delivery_error ? (
-              <div className="mt-4 rounded-[20px] border border-amber-500/20 bg-amber-500/8 px-4 py-3 text-sm text-amber-700">
+              <div className="rounded-[20px] border border-amber-500/20 bg-amber-500/8 px-4 py-3 text-sm text-amber-700">
                 <div className="flex items-center gap-2 font-semibold">
                   <TimerReset className="h-4 w-4" />
                   最近一次投递异常

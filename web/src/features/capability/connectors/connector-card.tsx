@@ -4,11 +4,17 @@ import { Check, Link2, Unplug } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
+  WorkspaceCatalogAction,
   WorkspaceCatalogBadge,
+  WorkspaceCatalogBody,
   WorkspaceCatalogCard,
+  WorkspaceCatalogDescription,
+  WorkspaceCatalogFooter,
+  WorkspaceCatalogHeader,
+  WorkspaceCatalogTag,
+  WorkspaceCatalogTitle,
   WorkspaceIconFrame,
 } from "@/shared/ui/workspace/workspace-catalog-card";
-import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import { ConnectorInfo } from "@/types/connector";
 
 import { getConnectorColors, getConnectorLetter } from "./connector-icons";
@@ -29,23 +35,41 @@ export function ConnectorCard({
   on_connect,
   on_disconnect,
 }: ConnectorCardProps) {
-  const { title, description, icon, status, connection_state, is_configured, config_error } = connector;
+  const {
+    title,
+    description,
+    icon,
+    status,
+    connection_state,
+    is_configured,
+    config_error,
+    category,
+    auth_type,
+  } = connector;
   const colors = getConnectorColors(icon);
   const letter = getConnectorLetter(icon, title);
   const is_connected = connection_state === "connected";
   const is_coming_soon = status === "coming_soon";
+  const auth_label =
+    auth_type === "oauth2"
+      ? "OAuth"
+      : auth_type === "api_key"
+        ? "API Key"
+        : auth_type === "token"
+          ? "Token"
+          : "免授权";
 
   return (
     <WorkspaceCatalogCard
       class_name={cn(
-        "group cursor-pointer rounded-[22px] px-5 py-4",
-        is_coming_soon && "opacity-70",
+        "group h-full",
+        busy && "opacity-60",
       )}
+      interactive
       onClick={on_select}
+      size="catalog"
     >
-      {/* 顶部：图标 + 标题 + 状态 */}
-      <div className="flex items-start gap-3">
-        {/* 品牌图标 */}
+      <WorkspaceCatalogHeader class_name="items-center">
         <WorkspaceIconFrame
           class_name={cn("h-10 w-10 shrink-0 text-sm font-bold", colors.bg, colors.text)}
           size="md"
@@ -55,66 +79,74 @@ export function ConnectorCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="truncate text-[15px] font-semibold text-[color:var(--text-strong)]">
+            <WorkspaceCatalogTitle class_name="min-w-0 flex-1" size="sm" truncate>
               {title}
-            </h3>
+            </WorkspaceCatalogTitle>
+            <WorkspaceCatalogBadge class_name="shrink-0" tone="neutral">
+              {category}
+            </WorkspaceCatalogBadge>
+            {is_coming_soon ? (
+              <WorkspaceCatalogBadge class_name="shrink-0" tone="neutral">
+                即将推出
+              </WorkspaceCatalogBadge>
+            ) : null}
           </div>
-          <p className="mt-0.5 line-clamp-2 text-[12px] leading-[1.55] text-[color:var(--text-default)]">
-            {is_configured ? description : config_error || description}
-          </p>
+        </div>
+      </WorkspaceCatalogHeader>
+
+      <WorkspaceCatalogBody grow>
+        <WorkspaceCatalogDescription min_height>
+          {is_configured ? description : config_error || description}
+        </WorkspaceCatalogDescription>
+      </WorkspaceCatalogBody>
+
+      <WorkspaceCatalogFooter>
+        <div className="flex min-w-0 flex-wrap gap-1">
+          <WorkspaceCatalogTag>{auth_label}</WorkspaceCatalogTag>
         </div>
 
-        {/* 右上角状态 */}
-        <div className="shrink-0">
+        <div className="flex shrink-0 items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
           {is_connected ? (
-            <WorkspaceCatalogBadge tone="success">
-              <Check className="h-3 w-3" />
-              已连接
+            <>
+              <WorkspaceCatalogBadge tone="success">
+                <Check className="h-3 w-3" />
+                已连接
+              </WorkspaceCatalogBadge>
+              <WorkspaceCatalogAction
+                disabled={busy}
+                onClick={on_disconnect}
+                size="sm"
+                title="断开连接"
+              >
+                <Unplug className="h-3.5 w-3.5" />
+              </WorkspaceCatalogAction>
+            </>
+          ) : !is_configured ? (
+            <WorkspaceCatalogBadge tone="warning">
+              未配置
             </WorkspaceCatalogBadge>
           ) : is_coming_soon ? (
             <WorkspaceCatalogBadge tone="neutral">
               即将推出
             </WorkspaceCatalogBadge>
-          ) : !is_configured ? (
-            <WorkspaceCatalogBadge tone="warning">
-              待配置
-            </WorkspaceCatalogBadge>
           ) : (
-            <WorkspaceCatalogBadge tone="neutral">
-              未连接
-            </WorkspaceCatalogBadge>
+            <>
+              <WorkspaceCatalogBadge tone="info">
+                <Link2 className="h-3 w-3" />
+                可连接
+              </WorkspaceCatalogBadge>
+              <WorkspaceCatalogAction
+                disabled={busy}
+                onClick={on_connect}
+                size="sm"
+                title="授权连接"
+              >
+                <Link2 className="h-3.5 w-3.5" />
+              </WorkspaceCatalogAction>
+            </>
           )}
         </div>
-      </div>
-
-      {/* 底部操作 —— 可用的连接器才显示 */}
-      {!is_coming_soon && (
-        <div className="mt-3 flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-          {is_connected ? (
-            <WorkspacePillButton
-              disabled={busy}
-              density="compact"
-              onClick={on_disconnect}
-              size="sm"
-              variant="outlined"
-            >
-              <Unplug className="h-3 w-3" />
-              断开
-            </WorkspacePillButton>
-          ) : (
-            <WorkspacePillButton
-              disabled={busy || !is_configured}
-              density="compact"
-              onClick={on_connect}
-              size="sm"
-              variant={is_configured ? "primary" : "outlined"}
-            >
-              <Link2 className="h-3 w-3" />
-              {is_configured ? "连接" : "未配置"}
-            </WorkspacePillButton>
-          )}
-        </div>
-      )}
+      </WorkspaceCatalogFooter>
     </WorkspaceCatalogCard>
   );
 }

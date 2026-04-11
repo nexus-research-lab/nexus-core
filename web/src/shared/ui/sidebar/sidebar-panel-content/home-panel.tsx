@@ -215,7 +215,7 @@ export const HomePanelContent = memo(function HomePanelContent() {
   }, [delete_target, refresh_rooms]);
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col">
       {/* Starred 分区 */}
       {starred.length > 0 ? (
         <CollapsibleSection
@@ -263,7 +263,7 @@ export const HomePanelContent = memo(function HomePanelContent() {
             />
           ))
         ) : (
-          <p className="px-2 py-2 text-[13px] text-slate-400">{t("home.no_rooms")}</p>
+          <p className="px-2 py-2 text-[13px] text-[color:var(--text-soft)]">{t("home.no_rooms")}</p>
         )}
       </CollapsibleSection>
 
@@ -285,7 +285,7 @@ export const HomePanelContent = memo(function HomePanelContent() {
             />
           ))
         ) : (
-          <p className="px-2 py-2 text-[13px] text-slate-400">{t("home.no_dms")}</p>
+          <p className="px-2 py-2 text-[13px] text-[color:var(--text-soft)]">{t("home.no_dms")}</p>
         )}
       </CollapsibleSection>
 

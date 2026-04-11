@@ -366,7 +366,7 @@ export function ToolBlock({
               disabled={interaction_disabled}
               title={interaction_disabled ? interaction_disabled_reason : undefined}
               className={cn(
-                "modal-btn-secondary rounded-lg px-3 py-1.5 text-xs font-medium text-[color:var(--text-muted)] transition-colors",
+                "dialog-button-secondary rounded-lg px-3 py-1.5 text-xs font-medium text-[color:var(--text-muted)] transition-colors",
                 interaction_disabled
                   ? "cursor-not-allowed opacity-50"
                   : "hover:text-[color:var(--text-strong)]",

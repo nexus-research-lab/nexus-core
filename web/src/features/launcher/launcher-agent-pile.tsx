@@ -405,9 +405,6 @@ export function AgentPile({
         class_name,
       )}
     >
-      <div className="pointer-events-none absolute inset-x-[10%] top-[64px] h-28 rounded-full bg-[radial-gradient(circle,rgba(154,127,255,0.18),rgba(154,127,255,0)_72%)] blur-3xl" />
-      <div className="pointer-events-none absolute inset-x-[18%] bottom-[58px] h-24 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.18),rgba(255,255,255,0)_76%)] blur-2xl" />
-      <div className="pointer-events-none absolute left-1/2 top-[108px] h-[124px] w-px -translate-x-1/2 bg-[linear-gradient(180deg,rgba(255,255,255,0.24),rgba(255,255,255,0))]" />
       <div className="pointer-events-none absolute bottom-[34px] left-1/2 h-[114px] w-[128%] -translate-x-1/2 rounded-[999px] border-t border-white/22 bg-[radial-gradient(circle_at_50%_8%,rgba(255,255,255,0.14),rgba(255,255,255,0.03)_28%,rgba(255,255,255,0)_62%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-[194px] h-px bg-[linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,0.1),rgba(255,255,255,0.3),rgba(255,255,255,0.1),rgba(255,255,255,0))]" />
 
@@ -427,7 +424,7 @@ export function AgentPile({
               tokenRefs.current[token.key] = node;
             }}
             className={cn(
-              "absolute left-0 top-0 overflow-hidden border opacity-0 will-change-transform transition-[filter] duration-200 hover:brightness-[1.04]",
+              "absolute left-0 top-0 border opacity-0",
               token.kind === "agent" ? "rounded-full" : "rounded-[14px]",
               isActive && "ring-2 ring-white/80",
             )}
@@ -460,52 +457,6 @@ export function AgentPile({
                 boxShadow: `inset 0 1px 0 ${hexToRgba("#ffffff", 0.34)}, inset 0 -3px 8px ${hexToRgba("#000000", 0.06)}`,
               }}
             />
-            {brandStyle.stacked && (
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "pointer-events-none absolute border",
-                  token.kind === "agent" ? "rounded-full" : "rounded-[12px]",
-                )}
-                style={{
-                  inset: 4,
-                  transform: "translate(2px, 3px)",
-                  borderColor: hexToRgba(token.swatch.ring, 0.28),
-                  background: hexToRgba(token.swatch.fill, 0.16),
-                  zIndex: 0,
-                }}
-              />
-            )}
-            {brandStyle.fold && token.kind === "room" && (
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute right-[7%] top-[7%] h-[26%] w-[26%] overflow-hidden rounded-[8px]"
-                style={{
-                  background: `linear-gradient(135deg, ${hexToRgba("#ffffff", 0.84)} 0%, ${hexToRgba(token.swatch.fill, 0.16)} 58%, transparent 58%)`,
-                  boxShadow: `inset 0 1px 0 ${hexToRgba("#ffffff", 0.46)}`,
-                }}
-              >
-                <span
-                  className="absolute inset-0"
-                  style={{
-                    background: `linear-gradient(135deg, transparent 0 48%, ${hexToRgba("#000000", 0.08)} 52%, transparent 60%)`,
-                  }}
-                />
-              </span>
-            )}
-            {brandStyle.ring && (
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "pointer-events-none absolute border",
-                  token.kind === "agent" ? "rounded-full" : "rounded-[10px]",
-                )}
-                style={{
-                  inset: token.kind === "agent" ? "24%" : "22%",
-                  borderColor: hexToRgba(token.swatch.text, 0.28),
-                }}
-              />
-            )}
             <span
               aria-hidden="true"
               className={cn(
@@ -518,33 +469,6 @@ export function AgentPile({
                 top: token.kind === "agent" ? "18%" : "16%",
                 height: "22%",
                 background: `linear-gradient(180deg, ${hexToRgba("#ffffff", brandStyle.gloss_opacity)} 0%, rgba(255,255,255,0) 100%)`,
-                filter: "blur(0.8px)",
-              }}
-            />
-            <span
-              aria-hidden="true"
-              className={cn(
-                "pointer-events-none absolute blur-[0.8px]",
-                token.kind === "agent" ? "rounded-full" : "rounded-[999px]",
-              )}
-              style={{
-                left: "18%",
-                top: "18%",
-                height: "26%",
-                width: "42%",
-                background: "linear-gradient(180deg, rgba(255,255,255,0.42), rgba(255,255,255,0))",
-              }}
-            />
-            <span
-              aria-hidden="true"
-              className={cn(
-                "pointer-events-none absolute",
-                token.kind === "agent" ? "rounded-full" : "rounded-[10px]",
-              )}
-              style={{
-                inset: token.kind === "agent" ? "10%" : "12%",
-                background: `radial-gradient(circle at 50% 56%, transparent 0%, transparent 58%, ${hexToRgba(token.swatch.text, brandStyle.accent_opacity)} 100%)`,
-                opacity: 0.55,
               }}
             />
             <span

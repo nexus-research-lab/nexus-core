@@ -68,33 +68,24 @@ export function ThreadDetailPanel({
   return (
     <div className={cn(
       "flex h-full min-w-0 w-full flex-1 flex-col overflow-hidden",
-      is_mobile ? "bg-background" : "bg-[var(--surface-popover-background)]",
+      is_mobile ? "bg-background" : "bg-transparent",
     )}>
       {/* ── 头部 ────────────────────────────────────────────── */}
-      <div className="flex shrink-0 items-center gap-2 border-b px-3 py-2.5" style={{ borderColor: "var(--divider-subtle-color)" }}>
+      <div className="flex shrink-0 items-center gap-2 border-b px-3 py-3" style={{ borderColor: "var(--divider-subtle-color)" }}>
         {is_mobile ? (
           <button
             type="button"
             onClick={on_close}
             aria-label="关闭 Thread"
             title="关闭 Thread"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-[color:var(--icon-default)] transition-colors hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--icon-strong)]"
-            style={{
-              background: "var(--surface-panel-subtle-background)",
-              borderColor: "var(--surface-panel-subtle-border)",
-            }}
+            className="chip-default flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-[color:var(--icon-default)] transition-colors hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--icon-strong)]"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
         ) : null}
 
         <div
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border text-[color:var(--icon-default)]"
-          style={{
-            background: "var(--surface-avatar-background)",
-            borderColor: "var(--surface-avatar-border)",
-            boxShadow: "var(--surface-avatar-shadow)",
-          }}
+          className="chip-default flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border text-[color:var(--icon-default)]"
         >
           <Bot className="h-3.5 w-3.5" />
         </div>
@@ -109,11 +100,7 @@ export function ThreadDetailPanel({
             onClick={on_close}
             aria-label="关闭 Thread"
             title="关闭 Thread"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-[color:var(--icon-default)] transition-colors hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--icon-strong)]"
-            style={{
-              background: "var(--surface-panel-subtle-background)",
-              borderColor: "var(--surface-panel-subtle-border)",
-            }}
+            className="chip-default flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border text-[color:var(--icon-default)] transition-colors hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--icon-strong)]"
           >
             <X className="h-4 w-4" />
           </button>

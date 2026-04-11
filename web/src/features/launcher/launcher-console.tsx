@@ -6,9 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { AppRouteBuilders } from "@/app/router/route-paths";
 
 import {
-  HeroActionOrbShell,
   HeroBlobShell,
-  HeroInputShell,
 } from "@/features/launcher/launcher-glass-shell";
 import { cn } from "@/lib/utils";
 import { ANIMATIONS } from "@/config/animation-assets";
@@ -169,7 +167,7 @@ function buildDecorativeTokens(
     ...room_tokens,
   ];
   fallback.forEach((item, index) => {
-    if (source.length < 22) {
+    if (source.length < 18) {
       source.push({
         key: `fallback-${item.label}-${index}`,
         label: item.label,
@@ -180,7 +178,7 @@ function buildDecorativeTokens(
     }
   });
 
-  return source.slice(0, 22);
+  return source.slice(0, 12);
 }
 
 function buildLauncherMentionTargets(
@@ -455,7 +453,14 @@ const HeroStage = memo(function HeroStage({
 
         <div className="mt-3 sm:mt-4">
           <FadeSlideIn delay_ms={440} duration_ms={420} y_offset={10}>
-            <HeroInputShell class_name="mx-auto w-full max-w-[326px] sm:max-w-[480px]">
+            <div
+              className="mx-auto w-full max-w-[326px] rounded-[28px] border px-4 py-4 sm:max-w-[480px] sm:px-6 sm:py-5"
+              style={{
+                background: "linear-gradient(180deg, var(--launcher-input-fill), var(--launcher-input-inner-fill))",
+                borderColor: "var(--launcher-input-stroke)",
+                boxShadow: "inset 0 1px 0 var(--launcher-input-inner-stroke), 0 14px 30px rgba(56, 72, 98, 0.10)",
+              }}
+            >
               <div className="relative flex min-w-0 items-center gap-2.5 sm:gap-3">
                 {mention_match ? (
                   <MentionTargetPopover
@@ -511,37 +516,36 @@ const HeroStage = memo(function HeroStage({
                   placeholder={input_placeholder || (surface === "app" ? "告诉 Nexus 你要推进什么..." : t("launcher.query_placeholder"))}
                   disabled={surface === "launcher" ? is_query_loading : input_disabled}
                 />
-                <HeroActionOrbShell class_name="shrink-0" is_active={!is_query_loading}>
-                  <button
-                    className={cn(
-                      "inline-flex h-full w-full items-center justify-center rounded-full transition duration-150 ease-out hover:-translate-y-0.5",
-                      ((surface === "launcher" && is_query_loading) || (surface === "app" && input_disabled))
-                        && "cursor-not-allowed opacity-50 hover:translate-y-0",
-                    )}
-                    style={{
-                      background: "var(--launcher-submit-background)",
-                      boxShadow: "var(--launcher-submit-shadow)",
-                      color: "var(--launcher-submit-color)",
-                    }}
-                    onClick={handle_submit}
-                    type="button"
-                    disabled={surface === "launcher" ? is_query_loading : input_disabled}
-                  >
-                    {surface === "app" ? (
-                      is_query_loading ? (
-                        <RotateCcw className="h-4 w-4" />
-                      ) : (
-                        <ArrowUp className="h-4 w-4" />
-                      )
-                    ) : is_query_loading ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-transparent" />
+                <button
+                  className={cn(
+                    "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition duration-150 ease-out hover:-translate-y-0.5 sm:h-11 sm:w-11",
+                    ((surface === "launcher" && is_query_loading) || (surface === "app" && input_disabled))
+                      && "cursor-not-allowed opacity-50 hover:translate-y-0",
+                  )}
+                  style={{
+                    background: "var(--launcher-submit-background)",
+                    borderColor: "rgba(255,255,255,0.34)",
+                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.26), var(--launcher-submit-shadow)",
+                    color: "var(--launcher-submit-color)",
+                  }}
+                  onClick={handle_submit}
+                  type="button"
+                  disabled={surface === "launcher" ? is_query_loading : input_disabled}
+                >
+                  {surface === "app" ? (
+                    is_query_loading ? (
+                      <RotateCcw className="h-4 w-4" />
                     ) : (
                       <ArrowUp className="h-4 w-4" />
-                    )}
-                  </button>
-                </HeroActionOrbShell>
+                    )
+                  ) : is_query_loading ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-transparent" />
+                  ) : (
+                    <ArrowUp className="h-4 w-4" />
+                  )}
+                </button>
               </div>
-            </HeroInputShell>
+            </div>
           </FadeSlideIn>
 
           <div className={cn(
@@ -555,11 +559,9 @@ const HeroStage = memo(function HeroStage({
                     <div
                       className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-max max-w-[220px] -translate-x-1/2 translate-y-1 rounded-2xl px-3 py-2 text-center text-xs font-medium leading-5 opacity-0 shadow-[0_18px_42px_rgba(38,52,76,0.16)] transition duration-200 ease-out group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100"
                       style={{
-                        background: "color-mix(in srgb, rgba(247, 249, 253, 0.96) 88%, rgba(255, 255, 255, 0.72))",
-                        boxShadow: "0 18px 42px rgba(38, 52, 76, 0.16), inset 0 0 0 1px rgba(255, 255, 255, 0.58)",
+                        background: "rgba(247, 249, 253, 0.96)",
+                        boxShadow: "0 18px 42px rgba(38, 52, 76, 0.16), inset 0 0 0 1px rgba(255, 255, 255, 0.52)",
                         color: "rgba(39, 50, 74, 0.88)",
-                        backdropFilter: "blur(14px)",
-                        WebkitBackdropFilter: "blur(14px)",
                       }}
                     >
                       {entry.type === "room" ? "#" : ""}
@@ -841,11 +843,7 @@ export function LauncherConsole({
 
   return (
     <section className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden">
-      <div className={cn(
-        "relative z-30 flex items-center justify-between gap-3 px-3 pt-3 sm:px-7 sm:pt-1",
-        surface === "app" && "pointer-events-none absolute inset-x-0 top-0",
-      )}
-        onClick={(e) => e.stopPropagation()}>
+      <div className="pointer-events-none absolute left-3 top-3 z-20 sm:left-5 sm:top-4">
         <div className="relative flex items-center gap-1 px-1 py-1">
           <LottiePlayer
             class_name="pointer-events-none absolute left-10 -top-4 h-12 w-12 opacity-[0.72] sm:left-3 sm:-top-12 sm:h-24 sm:w-24"
@@ -855,9 +853,7 @@ export function LauncherConsole({
           <img alt="" className="h-9 w-9 sm:h-10 sm:w-10" src="/logo.webp" />
           <span className="text-sm font-semibold text-foreground sm:text-base">Nexus</span>
         </div>
-
       </div>
-
       <div className={cn(
         "relative flex min-h-0 flex-1 items-center justify-center px-8",
         surface === "app" ? "pb-0 pt-0" : "pb-8 pt-6",

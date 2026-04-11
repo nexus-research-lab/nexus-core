@@ -14,6 +14,7 @@ import { TodoItem } from "@/types/todo";
 import { Agent } from "@/types/agent";
 
 import { ScrollToLatestButton } from "@/features/conversation-shared/scroll-to-latest-button";
+import { ComposerPanel } from "@/features/conversation-shared/composer-panel";
 import {
   buildRoomAgentRoundEntries,
   getRoomAgentRoundEntry,
@@ -27,7 +28,6 @@ import {
 } from "@/features/conversation-shared/utils";
 import { RoomConversationFeed } from "./room-conversation-feed";
 import { useRoomThread, useSetThreadPanelData } from "./thread/room-thread-state";
-import { RoomComposerPanel } from "./room-composer-panel";
 import { RoomConversationEmptyState } from "./room-conversation-empty-state";
 
 export interface RoomChatPanelProps {
@@ -377,7 +377,7 @@ export function RoomChatPanel({
             className={
               is_mobile_layout
                 ? "soft-scrollbar relative z-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-1 py-2"
-                : "soft-scrollbar relative z-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-[var(--surface-canvas-background)] px-4 py-5 sm:px-6 sm:py-6 xl:px-8 xl:py-7"
+                : "soft-scrollbar relative z-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 xl:px-8 xl:py-7"
             }
             style={{ overflowAnchor: "none" }}
             onScroll={on_scroll}
@@ -415,7 +415,7 @@ export function RoomChatPanel({
             />
           ) : null}
 
-          <RoomComposerPanel
+          <ComposerPanel
             compact={is_mobile_layout}
             control_status_text={session_control_text}
             mention_unavailable_agent_ids={mention_unavailable_agent_ids}

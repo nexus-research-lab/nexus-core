@@ -12,32 +12,32 @@ interface RoomAgentAboutViewProps {
 export function RoomAgentAboutView({ agent }: RoomAgentAboutViewProps) {
   return (
     <WorkspaceSurfaceView eyebrow="About" title={agent.name}>
-      <div className="rounded-[18px] border border-white/22 bg-white/10 px-5 py-5">
+      <div className="surface-card rounded-[24px] px-5 py-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/28 bg-white/18 text-slate-900/78">
+          <div className="chip-default flex h-10 w-10 items-center justify-center rounded-full text-[color:var(--icon-strong)]">
             <Bot className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-base font-semibold text-slate-950/88">{agent.name}</p>
-            <p className="text-[13px] text-slate-700/56">单成员协作对象</p>
+            <p className="text-base font-semibold text-[color:var(--text-strong)]">{agent.name}</p>
+            <p className="text-[13px] text-[color:var(--text-muted)]">单成员协作对象</p>
           </div>
         </div>
 
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
-          <div className="rounded-[14px] border border-white/18 bg-white/10 px-4 py-3.5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700/46">
+          <div className="surface-inset rounded-[18px] px-4 py-3.5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--text-soft)]">
               Model
             </p>
-            <p className="mt-1.5 text-[13px] font-semibold text-slate-950/84">
+            <p className="mt-1.5 text-[13px] font-semibold text-[color:var(--text-strong)]">
               {agent.options.model || "inherit"}
             </p>
           </div>
-          <div className="rounded-[14px] border border-white/18 bg-white/10 px-4 py-3.5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700/46">
+          <div className="surface-inset rounded-[18px] px-4 py-3.5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--text-soft)]">
               Permission
             </p>
-            <p className="mt-1.5 inline-flex items-center gap-2 text-[13px] font-semibold text-slate-950/84">
-              <Shield className="h-4 w-4 text-sky-600" />
+            <p className="mt-1.5 inline-flex items-center gap-2 text-[13px] font-semibold text-[color:var(--text-strong)]">
+              <Shield className="h-4 w-4 text-[color:var(--icon-default)]" />
               {agent.options.permission_mode || "default"}
             </p>
           </div>

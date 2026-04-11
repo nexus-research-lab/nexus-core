@@ -17,18 +17,18 @@ export const COMPOSER_ATTACHMENT_REMOVE_CLASS_NAME =
 
 export function getComposerShellClassName(disabled: boolean) {
   return cn(
-    "relative overflow-hidden rounded-[16px] transition-[box-shadow,border-color,background] duration-150",
+    "relative overflow-hidden rounded-[18px] transition-[box-shadow,border-color,background] duration-150",
     disabled && "cursor-not-allowed opacity-50",
   );
 }
 
 export function getComposerShellStyle(compact: boolean) {
   return {
-    background: "var(--surface-shell-background)",
-    border: `1px solid ${"color-mix(in srgb, var(--surface-shell-border) 94%, transparent)"}`,
-    boxShadow: compact ? "none" : "0 8px 18px rgb(71 85 105 / 0.05)",
+    background: "var(--surface-inset-background)",
+    border: `1px solid ${"color-mix(in srgb, var(--surface-inset-border) 94%, transparent)"}`,
+    boxShadow: compact ? "none" : "0 14px 30px color-mix(in srgb, var(--ambient-stage-shadow) 56%, transparent)",
   } as const;
 }
 
 export const COMPOSER_FOOTER_CLASS_NAME =
-  "flex items-center justify-between border-t border-[var(--divider-subtle-color)] px-2.5 py-1 text-slate-400/80";
+  "flex items-center justify-between border-t border-[var(--divider-subtle-color)] px-2.5 py-1 text-[color:var(--text-soft)]";

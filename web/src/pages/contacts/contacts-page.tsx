@@ -147,14 +147,14 @@ export function ContactsPage() {
     void load_conversations_from_server();
   }, [load_agents_from_server, load_conversations_from_server]);
 
-  // 加载中 — 内联 loading，AppStage 由路由布局层提供
+  // 加载中 — 内联 loading，外层布局由路由层提供
   if (loading && !agents.length) {
     return (
       <WorkspacePageFrame content_padding_class_name="p-0">
         <div className="flex min-h-0 flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-3">
-            <Loader2 className="h-6 w-6 animate-spin text-slate-400/60" />
-            <span className="text-sm text-slate-400/60">加载成员...</span>
+            <Loader2 className="h-6 w-6 animate-spin text-[color:var(--text-soft)]" />
+            <span className="text-sm text-[color:var(--text-soft)]">加载成员...</span>
           </div>
         </div>
       </WorkspacePageFrame>

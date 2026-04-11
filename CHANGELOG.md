@@ -34,6 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 新增同一 session 的“多观察者、单控制者”运行时语义：多窗口可同时实时观察同一会话，消息流与 round 状态 fan-out，同一时刻仅一个控制端可发送消息、停止生成或确认权限。
 
 ### Changed
+- 重构 `/app` 与 `launcher` 前端视觉骨架：收口 surface recipe、统一目录卡片语法、移除多余玻璃壳与中间 wrapper，整体层级更薄、更接近桌面端结构。
+- 简化 Launcher Hero、右侧 Nexus 信息面板与输入/动作区结构，恢复 `/app` 首页原有 `nexus` ASCII 文字动画入口。
 - 定时任务前后端契约升级为结构化自动化模型：前端不再使用扁平 `cron_expression/source_type` 占位字段，统一改为 `schedule`、`session_target`、`delivery` 结构。
 - 技能市场代码从 `service/workspace/` 迁移至 `service/capability/skills/`，API 从 `api/agent/` 迁移至 `api/capability/`。
 - `SkillCatalog` 改为无状态设计，状态由调用方通过数据库查询后传入。
@@ -62,6 +64,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Room 权限请求不再广播给全部房间订阅者，改为只投递给当前 session 控制端；Room 普通协作事件仍保留 room 广播。
 
 ### Fixed
+- 修复 Sidebar、Room/DM、技能/连接器目录、Agent Options 与 Launcher 等区域因额外背景板、空壳节点和过多动作层导致的布局抖动、容器收缩与层级堆叠问题。
+- 修复多处前端无效交互入口与显示回归，包括 Launcher 右侧“清空 Nexus 对话”、连接器卡片状态表达、Thread 面板宽度与会话切换下拉等问题。
 - 修复 `session_repository` / `cost_repository` 模块级初始化产生的导入副作用（#11）。
 - 修复 Alembic 迁移多 head 冲突问题。
 - 修复 `make dev` / `make db-init` 因 Alembic 双 `head` 与后端启动旧导入路径导致的本地启动失败问题。

@@ -4,8 +4,12 @@ import { Bot, MessageSquareText, Users } from "lucide-react";
 
 import { useI18n } from "@/shared/i18n/i18n-context";
 import {
+  WorkspaceCatalogBody,
   WorkspaceCatalogCard,
+  WorkspaceCatalogDescription,
+  WorkspaceCatalogFooter,
   WorkspaceIconFrame,
+  WorkspaceCatalogTitle,
 } from "@/shared/ui/workspace/workspace-catalog-card";
 import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 
@@ -33,26 +37,26 @@ export function ContactsAgentCard({
   const { t } = useI18n();
   return (
     <WorkspaceCatalogCard
-      class_name="cursor-pointer rounded-[26px] px-6 py-6 text-center"
+      align="center"
+      class_name="h-full"
+      interactive
       onClick={on_open_profile}
+      size="comfort"
     >
-      {/* 居中头像 */}
       <WorkspaceIconFrame class_name="mx-auto h-16 w-16" shape="round" size="lg">
         <Bot className="h-7 w-7 text-[color:var(--icon-strong)]" />
       </WorkspaceIconFrame>
 
-      {/* 名称 */}
-      <p className="mt-4 truncate text-[18px] font-bold tracking-[-0.03em] text-[color:var(--text-strong)]">
+      <WorkspaceCatalogBody class_name="mt-4 w-full" grow={false}>
+        <WorkspaceCatalogTitle size="lg" truncate>
         {name}
-      </p>
+        </WorkspaceCatalogTitle>
+        <WorkspaceCatalogDescription class_name="mt-2" min_height>
+          {description}
+        </WorkspaceCatalogDescription>
+      </WorkspaceCatalogBody>
 
-      {/* 描述：1-2 行截断 */}
-      <p className="mt-2 line-clamp-2 min-h-[40px] text-[13px] leading-5 text-[color:var(--text-default)]">
-        {description}
-      </p>
-
-      {/* 底部操作按钮 */}
-      <div className="mt-5 flex items-center justify-center gap-2.5" onClick={(e) => e.stopPropagation()}>
+      <WorkspaceCatalogFooter class_name="mt-5 w-full gap-2.5" justify="center" onClick={(e) => e.stopPropagation()}>
         <WorkspacePillButton onClick={on_open_room} size="sm" variant="primary">
           <MessageSquareText className="h-3.5 w-3.5" />
           {t("contacts.chat")}
@@ -61,7 +65,7 @@ export function ContactsAgentCard({
           <Users className="h-3.5 w-3.5" />
           {t("contacts.create_team")}
         </WorkspacePillButton>
-      </div>
+      </WorkspaceCatalogFooter>
     </WorkspaceCatalogCard>
   );
 }

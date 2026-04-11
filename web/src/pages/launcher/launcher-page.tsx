@@ -7,7 +7,6 @@ import { LauncherAppConversationPanel } from "@/features/launcher/launcher-app-c
 import { LauncherConsole } from "@/features/launcher/launcher-console";
 import { getLauncherSurfaceThemeStyle } from "@/features/launcher/launcher-surface-theme";
 import { useLauncherPageController } from "@/hooks/use-launcher-page-controller";
-import { deleteConversation } from "@/lib/agent-api";
 import { createRoom, ensureDirectRoom } from "@/lib/room-api";
 import { cn } from "@/lib/utils";
 import { AgentOptions } from "@/shared/ui/dialog/agent-options";
@@ -46,7 +45,6 @@ export function LauncherPage() {
     bind_session_key,
     load_session,
     send_message,
-    clear_session,
     messages: app_conversation_messages,
     error: app_conversation_error,
     is_loading: app_conversation_loading,
@@ -170,21 +168,6 @@ export function LauncherPage() {
     });
   }, [controller, navigate, set_active_panel_item]);
 
-  const handle_clear_app_session = useCallback(async () => {
-    try {
-      await deleteConversation(controller.app_session_key);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "";
-      if (message !== "Session not found") {
-        throw error;
-      }
-    }
-    app_panel_load_signature_ref.current = null;
-    clear_session();
-    controller.set_app_conversation_draft("");
-    await controller.refresh_conversations();
-  }, [clear_session, controller]);
-
   const handle_save_agent_options = useCallback(async (title: string, options: AgentConfigOptions) => {
     const should_open_room_after_create = controller.dialog_mode === "create";
     await controller.handle_save_agent_options(title, options);
@@ -289,13 +272,13 @@ export function LauncherPage() {
         </div>
 
         {controller.is_app_conversation_open ? (
-          <div className="absolute inset-x-3 bottom-4 top-24 z-40 lg:static lg:inset-auto lg:block lg:w-[512px] lg:shrink-0 lg:pb-8">
+          <div className="absolute inset-x-3 bottom-4 top-4 z-40 lg:static lg:inset-auto lg:block lg:w-[512px] lg:shrink-0 lg:pb-8">
             <div
               className={cn(
-                "h-full transition-[transform,opacity,filter] duration-500 ease-out",
+                "h-full transition-[transform,opacity] duration-500 ease-out",
                 controller.is_app_conversation_open
-                  ? "translate-x-0 scale-100 opacity-100 blur-0"
-                  : "translate-x-[34px] scale-[0.94] opacity-0 blur-[8px]",
+                  ? "translate-x-0 scale-100 opacity-100"
+                  : "translate-x-[34px] scale-[0.94] opacity-0",
               )}
             >
               <LauncherAppConversationPanel
@@ -308,7 +291,6 @@ export function LauncherPage() {
                 can_respond_to_permissions={app_conversation_can_control}
                 control_status_text={app_conversation_control_status_text}
                 permission_read_only_reason="当前窗口是观察视图，控制权在另一窗口"
-                on_clear_session={handle_clear_app_session}
                 on_close={controller.close_app_conversation}
                 on_permission_response={send_permission_response}
                 pending_permissions={pending_permissions}

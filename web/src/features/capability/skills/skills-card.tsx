@@ -6,16 +6,21 @@ import { cn } from "@/lib/utils";
 import {
   WorkspaceCatalogAction,
   WorkspaceCatalogBadge,
+  WorkspaceCatalogBody,
   WorkspaceCatalogCard,
+  WorkspaceCatalogDescription,
+  WorkspaceCatalogFooter,
+  WorkspaceCatalogHeader,
   WorkspaceIconFrame,
   WorkspaceCatalogTag,
+  WorkspaceCatalogTitle,
 } from "@/shared/ui/workspace/workspace-catalog-card";
-import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import { SkillInfo } from "@/types/skill";
 
 interface SkillsCardProps {
   skill: SkillInfo;
   busy?: boolean;
+  class_name?: string;
   on_select: () => void;
   on_update?: () => void;
   on_delete?: () => void;
@@ -25,6 +30,7 @@ interface SkillsCardProps {
 export function SkillsCard({
   skill,
   busy = false,
+  class_name,
   on_select,
   on_update,
   on_delete,
@@ -44,11 +50,16 @@ export function SkillsCard({
 
   return (
     <WorkspaceCatalogCard
-      class_name="group h-full min-h-[170px] cursor-pointer rounded-[22px] px-5 py-4"
+      class_name={cn(
+        "group h-full",
+        busy && "opacity-60",
+        class_name,
+      )}
+      interactive
       onClick={on_select}
+      size="catalog"
     >
-      {/* 头部：图标 + 名称 + 来源标签 */}
-      <div className="flex items-center gap-3">
+      <WorkspaceCatalogHeader class_name="items-center">
         <WorkspaceIconFrame
           class_name={cn("h-10 w-10 shrink-0", source_type === "external" && "text-sky-600")}
           size="md"
@@ -58,9 +69,9 @@ export function SkillsCard({
         </WorkspaceIconFrame>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="truncate text-[15px] font-bold tracking-[-0.02em] text-[color:var(--text-strong)]">
+            <WorkspaceCatalogTitle class_name="min-w-0 flex-1" size="sm" truncate>
               {title}
-            </p>
+            </WorkspaceCatalogTitle>
             <WorkspaceCatalogBadge class_name="shrink-0" tone="neutral">
               {source_label}
             </WorkspaceCatalogBadge>
@@ -71,16 +82,15 @@ export function SkillsCard({
             )}
           </div>
         </div>
-      </div>
+      </WorkspaceCatalogHeader>
 
-      {/* 描述 */}
-      <p className="mt-2.5 line-clamp-2 min-h-[40px] flex-1 text-[13px] leading-[1.55] text-[color:var(--text-default)]">
-        {description || "暂无描述"}
-      </p>
+      <WorkspaceCatalogBody grow>
+        <WorkspaceCatalogDescription min_height>
+          {description || "暂无描述"}
+        </WorkspaceCatalogDescription>
+      </WorkspaceCatalogBody>
 
-      {/* 底部：标签 + 状态 */}
-      <div className="mt-3 min-h-[32px] flex items-end justify-between gap-3">
-        {/* 标签 */}
+      <WorkspaceCatalogFooter>
         <div className="flex min-w-0 flex-wrap gap-1">
           {tags.slice(0, 2).map((tag) => (
             <WorkspaceCatalogTag key={tag}>
@@ -101,10 +111,10 @@ export function SkillsCard({
               已导入
             </WorkspaceCatalogBadge>
           ) : (
-            <WorkspacePillButton density="compact" size="sm" variant="outlined">
+            <WorkspaceCatalogBadge tone="neutral">
               <Puzzle className="h-3 w-3" />
               可安装到 Agent
-            </WorkspacePillButton>
+            </WorkspaceCatalogBadge>
           )}
           {has_update ? (
             <WorkspaceCatalogAction
@@ -128,7 +138,7 @@ export function SkillsCard({
             </WorkspaceCatalogAction>
           ) : null}
         </div>
-      </div>
+      </WorkspaceCatalogFooter>
     </WorkspaceCatalogCard>
   );
 }

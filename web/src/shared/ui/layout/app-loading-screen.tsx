@@ -2,6 +2,7 @@
 
 import { ANIMATIONS } from "@/config/animation-assets";
 import { cn } from "@/lib/utils";
+import { LIQUID_GLASS_PRESETS, LiquidGlassPanel } from "@/shared/ui/liquid-glass";
 import { LottiePlayer } from "../feedback/lottie-player";
 
 interface AppLoadingStateProps {
@@ -16,18 +17,18 @@ export function AppLoadingState({
   message = "正在加载...",
 }: AppLoadingStateProps) {
   return (
-    <div
-      className={cn(
-        "radius-shell-lg glass-surface flex flex-col items-center gap-3 px-12 py-10 text-center",
-        class_name,
-      )}
+    <LiquidGlassPanel
+      class_name={cn("flex flex-col items-center gap-3 text-center", class_name)}
+      content_class_name="px-12 py-10"
+      preset={LIQUID_GLASS_PRESETS.panel}
+      radius={24}
     >
       <LottiePlayer
         class_name={animation_class_name}
         src={ANIMATIONS.CAT}
       />
-      <p className="text-sm text-muted-foreground">{message}</p>
-    </div>
+      <p className="text-sm text-[color:var(--text-muted)]">{message}</p>
+    </LiquidGlassPanel>
   );
 }
 

@@ -5,11 +5,8 @@ import { ReactNode, useId } from "react";
 import {
   createClosedSplinePath,
   createInnerPoints,
-  DEFAULT_INPUT_POINTS,
   DEFAULT_OUTER_POINTS,
   DEFAULT_SIDE_PANEL_POINTS,
-  INPUT_VIEWBOX_HEIGHT,
-  INPUT_VIEWBOX_WIDTH,
   OUTER_VIEWBOX_HEIGHT,
   OUTER_VIEWBOX_WIDTH,
   SIDE_PANEL_VIEWBOX_HEIGHT,
@@ -24,11 +21,6 @@ interface GlassGradientStop {
 }
 
 interface HeroBlobShellProps {
-  children: ReactNode;
-  class_name?: string;
-}
-
-interface HeroInputShellProps {
   children: ReactNode;
   class_name?: string;
 }
@@ -108,10 +100,6 @@ const OUTER_PATH = createClosedSplinePath(DEFAULT_OUTER_POINTS);
 const OUTER_INNER_PATH_1 = createClosedSplinePath(createInnerPoints(DEFAULT_OUTER_POINTS, 0.985, 0.982));
 const OUTER_INNER_PATH_2 = createClosedSplinePath(createInnerPoints(DEFAULT_OUTER_POINTS, 0.992, 0.99));
 
-const INPUT_PATH = createClosedSplinePath(DEFAULT_INPUT_POINTS);
-const INPUT_INNER_PATH_1 = createClosedSplinePath(createInnerPoints(DEFAULT_INPUT_POINTS, 0.965, 0.92));
-const INPUT_INNER_PATH_2 = createClosedSplinePath(createInnerPoints(DEFAULT_INPUT_POINTS, 0.93, 0.86));
-
 function StaticGlassShell({
   aura_background = `radial-gradient(28% 22% at 20% 24%, rgba(255,190,122,0.12), rgba(255,190,122,0) 76%),
     radial-gradient(24% 24% at 82% 18%, rgba(118,231,206,0.12), rgba(118,231,206,0) 78%),
@@ -144,15 +132,13 @@ function StaticGlassShell({
   const innerSurfaceFill = inner_fill_gradient_stops ? `url(#${innerFillGradientId})` : inner_fill;
 
   return (
-    <div className={cn("relative isolate overflow-visible", class_name)}>
-      <div className="absolute inset-[-14%] z-0 pointer-events-none">
-        {aura_background ? (
-          <div
-            className={cn("absolute inset-0", aura_blur_class_name)}
-            style={{ background: aura_background }}
-          />
-        ) : null}
-      </div>
+    <div className={cn("relative overflow-visible", class_name)}>
+      {aura_background ? (
+        <div
+          className={cn("pointer-events-none absolute inset-[-14%] z-0", aura_blur_class_name)}
+          style={{ background: aura_background }}
+        />
+      ) : null}
 
       <svg
         aria-hidden="true"
@@ -338,149 +324,76 @@ export function HeroBlobShell({ children, class_name }: HeroBlobShellProps) {
   const tintGradientId = useId();
 
   return (
-    <div className={cn("relative isolate w-full max-w-[404px] sm:max-w-[980px]", class_name)}>
-      <div className="absolute inset-[-24%] z-0 pointer-events-none sm:inset-[-20%]">
-        <div className="h-full w-full origin-center scale-x-[1.7] scale-y-[0.96] sm:scale-x-[1.4] sm:scale-y-[1.2] lg:scale-x-100 lg:scale-y-100  ">
-        <div
-          className="absolute inset-0 pointer-events-none blur-[56px]"
-          style={{
-            background: "var(--launcher-hero-aura)",
-          }}
-        />
-
+    <div className={cn("relative w-full max-w-[404px] sm:max-w-[980px]", class_name)}>
+      <div className="absolute inset-[-24%] z-0 origin-center pointer-events-none scale-x-[1.7] scale-y-[0.96] sm:inset-[-20%] sm:scale-x-[1.4] sm:scale-y-[1.2] lg:scale-x-100 lg:scale-y-100">
         <svg
           aria-hidden="true"
           className="absolute inset-0 h-full w-full pointer-events-none"
           preserveAspectRatio="none"
           viewBox={`0 0 ${OUTER_VIEWBOX_WIDTH} ${OUTER_VIEWBOX_HEIGHT}`}
         >
-          <defs>
-            <linearGradient id={gradientId} x1="142" x2="900" y1="92" y2="640" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" style={{ stopColor: "var(--launcher-hero-stop-1)" }} />
-              <stop offset="44%" style={{ stopColor: "var(--launcher-hero-stop-2)" }} />
-              <stop offset="100%" style={{ stopColor: "var(--launcher-hero-stop-3)" }} />
-            </linearGradient>
-            <radialGradient id={tintGradientId} cx="20%" cy="18%" r="88%">
-              <stop offset="0%" style={{ stopColor: "var(--launcher-hero-tint-1)" }} />
-              <stop offset="42%" style={{ stopColor: "var(--launcher-hero-tint-2)" }} />
-              <stop offset="74%" style={{ stopColor: "var(--launcher-hero-tint-3)" }} />
-              <stop offset="100%" style={{ stopColor: "var(--launcher-hero-tint-4)" }} />
-            </radialGradient>
-            <linearGradient id={outerEdgeGlowGradientId} x1="176" x2="888" y1="74" y2="674" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="rgba(255,255,255,0.78)"/>
-              <stop offset="34%" stopColor="rgba(255,255,255,0.34)"/>
-              <stop offset="74%" stopColor="rgba(211,224,248,0.26)"/>
-              <stop offset="100%" stopColor="rgba(255,255,255,0.18)"/>
-            </linearGradient>
-            <filter id={outerEdgeGlowId} x="-20%" y="-80%" width="140%" height="260%">
-              <feGaussianBlur stdDeviation="6"/>
-            </filter>
-          </defs>
+            <defs>
+              <linearGradient id={gradientId} x1="142" x2="900" y1="92" y2="640" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" style={{ stopColor: "var(--launcher-hero-stop-1)" }} />
+                <stop offset="44%" style={{ stopColor: "var(--launcher-hero-stop-2)" }} />
+                <stop offset="100%" style={{ stopColor: "var(--launcher-hero-stop-3)" }} />
+              </linearGradient>
+              <radialGradient id={tintGradientId} cx="20%" cy="18%" r="88%">
+                <stop offset="0%" style={{ stopColor: "var(--launcher-hero-tint-1)" }} />
+                <stop offset="42%" style={{ stopColor: "var(--launcher-hero-tint-2)" }} />
+                <stop offset="74%" style={{ stopColor: "var(--launcher-hero-tint-3)" }} />
+                <stop offset="100%" style={{ stopColor: "var(--launcher-hero-tint-4)" }} />
+              </radialGradient>
+              <linearGradient id={outerEdgeGlowGradientId} x1="176" x2="888" y1="74" y2="674" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="rgba(255,255,255,0.78)"/>
+                <stop offset="34%" stopColor="rgba(255,255,255,0.34)"/>
+                <stop offset="74%" stopColor="rgba(211,224,248,0.26)"/>
+                <stop offset="100%" stopColor="rgba(255,255,255,0.18)"/>
+              </linearGradient>
+              <filter id={outerEdgeGlowId} x="-20%" y="-80%" width="140%" height="260%">
+                <feGaussianBlur stdDeviation="6"/>
+              </filter>
+            </defs>
 
-          <path
-            d={OUTER_PATH}
-            fill="none"
-            filter={`url(#${outerEdgeGlowId})`}
-            opacity={0.88}
-            stroke={`url(#${outerEdgeGlowGradientId})`}
-            strokeWidth="18"
-          />
-          <path
-            d={OUTER_INNER_PATH_1}
-            fill="none"
-            filter={`url(#${outerEdgeGlowId})`}
-            opacity={0.78}
-            stroke="rgba(255,255,255,0.22)"
-            strokeWidth="14"
-          />
-          <path
-            d={OUTER_PATH}
-            fill={`url(#${gradientId})`}
-            opacity={0.92}
-            stroke="var(--launcher-hero-stroke)"
-            strokeWidth="2"
-          />
-          <path
-            d={OUTER_PATH}
-            fill={`url(#${tintGradientId})`}
-            style={{ mixBlendMode: "soft-light" }}
-          />
-          <path
-            d={OUTER_INNER_PATH_2}
-            fill="var(--launcher-hero-inner-fill)"
-            opacity={0.92}
-            stroke="var(--launcher-hero-inner-stroke)"
-            strokeWidth="4"
-          />
+            <path
+              d={OUTER_PATH}
+              fill="none"
+              filter={`url(#${outerEdgeGlowId})`}
+              opacity={0.88}
+              stroke={`url(#${outerEdgeGlowGradientId})`}
+              strokeWidth="18"
+            />
+            <path
+              d={OUTER_INNER_PATH_1}
+              fill="none"
+              filter={`url(#${outerEdgeGlowId})`}
+              opacity={0.78}
+              stroke="rgba(255,255,255,0.22)"
+              strokeWidth="14"
+            />
+            <path
+              d={OUTER_PATH}
+              fill={`url(#${gradientId})`}
+              opacity={0.92}
+              stroke="var(--launcher-hero-stroke)"
+              strokeWidth="2"
+            />
+            <path
+              d={OUTER_PATH}
+              fill={`url(#${tintGradientId})`}
+              style={{ mixBlendMode: "soft-light" }}
+            />
+            <path
+              d={OUTER_INNER_PATH_2}
+              fill="var(--launcher-hero-inner-fill)"
+              opacity={0.92}
+              stroke="var(--launcher-hero-inner-stroke)"
+              strokeWidth="4"
+            />
         </svg>
-        </div>
       </div>
 
       <div className="relative z-10 px-5 py-11 text-center sm:px-14 sm:py-12 lg:px-18 lg:py-16">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-export function HeroInputShell({ children, class_name }: HeroInputShellProps) {
-  const inputGlowGradientId = useId();
-  const inputGlowId = useId();
-
-  return (
-    <div className={cn("relative isolate w-full", class_name)}>
-      <div className="absolute inset-[-4%] z-0 sm:inset-[-6%]">
-        <svg
-          aria-hidden="true"
-          className="absolute inset-0 h-full w-full pointer-events-none"
-          preserveAspectRatio="none"
-          viewBox={`0 0 ${INPUT_VIEWBOX_WIDTH} ${INPUT_VIEWBOX_HEIGHT}`}
-        >
-          <defs>
-            <linearGradient id={inputGlowGradientId} x1="42" x2="712" y1="34" y2="142" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="rgba(255,255,255,0.78)"/>
-              <stop offset="34%" stopColor="rgba(255,255,255,0.34)"/>
-              <stop offset="74%" stopColor="rgba(211,224,248,0.26)"/>
-              <stop offset="100%" stopColor="rgba(255,255,255,0.18)"/>
-            </linearGradient>
-            <filter id={inputGlowId} x="-20%" y="-80%" width="140%" height="260%">
-              <feGaussianBlur stdDeviation="6"/>
-            </filter>
-          </defs>
-
-          <path
-            d={INPUT_PATH}
-            fill="none"
-            filter={`url(#${inputGlowId})`}
-            opacity={0.88}
-            stroke={`url(#${inputGlowGradientId})`}
-            strokeWidth="18"
-          />
-          <path
-            d={INPUT_INNER_PATH_1}
-            fill="none"
-            filter={`url(#${inputGlowId})`}
-            opacity={0.78}
-            stroke="rgba(255,255,255,0.22)"
-            strokeWidth="14"
-          />
-          <path
-            d={INPUT_PATH}
-            fill="var(--launcher-input-fill)"
-            stroke="var(--launcher-input-stroke)"
-            strokeWidth="2"
-          />
-          <path
-            d={INPUT_INNER_PATH_2}
-            fill="var(--launcher-input-inner-fill)"
-            opacity={0.92}
-            stroke="var(--launcher-input-inner-stroke)"
-            strokeWidth="4"
-          />
-        </svg>
-      </div>
-
-      <div className="relative z-10 px-4 py-4 sm:px-6 sm:py-5">
         {children}
       </div>
     </div>

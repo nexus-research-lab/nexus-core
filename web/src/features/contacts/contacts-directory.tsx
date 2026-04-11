@@ -99,13 +99,14 @@ export function ContactsDirectory({
       />
 
       {/* 卡片网格区域 */}
-      <div className="soft-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-5 xl:px-6">
-        <div className="grid grid-cols-3 gap-6 md:grid-cols-3 xl:grid-cols-4">
+      <div className="soft-scrollbar scrollbar-stable-gutter min-h-0 flex-1 overflow-y-auto px-5 py-5 xl:px-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {/* 首张卡片 — New Agent */}
           {active_tab != "task_generated" && (
             <WorkspaceCatalogGhostCard
-              class_name="px-6 py-8"
+              class_name="py-8"
               onClick={on_create_agent}
+              size="comfort"
             >
               <WorkspaceIconFrame class_name="h-16 w-16" shape="round" size="lg">
                 <Plus className="h-7 w-7 text-[color:var(--icon-default)]" />

@@ -216,7 +216,7 @@ export function AgentOptionsSkillsTab({
             </div>
 
             <div className="surface-card radius-shell-md p-4">
-              <div className="flex items-center gap-3 rounded-[18px] border border-[var(--modal-input-border)] bg-[var(--modal-input-background)] px-4 py-3">
+              <div className="dialog-input flex items-center gap-3 rounded-[18px] px-4 py-3">
                 <Search className="h-4 w-4 text-[color:var(--text-soft)]" />
                 <input
                   type="text"

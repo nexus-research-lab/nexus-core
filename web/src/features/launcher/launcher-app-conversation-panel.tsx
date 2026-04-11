@@ -1,13 +1,8 @@
 "use client";
 
 import { CSSProperties, useEffect, useMemo } from "react";
-import { AlertCircle, RotateCcw, X, } from "lucide-react";
+import { AlertCircle, X, } from "lucide-react";
 
-import {
-  HeroActionOrbShell,
-  HeroActionPillShell,
-  HeroSidePanelShell,
-} from "@/features/launcher/launcher-glass-shell";
 import { ConversationFeed } from "@/features/conversation-shared/conversation-feed";
 import { ScrollToLatestButton } from "@/features/conversation-shared/scroll-to-latest-button";
 import { useFollowScroll } from "@/hooks/use-follow-scroll";
@@ -26,7 +21,6 @@ interface LauncherAppConversationPanelProps {
   ws_state: WebSocketState;
   can_respond_to_permissions?: boolean;
   permission_read_only_reason?: string;
-  on_clear_session: () => void;
   on_close: () => void;
   on_permission_response: (payload: PermissionDecisionPayload) => boolean;
   pending_permissions: PendingPermission[];
@@ -55,7 +49,6 @@ export function LauncherAppConversationPanel({
   ws_state,
   can_respond_to_permissions = true,
   permission_read_only_reason,
-  on_clear_session,
   on_close,
   on_permission_response,
   pending_permissions,
@@ -130,6 +123,16 @@ export function LauncherAppConversationPanel({
     }) as CSSProperties,
     [],
   );
+  const launcher_message_panel_style = useMemo(
+    () => ({
+      ...launcher_message_theme_style,
+      background:
+        "linear-gradient(180deg, rgba(244,247,252,0.72) 0%, rgba(239,244,250,0.64) 42%, rgba(234,239,247,0.60) 100%)",
+      border: "1px solid rgba(255,255,255,0.30)",
+      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.34), 0 18px 36px rgba(112,128,154,0.08)",
+    }) as CSSProperties,
+    [launcher_message_theme_style],
+  );
 
   useEffect(() => {
     const feed = feed_ref.current;
@@ -191,11 +194,20 @@ export function LauncherAppConversationPanel({
   }, [app_conversation_messages.length, feed_ref, scroll_to_bottom, session_key]);
 
   return (
-    <HeroSidePanelShell class_name="h-full min-h-[620px] w-full max-w-[512px]">
-      <div className="flex h-full min-h-0 flex-col mx-5">
+    <section
+      className="flex h-full min-h-[620px] w-full max-w-[512px] flex-col overflow-hidden rounded-[28px] px-5 py-5"
+      style={launcher_message_panel_style}
+    >
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            <HeroActionPillShell class_name="w-fit shrink-0">
+            <div
+              className="inline-flex h-11 w-fit shrink-0 items-center gap-2 rounded-full border px-4"
+              style={{
+                background: "rgba(244,247,252,0.56)",
+                borderColor: "rgba(255,255,255,0.28)",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.28)",
+              }}
+            >
               <span
                 className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-foreground/72">
                 <span className={cn("h-3 w-3 rounded-full", connection_meta.dot_class_name)} />
@@ -204,7 +216,7 @@ export function LauncherAppConversationPanel({
               <span className={cn("text-[11px] font-medium", connection_meta.badge_class_name)}>
                 {connection_meta.label}
               </span>
-            </HeroActionPillShell>
+            </div>
             {control_status_text ? (
               <p className="min-w-0 truncate text-[11px] leading-5 text-[rgba(99,111,133,0.82)]">
                 {control_status_text}
@@ -214,35 +226,25 @@ export function LauncherAppConversationPanel({
 
           <div className="flex shrink-0 items-center gap-2">
             <button
-              aria-label="清空 Nexus 对话"
-              className="transition-transform duration-300 hover:-translate-y-0.5"
-              onClick={on_clear_session}
-              type="button"
-            >
-              <HeroActionOrbShell class_name="h-[46px] w-[46px]">
-                <RotateCcw className="h-4 w-4 text-foreground/76" />
-              </HeroActionOrbShell>
-            </button>
-            <button
               aria-label="关闭 Nexus 对话"
-              className="transition-transform duration-300 hover:-translate-y-0.5"
+              className="inline-flex h-[54px] w-[54px] items-center justify-center rounded-full border transition-transform duration-300 hover:-translate-y-0.5"
+              style={{
+                background: "rgba(244,247,252,0.56)",
+                borderColor: "rgba(255,255,255,0.28)",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.28)",
+              }}
               onClick={on_close}
               type="button"
             >
-              <HeroActionOrbShell class_name="h-[54px] w-[54px]">
-                <X className="h-4 w-4 text-foreground/76" />
-              </HeroActionOrbShell>
+              <X className="h-4 w-4 text-foreground/76" />
             </button>
           </div>
         </div>
 
-        <div
-          className="relative mt-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[28px] bg-[rgba(244,247,252,0.44)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.26),0_18px_36px_rgba(112,128,154,0.08)] backdrop-blur-[14px]"
-          style={launcher_message_theme_style}
-        >
+        <div className="mt-3 min-h-0 flex-1">
           {error ? (
             <div
-              className="mx-3 mt-3 flex items-start gap-2 rounded-[20px] bg-[rgba(255,243,243,0.74)] px-3 py-2 text-xs leading-5 text-red-900/84 shadow-[inset_0_0_0_1px_rgba(255,120,120,0.14)]">
+              className="mb-3 flex items-start gap-2 rounded-[20px] bg-[rgba(255,243,243,0.74)] px-3 py-2 text-xs leading-5 text-red-900/84 shadow-[inset_0_0_0_1px_rgba(255,120,120,0.14)]">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -250,7 +252,7 @@ export function LauncherAppConversationPanel({
 
           <div
             ref={scroll_ref}
-            className="soft-scrollbar relative z-0 min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-3 pt-4 sm:px-4 sm:pb-3 sm:pt-4"
+            className="soft-scrollbar min-h-0 min-w-0 h-full overflow-x-hidden overflow-y-auto"
             style={{ overflowAnchor: "none" }}
             onScroll={on_scroll}
             onTouchEnd={on_touch_end}
@@ -299,7 +301,6 @@ export function LauncherAppConversationPanel({
             />
           ) : null}
         </div>
-      </div>
-    </HeroSidePanelShell>
+    </section>
   );
 }

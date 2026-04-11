@@ -95,54 +95,50 @@ export function ScheduledTaskList({
   on_open_history,
 }: ScheduledTaskListProps) {
   return (
-    <section className="glass-panel-subtle radius-shell-xl flex min-h-[360px] flex-col overflow-hidden">
-      <div className="border-b border-[var(--divider-subtle-color)] px-5 py-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <div className="glass-chip flex h-9 w-9 items-center justify-center rounded-2xl">
-                <Clock3 className="h-4 w-4 text-slate-900/80" />
-              </div>
-              <div>
-                <h2 className="text-[15px] font-semibold tracking-[-0.03em] text-[color:var(--text-strong)]">
-                  调度任务
-                </h2>
-                <p className="text-xs text-[color:var(--text-default)]">
-                  共 {items.length} 个任务，支持立即执行、启停切换和查看运行记录。
-                </p>
-              </div>
+    <section className="flex min-h-[360px] flex-col">
+      <div className="flex items-start justify-between gap-3 px-1 py-1">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <Clock3 className="h-4 w-4 text-[color:var(--icon-default)]" />
+            <div>
+              <h2 className="text-[15px] font-semibold tracking-[-0.03em] text-[color:var(--text-strong)]">
+                调度任务
+              </h2>
+              <p className="text-xs text-[color:var(--text-default)]">
+                共 {items.length} 个任务，支持立即执行、启停切换和查看运行记录。
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <WorkspacePillButton
-              density="compact"
-              disabled={is_loading}
-              onClick={() => void on_refresh?.()}
-              size="sm"
-              variant="outlined"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-              刷新
-            </WorkspacePillButton>
-            <WorkspacePillButton
-              density="compact"
-              onClick={on_create}
-              size="sm"
-              variant="primary"
-            >
-              新建任务
-            </WorkspacePillButton>
-          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <WorkspacePillButton
+            density="compact"
+            disabled={is_loading}
+            onClick={() => void on_refresh?.()}
+            size="sm"
+            variant="outlined"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            刷新
+          </WorkspacePillButton>
+          <WorkspacePillButton
+            density="compact"
+            onClick={on_create}
+            size="sm"
+            variant="primary"
+          >
+            新建任务
+          </WorkspacePillButton>
         </div>
       </div>
 
-      <div className="soft-scrollbar min-h-0 flex-1 overflow-y-auto p-5">
+      <div className="soft-scrollbar mt-4 min-h-0 flex-1 overflow-y-auto">
         {is_loading ? (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, index) => (
               <div
                 key={index}
-                className="h-[148px] animate-pulse rounded-[24px] bg-white/45"
+                className="surface-card h-[148px] animate-pulse rounded-[24px]"
               />
             ))}
           </div>
@@ -158,8 +154,8 @@ export function ScheduledTaskList({
           </div>
         ) : items.length === 0 ? (
           <div className="flex min-h-[240px] flex-col items-center justify-center rounded-[24px] border border-dashed border-[var(--divider-subtle-color)] px-5 text-center">
-            <div className="glass-chip flex h-14 w-14 items-center justify-center rounded-[20px]">
-              <Clock3 className="h-6 w-6 text-slate-900/78" />
+            <div className="chip-default flex h-14 w-14 items-center justify-center rounded-[20px]">
+              <Clock3 className="h-6 w-6 text-[color:var(--icon-strong)]" />
             </div>
             <h3 className="mt-5 text-lg font-bold tracking-[-0.03em] text-[color:var(--text-strong)]">
               还没有定时任务
@@ -180,7 +176,7 @@ export function ScheduledTaskList({
               return (
                 <article
                   key={task.job_id}
-                  className="rounded-[24px] border border-[var(--divider-subtle-color)] bg-white/55 px-5 py-4 shadow-[0_16px_40px_rgba(15,23,42,0.07)] backdrop-blur-xl"
+                  className="surface-card rounded-[24px] px-5 py-4"
                 >
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0 flex-1">
@@ -193,8 +189,8 @@ export function ScheduledTaskList({
                           <WorkspaceStatusBadge label="执行占用中" size="compact" tone="running" />
                         ) : null}
                       </div>
-                      <div className="mt-3 grid gap-3 text-sm text-[color:var(--text-default)] md:grid-cols-2">
-                        <div className="rounded-[18px] border border-[var(--divider-subtle-color)] bg-white/45 px-3 py-2.5">
+                      <div className="mt-3 grid gap-4 border-y border-[var(--divider-subtle-color)] py-3 text-sm text-[color:var(--text-default)] md:grid-cols-2">
+                        <div className="min-w-0">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
                             调度规则
                           </p>
@@ -202,7 +198,7 @@ export function ScheduledTaskList({
                             {get_schedule_summary(task.schedule)}
                           </p>
                         </div>
-                        <div className="rounded-[18px] border border-[var(--divider-subtle-color)] bg-white/45 px-3 py-2.5">
+                        <div className="min-w-0">
                           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
                             目标会话
                           </p>

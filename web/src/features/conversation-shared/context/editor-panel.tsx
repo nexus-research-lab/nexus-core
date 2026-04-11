@@ -132,11 +132,15 @@ export function EditorPanel({
     }
   };
 
+  if (!embedded && !is_open) {
+    return null;
+  }
+
   return (
     <section
       className={cn(
         "relative flex min-h-0 min-w-0 shrink-0 flex-col overflow-hidden transition-[width,opacity,transform,border-color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
-        embedded ? "border-l glass-divider shadow-none" : "glass-card radius-shell-lg",
+        embedded ? "border-l divider-subtle shadow-none" : "surface-card radius-shell-lg",
         is_open ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-3 opacity-0",
         embedded && !is_open && "border-l-transparent",
         class_name,
@@ -171,7 +175,7 @@ export function EditorPanel({
             </button>
           ) : null}
 
-          <div className="flex h-14 min-w-0 items-center justify-between overflow-hidden border-b glass-divider px-4">
+          <div className="flex h-14 min-w-0 items-center justify-between overflow-hidden border-b divider-subtle px-4">
             <div className="min-w-0 flex-1 overflow-hidden pr-3">
               <p
                 className="w-full truncate text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground"

@@ -25,10 +25,7 @@ export function SkillsHeader({ ctrl }: SkillsHeaderProps) {
       title={t("capability.skills_title")}
       tabs={DISCOVERY_OPTIONS}
       active_tab={ctrl.discovery_mode}
-      on_change_tab={(next_mode) => {
-        ctrl.set_source_dropdown_open(false);
-        ctrl.set_discovery_mode(next_mode);
-      }}
+      on_change_tab={ctrl.set_discovery_mode}
       trailing={
         <div className="flex items-center gap-2">
           <WorkspacePillButton density="compact" onClick={() => ctrl.file_input_ref.current?.click()} size="sm" variant="outlined">

@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { Loader2, Puzzle } from "lucide-react";
 
 import type { SkillInfo } from "@/types/skill";
@@ -36,9 +37,9 @@ export function SkillsCatalogGrid({ ctrl }: SkillsCatalogGridProps) {
   }
 
   return (
-    <div className="space-y-7">
+    <div className="flex flex-col gap-7">
       {ctrl.grouped_skills.map(([category_name, items]: [string, SkillInfo[]]) => (
-        <section key={category_name}>
+        <Fragment key={category_name}>
           <div className="mb-3 flex items-center gap-2.5">
             <h2 className="text-[15px] font-bold tracking-[-0.02em] text-[color:var(--text-strong)]">
               {category_name}
@@ -49,21 +50,18 @@ export function SkillsCatalogGrid({ ctrl }: SkillsCatalogGridProps) {
           </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             {items.map((skill: SkillInfo) => (
-              <div
+              <SkillsCard
                 key={skill.name}
-                className={ctrl.busy_skill_name === skill.name ? "h-full opacity-60 transition-opacity" : "h-full transition-opacity"}
-              >
-                <SkillsCard
-                  busy={ctrl.busy_skill_name === skill.name}
-                  on_delete={() => void ctrl.handle_delete_skill(skill)}
-                  on_select={() => ctrl.set_selected_skill(skill.name)}
-                  on_update={() => void ctrl.handle_update_single(skill.name)}
-                  skill={skill}
-                />
-              </div>
+                busy={ctrl.busy_skill_name === skill.name}
+                class_name="transition-opacity"
+                on_delete={() => void ctrl.handle_delete_skill(skill)}
+                on_select={() => ctrl.set_selected_skill(skill.name)}
+                on_update={() => void ctrl.handle_update_single(skill.name)}
+                skill={skill}
+              />
             ))}
           </div>
-        </section>
+        </Fragment>
       ))}
     </div>
   );

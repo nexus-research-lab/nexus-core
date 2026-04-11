@@ -14,6 +14,7 @@ import { Check, ChevronDown, History, LucideIcon, MessageSquare, MessageSquarePl
 
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/shared/i18n/i18n-context";
+import { LIQUID_GLASS_PRESETS, LiquidGlassPanel } from "@/shared/ui/liquid-glass";
 import { RoomConversationView } from "@/types/conversation";
 
 interface WorkspaceConversationSwitcherProps {
@@ -92,8 +93,9 @@ export function WorkspaceConversationSwitcher({
   return (
     <div className="relative">
       <button
+        aria-expanded={is_open}
         className={cn(
-          "flex max-w-[168px] items-center gap-1 rounded-full text-[color:var(--text-default)] transition duration-150 ease-out",
+          "flex max-w-[168px] items-center gap-1 rounded-full text-[color:var(--text-default)] transition-[background-color,border-color,color,transform] duration-150 ease-out",
           density === "compact" ? "h-5 px-2.5 text-[10.5px]" : "h-8 px-3 text-[11px]",
         )}
         style={trigger_style}
@@ -101,7 +103,9 @@ export function WorkspaceConversationSwitcher({
         type="button"
       >
         <span className="max-w-[124px] truncate">{current_title}</span>
-        <ChevronDown className={cn("h-3 w-3 text-[color:var(--icon-muted)] transition-transform", is_open && "rotate-180 text-[color:var(--icon-default)]")} />
+        <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center">
+          <ChevronDown className={cn("h-3 w-3 text-[color:var(--icon-muted)] transition-transform duration-150", is_open && "rotate-180 text-[color:var(--icon-default)]")} />
+        </span>
       </button>
 
       {is_open ? (
@@ -110,13 +114,12 @@ export function WorkspaceConversationSwitcher({
             className="fixed inset-0 z-40"
             onClick={() => set_is_open(false)}
           />
-          <div
-            className="absolute left-0 top-[calc(100%+8px)] z-50 w-[min(18.5rem,calc(100vw-24px))] overflow-hidden rounded-[24px]"
-            style={{
-              background: "var(--surface-popover-background)",
-              border: "1px solid var(--surface-popover-border)",
-              boxShadow: "0 20px 48px rgb(15 23 42 / 0.14)",
-            }}
+          <LiquidGlassPanel
+            blur={20}
+            class_name="absolute left-0 top-[calc(100%+8px)] z-50 w-[min(18.5rem,calc(100vw-24px))]"
+            content_class_name="overflow-hidden"
+            preset={LIQUID_GLASS_PRESETS.popover}
+            radius={24}
           >
             {sorted_conversations.length > 0 ? (
               <>
@@ -125,11 +128,12 @@ export function WorkspaceConversationSwitcher({
                     const is_active = conversation.conversation_id === conversation_id;
                     return (
                       <button
+                        aria-pressed={is_active}
                         key={conversation.conversation_id}
                         className={cn(
-                          "group flex w-full items-center gap-2.5 rounded-[14px] border px-3.5 py-2.5 text-left text-[11.5px] transition duration-150 ease-out",
+                          "group flex w-full items-center gap-2.5 rounded-[14px] border px-3.5 py-2.5 text-left text-[11.5px] font-medium transition-[background-color,border-color,color,opacity] duration-150 ease-out",
                           is_active
-                            ? "bg-[var(--surface-interactive-active-background)] font-semibold text-[color:var(--text-strong)] hover:brightness-[0.985]"
+                            ? "bg-[var(--surface-interactive-active-background)] text-[color:var(--text-strong)] hover:brightness-[0.985]"
                             : "border-transparent text-[color:var(--text-default)] hover:border-[var(--surface-interactive-hover-border)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--text-strong)]",
                         )}
                         onClick={() => {
@@ -138,18 +142,20 @@ export function WorkspaceConversationSwitcher({
                         }}
                         type="button"
                       >
-                        <Icon className={cn(
-                          "h-3.5 w-3.5 shrink-0 transition-colors duration-150",
-                          is_active
-                            ? "text-[color:var(--icon-default)]"
-                            : "text-[color:var(--icon-muted)] group-hover:text-[color:var(--icon-default)]",
-                        )} />
+                        <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center">
+                          <Icon className={cn(
+                            "h-3.5 w-3.5 transition-colors duration-150",
+                            is_active
+                              ? "text-[color:var(--icon-default)]"
+                              : "text-[color:var(--icon-muted)] group-hover:text-[color:var(--icon-default)]",
+                          )} />
+                        </span>
                         <span className="min-w-0 flex-1 truncate">
                           {conversation.title || t("room.untitled_conversation")}
                         </span>
-                        {is_active ? (
-                          <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-                        ) : null}
+                        <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center">
+                          <Check className={cn("h-3.5 w-3.5 text-emerald-500 transition-opacity duration-150", is_active ? "opacity-100" : "opacity-0")} />
+                        </span>
                       </button>
                     );
                   })}
@@ -180,7 +186,7 @@ export function WorkspaceConversationSwitcher({
                 {on_create_conversation ? (
                   <div className="p-1.5 pt-1">
                     <button
-                      className="flex w-full items-center gap-2.5 rounded-[14px] border border-transparent px-3.5 py-2.5 text-left text-[11.5px] font-medium text-emerald-600 transition duration-150 ease-out hover:border-emerald-500/15 hover:bg-emerald-500/8 disabled:opacity-60"
+                      className="flex w-full items-center gap-2.5 rounded-[14px] border border-transparent px-3.5 py-2.5 text-left text-[11.5px] font-medium text-emerald-600 transition-[background-color,border-color,color,opacity] duration-150 ease-out hover:border-emerald-500/15 hover:bg-emerald-500/8 disabled:opacity-60"
                       disabled={is_creating}
                       onClick={handle_create}
                       type="button"
@@ -196,7 +202,7 @@ export function WorkspaceConversationSwitcher({
             ) : (
               <div className="px-3 py-2 text-[11px] text-[color:var(--text-soft)]">{t("room.no_conversations")}</div>
             )}
-          </div>
+          </LiquidGlassPanel>
         </>
       ) : null}
     </div>

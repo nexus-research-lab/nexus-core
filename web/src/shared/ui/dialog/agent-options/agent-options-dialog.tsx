@@ -8,6 +8,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Settings, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type {
@@ -110,6 +111,22 @@ export function AgentOptions({
     setIsValidatingName(false);
   }, [is_open, initial_title, initial_options]);
 
+  useEffect(() => {
+    if (!is_open) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        on_close();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [is_open, on_close]);
+
   // ---- 名称校验 debounce ----
   useEffect(() => {
     if (!is_open) return;
@@ -203,11 +220,11 @@ export function AgentOptions({
   const canSave = !!title.trim() && !isValidatingName && !isNameInvalid;
   const canDelete = mode === "edit" && Boolean(agent_id) && Boolean(on_delete);
 
-  if (!is_open) return null;
+  if (!is_open || typeof document === "undefined") return null;
 
-  return (
-    <div className="dialog-backdrop animate-in fade-in duration-200">
-      <div className="dialog-shell radius-shell-xl flex h-[85vh] w-full max-w-[980px] flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+  const dialog = (
+    <div className="dialog-backdrop z-[9999]" role="dialog" aria-modal="true">
+      <div className="dialog-shell radius-shell-xl flex h-[85vh] w-full max-w-[980px] flex-col overflow-hidden">
         <div className="dialog-header">
           <div className={cn(DIALOG_HEADER_LEADING_CLASS_NAME, "min-w-0 flex-1 items-center")}>
             <div className={cn(DIALOG_HEADER_ICON_CLASS_NAME, "h-14 w-14 rounded-[20px] text-primary")}>
@@ -322,4 +339,6 @@ export function AgentOptions({
       </div>
     </div>
   );
+
+  return createPortal(dialog, document.body);
 }

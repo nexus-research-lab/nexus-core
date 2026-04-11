@@ -67,7 +67,7 @@ export function ConfirmDialog({
       aria-labelledby="confirm-dialog-title"
       aria-describedby="confirm-dialog-message"
     >
-      <div className="dialog-shell radius-shell-lg w-full max-w-md animate-in zoom-in-95 duration-150">
+      <section className="dialog-shell radius-shell-lg flex w-full max-w-md flex-col overflow-hidden animate-in zoom-in-95 duration-150">
         <div className="dialog-header">
           <div className="min-w-0 flex-1">
             <h3 id="confirm-dialog-title" className="dialog-title">
@@ -105,7 +105,7 @@ export function ConfirmDialog({
             {confirm_text}
           </WorkspacePillButton>
         </div>
-      </div>
+      </section>
     </div>
   );
 
@@ -168,7 +168,7 @@ export function PromptDialog({
       aria-modal="true"
       aria-labelledby="prompt-dialog-title"
     >
-      <div className="dialog-shell radius-shell-lg w-full max-w-md animate-in zoom-in-95 duration-150">
+      <section className="dialog-shell radius-shell-lg flex w-full max-w-md flex-col overflow-hidden animate-in zoom-in-95 duration-150">
         <div className="dialog-header">
           <div className="min-w-0 flex-1">
             <h3 id="prompt-dialog-title" className="dialog-title">
@@ -219,7 +219,7 @@ export function PromptDialog({
             确认
           </WorkspacePillButton>
         </div>
-      </div>
+      </section>
     </div>
   );
 

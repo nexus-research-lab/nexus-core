@@ -175,11 +175,11 @@ export function ScheduledTaskRunHistoryDialog({
           {is_loading ? (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="h-[132px] animate-pulse rounded-[24px] bg-white/45"
-                />
-              ))}
+              <div
+                key={index}
+                className="surface-card h-[132px] animate-pulse rounded-[24px]"
+              />
+            ))}
             </div>
           ) : error_message ? (
             <div className="flex min-h-[320px] flex-col items-center justify-center rounded-[24px] border border-rose-500/15 bg-rose-500/6 px-5 text-center">
@@ -190,8 +190,8 @@ export function ScheduledTaskRunHistoryDialog({
             </div>
           ) : runs.length === 0 ? (
             <div className="flex min-h-[320px] flex-col items-center justify-center rounded-[24px] border border-dashed border-[var(--divider-subtle-color)] px-5 text-center">
-              <div className="glass-chip flex h-14 w-14 items-center justify-center rounded-[20px]">
-                <History className="h-6 w-6 text-slate-900/78" />
+            <div className="chip-default flex h-14 w-14 items-center justify-center rounded-[20px]">
+                <History className="h-6 w-6 text-[color:var(--icon-strong)]" />
               </div>
               <h4 className="mt-5 text-lg font-bold tracking-[-0.03em] text-[color:var(--text-strong)]">
                 还没有运行记录
@@ -207,7 +207,7 @@ export function ScheduledTaskRunHistoryDialog({
                 return (
                   <article
                     key={run.run_id}
-                    className="rounded-[24px] border border-[var(--divider-subtle-color)] bg-white/55 px-5 py-4 shadow-[0_16px_40px_rgba(15,23,42,0.07)] backdrop-blur-xl"
+                    className="surface-card rounded-[24px] px-5 py-4"
                   >
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <div className="min-w-0 flex-1">
@@ -218,7 +218,7 @@ export function ScheduledTaskRunHistoryDialog({
                           </span>
                         </div>
                         <div className="mt-3 grid gap-3 text-sm text-[color:var(--text-default)] md:grid-cols-2">
-                          <div className="rounded-[18px] border border-[var(--divider-subtle-color)] bg-white/45 px-3 py-2.5">
+                          <div className="surface-inset rounded-[18px] px-3 py-2.5">
                             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
                               调度时间
                             </p>
@@ -226,7 +226,7 @@ export function ScheduledTaskRunHistoryDialog({
                               {format_datetime(run.scheduled_for)}
                             </p>
                           </div>
-                          <div className="rounded-[18px] border border-[var(--divider-subtle-color)] bg-white/45 px-3 py-2.5">
+                          <div className="surface-inset rounded-[18px] px-3 py-2.5">
                             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
                               执行耗时
                             </p>

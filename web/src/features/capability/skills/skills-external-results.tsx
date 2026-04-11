@@ -3,7 +3,12 @@ import { Download, Loader2 } from "lucide-react";
 import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import {
   WorkspaceCatalogBadge,
+  WorkspaceCatalogBody,
   WorkspaceCatalogCard,
+  WorkspaceCatalogDescription,
+  WorkspaceCatalogFooter,
+  WorkspaceCatalogHeader,
+  WorkspaceCatalogTitle,
 } from "@/shared/ui/workspace/workspace-catalog-card";
 import type { ExternalSkillSearchItem } from "@/types/skill";
 
@@ -80,15 +85,16 @@ function ExternalResultCard({
 
   return (
     <WorkspaceCatalogCard
-      class_name="h-full min-h-[138px] cursor-pointer rounded-[20px] px-5 py-4"
+      class_name="h-full"
+      interactive
       onClick={on_preview}
+      size="compact"
     >
-      {/* 标题行 */}
-      <div className="flex items-start justify-between gap-3">
+      <WorkspaceCatalogHeader class_name="justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-bold tracking-tight text-[color:var(--text-strong)]">
+          <WorkspaceCatalogTitle class_name="tracking-tight" size="sm" truncate>
             {item.title || item.skill_slug}
-          </p>
+          </WorkspaceCatalogTitle>
           <p className="mt-0.5 flex items-center gap-2 truncate text-[11px] text-[color:var(--text-muted)]">
             <span>{item.package_spec}</span>
             <span>·</span>
@@ -117,12 +123,13 @@ function ExternalResultCard({
             </WorkspacePillButton>
           )}
         </div>
-      </div>
+      </WorkspaceCatalogHeader>
 
-      {/* 描述 */}
-      <p className="mt-2.5 line-clamp-2 min-h-[38px] flex-1 text-[12px] leading-[1.6] text-[color:var(--text-default)]">
-        {item.readme_markdown || item.description}
-      </p>
+      <WorkspaceCatalogBody grow>
+        <WorkspaceCatalogDescription class_name="text-[12px] leading-[1.6]" lines={2}>
+          {item.readme_markdown || item.description}
+        </WorkspaceCatalogDescription>
+      </WorkspaceCatalogBody>
     </WorkspaceCatalogCard>
   );
 }

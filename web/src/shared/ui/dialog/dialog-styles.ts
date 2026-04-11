@@ -40,8 +40,8 @@ export function getDialogNoteStyle(tone: "default" | "danger"): CSSProperties | 
   }
 
   return {
-    background: "color-mix(in srgb, var(--destructive) 12%, var(--modal-card-background))",
-    borderColor: "color-mix(in srgb, var(--destructive) 26%, var(--modal-card-border))",
+    background: "color-mix(in srgb, var(--destructive) 12%, var(--material-dialog-card-background))",
+    borderColor: "color-mix(in srgb, var(--destructive) 26%, var(--material-dialog-card-border))",
     color: "var(--text-default)",
   };
 }
@@ -62,8 +62,8 @@ export function getDialogChoiceStyle(is_active: boolean): CSSProperties | undefi
   }
 
   return {
-    background: "color-mix(in srgb, var(--primary) 82%, var(--modal-card-background))",
-    border: "1px solid color-mix(in srgb, var(--primary) 36%, var(--modal-card-border))",
+    background: "color-mix(in srgb, var(--primary) 82%, var(--material-dialog-card-background))",
+    border: "1px solid color-mix(in srgb, var(--primary) 36%, var(--material-dialog-card-border))",
     color: "var(--primary-foreground)",
   };
 }
