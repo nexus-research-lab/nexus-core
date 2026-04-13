@@ -446,10 +446,10 @@ const HeroStage = memo(function HeroStage({
           </div>
         </div>
 
-        <div className="mt-3 sm:mt-4">
+        <div className="mt-8 sm:mt-10">
           <FadeSlideIn delay_ms={440} duration_ms={420} y_offset={10}>
             <div
-              className="mx-auto w-full max-w-[326px] rounded-[28px] border px-4 py-4 sm:max-w-[480px] "
+              className="mx-auto w-full max-w-[326px] rounded-2xl border px-4 py-1 sm:max-w-[420px] "
               style={{
                 background: "linear-gradient(180deg, var(--launcher-input-fill), var(--launcher-input-inner-fill))",
                 borderColor: "var(--launcher-input-stroke)",
