@@ -92,14 +92,14 @@ export function AgentOptionsIdentityTab({
               )}
             </div>
             <div className="min-w-0 flex-1 space-y-1.5">
-              <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--text-soft)]">
+              <label className="text-[11px] font-semibold uppercase tracking-[0.12em] text-(--text-soft)">
                 Name <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => onTitleChange(e.target.value)}
-                className="dialog-input rounded-xl flex h-10 w-full px-3.5 py-2 text-sm text-[color:var(--text-strong)] placeholder:text-[color:var(--text-soft)] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-[var(--disabled-opacity)] transition-all"
+                className="dialog-input rounded-xl flex h-10 w-full px-3.5 py-2 text-sm text-(--text-strong) placeholder:text-(--text-soft) focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-[var(--disabled-opacity)] transition-all"
                 placeholder="例如：Coding Assistant"
               />
             </div>
@@ -123,8 +123,8 @@ export function AgentOptionsIdentityTab({
               <span className="text-red-500">{nameValidation.reason}</span>
             ) : null}
             {!isValidatingName &&
-            nameValidation?.is_valid &&
-            nameValidation?.is_available ? (
+              nameValidation?.is_valid &&
+              nameValidation?.is_available ? (
               <span className="text-emerald-600">
                 名称可用，工作区将自动创建到：{nameValidation.workspace_path}
               </span>
@@ -134,7 +134,7 @@ export function AgentOptionsIdentityTab({
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-[11px] font-semibold text-[color:var(--text-muted)]">Vibe Tags</label>
+            <label className="text-[11px] font-semibold text-(--text-muted)">Vibe Tags</label>
             <div className="rounded-[18px] border border-[var(--divider-subtle-color)] px-3.5 py-3">
               <div className="flex flex-wrap items-center gap-2">
                 {vibeTags.map((tag) => (
@@ -160,13 +160,13 @@ export function AgentOptionsIdentityTab({
                     value={tagInput}
                     onChange={(e) => setTagInput(e.target.value)}
                     onKeyDown={handleTagKeyDown}
-                    className="dialog-input rounded-lg h-7 w-24 px-2 text-xs text-[color:var(--text-strong)] placeholder:text-[color:var(--text-soft)] focus-visible:outline-none transition-all"
+                    className="dialog-input rounded-lg h-7 w-24 px-2 text-xs text-(--text-strong) placeholder:text-(--text-soft) focus-visible:outline-none transition-all"
                     placeholder="添加标签"
                   />
                   <button
                     type="button"
                     onClick={handleAddTag}
-                    className="flex h-7 w-7 items-center justify-center rounded-md text-[color:var(--text-soft)] transition-colors hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--text-strong)]"
+                    className="flex h-7 w-7 items-center justify-center rounded-md text-(--text-soft) transition-colors hover:bg-[var(--surface-interactive-hover-background)] hover:text-(--text-strong)"
                   >
                     <Plus className="h-3.5 w-3.5" />
                   </button>
@@ -176,14 +176,14 @@ export function AgentOptionsIdentityTab({
           </div>
 
           <div className="space-y-2">
-            <label className="text-[11px] font-semibold text-[color:var(--text-muted)]">
+            <label className="text-[11px] font-semibold text-(--text-muted)">
               Model Provider <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <select
                 value={model}
                 onChange={(e) => onModelChange(e.target.value)}
-                className="dialog-input rounded-xl flex h-10 w-full appearance-none px-3.5 py-2 text-sm text-[color:var(--text-strong)] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-[var(--disabled-opacity)] transition-all"
+                className="dialog-input rounded-xl flex h-10 w-full appearance-none px-3.5 py-2 text-sm text-(--text-strong) focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-[var(--disabled-opacity)] transition-all"
               >
                 {AVAILABLE_MODELS.map((m) => (
                   <option key={m.value} value={m.value}>
@@ -214,11 +214,11 @@ export function AgentOptionsIdentityTab({
       </div>
 
       <div className="space-y-2">
-        <label className="text-[11px] font-semibold text-[color:var(--text-muted)]">Description</label>
+        <label className="text-[11px] font-semibold text-(--text-muted)">Description</label>
         <textarea
           value={description}
           onChange={(e) => onDescriptionChange(e.target.value)}
-          className="dialog-input rounded-2xl flex min-h-[72px] w-full resize-y px-3.5 py-2.5 text-sm text-[color:var(--text-strong)] placeholder:text-[color:var(--text-soft)] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-[var(--disabled-opacity)] transition-all"
+          className="dialog-input rounded-2xl flex min-h-[72px] w-full resize-y px-3.5 py-2.5 text-sm text-(--text-strong) placeholder:text-(--text-soft) focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-[var(--disabled-opacity)] transition-all"
           rows={3}
           placeholder="描述此 Agent 的目标或背景信息..."
         />

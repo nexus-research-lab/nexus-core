@@ -19,7 +19,7 @@ export const COMPOSER_ATTACHMENT_REMOVE_CLASS_NAME =
   "ml-1 rounded-full p-0.5 text-red-500/76 opacity-60 transition-[background,opacity] duration-[var(--motion-duration-fast)] hover:bg-red-50/90 focus-visible:ring-2 focus-visible:ring-primary/50";
 
 export const COMPOSER_ACTION_BUTTON_CLASS_NAME =
-  "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] border border-[var(--divider-subtle-color)] bg-transparent text-[color:var(--icon-default)] transition-[background,border-color,color] duration-[var(--motion-duration-fast)] hover:border-[var(--surface-interactive-hover-border)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--text-strong)] disabled:cursor-not-allowed disabled:opacity-[var(--disabled-opacity)]";
+  "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] border border-[var(--divider-subtle-color)] bg-transparent text-(--icon-default) transition-[background,border-color,color] duration-[var(--motion-duration-fast)] hover:border-[var(--surface-interactive-hover-border)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-(--text-strong) disabled:cursor-not-allowed disabled:opacity-[var(--disabled-opacity)]";
 
 export const COMPOSER_PRIMARY_ACTION_BUTTON_CLASS_NAME =
   "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] border border-[var(--button-primary-border)] bg-[var(--button-primary-background)] text-[var(--button-primary-color)] transition-[background,border-color,color] duration-[var(--motion-duration-fast)] hover:bg-[var(--button-primary-hover-background)] hover:border-[var(--button-primary-hover-border)] disabled:cursor-not-allowed disabled:opacity-[var(--disabled-opacity)]";
@@ -45,4 +45,4 @@ export function getComposerShellStyle(compact: boolean) {
 }
 
 export const COMPOSER_FOOTER_CLASS_NAME =
-  "flex items-center justify-between gap-3 border-t border-[var(--divider-subtle-color)] px-2.5 py-1.5 text-[color:var(--text-soft)]";
+  "flex items-center justify-between gap-3 border-t border-[var(--divider-subtle-color)] px-2.5 py-1.5 text-(--text-soft)";

@@ -112,7 +112,7 @@ export function SkillDetailDialog({
         <div className="dialog-header">
           <div className={cn(DIALOG_HEADER_LEADING_CLASS_NAME, "min-w-0 flex-1 items-center")}>
             <div className={cn(DIALOG_HEADER_ICON_CLASS_NAME, "h-14 w-14 rounded-[20px]")}>
-              <Puzzle className="h-7 w-7 text-[color:var(--text-strong)]" />
+              <Puzzle className="h-7 w-7 text-(--text-strong)" />
             </div>
             <div className="min-w-0">
               <h2 className="dialog-title truncate" data-size="hero">
@@ -136,7 +136,7 @@ export function SkillDetailDialog({
         <div className="dialog-body dialog-body--scroll soft-scrollbar flex-1">
           {loading ? (
             <div className="flex min-h-80 items-center justify-center">
-              <Loader2 className="h-7 w-7 animate-spin text-[color:var(--text-muted)]" />
+              <Loader2 className="h-7 w-7 animate-spin text-(--text-muted)" />
             </div>
           ) : skill ? (
             <>
@@ -182,7 +182,7 @@ export function SkillDetailDialog({
               <SkillMarkdown markdown={skill.readme_markdown} />
             </>
           ) : (
-            <div className="flex min-h-80 items-center justify-center text-sm text-[color:var(--text-muted)]">
+            <div className="flex min-h-80 items-center justify-center text-sm text-(--text-muted)">
               未找到该 Skill
             </div>
           )}

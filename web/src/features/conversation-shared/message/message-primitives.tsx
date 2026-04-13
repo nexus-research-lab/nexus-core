@@ -33,7 +33,7 @@ const AVATAR_SIZE_CLASS_MAP: Record<MessageAvatarSize, string> = {
 };
 
 const ACTION_TONE_CLASS_MAP: Record<MessageActionTone, string> = {
-  default: "hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--text-strong)]",
+  default: "hover:bg-[var(--surface-interactive-hover-background)] hover:text-(--text-strong)",
   success: "text-green-500 hover:bg-emerald-500/10 hover:text-emerald-500",
   danger: "hover:bg-rose-500/10 hover:text-rose-500",
 };
@@ -55,8 +55,8 @@ const ACTIVITY_LABEL_MAP: Record<MessageActivityState, string> = {
 };
 
 const ACTIVITY_TONE_CLASS_MAP: Record<MessageActivityState, string> = {
-  thinking: "text-[color:var(--text-muted)]",
-  replying: "text-[color:var(--text-default)]",
+  thinking: "text-(--text-muted)",
+  replying: "text-(--text-default)",
   browsing: "text-cyan-600",
   executing: "text-indigo-600",
   waiting_permission: "text-amber-700",
@@ -84,7 +84,7 @@ export function MessageAvatar({
   return (
     <div
       className={cn(
-        "flex items-center justify-center border border-[var(--surface-avatar-border)] bg-[var(--surface-avatar-background)] text-[color:var(--surface-avatar-foreground)] shadow-[var(--surface-avatar-shadow)] transition-transform duration-[var(--motion-duration-fast)] hover:scale-110",
+        "flex items-center justify-center border border-[var(--surface-avatar-border)] bg-[var(--surface-avatar-background)] text-(--surface-avatar-foreground) shadow-[var(--surface-avatar-shadow)] transition-transform duration-[var(--motion-duration-fast)] hover:scale-110",
         AVATAR_SIZE_CLASS_MAP[size],
         class_name,
       )}
@@ -107,7 +107,7 @@ export function MessageActionButton({
   return (
     <button
       className={cn(
-        "rounded-lg p-1 text-[color:var(--icon-default)] transition-colors duration-[var(--motion-duration-fast)] focus-visible:ring-2 focus-visible:ring-primary/50",
+        "rounded-lg p-1 text-(--icon-default) transition-colors duration-[var(--motion-duration-fast)] focus-visible:ring-2 focus-visible:ring-primary/50",
         ACTION_TONE_CLASS_MAP[tone],
         class_name,
       )}

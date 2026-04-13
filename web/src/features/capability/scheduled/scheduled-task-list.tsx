@@ -100,12 +100,12 @@ export function ScheduledTaskList({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <Clock3 className="h-4 w-4 text-[color:var(--icon-default)]" />
+            <Clock3 className="h-4 w-4 text-(--icon-default)" />
             <div>
-              <h2 className="text-[15px] font-semibold tracking-[-0.03em] text-[color:var(--text-strong)]">
+              <h2 className="text-[15px] font-semibold tracking-[-0.03em] text-(--text-strong)">
                 调度任务
               </h2>
-              <p className="text-xs text-[color:var(--text-default)]">
+              <p className="text-xs text-(--text-default)">
                 共 {items.length} 个任务，支持立即执行、启停切换和查看运行记录。
               </p>
             </div>
@@ -140,8 +140,8 @@ export function ScheduledTaskList({
           </div>
         ) : error_message ? (
           <div className="flex min-h-[240px] flex-col items-center justify-center rounded-[18px] border border-[color:color-mix(in_srgb,var(--destructive)_15%,transparent)] px-5 text-center">
-            <p className="text-sm font-semibold text-[color:var(--destructive)]">任务列表加载失败</p>
-            <p className="mt-2 max-w-md text-sm leading-6 text-[color:var(--text-default)]">
+            <p className="text-sm font-semibold text-(--destructive)">任务列表加载失败</p>
+            <p className="mt-2 max-w-md text-sm leading-6 text-(--text-default)">
               {error_message}
             </p>
             <WorkspaceCatalogTextAction class_name="mt-4" onClick={() => void on_refresh?.()} tone="primary">
@@ -151,12 +151,12 @@ export function ScheduledTaskList({
         ) : items.length === 0 ? (
           <div className="flex min-h-[240px] flex-col items-center justify-center rounded-[18px] border border-dashed border-[var(--divider-subtle-color)] px-5 text-center">
             <div className="chip-default flex h-14 w-14 items-center justify-center rounded-[20px]">
-              <Clock3 className="h-6 w-6 text-[color:var(--icon-strong)]" />
+              <Clock3 className="h-6 w-6 text-(--icon-strong)" />
             </div>
-            <h3 className="mt-5 text-lg font-bold tracking-[-0.03em] text-[color:var(--text-strong)]">
+            <h3 className="mt-5 text-lg font-bold tracking-[-0.03em] text-(--text-strong)">
               还没有定时任务
             </h3>
-            <p className="mt-2 max-w-sm text-sm leading-6 text-[color:var(--text-default)]">
+            <p className="mt-2 max-w-sm text-sm leading-6 text-(--text-default)">
               创建第一个自动化任务后，这里会显示调度频率、目标会话和最近运行情况。
             </p>
             <WorkspaceCatalogTextAction class_name="mt-4" onClick={on_create} tone="primary">
@@ -177,7 +177,7 @@ export function ScheduledTaskList({
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-[15px] font-semibold text-[color:var(--text-strong)]">
+                        <h3 className="text-[15px] font-semibold text-(--text-strong)">
                           {task.name}
                         </h3>
                         <WorkspaceStatusBadge label={status.label} size="compact" tone={status.tone} />
@@ -185,25 +185,25 @@ export function ScheduledTaskList({
                           <WorkspaceStatusBadge label="执行占用中" size="compact" tone="running" />
                         ) : null}
                       </div>
-                      <div className="mt-3 grid gap-4 text-sm text-[color:var(--text-default)] md:grid-cols-2">
+                      <div className="mt-3 grid gap-4 text-sm text-(--text-default) md:grid-cols-2">
                         <div className="min-w-0">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-(--text-muted)">
                             调度规则
                           </p>
-                          <p className="mt-1.5 font-medium text-[color:var(--text-strong)]">
+                          <p className="mt-1.5 font-medium text-(--text-strong)">
                             {get_schedule_summary(task.schedule)}
                           </p>
                         </div>
                         <div className="min-w-0">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-(--text-muted)">
                             目标会话
                           </p>
-                          <p className="mt-1.5 font-medium text-[color:var(--text-strong)]">
+                          <p className="mt-1.5 font-medium text-(--text-strong)">
                             {get_session_target_summary(task.session_target)}
                           </p>
                         </div>
                       </div>
-                      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-[color:var(--text-default)]">
+                      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-(--text-default)">
                         <span>下次运行 {format_datetime(task.next_run_at)}</span>
                         <span>最近执行 {format_datetime(task.last_run_at)}</span>
                         <span>Agent {task.agent_id}</span>

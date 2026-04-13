@@ -78,18 +78,18 @@ export function ThreadDetailPanel({
             onClick={on_close}
             aria-label="关闭 Thread"
             title="关闭 Thread"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[color:var(--icon-default)] transition-colors hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--icon-strong)]"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-(--icon-default) transition-colors hover:bg-[var(--surface-interactive-hover-background)] hover:text-(--icon-strong)"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
         ) : null}
 
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[var(--divider-subtle-color)] text-[color:var(--icon-default)]">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[var(--divider-subtle-color)] text-(--icon-default)">
           <Bot className="h-3.5 w-3.5" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-[color:var(--text-strong)]">{agent_name}</p>
-          <p className="text-xs text-[color:var(--text-soft)]">Thread</p>
+          <p className="truncate text-sm font-semibold text-(--text-strong)">{agent_name}</p>
+          <p className="text-xs text-(--text-soft)">Thread</p>
         </div>
 
         {!is_mobile ? (
@@ -98,7 +98,7 @@ export function ThreadDetailPanel({
             onClick={on_close}
             aria-label="关闭 Thread"
             title="关闭 Thread"
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[color:var(--icon-default)] transition-colors hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--icon-strong)]"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-(--icon-default) transition-colors hover:bg-[var(--surface-interactive-hover-background)] hover:text-(--icon-strong)"
           >
             <X className="h-4 w-4" />
           </button>

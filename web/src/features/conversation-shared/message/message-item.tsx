@@ -92,14 +92,14 @@ function getSystemMessageContainerClassName(tone: "neutral" | "warning"): string
   if (tone === "warning") {
     return "border border-amber-200/60 bg-amber-50/70 text-amber-950/88";
   }
-  return "border border-[var(--surface-panel-subtle-border)] bg-[var(--surface-inset-background)] text-[color:var(--text-default)]";
+  return "border border-[var(--surface-panel-subtle-border)] bg-[var(--surface-inset-background)] text-(--text-default)";
 }
 
 function getSystemMessageIconClassName(tone: "neutral" | "warning"): string {
   if (tone === "warning") {
     return "text-amber-700/80";
   }
-  return "text-[color:var(--icon-muted)]";
+  return "text-(--icon-muted)";
 }
 
 interface MessageItemProps {
@@ -921,10 +921,10 @@ function MessageItemInner(
                     </MessageActionButton>
                   </div>
 
-                  <span className="hidden shrink-0 text-xs text-[color:var(--text-muted)] sm:inline">
+                  <span className="hidden shrink-0 text-xs text-(--text-muted) sm:inline">
                     {userMessage.timestamp ? formatTime(userMessage.timestamp) : "--:--"}
                   </span>
-                  <span className="shrink-0 text-sm font-bold text-[color:var(--text-strong)]">你</span>
+                  <span className="shrink-0 text-sm font-bold text-(--text-strong)">你</span>
                   <MessageAvatar class_name="shrink-0" size={compact ? "compact" : "full"}>
                     <User className={compact ? "h-3 w-3" : "h-4 w-4"} />
                   </MessageAvatar>
@@ -934,7 +934,7 @@ function MessageItemInner(
                 <div className="rounded-2xl bg-[color:color-mix(in_srgb,var(--primary)_6%,var(--material-card-background))] px-4 py-3 max-w-[720px]">
                   <p className={cn(
                     "w-full",
-                    "whitespace-pre-wrap text-right text-[color:var(--text-strong)] wrap-anywhere",
+                    "whitespace-pre-wrap text-right text-(--text-strong) wrap-anywhere",
                     compact ? "text-[15px] leading-6" : "text-[16px] leading-7",
                   )}>
                     {userContent}
@@ -971,17 +971,17 @@ function MessageItemInner(
                       <Bot className="h-3 w-3" />
                     </MessageAvatar>
                   ) : null}
-                  <span className="shrink-0 text-sm font-bold text-[color:var(--text-strong)]">
+                  <span className="shrink-0 text-sm font-bold text-(--text-strong)">
                     {current_agent_name || "协作成员"}
                   </span>
 
                   {/* 时间 */}
-                  <span className="hidden shrink-0 text-xs text-[color:var(--text-muted)] sm:inline">
+                  <span className="hidden shrink-0 text-xs text-(--text-muted) sm:inline">
                     {timestamp ? formatTime(timestamp) : "--:--"}
                   </span>
 
                   {/* 模型 */}
-                  {model ? <span className="min-w-0 truncate text-xs text-[color:var(--text-soft)]">{model}</span> : null}
+                  {model ? <span className="min-w-0 truncate text-xs text-(--text-soft)">{model}</span> : null}
 
                   <div className="flex-1" />
 
@@ -1030,7 +1030,7 @@ function MessageItemInner(
                               "flex items-start gap-2 rounded-2xl px-3 py-2.5",
                               getSystemMessageContainerClassName(display_meta.tone),
                               is_room_thread_mode && display_meta.tone === "neutral"
-                                ? "border border-[var(--divider-subtle-color)] bg-transparent text-[color:var(--text-default)]"
+                                ? "border border-[var(--divider-subtle-color)] bg-transparent text-(--text-default)"
                                 : null,
                             )}
                           >
@@ -1056,7 +1056,7 @@ function MessageItemInner(
 
                   {/* Room 并发：已取消标记 */}
                   {stream_status === 'cancelled' && mergedContent.length === 0 && (
-                    <span className="text-xs italic text-[color:var(--text-soft)]">已停止</span>
+                    <span className="text-xs italic text-(--text-soft)">已停止</span>
                   )}
 
                   {stream_status === 'error' && mergedContent.length === 0 && (
@@ -1084,15 +1084,15 @@ function MessageItemInner(
                   {shouldRenderProcessCallchain ? (
                     <div ref={processAnchorRef as React.RefObject<HTMLDivElement>}>
                       <button
-                        className="flex w-full items-center gap-2 py-1.5 text-left text-[color:var(--text-muted)] transition-colors duration-[var(--motion-duration-fast)] hover:text-[color:var(--text-strong)]"
+                        className="flex w-full items-center gap-2 py-1.5 text-left text-(--text-muted) transition-colors duration-[var(--motion-duration-fast)] hover:text-(--text-strong)"
                         onClick={toggleProcessExpanded}
                         type="button"
                       >
-                        <Wrench className="h-3 w-3 shrink-0 text-[color:var(--icon-muted)]" />
-                        <div className="min-w-0 flex-1 truncate text-[12px] font-medium text-[color:var(--text-muted)]">
+                        <Wrench className="h-3 w-3 shrink-0 text-(--icon-muted)" />
+                        <div className="min-w-0 flex-1 truncate text-[12px] font-medium text-(--text-muted)">
                           {processSummary}
                         </div>
-                        <div className="text-[color:var(--icon-muted)]">
+                        <div className="text-(--icon-muted)">
                           {isProcessExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
                         </div>
                       </button>

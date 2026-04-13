@@ -146,15 +146,15 @@ export function PermissionDialog(
     return (
       <div className="space-y-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--text-soft)]">Parameters</p>
-          <h3 className="mt-1 text-base font-semibold text-[color:var(--text-strong)]">参数</h3>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-(--text-soft)">Parameters</p>
+          <h3 className="mt-1 text-base font-semibold text-(--text-strong)">参数</h3>
         </div>
         {readableFields.map((field) => (
           <div key={field.key} className="rounded-[16px] border border-[var(--divider-subtle-color)] px-4 py-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--text-soft)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-(--text-soft)">
               {field.label}
             </p>
-            <p className="mt-2 text-sm leading-7 whitespace-pre-wrap break-words text-[color:var(--text-default)]">
+            <p className="mt-2 text-sm leading-7 whitespace-pre-wrap break-words text-(--text-default)">
               {field.value}
             </p>
           </div>
@@ -227,7 +227,7 @@ export function PermissionDialog(
           </div>
 
           <div className={getDialogNoteClassName("default")} style={getDialogNoteStyle("default")}>
-            <div className="text-[15px] leading-8 break-words text-[color:var(--text-default)]">
+            <div className="text-[15px] leading-8 break-words text-(--text-default)">
               {summary || "确认后继续执行"}
             </div>
           </div>
@@ -236,7 +236,7 @@ export function PermissionDialog(
             <div className="space-y-3">
               <div>
                 <p className="dialog-label">Policy</p>
-                <h3 className="mt-1 text-base font-semibold text-[color:var(--text-strong)]">授权范围</h3>
+                <h3 className="mt-1 text-base font-semibold text-(--text-strong)">授权范围</h3>
               </div>
               <div className="space-y-2">
                 <label

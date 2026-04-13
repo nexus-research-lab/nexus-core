@@ -423,8 +423,8 @@ const ComposerPanelView = memo(({
           <textarea
             ref={textarea_ref}
             className={cn(
-              "multiline-cursor min-h-6 min-w-0 flex-1 max-h-[200px] resize-none overflow-y-auto bg-transparent text-[14px] leading-6 text-[color:var(--text-strong)] outline-none shadow-none ring-0",
-              "placeholder:text-[color:var(--text-soft)]",
+              "multiline-cursor min-h-6 min-w-0 flex-1 max-h-[200px] resize-none overflow-y-auto bg-transparent text-[14px] leading-6 text-(--text-strong) outline-none shadow-none ring-0",
+              "placeholder:text-(--text-soft)",
               "disabled:cursor-not-allowed disabled:opacity-[var(--disabled-opacity)]",
               "focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none",
             )}
@@ -473,22 +473,22 @@ const ComposerPanelView = memo(({
         </div>
 
         <div className={COMPOSER_FOOTER_CLASS_NAME}>
-          <div className="flex items-center gap-3 text-[10px] text-[color:var(--text-soft)]">
+          <div className="flex items-center gap-3 text-[10px] text-(--text-soft)">
             {disabled && control_status_text ? (
-              <span className="text-[color:var(--text-default)]">{control_status_text}</span>
+              <span className="text-(--text-default)">{control_status_text}</span>
             ) : is_loading && on_stop ? (
               <span className="flex items-center gap-2 text-emerald-900/90">
                 <LoadingOrb frames={["✽", "✻", "✶", "✢", "·"]} />
                 <span className="animate-pulse">正在回复中…</span>
-                <span className="text-[color:var(--text-soft)]">[ESC 停止]</span>
+                <span className="text-(--text-soft)">[ESC 停止]</span>
               </span>
             ) : is_preparing_attachments ? (
-              <span className="flex items-center gap-2 text-[color:var(--text-default)]">
+              <span className="flex items-center gap-2 text-(--text-default)">
                 <LoadingOrb frames={["·", "◦", "•", "◦"]} />
                 <span>正在整理附件并同步到工作区…</span>
               </span>
             ) : attachment_error ? (
-              <span className="text-[color:var(--destructive)]">{attachment_error}</span>
+              <span className="text-(--destructive)">{attachment_error}</span>
             ) : (
               <>
                 <span className="flex items-center gap-1">
@@ -501,13 +501,13 @@ const ComposerPanelView = memo(({
                   <kbd>Enter</kbd>
                   <span>换行</span>
                 </span>
-                <span className="hidden sm:inline text-[color:var(--text-soft)]">
+                <span className="hidden sm:inline text-(--text-soft)">
                   附件仅支持文本文件
                 </span>
               </>
             )}
             {!disabled && control_status_text ? (
-              <span className="text-[color:var(--text-default)]">{control_status_text}</span>
+              <span className="text-(--text-default)">{control_status_text}</span>
             ) : null}
           </div>
 
@@ -518,16 +518,16 @@ const ComposerPanelView = memo(({
                   className={cn(
                     is_over_limit && "text-destructive",
                     is_near_limit && !is_over_limit && "text-warning",
-                    !is_near_limit && "text-[color:var(--text-soft)]",
+                    !is_near_limit && "text-(--text-soft)",
                   )}
                 >
                   {char_count}
                 </span>
-                <span className="text-[color:var(--text-soft)]">/{max_length}</span>
+                <span className="text-(--text-soft)">/{max_length}</span>
               </div>
             ) : null}
             {history_index >= 0 ? (
-              <div className="text-[10px] text-[color:var(--text-default)]">
+              <div className="text-[10px] text-(--text-default)">
                 历史 {history_index + 1}/{input_history.length}
               </div>
             ) : null}

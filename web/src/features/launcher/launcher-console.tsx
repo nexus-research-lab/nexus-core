@@ -470,7 +470,7 @@ const HeroStage = memo(function HeroStage({
                 <MessageSquare className="h-4.5 w-4.5" style={{ color: "var(--launcher-input-icon)" }} />
                 <input
                   ref={input_ref}
-                  className="flex-1 bg-transparent text-[14px] outline-none shadow-none ring-0 placeholder:text-[color:var(--launcher-input-placeholder)] focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none sm:text-[15px]"
+                  className="flex-1 bg-transparent text-[14px] outline-none shadow-none ring-0 placeholder:text-(--launcher-input-placeholder) focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none sm:text-[15px]"
                   style={{ color: "var(--launcher-input-text)" }}
                   onBlur={() => {
                     requestAnimationFrame(() => {
@@ -596,7 +596,7 @@ const HeroStage = memo(function HeroStage({
 
             <FadeSlideIn delay_ms={580 + recent_entries.length * 55} duration_ms={360} y_offset={6} style={{ display: "inline-flex" }}>
               <button
-                className="px-2 text-xs font-medium transition-colors duration-150 ease-out hover:text-[color:var(--launcher-handoff-hover-color)] sm:text-sm"
+                className="px-2 text-xs font-medium transition-colors duration-150 ease-out hover:text-(--launcher-handoff-hover-color) sm:text-sm"
                 style={{ color: "var(--launcher-handoff-color)" }}
                 onClick={() => is_app_conversation_open ? on_close_app_conversation() : on_open_app_conversation(query)}
                 type="button"

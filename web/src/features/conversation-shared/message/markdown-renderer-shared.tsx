@@ -37,8 +37,8 @@ const WORKSPACE_FILE_PATTERN = /([A-Za-z0-9_./-]+\.[A-Za-z0-9]{1,10})/g;
 
 export const MARKDOWN_PLUGINS = [remarkGfm, remarkMath, remarkBreaks];
 export const REHYPE_PLUGINS = [rehypeKatex];
-export const MARKDOWN_BODY_CLASS_NAME = "w-full min-w-0 max-w-full overflow-x-hidden text-[15px] leading-7 text-[color:var(--text-strong)] [&_strong]:font-semibold [&_strong]:text-[color:var(--text-strong)] [&_em]:italic [&_hr]:my-4 [&_hr]:border-[var(--divider-subtle-color)]";
-export const MARKDOWN_SUMMARY_CLASS_NAME = "w-full min-w-0 max-w-full overflow-hidden text-[15px] leading-7 text-[color:var(--text-strong)] [&_strong]:font-semibold [&_strong]:text-[color:var(--text-strong)] [&_em]:italic";
+export const MARKDOWN_BODY_CLASS_NAME = "w-full min-w-0 max-w-full overflow-x-hidden text-[15px] leading-7 text-(--text-strong) [&_strong]:font-semibold [&_strong]:text-(--text-strong) [&_em]:italic [&_hr]:my-4 [&_hr]:border-[var(--divider-subtle-color)]";
+export const MARKDOWN_SUMMARY_CLASS_NAME = "w-full min-w-0 max-w-full overflow-hidden text-[15px] leading-7 text-(--text-strong) [&_strong]:font-semibold [&_strong]:text-(--text-strong) [&_em]:italic";
 
 function normalizeWorkspaceReference(value: string): string {
   return value.replace(/^[("'`【]+|[)"'`】,，。；：:!?]+$/g, "");
@@ -174,7 +174,7 @@ export function createMarkdownComponents(
     },
     blockquote({ children }) {
       return (
-        <blockquote className="my-4 w-full min-w-0 max-w-full overflow-hidden border-l-[3px] border-primary/40 bg-primary/4 px-1 py-2 pl-4 italic text-[color:var(--text-muted)] wrap-anywhere">
+        <blockquote className="my-4 w-full min-w-0 max-w-full overflow-hidden border-l-[3px] border-primary/40 bg-primary/4 px-1 py-2 pl-4 italic text-(--text-muted) wrap-anywhere">
           <div className="min-w-0 max-w-full">{children}</div>
         </blockquote>
       );
@@ -211,7 +211,7 @@ export function createMarkdownComponents(
       return <table className="my-4 w-full max-w-full table-fixed border-collapse overflow-hidden rounded-[14px] border border-[var(--divider-subtle-color)] text-left text-sm sm:table-auto">{children}</table>;
     },
     thead({ children }) {
-      return <thead className="uppercase text-[color:var(--text-muted)] font-semibold" style={{ background: "color-mix(in srgb, var(--surface-panel-background) 68%, var(--divider-subtle-color))" }}>{children}</thead>;
+      return <thead className="uppercase text-(--text-muted) font-semibold" style={{ background: "color-mix(in srgb, var(--surface-panel-background) 68%, var(--divider-subtle-color))" }}>{children}</thead>;
     },
     tbody({ children }) {
       return <tbody className="align-top">{children}</tbody>;
@@ -251,7 +251,7 @@ export function createMarkdownSummaryComponents(
       return <span className="inline min-w-0 max-w-full wrap-anywhere [&_p]:inline [&_p]:m-0">• {children} </span>;
     },
     blockquote({ children }) {
-      return <span className="inline min-w-0 max-w-full italic text-[color:var(--text-muted)] wrap-anywhere">{children}</span>;
+      return <span className="inline min-w-0 max-w-full italic text-(--text-muted) wrap-anywhere">{children}</span>;
     },
     h1({ children }) {
       return <span className="inline font-semibold text-foreground">{children}</span>;

@@ -18,10 +18,10 @@ export function MemberSummaryCard({
     <section className="min-w-[240px] border-b divider-subtle px-4 py-4">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--text-soft)]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-(--text-soft)">
             当前成员
           </p>
-          <p className="mt-1 text-[28px] font-black tracking-[-0.05em] text-[color:var(--text-strong)]">
+          <p className="mt-1 text-[28px] font-black tracking-[-0.05em] text-(--text-strong)">
             {agent.name}
           </p>
         </div>
@@ -40,7 +40,7 @@ export function MemberSummaryCard({
           </span>
           <button
             aria-label="打开 Agent 设置"
-            className="text-[11px] font-semibold text-[color:var(--text-default)] transition-colors hover:text-[color:var(--text-strong)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1"
+            className="text-[11px] font-semibold text-(--text-default) transition-colors hover:text-(--text-strong) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1"
             onClick={() => on_edit_agent(agent.agent_id)}
             type="button"
           >

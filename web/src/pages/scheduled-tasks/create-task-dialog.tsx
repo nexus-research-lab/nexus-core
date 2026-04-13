@@ -582,10 +582,10 @@ export function CreateTaskDialog({
                 ))}
             </select>
             {target_type === "agent" && agents_error ? (
-              <p className="mt-2 text-xs text-[color:var(--destructive)]">{agents_error}</p>
+              <p className="mt-2 text-xs text-(--destructive)">{agents_error}</p>
             ) : null}
             {target_type === "room" && rooms_error ? (
-              <p className="mt-2 text-xs text-[color:var(--destructive)]">{rooms_error}</p>
+              <p className="mt-2 text-xs text-(--destructive)">{rooms_error}</p>
             ) : null}
           </div>
 
@@ -631,16 +631,16 @@ export function CreateTaskDialog({
               ))}
             </select>
             {target_type === "agent" && agent_sessions_error ? (
-              <p className="mt-2 text-xs text-[color:var(--destructive)]">{agent_sessions_error}</p>
+              <p className="mt-2 text-xs text-(--destructive)">{agent_sessions_error}</p>
             ) : null}
             {target_type === "room" && room_contexts_error ? (
-              <p className="mt-2 text-xs text-[color:var(--destructive)]">{room_contexts_error}</p>
+              <p className="mt-2 text-xs text-(--destructive)">{room_contexts_error}</p>
             ) : null}
             {target_type === "agent" && selected_agent_id && !agent_sessions_loading && agent_session_options.length === 0 ? (
-              <p className="mt-2 text-xs text-[color:var(--text-muted)]">这个智能体没有可选会话</p>
+              <p className="mt-2 text-xs text-(--text-muted)">这个智能体没有可选会话</p>
             ) : null}
             {target_type === "room" && selected_room_id && !room_contexts_loading && room_session_options.length === 0 ? (
-              <p className="mt-2 text-xs text-[color:var(--text-muted)]">这个 Room 没有可选会话</p>
+              <p className="mt-2 text-xs text-(--text-muted)">这个 Room 没有可选会话</p>
             ) : null}
           </div>
 
@@ -756,7 +756,7 @@ export function CreateTaskDialog({
             />
           </div>
 
-          <label className="flex items-center gap-3 rounded-[18px] border border-[var(--divider-subtle-color)] bg-white/45 px-4 py-3 text-sm text-[color:var(--text-default)]">
+          <label className="flex items-center gap-3 rounded-[18px] border border-[var(--divider-subtle-color)] bg-white/45 px-4 py-3 text-sm text-(--text-default)">
             <input
               checked={enabled}
               className="h-4 w-4"
@@ -767,7 +767,7 @@ export function CreateTaskDialog({
           </label>
 
           {error_message ? (
-            <div className="rounded-[18px] border border-[color:color-mix(in_srgb,var(--destructive)_15%,transparent)] bg-[color:color-mix(in_srgb,var(--destructive)_6%,transparent)] px-4 py-3 text-sm text-[color:var(--destructive)]">
+            <div className="rounded-[18px] border border-[color:color-mix(in_srgb,var(--destructive)_15%,transparent)] bg-[color:color-mix(in_srgb,var(--destructive)_6%,transparent)] px-4 py-3 text-sm text-(--destructive)">
               {error_message}
             </div>
           ) : null}

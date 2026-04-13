@@ -90,7 +90,7 @@ function QuestionCard({
             >
                 {/* 序号 */}
                 <span className={cn(
-                    "flex h-5 w-5 items-center justify-center rounded-full bg-[var(--material-chip-background)] text-[10px] font-bold text-[color:var(--text-muted)]",
+                    "flex h-5 w-5 items-center justify-center rounded-full bg-[var(--material-chip-background)] text-[10px] font-bold text-(--text-muted)",
                     hasSelection && "bg-primary/12 text-primary",
                 )}>
                     {question_index + 1}
@@ -205,7 +205,7 @@ function QuestionCard({
                             <div className="border-b border-white/14">
                                 <textarea
                                     className={cn(
-                                        "h-7 min-h-7 w-full resize-none border-0 bg-transparent px-0 py-0 text-[13px] leading-7 text-[color:var(--text-strong)] outline-none shadow-none ring-0 transition duration-[var(--motion-duration-fast)] ease-out focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none",
+                                        "h-7 min-h-7 w-full resize-none border-0 bg-transparent px-0 py-0 text-[13px] leading-7 text-(--text-strong) outline-none shadow-none ring-0 transition duration-[var(--motion-duration-fast)] ease-out focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none",
                                         "placeholder:text-muted-foreground/70",
                                         is_submitted && "cursor-not-allowed opacity-60"
                                     )}
@@ -401,9 +401,9 @@ export function AskUserQuestionBlock({
 
     const isReadOnly = isSubmitted || isTimedOut || isFailed || isObserverReadOnly;
     const headerToneClassName = isTimedOut || isFailed
-        ? "text-[color:var(--warning)]"
+        ? "text-(--warning)"
         : isSubmitted
-            ? "text-[color:var(--success)]"
+            ? "text-(--success)"
             : "text-primary";
     const headerLabel = isTimedOut
         ? "提问已超时"
@@ -454,7 +454,7 @@ export function AskUserQuestionBlock({
                 {!isExpanded && answerSummary && (
                     <>
                         <span className="text-muted-foreground/30">│</span>
-                        <span className="truncate max-w-[200px] text-[color:var(--text-muted)]">
+                        <span className="truncate max-w-[200px] text-(--text-muted)">
                             {answerSummary}
                         </span>
                     </>
@@ -521,7 +521,7 @@ export function AskUserQuestionBlock({
                             "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium leading-none transition-colors",
                             canSubmit && is_ready && !interaction_disabled
                                 ? "border-primary/24 bg-primary/10 text-primary hover:bg-primary/14"
-                                : "border-white/14 bg-white/6 text-[color:var(--text-soft)]",
+                                : "border-white/14 bg-white/6 text-(--text-soft)",
                         )}
                     >
                         <Send className="h-3 w-3" />
@@ -532,9 +532,9 @@ export function AskUserQuestionBlock({
 
             {/* ═══════════ 已提交状态（展开时显示） ═══════════ */}
             {isSubmitted && isExpanded && (
-                <div className="mt-2 flex items-center gap-2 border-t border-[color:color-mix(in_srgb,var(--success)_18%,transparent)] pt-2 text-xs font-semibold text-[color:var(--success)]">
-                    <Check className="w-3.5 h-3.5 text-[color:var(--success)]" />
-                    <span className="text-xs font-medium text-[color:var(--success)]">已收到你的回应</span>
+                <div className="mt-2 flex items-center gap-2 border-t border-[color:color-mix(in_srgb,var(--success)_18%,transparent)] pt-2 text-xs font-semibold text-(--success)">
+                    <Check className="w-3.5 h-3.5 text-(--success)" />
+                    <span className="text-xs font-medium text-(--success)">已收到你的回应</span>
                 </div>
             )}
         </MessageRail>

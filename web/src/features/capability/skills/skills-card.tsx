@@ -72,7 +72,7 @@ export function SkillsCard({
             <WorkspaceCatalogTitle class_name="min-w-0" size="sm" truncate>
               {title}
             </WorkspaceCatalogTitle>
-            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[color:var(--text-soft)]">
+            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-(--text-soft)">
               <span>{source_label}</span>
               {has_update ? <span>可更新</span> : null}
             </div>
@@ -87,7 +87,7 @@ export function SkillsCard({
       </WorkspaceCatalogBody>
 
       <WorkspaceCatalogFooter>
-        <div className="min-w-0 text-[11px] text-[color:var(--text-soft)]">
+        <div className="min-w-0 text-[11px] text-(--text-soft)">
           {tag_summary || "无额外标签"}
         </div>
 

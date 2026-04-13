@@ -151,8 +151,8 @@ export function RoomPage() {
       <WorkspacePageFrame content_padding_class_name="p-0">
         <div className="flex min-h-0 flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-3">
-            <Loader2 className="h-6 w-6 animate-spin text-[color:var(--text-soft)]" />
-            <span className="text-sm text-[color:var(--text-soft)]">加载对话...</span>
+            <Loader2 className="h-6 w-6 animate-spin text-(--text-soft)" />
+            <span className="text-sm text-(--text-soft)">加载对话...</span>
           </div>
         </div>
       </WorkspacePageFrame>

@@ -80,8 +80,8 @@ function RoomCompletedReply({
             className={cn(
               "rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
               is_thread_active
-                ? "border-[var(--status-info-soft-border)] bg-[var(--status-info-soft-bg)] text-[color:var(--status-info-soft-text)]"
-                : "border-[var(--divider-subtle-color)] bg-[var(--material-chip-background)] text-[color:var(--text-muted)] hover:bg-[var(--interaction-hover-background)] hover:text-[color:var(--text-default)]",
+                ? "border-[var(--status-info-soft-border)] bg-[var(--status-info-soft-bg)] text-(--status-info-soft-text)"
+                : "border-[var(--divider-subtle-color)] bg-[var(--material-chip-background)] text-(--text-muted) hover:bg-[var(--interaction-hover-background)] hover:text-(--text-default)",
             )}
             onClick={on_click_thread}
             type="button"

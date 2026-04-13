@@ -63,12 +63,12 @@ export function HeartbeatSettingsCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-[color:var(--icon-default)]" />
+            <Activity className="h-4 w-4 text-(--icon-default)" />
             <div>
-              <h2 className="text-[15px] font-semibold tracking-[-0.03em] text-[color:var(--text-strong)]">
+              <h2 className="text-[15px] font-semibold tracking-[-0.03em] text-(--text-strong)">
                 Heartbeat 设置
               </h2>
-              <p className="text-xs text-[color:var(--text-default)]">
+              <p className="text-xs text-(--text-default)">
                 查看当前自动唤醒状态并手动触发一次执行。
               </p>
             </div>
@@ -105,8 +105,8 @@ export function HeartbeatSettingsCard({
           </div>
         ) : error_message ? (
           <div className="flex min-h-[180px] flex-1 flex-col items-center justify-center rounded-[18px] border border-[color:color-mix(in_srgb,var(--destructive)_15%,transparent)] px-5 text-center">
-            <p className="text-sm font-semibold text-[color:var(--destructive)]">Heartbeat 加载失败</p>
-            <p className="mt-2 max-w-sm text-sm leading-6 text-[color:var(--text-default)]">
+            <p className="text-sm font-semibold text-(--destructive)">Heartbeat 加载失败</p>
+            <p className="mt-2 max-w-sm text-sm leading-6 text-(--text-default)">
               {error_message}
             </p>
           </div>
@@ -128,25 +128,25 @@ export function HeartbeatSettingsCard({
 
             <div className="grid gap-4 border-y border-[var(--divider-subtle-color)] py-4 sm:grid-cols-2">
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-(--text-muted)">
                   执行间隔
                 </p>
-                <p className="mt-2 text-base font-semibold text-[color:var(--text-strong)]">
+                <p className="mt-2 text-base font-semibold text-(--text-strong)">
                   {format_interval(heartbeat.every_seconds)}
                 </p>
-                <p className="mt-1 text-xs text-[color:var(--text-default)]">
+                <p className="mt-1 text-xs text-(--text-default)">
                   下一次 {format_datetime(heartbeat.next_run_at)}
                 </p>
               </div>
 
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-(--text-muted)">
                   投递策略
                 </p>
-                <p className="mt-2 text-base font-semibold text-[color:var(--text-strong)]">
+                <p className="mt-2 text-base font-semibold text-(--text-strong)">
                   {get_target_mode_label(heartbeat.target_mode)}
                 </p>
-                <p className="mt-1 text-xs text-[color:var(--text-default)]">
+                <p className="mt-1 text-xs text-(--text-default)">
                   ACK 上限 {heartbeat.ack_max_chars} 字
                 </p>
               </div>
@@ -154,27 +154,27 @@ export function HeartbeatSettingsCard({
 
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3 text-sm">
-                <span className="text-[color:var(--text-default)]">最近心跳</span>
-                <span className="font-medium text-[color:var(--text-strong)]">
+                <span className="text-(--text-default)">最近心跳</span>
+                <span className="font-medium text-(--text-strong)">
                   {format_datetime(heartbeat.last_heartbeat_at)}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-3 text-sm">
-                <span className="text-[color:var(--text-default)]">最近 ACK</span>
-                <span className="font-medium text-[color:var(--text-strong)]">
+                <span className="text-(--text-default)">最近 ACK</span>
+                <span className="font-medium text-(--text-strong)">
                   {format_datetime(heartbeat.last_ack_at)}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-3 text-sm">
-                <span className="text-[color:var(--text-default)]">下一次调度</span>
-                <span className="font-medium text-[color:var(--text-strong)]">
+                <span className="text-(--text-default)">下一次调度</span>
+                <span className="font-medium text-(--text-strong)">
                   {format_datetime(heartbeat.next_run_at)}
                 </span>
               </div>
             </div>
 
             {heartbeat.delivery_error ? (
-              <div className="rounded-[16px] border border-[color:color-mix(in_srgb,var(--warning)_20%,transparent)] px-4 py-3 text-sm text-[color:var(--warning)]">
+              <div className="rounded-[16px] border border-[color:color-mix(in_srgb,var(--warning)_20%,transparent)] px-4 py-3 text-sm text-(--warning)">
                 <div className="flex items-center gap-2 font-semibold">
                   <TimerReset className="h-4 w-4" />
                   最近一次投递异常
@@ -185,10 +185,10 @@ export function HeartbeatSettingsCard({
           </>
         ) : (
           <div className="flex min-h-[180px] flex-1 flex-col items-center justify-center rounded-[18px] border border-dashed border-[var(--divider-subtle-color)] px-5 text-center">
-            <p className="text-sm font-semibold text-[color:var(--text-strong)]">
+            <p className="text-sm font-semibold text-(--text-strong)">
               当前 Agent 还没有 heartbeat 配置
             </p>
-            <p className="mt-2 max-w-sm text-sm leading-6 text-[color:var(--text-default)]">
+            <p className="mt-2 max-w-sm text-sm leading-6 text-(--text-default)">
               当后端启用 heartbeat 后，这里会展示运行状态、下一次执行时间和唤醒入口。
             </p>
           </div>

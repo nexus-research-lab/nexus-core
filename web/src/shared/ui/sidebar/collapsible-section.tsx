@@ -22,9 +22,9 @@ const CONTEXT_MENU_ITEM_CLASS_NAME =
 const SIDEBAR_LIST_ITEM_CLASS_NAME =
   "group/item box-border flex w-full items-center gap-2.5 rounded-[12px] px-2.5 py-[7px] text-left text-[14px] transition-[background,color] duration-[var(--motion-duration-fast)]";
 const SIDEBAR_SECTION_TRIGGER_CLASS_NAME =
-  "flex flex-1 items-center gap-1.5 text-[13px] font-semibold uppercase tracking-[0.12em] text-[color:var(--text-default)] transition-colors duration-[var(--motion-duration-fast)] hover:text-[color:var(--text-strong)]";
+  "flex flex-1 items-center gap-1.5 text-[13px] font-semibold uppercase tracking-[0.12em] text-(--text-default) transition-colors duration-[var(--motion-duration-fast)] hover:text-(--text-strong)";
 const SIDEBAR_SECTION_ACTION_CLASS_NAME =
-  "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[color:var(--icon-muted)] transition-[background,color,transform] duration-[var(--motion-duration-fast)] hover:-translate-y-[1px] hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--icon-default)]";
+  "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-(--icon-muted) transition-[background,color,transform] duration-[var(--motion-duration-fast)] hover:-translate-y-[1px] hover:bg-[var(--surface-interactive-hover-background)] hover:text-(--icon-default)";
 
 interface CollapsibleSectionProps {
   section_id: string;
@@ -91,8 +91,8 @@ export function SidebarListItem({
           SIDEBAR_LIST_ITEM_CLASS_NAME,
           "relative",
           is_active
-            ? "font-medium text-[color:var(--text-strong)]"
-            : "text-[color:var(--text-default)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--text-strong)] hover:translate-x-[2px]",
+            ? "font-medium text-(--text-strong)"
+            : "text-(--text-default) hover:bg-[var(--surface-interactive-hover-background)] hover:text-(--text-strong) hover:translate-x-[2px]",
         )}
         style={is_active ? {
           background: "color-mix(in srgb, var(--surface-interactive-active-background) 72%, transparent)",
@@ -108,7 +108,7 @@ export function SidebarListItem({
         <span
           className={cn(
             "flex h-5 w-5 shrink-0 items-center justify-center",
-            is_active ? "text-[color:var(--primary)]" : "text-[color:var(--icon-muted)]",
+            is_active ? "text-(--primary)" : "text-(--icon-muted)",
           )}
         >
           {icon}
@@ -116,7 +116,7 @@ export function SidebarListItem({
         <span className="min-w-0 flex-1 truncate">{label}</span>
         {has_actions ? (
           <span
-            className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-[color:var(--icon-muted)] opacity-0 transition-all hover:text-[color:var(--icon-default)] group-hover/item:opacity-100"
+            className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-(--icon-muted) opacity-0 transition-all hover:text-(--icon-default) group-hover/item:opacity-100"
             onClick={handle_more_click}
             role="button"
             tabIndex={-1}
@@ -127,7 +127,7 @@ export function SidebarListItem({
           <span
             className={cn(
               "shrink-0 text-[12px] font-medium tabular-nums",
-              is_active ? "text-[color:var(--text-muted)]" : "text-[color:var(--text-soft)]",
+              is_active ? "text-(--text-muted)" : "text-(--text-soft)",
             )}
           >
             {meta}
@@ -148,7 +148,7 @@ export function SidebarListItem({
         >
           {on_rename ? (
             <button
-              className={cn(CONTEXT_MENU_ITEM_CLASS_NAME, "text-[color:var(--text-default)] hover:bg-[var(--surface-interactive-hover-background)]")}
+              className={cn(CONTEXT_MENU_ITEM_CLASS_NAME, "text-(--text-default) hover:bg-[var(--surface-interactive-hover-background)]")}
               onClick={() => {
                 set_menu_pos(null);
                 on_rename();
@@ -211,7 +211,7 @@ export function CollapsibleSection({
           {icon ? <span className="flex items-center">{icon}</span> : null}
           <span>{title}</span>
           {typeof count === "number" ? (
-            <span className="text-[12px] font-medium tabular-nums text-[color:var(--text-muted)]">{count}</span>
+            <span className="text-[12px] font-medium tabular-nums text-(--text-muted)">{count}</span>
           ) : null}
         </button>
 

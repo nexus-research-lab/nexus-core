@@ -43,13 +43,13 @@ export function ContactsAgentCard({
   return (
     <WorkspaceCatalogCard
       align="center"
-      class_name="h-full"
+      class_name="relative h-full overflow-hidden"
       interactive
       onClick={on_open_profile}
       size="comfort"
     >
       <WorkspaceIconFrame
-        class_name="mx-auto h-14 w-14 overflow-hidden transition-all duration-300 hover:scale-110 hover:shadow-lg"
+        class_name="mx-auto h-14 w-14 overflow-hidden transition-all duration-300 hover:scale-110 hover:shadow-lg relative z-10"
         shape="round"
         size="lg"
       >
@@ -60,7 +60,7 @@ export function ContactsAgentCard({
             src={getIconAvatarSrc(agent.avatar) ?? undefined}
           />
         ) : (
-          <Bot className="h-6 w-6 text-[color:var(--icon-strong)] transition-transform duration-300 hover:scale-110 hover:rotate-6" />
+          <Bot className="h-6 w-6 text-(--icon-strong) transition-transform duration-300 hover:scale-110 hover:rotate-6" />
         )}
       </WorkspaceIconFrame>
 

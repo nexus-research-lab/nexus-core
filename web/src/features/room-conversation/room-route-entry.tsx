@@ -35,25 +35,25 @@ export function RoomRouteEntry({
   return (
     <div className="grid flex-1 gap-4 xl:grid-cols-[0.92fr_1.08fr]">
       <section className="radius-shell-xl border border-[var(--divider-subtle-color)] px-6 py-6">
-        <h2 className="mt-2 text-[28px] font-black tracking-[-0.04em] text-[color:var(--text-strong)]">
+        <h2 className="mt-2 text-[28px] font-black tracking-[-0.04em] text-(--text-strong)">
           {room_agent ? room_agent.name : t("room.route_empty_title")}
         </h2>
 
         <WorkspaceActionBar variant="cards">
           <WorkspaceActionCard
             description={t("room.route_back_launcher_description")}
-            icon={<MessageSquare className="h-5 w-5 text-[color:var(--icon-strong)]" />}
+            icon={<MessageSquare className="h-5 w-5 text-(--icon-strong)" />}
             on_click={() => navigate(AppRouteBuilders.launcher())}
             title={t("room.route_back_launcher")}
           />
           <WorkspaceActionCard
             description={t("room.route_browse_agents_description")}
-            icon={<Users className="h-5 w-5 text-[color:var(--icon-strong)]" />}
+            icon={<Users className="h-5 w-5 text-(--icon-strong)" />}
             on_click={() => navigate(AppRouteBuilders.contacts())}
             title={t("room.route_browse_agents")}
           />
           <WorkspaceActionCard
-            icon={<Sparkles className="h-5 w-5 text-[color:var(--icon-strong)]" />}
+            icon={<Sparkles className="h-5 w-5 text-(--icon-strong)" />}
             on_click={() => navigate(AppRouteBuilders.launcher())}
             title={t("room.route_handoff")}
           />
@@ -63,25 +63,25 @@ export function RoomRouteEntry({
       <aside className="radius-shell-xl border border-[var(--divider-subtle-color)] px-6 py-6">
         <div className="mt-4">
           <div className={METRIC_ROW_CLASS_NAME}>
-            <p className="text-[11px] uppercase tracking-[0.12em] text-[color:var(--text-soft)]">Room</p>
-            <p className="text-sm font-semibold text-[color:var(--text-strong)]">{room_id ?? "-"}</p>
+            <p className="text-[11px] uppercase tracking-[0.12em] text-(--text-soft)">Room</p>
+            <p className="text-sm font-semibold text-(--text-strong)">{room_id ?? "-"}</p>
           </div>
 
           <div className={METRIC_ROW_CLASS_NAME}>
-            <p className="text-[11px] uppercase tracking-[0.12em] text-[color:var(--text-soft)]">
+            <p className="text-[11px] uppercase tracking-[0.12em] text-(--text-soft)">
               {t("room.route_conversation")}
             </p>
-            <p className="text-sm font-semibold text-[color:var(--text-strong)]">{conversation_id ?? "-"}</p>
+            <p className="text-sm font-semibold text-(--text-strong)">{conversation_id ?? "-"}</p>
           </div>
 
           {recent_room_conversations.length ? (
             <div className="pt-3">
-              <p className="text-[11px] uppercase tracking-[0.12em] text-[color:var(--text-soft)]">{t("room.route_recent")}</p>
+              <p className="text-[11px] uppercase tracking-[0.12em] text-(--text-soft)">{t("room.route_recent")}</p>
               <div className="mt-3 divide-y divide-[var(--divider-subtle-color)]">
                 {recent_room_conversations.map((conversation) => (
                   <button
                     key={conversation.conversation_id}
-                    className="flex w-full items-center justify-between gap-3 py-3 text-left transition hover:text-[color:var(--text-strong)]"
+                    className="flex w-full items-center justify-between gap-3 py-3 text-left transition hover:text-(--text-strong)"
                     onClick={() =>
                       navigate(
                         AppRouteBuilders.room_conversation(
@@ -92,11 +92,11 @@ export function RoomRouteEntry({
                     }
                     type="button"
                   >
-                    <span className="truncate text-sm text-[color:var(--text-default)]">
+                    <span className="truncate text-sm text-(--text-default)">
                       {conversation.title || t("room.untitled_conversation")}
                     </span>
-                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full text-[color:var(--icon-default)] transition-colors hover:text-[color:var(--icon-strong)]">
-                      <ArrowRight className="h-4 w-4 shrink-0 text-[color:var(--icon-default)]" />
+                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full text-(--icon-default) transition-colors hover:text-(--icon-strong)">
+                      <ArrowRight className="h-4 w-4 shrink-0 text-(--icon-default)" />
                     </span>
                   </button>
                 ))}

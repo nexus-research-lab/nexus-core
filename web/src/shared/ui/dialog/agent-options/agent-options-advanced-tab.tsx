@@ -77,14 +77,14 @@ export function AgentOptionsAdvancedTab({
       <div className="space-y-3.5">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--text-soft)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-(--text-soft)">
               Runtime Policy
             </p>
-            <h3 className="mt-1 text-[15px] font-semibold text-[color:var(--text-strong)]">
+            <h3 className="mt-1 text-[15px] font-semibold text-(--text-strong)">
               权限控制
             </h3>
           </div>
-          <p className="max-w-[240px] text-right text-xs leading-5 text-[color:var(--text-soft)]">
+          <p className="max-w-[240px] text-right text-xs leading-5 text-(--text-soft)">
             这里决定 Agent 在执行命令、编辑文件和联网操作时的审批边界。
           </p>
         </div>
@@ -132,7 +132,7 @@ export function AgentOptionsAdvancedTab({
         {/* bypassPermissions 警告 */}
         {permissionMode === "bypassPermissions" &&
           allowedTools.length > 0 && (
-            <div className="radius-shell-md border border-[color:color-mix(in_srgb,var(--warning)_20%,transparent)] bg-[color:color-mix(in_srgb,var(--warning)_10%,transparent)] p-4 text-xs leading-relaxed text-[color:var(--warning)]">
+            <div className="radius-shell-md border border-[color:color-mix(in_srgb,var(--warning)_20%,transparent)] bg-[color:color-mix(in_srgb,var(--warning)_10%,transparent)] p-4 text-xs leading-relaxed text-(--warning)">
               `bypassPermissions` 会放行所有工具，`allowed_tools`
               只代表预授权集合，并不能限制其它工具。
               如果你想在全放行模式下屏蔽个别危险工具，请改用
@@ -144,21 +144,21 @@ export function AgentOptionsAdvancedTab({
       <div className="space-y-3.5">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--text-soft)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-(--text-soft)">
               Tool Access
             </p>
-            <h3 className="mt-1 text-[15px] font-semibold text-[color:var(--text-strong)]">
+            <h3 className="mt-1 text-[15px] font-semibold text-(--text-strong)">
               工具预授权
             </h3>
           </div>
-          <span className="text-[11px] text-[color:var(--text-soft)]">
+          <span className="text-[11px] text-(--text-soft)">
             已启用 {allowedTools.length} 个工具
           </span>
         </div>
 
         {/* 安全提示 */}
         <div className="radius-shell-md flex gap-3 border border-[color:color-mix(in_srgb,var(--warning)_20%,transparent)] bg-[color:color-mix(in_srgb,var(--warning)_10%,transparent)] p-3.5">
-          <div className="mt-0.5 text-[color:var(--warning)]">
+          <div className="mt-0.5 text-(--warning)">
             <svg
               width="16"
               height="16"

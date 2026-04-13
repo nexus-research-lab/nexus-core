@@ -207,7 +207,7 @@ export function EditorPanel({
             <div className="flex shrink-0 items-center gap-3">
               <button
                 disabled={!is_dirty || is_saving || is_external_writing}
-                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[color:var(--primary)] transition duration-[var(--motion-duration-fast)] hover:text-[color:color-mix(in_srgb,var(--primary)_86%,var(--foreground)_14%)] disabled:cursor-not-allowed disabled:opacity-[var(--disabled-opacity)]"
+                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-(--primary) transition duration-[var(--motion-duration-fast)] hover:text-[color:color-mix(in_srgb,var(--primary)_86%,var(--foreground)_14%)] disabled:cursor-not-allowed disabled:opacity-[var(--disabled-opacity)]"
                 onClick={() => void handle_save()}
                 type="button"
               >
@@ -216,7 +216,7 @@ export function EditorPanel({
               </button>
               <button
                 aria-label="关闭编辑器"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-[color:var(--icon-default)] transition duration-[var(--motion-duration-fast)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--icon-strong)]"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-(--icon-default) transition duration-[var(--motion-duration-fast)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-(--icon-strong)"
                 onClick={on_close}
                 type="button"
               >
@@ -238,7 +238,7 @@ export function EditorPanel({
               />
             ) : (
               <textarea
-                className="soft-scrollbar h-full w-full resize-none border-0 bg-transparent p-0 font-mono text-sm leading-6 text-[color:var(--text-default)] outline-none disabled:opacity-70"
+                className="soft-scrollbar h-full w-full resize-none border-0 bg-transparent p-0 font-mono text-sm leading-6 text-(--text-default) outline-none disabled:opacity-70"
                 disabled={is_loading}
                 onChange={(event) => setDraftContent(event.target.value)}
                 value={is_loading ? "加载中..." : draft_content}

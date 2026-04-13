@@ -63,7 +63,7 @@ export function IconPicker({
             {/* 清除按钮 */}
             {show_clear && value ? (
                 <button
-                    className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[color:var(--text-muted)] hover:text-[color:var(--text-default)] transition"
+                    className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-(--text-muted) hover:text-(--text-default) transition"
                     onClick={() => on_select("")}
                     type="button"
                     disabled={disabled}
@@ -93,7 +93,7 @@ export function IconPicker({
                                 ICON_SIZE_MAP[icon_size],
                                 layout === "row" && "shrink-0",
                                 is_selected
-                                    ? "bg-[color:color-mix(in_srgb,var(--primary)_12%,transparent)] border border-[color:var(--primary)] shadow-[0_0_0_1px_color-mix(in_srgb,var(--primary)_16%,transparent)]"
+                                    ? "bg-[color:color-mix(in_srgb,var(--primary)_12%,transparent)] border border-(--primary) shadow-[0_0_0_1px_color-mix(in_srgb,var(--primary)_16%,transparent)]"
                                     : "bg-[var(--surface-inset-background)] border border-[var(--surface-inset-border)] hover:bg-[var(--surface-card-background)] hover:-translate-y-[1px]",
                                 disabled && "cursor-not-allowed opacity-50",
                             )}

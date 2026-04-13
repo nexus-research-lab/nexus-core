@@ -45,7 +45,7 @@ export function MessageRailLabel({
   return (
     <div
       className={cn(
-        "flex min-w-0 items-center gap-2 text-[11px] font-medium text-[color:var(--text-muted)]",
+        "flex min-w-0 items-center gap-2 text-[11px] font-medium text-(--text-muted)",
         active && "text-primary",
         class_name,
       )}
@@ -63,7 +63,7 @@ export function MessageRailBody({
   class_name?: string;
 }) {
   return (
-    <div className={cn("min-w-0 max-w-full overflow-hidden break-words text-[11px] leading-[1.45] text-[color:var(--text-default)]", class_name)}>
+    <div className={cn("min-w-0 max-w-full overflow-hidden break-words text-[11px] leading-[1.45] text-(--text-default)", class_name)}>
       {children}
     </div>
   );
@@ -77,7 +77,7 @@ export function MessageCallout({
   class_name?: string;
 }) {
   return (
-    <div className={cn("rounded-[14px] border border-[var(--status-info-soft-border)] bg-[var(--status-info-soft-bg)] px-3.5 py-2.5 text-xs text-[color:var(--status-info-soft-text)]", class_name)}>
+    <div className={cn("rounded-[14px] border border-[var(--status-info-soft-border)] bg-[var(--status-info-soft-bg)] px-3.5 py-2.5 text-xs text-(--status-info-soft-text)", class_name)}>
       {children}
     </div>
   );
@@ -91,7 +91,7 @@ export function MessageCalloutTitle({
   class_name?: string;
 }) {
   return (
-    <div className={cn("font-semibold text-[color:var(--status-info-soft-text)]", class_name)}>
+    <div className={cn("font-semibold text-(--status-info-soft-text)", class_name)}>
       {children}
     </div>
   );
@@ -100,8 +100,8 @@ export function MessageCalloutTitle({
 type MessageResultTone = "success" | "error";
 
 const RESULT_TONE_CLASS_MAP: Record<MessageResultTone, string> = {
-  success: "text-[color:var(--success)]",
-  error: "text-[color:var(--destructive)]",
+  success: "text-(--success)",
+  error: "text-(--destructive)",
 };
 
 export function MessageResultLabel({

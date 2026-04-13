@@ -64,7 +64,7 @@ export function WorkspaceSurfaceHeader<TTabKey extends string>({
           {leading ? (
             <div
               className={cn(
-                "flex shrink-0 items-center justify-center rounded-full border border-[var(--surface-avatar-border)] bg-[var(--surface-avatar-background)] text-[color:var(--icon-default)] shadow-[var(--surface-avatar-shadow)]",
+                "flex shrink-0 items-center justify-center rounded-full border border-[var(--surface-avatar-border)] bg-[var(--surface-avatar-background)] text-(--icon-default) shadow-[var(--surface-avatar-shadow)]",
                 density === "compact" ? "h-8 w-8" : "h-10 w-10",
               )}
             >
@@ -75,17 +75,17 @@ export function WorkspaceSurfaceHeader<TTabKey extends string>({
           <div className="min-w-0 flex-1">
             <div className={cn("flex min-w-0 flex-wrap items-center", density === "compact" ? "gap-x-1.5 gap-y-0.5" : "gap-x-2 gap-y-1")}>
               <div className={cn(
-                "truncate font-black tracking-[-0.045em] text-[color:var(--text-strong)]",
+                "truncate font-black tracking-[-0.045em] text-(--text-strong)",
                 density === "compact" ? "text-[20px]" : "text-[21px]",
               )}>
                 {title}
               </div>
               {title_trailing ? (
-                <div className="min-w-0 shrink text-[color:var(--text-default)]">{title_trailing}</div>
+                <div className="min-w-0 shrink text-(--text-default)">{title_trailing}</div>
               ) : null}
             </div>
             {subtitle ? (
-              <div className="mt-1 text-[12px] text-[color:var(--text-soft)]">
+              <div className="mt-1 text-[12px] text-(--text-soft)">
                 {subtitle}
               </div>
             ) : null}
@@ -124,8 +124,8 @@ export function WorkspaceSurfaceHeader<TTabKey extends string>({
                   className={cn(
                     "inline-flex h-9 shrink-0 items-center gap-1.5 border-b-2 border-transparent px-0 py-0 text-[11px] font-semibold transition-[color,border-color] duration-[var(--motion-duration-fast)] ease-out",
                     is_active
-                      ? "border-[var(--surface-interactive-active-border)] text-[color:var(--text-strong)]"
-                      : "text-[color:var(--text-default)] hover:text-[color:var(--text-strong)]",
+                      ? "border-[var(--surface-interactive-active-border)] text-(--text-strong)"
+                      : "text-(--text-default) hover:text-(--text-strong)",
                     density === "compact" && "h-8 text-[10.5px]",
                   )}
                   onClick={() => on_change_tab?.(tab.key)}
@@ -158,8 +158,8 @@ export function WorkspaceSurfaceToolbarAction({
     <button
       className={cn(
         "inline-flex items-center gap-1.5 text-[11px] font-semibold transition duration-[var(--motion-duration-fast)] ease-out disabled:cursor-not-allowed disabled:opacity-[var(--disabled-opacity)]",
-        tone === "default" && "text-[color:var(--text-default)] hover:text-[color:var(--text-strong)]",
-        tone === "primary" && "text-[color:var(--primary)] hover:text-[color:color-mix(in_srgb,var(--primary)_86%,var(--foreground)_14%)]",
+        tone === "default" && "text-(--text-default) hover:text-(--text-strong)",
+        tone === "primary" && "text-(--primary) hover:text-[color:color-mix(in_srgb,var(--primary)_86%,var(--foreground)_14%)]",
       )}
       disabled={disabled}
       onClick={onClick}

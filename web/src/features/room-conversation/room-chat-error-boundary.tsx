@@ -31,8 +31,8 @@ export class RoomChatErrorBoundary extends Component<
       return (
         <div className="flex h-full min-h-80 items-center justify-center px-6 py-10">
           <div className="max-w-md rounded-3xl border border-[color:color-mix(in_srgb,var(--destructive)_24%,var(--divider-subtle-color))] bg-[var(--material-card-background)] p-6 text-center shadow-[0_24px_80px_var(--material-panel-shadow)]">
-            <p className="text-sm font-semibold text-[color:var(--text-strong)]">聊天面板渲染失败</p>
-            <p className="mt-2 text-sm leading-6 text-[color:var(--text-default)]">
+            <p className="text-sm font-semibold text-(--text-strong)">聊天面板渲染失败</p>
+            <p className="mt-2 text-sm leading-6 text-(--text-default)">
               当前会话在渲染阶段触发异常，错误详情已经输出到控制台。
             </p>
             <button

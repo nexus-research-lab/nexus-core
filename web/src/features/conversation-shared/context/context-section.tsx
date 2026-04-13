@@ -17,7 +17,7 @@ interface ContextSectionProps {
 export function ContextSection({ icon, title, trailing, children }: ContextSectionProps) {
   return (
     <section className="border-b divider-subtle px-4 py-4">
-      <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--text-soft)]">
+      <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-(--text-soft)">
         <div className="flex items-center gap-2">
           {icon}
           {title}

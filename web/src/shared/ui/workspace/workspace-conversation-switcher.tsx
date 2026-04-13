@@ -102,7 +102,7 @@ export function WorkspaceConversationSwitcher({
       <button
         aria-expanded={is_open}
         className={cn(
-          "flex max-w-[168px] items-center text-[color:var(--text-default)] transition-[background-color,border-color,color,transform] duration-[var(--motion-duration-fast)] ease-out",
+          "flex max-w-[168px] items-center text-(--text-default) transition-[background-color,border-color,color,transform] duration-[var(--motion-duration-fast)] ease-out",
           density === "compact" ? "h-6 gap-1 px-0 pb-0.5 text-[12px]" : "h-8 gap-1 rounded-full px-3 text-[12px]",
         )}
         style={trigger_style}
@@ -111,7 +111,7 @@ export function WorkspaceConversationSwitcher({
       >
         <span className={cn("truncate font-medium", density === "compact" ? "max-w-[120px]" : "max-w-[132px]")}>{current_title}</span>
         <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center">
-          <ChevronDown className={cn("h-3 w-3 text-[color:var(--icon-muted)] transition-transform duration-[var(--motion-duration-fast)]", is_open && "rotate-180 text-[color:var(--icon-default)]")} />
+          <ChevronDown className={cn("h-3 w-3 text-(--icon-muted) transition-transform duration-[var(--motion-duration-fast)]", is_open && "rotate-180 text-(--icon-default)")} />
         </span>
       </button>
 
@@ -136,8 +136,8 @@ export function WorkspaceConversationSwitcher({
                         className={cn(
                           "group flex w-full items-center gap-2.5 rounded-[14px] border px-3.5 py-2.5 text-left text-[11.5px] font-medium transition-[background-color,border-color,color,opacity] duration-[var(--motion-duration-fast)] ease-out",
                           is_active
-                            ? "bg-[var(--surface-interactive-active-background)] text-[color:var(--text-strong)] hover:brightness-[0.985]"
-                            : "border-transparent text-[color:var(--text-default)] hover:border-[var(--surface-interactive-hover-border)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--text-strong)]",
+                            ? "bg-[var(--surface-interactive-active-background)] text-(--text-strong) hover:brightness-[0.985]"
+                            : "border-transparent text-(--text-default) hover:border-[var(--surface-interactive-hover-border)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-(--text-strong)",
                         )}
                         onClick={() => {
                           on_select_conversation(conversation.conversation_id);
@@ -149,15 +149,15 @@ export function WorkspaceConversationSwitcher({
                           <Icon className={cn(
                             "h-3.5 w-3.5 transition-colors duration-[var(--motion-duration-fast)]",
                             is_active
-                              ? "text-[color:var(--icon-default)]"
-                              : "text-[color:var(--icon-muted)] group-hover:text-[color:var(--icon-default)]",
+                              ? "text-(--icon-default)"
+                              : "text-(--icon-muted) group-hover:text-(--icon-default)",
                           )} />
                         </span>
                         <span className="min-w-0 flex-1 truncate">
                           {conversation.title || t("room.untitled_conversation")}
                         </span>
                         <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center">
-                          <Check className={cn("h-3.5 w-3.5 text-[color:var(--success)] transition-opacity duration-[var(--motion-duration-fast)]", is_active ? "opacity-100" : "opacity-0")} />
+                          <Check className={cn("h-3.5 w-3.5 text-(--success) transition-opacity duration-[var(--motion-duration-fast)]", is_active ? "opacity-100" : "opacity-0")} />
                         </span>
                       </button>
                     );
@@ -171,14 +171,14 @@ export function WorkspaceConversationSwitcher({
                 {has_more_conversations && on_view_history ? (
                   <div className="p-1.5 pt-1">
                     <button
-                      className="flex w-full items-center gap-2.5 rounded-[14px] border border-transparent px-3.5 py-2.5 text-left text-[11.5px] font-medium text-[color:var(--text-default)] transition duration-[var(--motion-duration-fast)] ease-out hover:border-[var(--surface-interactive-hover-border)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--text-strong)]"
+                      className="flex w-full items-center gap-2.5 rounded-[14px] border border-transparent px-3.5 py-2.5 text-left text-[11.5px] font-medium text-(--text-default) transition duration-[var(--motion-duration-fast)] ease-out hover:border-[var(--surface-interactive-hover-border)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-(--text-strong)"
                       onClick={() => {
                         set_is_open(false);
                         on_view_history();
                       }}
                       type="button"
                     >
-                      <History className="h-3.5 w-3.5 shrink-0 text-[color:var(--icon-muted)]" />
+                      <History className="h-3.5 w-3.5 shrink-0 text-(--icon-muted)" />
                       <span className="min-w-0 flex-1">
                         {t("room.more_conversations")}
                       </span>
@@ -189,7 +189,7 @@ export function WorkspaceConversationSwitcher({
                 {on_create_conversation ? (
                   <div className="p-1.5 pt-1">
                     <button
-                      className="flex w-full items-center gap-2.5 rounded-[14px] border border-transparent px-3.5 py-2.5 text-left text-[11.5px] font-medium text-[color:var(--success)] transition-[background-color,border-color,color,opacity] duration-[var(--motion-duration-fast)] ease-out hover:border-[color:color-mix(in_srgb,var(--success)_15%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--success)_8%,transparent)] disabled:opacity-60"
+                      className="flex w-full items-center gap-2.5 rounded-[14px] border border-transparent px-3.5 py-2.5 text-left text-[11.5px] font-medium text-(--success) transition-[background-color,border-color,color,opacity] duration-[var(--motion-duration-fast)] ease-out hover:border-[color:color-mix(in_srgb,var(--success)_15%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--success)_8%,transparent)] disabled:opacity-60"
                       disabled={is_creating}
                       onClick={handle_create}
                       type="button"
@@ -203,7 +203,7 @@ export function WorkspaceConversationSwitcher({
                 ) : null}
               </>
             ) : (
-              <div className="px-3 py-2 text-[11px] text-[color:var(--text-soft)]">{t("room.no_conversations")}</div>
+              <div className="px-3 py-2 text-[11px] text-(--text-soft)">{t("room.no_conversations")}</div>
             )}
           </div>
         </>

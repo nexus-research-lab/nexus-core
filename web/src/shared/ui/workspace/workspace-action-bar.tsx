@@ -49,9 +49,9 @@ export function WorkspaceActionCard({
       type="button"
     >
       {icon}
-      <p className="mt-3 text-sm font-semibold text-[color:var(--text-strong)]">{title}</p>
+      <p className="mt-3 text-sm font-semibold text-(--text-strong)">{title}</p>
       {description ? (
-        <p className="mt-1 text-xs leading-5 text-[color:var(--text-soft)]">
+        <p className="mt-1 text-xs leading-5 text-(--text-soft)">
           {description}
         </p>
       ) : null}

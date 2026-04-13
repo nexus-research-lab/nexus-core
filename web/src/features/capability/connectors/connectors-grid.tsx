@@ -15,7 +15,7 @@ interface ConnectorsGridProps {
 export function ConnectorsGrid({ ctrl }: ConnectorsGridProps) {
   if (ctrl.loading) {
     return (
-      <div className="flex min-h-40 items-center justify-center text-sm text-[color:var(--text-muted)]">
+      <div className="flex min-h-40 items-center justify-center text-sm text-(--text-muted)">
         加载中…
       </div>
     );
@@ -23,7 +23,7 @@ export function ConnectorsGrid({ ctrl }: ConnectorsGridProps) {
 
   if (ctrl.connectors.length === 0) {
     return (
-      <div className="flex min-h-60 flex-col items-center justify-center gap-3 text-[color:var(--text-muted)]">
+      <div className="flex min-h-60 flex-col items-center justify-center gap-3 text-(--text-muted)">
         <div className="flex h-14 w-14 items-center justify-center rounded-full border border-[var(--divider-subtle-color)] bg-[var(--surface-inset-background)]">
           <Link2 className="h-6 w-6" />
         </div>
@@ -55,8 +55,8 @@ export function ConnectorsGrid({ ctrl }: ConnectorsGridProps) {
       {coming_soon.length > 0 && (
         <Fragment>
           <div className="mb-3 flex items-center gap-2.5">
-            <h2 className="text-[15px] font-bold tracking-[-0.02em] text-[color:var(--text-strong)]">即将推出</h2>
-            <span className="text-[11px] font-medium text-[color:var(--text-soft)]">
+            <h2 className="text-[15px] font-bold tracking-[-0.02em] text-(--text-strong)">即将推出</h2>
+            <span className="text-[11px] font-medium text-(--text-soft)">
               {coming_soon.length} 个
             </span>
           </div>

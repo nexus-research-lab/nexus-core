@@ -120,7 +120,7 @@ export function AgentOptionsSkillsTab({
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-semibold text-[color:var(--text-strong)]">
+              <span className="text-sm font-semibold text-(--text-strong)">
                 {skill.title || skill.name}
               </span>
               {skill.locked ? (
@@ -136,7 +136,7 @@ export function AgentOptionsSkillsTab({
               ) : null}
             </div>
             {skill.description ? (
-              <p className="mt-2 line-clamp-1 text-sm leading-6 text-[color:var(--text-muted)]">
+              <p className="mt-2 line-clamp-1 text-sm leading-6 text-(--text-muted)">
                 {skill.description}
               </p>
             ) : null}
@@ -164,10 +164,10 @@ export function AgentOptionsSkillsTab({
   return (
     <div className="space-y-5 animate-in slide-in-from-right-4 duration-300">
       <div className="flex items-center justify-between gap-4">
-        <h3 className="text-[18px] font-semibold tracking-tight text-[color:var(--text-strong)]">
+        <h3 className="text-[18px] font-semibold tracking-tight text-(--text-strong)">
           {installedCount} skills
         </h3>
-        <span className="text-sm text-[color:var(--text-soft)]">{skills.length} total</span>
+        <span className="text-sm text-(--text-soft)">{skills.length} total</span>
       </div>
 
       {errorMessage ? (
@@ -177,13 +177,13 @@ export function AgentOptionsSkillsTab({
       ) : null}
 
       {loading ? (
-        <div className="surface-card radius-shell-md flex items-center justify-center py-12 text-[color:var(--text-soft)]">
+        <div className="surface-card radius-shell-md flex items-center justify-center py-12 text-(--text-soft)">
           <Loader2 className="h-4 w-4 animate-spin" />
         </div>
       ) : null}
 
       {!agent_id ? (
-        <div className="surface-card radius-shell-md px-5 py-6 text-sm text-[color:var(--text-muted)]">
+        <div className="surface-card radius-shell-md px-5 py-6 text-sm text-(--text-muted)">
           创建后可安装 skill。
         </div>
       ) : null}
@@ -192,12 +192,12 @@ export function AgentOptionsSkillsTab({
         <>
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-4">
-              <h4 className="text-sm font-semibold text-[color:var(--text-strong)]">已安装</h4>
-              <span className="text-xs text-[color:var(--text-soft)]">{installedSkills.length}</span>
+              <h4 className="text-sm font-semibold text-(--text-strong)">已安装</h4>
+              <span className="text-xs text-(--text-soft)">{installedSkills.length}</span>
             </div>
 
             {installedSkills.length === 0 ? (
-              <div className="surface-card radius-shell-md px-5 py-6 text-sm text-[color:var(--text-muted)]">
+              <div className="surface-card radius-shell-md px-5 py-6 text-sm text-(--text-muted)">
                 暂无已安装 skill。
               </div>
             ) : (
@@ -209,33 +209,33 @@ export function AgentOptionsSkillsTab({
 
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-4">
-              <h4 className="text-sm font-semibold text-[color:var(--text-strong)]">添加技能</h4>
-              <span className="text-xs text-[color:var(--text-soft)]">
+              <h4 className="text-sm font-semibold text-(--text-strong)">添加技能</h4>
+              <span className="text-xs text-(--text-soft)">
                 {filteredAddableSkills.length}/{addableSkills.length}
               </span>
             </div>
 
             <div className="surface-card radius-shell-md p-4">
               <div className="dialog-input flex items-center gap-3 rounded-[18px] px-4 py-3">
-                <Search className="h-4 w-4 text-[color:var(--text-soft)]" />
+                <Search className="h-4 w-4 text-(--text-soft)" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="搜索 skill"
-                  className="w-full bg-transparent text-sm text-[color:var(--text-strong)] outline-none placeholder:text-[color:var(--text-soft)]"
+                  className="w-full bg-transparent text-sm text-(--text-strong) outline-none placeholder:text-(--text-soft)"
                 />
               </div>
             </div>
 
             {skills.length === 0 ? (
-              <div className="surface-card radius-shell-md px-5 py-6 text-sm text-[color:var(--text-muted)]">
+              <div className="surface-card radius-shell-md px-5 py-6 text-sm text-(--text-muted)">
                 当前没有可用 skill。
               </div>
             ) : null}
 
             {skills.length > 0 && filteredAddableSkills.length === 0 ? (
-              <div className="surface-card radius-shell-md px-5 py-6 text-sm text-[color:var(--text-muted)]">
+              <div className="surface-card radius-shell-md px-5 py-6 text-sm text-(--text-muted)">
                 {addableSkills.length === 0
                   ? "没有更多可添加 skill。"
                   : "没有匹配的 skill。"}

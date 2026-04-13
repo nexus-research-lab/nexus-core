@@ -84,7 +84,7 @@ export function RoomMemberPickerDialog({
                     onClick={() => on_select(agent.agent_id)}
                     type="button"
                   >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--surface-avatar-border)] bg-[var(--surface-avatar-background)] text-[11px] font-bold text-[color:var(--text-strong)] shadow-[var(--surface-avatar-shadow)]">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--surface-avatar-border)] bg-[var(--surface-avatar-background)] text-[11px] font-bold text-(--text-strong) shadow-[var(--surface-avatar-shadow)]">
                       {getIconAvatarSrc(agent.avatar) ? (
                         <img
                           alt={agent.name}
@@ -96,10 +96,10 @@ export function RoomMemberPickerDialog({
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-[color:var(--text-strong)]">
+                      <p className="truncate text-sm font-semibold text-(--text-strong)">
                         {agent.name}
                       </p>
-                      <p className="truncate text-[11px] text-[color:var(--text-soft)]">
+                      <p className="truncate text-[11px] text-(--text-soft)">
                         {t("room.add_member_dialog_hint")}
                       </p>
                     </div>

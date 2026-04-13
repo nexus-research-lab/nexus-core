@@ -82,18 +82,18 @@ export function RoomConversationHistoryView({
         </div>
       ) : (
         <div className="rounded-[24px] border border-[var(--divider-subtle-color)] px-6 py-10 text-center">
-          <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-[var(--surface-avatar-border)] bg-[var(--surface-avatar-background)] text-[color:var(--icon-default)] shadow-[var(--surface-avatar-shadow)]">
+          <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-[var(--surface-avatar-border)] bg-[var(--surface-avatar-background)] text-(--icon-default) shadow-[var(--surface-avatar-shadow)]">
             <Clock3 className="h-4 w-4" />
           </div>
-          <p className="mt-4 text-[15px] font-semibold text-[color:var(--text-strong)]">
+          <p className="mt-4 text-[15px] font-semibold text-(--text-strong)">
             {t("room.no_conversations")}
           </p>
-          <p className="mt-1 text-[12px] leading-6 text-[color:var(--text-soft)]">
+          <p className="mt-1 text-[12px] leading-6 text-(--text-soft)">
             {t("room.history_empty_hint")}
           </p>
           {can_manage_conversations ? (
             <button
-              className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[color:var(--primary)] transition duration-[var(--motion-duration-fast)] ease-out hover:text-[color:color-mix(in_srgb,var(--primary)_84%,var(--foreground)_16%)]"
+              className="mt-4 inline-flex items-center gap-1.5 text-[12px] font-semibold text-(--primary) transition duration-[var(--motion-duration-fast)] ease-out hover:text-[color:color-mix(in_srgb,var(--primary)_84%,var(--foreground)_16%)]"
               onClick={() => {
                 void on_create_conversation();
               }}
@@ -177,7 +177,7 @@ function ConversationHistoryItem({
             <div className="flex items-center gap-1.5">
               <input
                 autoFocus
-                className="min-w-0 flex-1 rounded-[12px] border border-[color:var(--input-shell-border)] bg-transparent px-3 py-2 text-[13px] font-semibold text-[color:var(--text-strong)] outline-none transition focus:border-[var(--surface-interactive-active-border)]"
+                className="min-w-0 flex-1 rounded-[12px] border border-(--input-shell-border) bg-transparent px-3 py-2 text-[13px] font-semibold text-(--text-strong) outline-none transition focus:border-[var(--surface-interactive-active-border)]"
                 maxLength={64}
                 onChange={(e) => set_edit_value(e.target.value)}
                 onKeyDown={(e) => {
@@ -188,7 +188,7 @@ function ConversationHistoryItem({
               />
               <button
                 aria-label="确认"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-[color:var(--primary)] transition duration-[var(--motion-duration-fast)] hover:bg-[var(--surface-interactive-hover-background)]"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-(--primary) transition duration-[var(--motion-duration-fast)] hover:bg-[var(--surface-interactive-hover-background)]"
                 onClick={confirm_edit}
                 type="button"
               >
@@ -196,7 +196,7 @@ function ConversationHistoryItem({
               </button>
               <button
                 aria-label="取消"
-                className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-[color:var(--icon-default)] transition duration-[var(--motion-duration-fast)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--icon-strong)]"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-(--icon-default) transition duration-[var(--motion-duration-fast)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-(--icon-strong)"
                 onClick={cancel_edit}
                 type="button"
               >
@@ -211,10 +211,10 @@ function ConversationHistoryItem({
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate text-[14px] font-semibold text-[color:var(--text-strong)]">
+                  <p className="truncate text-[14px] font-semibold text-(--text-strong)">
                     {conversation.title?.trim() || t("room.untitled_conversation")}
                   </p>
-                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[color:var(--text-soft)]">
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-(--text-soft)">
                     <span className="inline-flex items-center gap-1.5">
                       <Clock3 className="h-3.5 w-3.5 shrink-0" />
                       <span>{formatRelativeTime(conversation.last_activity_at)}</span>
@@ -226,7 +226,7 @@ function ConversationHistoryItem({
                   </div>
                 </div>
                 {is_active ? (
-                  <span className="mt-0.5 inline-flex shrink-0 items-center rounded-full border border-[color:color-mix(in_srgb,var(--primary)_24%,transparent)] px-2 py-0.5 text-[10px] font-semibold text-[color:var(--primary)]">
+                  <span className="mt-0.5 inline-flex shrink-0 items-center rounded-full border border-[color:color-mix(in_srgb,var(--primary)_24%,transparent)] px-2 py-0.5 text-[10px] font-semibold text-(--primary)">
                     {t("room.current_conversation")}
                   </span>
                 ) : null}
@@ -235,7 +235,7 @@ function ConversationHistoryItem({
           )}
 
           {is_editing ? (
-            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[color:var(--text-soft)]">
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-(--text-soft)">
               <span className="inline-flex items-center gap-1.5">
                 <Clock3 className="h-3.5 w-3.5 shrink-0" />
                 <span>{formatRelativeTime(conversation.last_activity_at)}</span>
@@ -253,7 +253,7 @@ function ConversationHistoryItem({
             <button
               aria-label="重命名"
               className={cn(
-                "inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-[color:var(--icon-default)] transition duration-[var(--motion-duration-fast)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--icon-strong)]",
+                "inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-(--icon-default) transition duration-[var(--motion-duration-fast)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-(--icon-strong)",
                 is_active ? "opacity-100" : "opacity-0 group-hover:opacity-100",
               )}
               onClick={start_edit}
@@ -268,7 +268,7 @@ function ConversationHistoryItem({
               <button
                 aria-label="删除对话"
                 className={cn(
-                  "inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-[color:var(--destructive)] transition duration-[var(--motion-duration-fast)] hover:bg-[color:color-mix(in_srgb,var(--destructive)_8%,transparent)]",
+                  "inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-(--destructive) transition duration-[var(--motion-duration-fast)] hover:bg-[color:color-mix(in_srgb,var(--destructive)_8%,transparent)]",
                   is_active ? "opacity-100" : "opacity-0 group-hover:opacity-100",
                 )}
                 onClick={on_delete}
@@ -289,7 +289,7 @@ function ConversationHistoryItem({
                 {delete_state.reason ? (
                   <div
                     className={cn(
-                      "pointer-events-none absolute bottom-full right-0 z-10 mb-2 w-max max-w-52 rounded-xl border px-2.5 py-1.5 text-[11px] leading-5 text-[color:var(--text-strong)] shadow-lg",
+                      "pointer-events-none absolute bottom-full right-0 z-10 mb-2 w-max max-w-52 rounded-xl border px-2.5 py-1.5 text-[11px] leading-5 text-(--text-strong) shadow-lg",
                       "whitespace-normal break-words",
                       "translate-y-1 opacity-0 transition duration-[var(--motion-duration-fast)] ease-out group-hover/delete-hint:translate-y-0 group-hover/delete-hint:opacity-100",
                     )}

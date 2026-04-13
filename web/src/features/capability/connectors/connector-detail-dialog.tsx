@@ -42,7 +42,7 @@ export function ConnectorDetailDialog({
     [on_close],
   );
 
-  const colors = detail ? getConnectorColors(detail.icon) : { bg: "bg-[var(--surface-panel-subtle-background)]", text: "text-[color:var(--text-muted)]" };
+  const colors = detail ? getConnectorColors(detail.icon) : { bg: "bg-[var(--surface-panel-subtle-background)]", text: "text-(--text-muted)" };
   const letter = detail ? getConnectorLetter(detail.icon, detail.title) : "?";
   const is_connected = detail?.connection_state === "connected";
   const is_coming_soon = detail?.status === "coming_soon";
@@ -69,17 +69,17 @@ export function ConnectorDetailDialog({
               {letter}
             </div>
             <div className="min-w-0 flex-1">
-            {loading ? (
-              <div className="h-5 w-32 animate-pulse rounded bg-[var(--surface-panel-subtle-background)]" />
-            ) : (
-              <>
-                <h2 className="dialog-title" data-size="hero">
-                  {detail?.title}
-                </h2>
-                <p className="dialog-subtitle">{detail?.description}</p>
-              </>
-            )}
-          </div>
+              {loading ? (
+                <div className="h-5 w-32 animate-pulse rounded bg-[var(--surface-panel-subtle-background)]" />
+              ) : (
+                <>
+                  <h2 className="dialog-title" data-size="hero">
+                    {detail?.title}
+                  </h2>
+                  <p className="dialog-subtitle">{detail?.description}</p>
+                </>
+              )}
+            </div>
           </div>
           <button
             className={DIALOG_ICON_BUTTON_CLASS_NAME}
@@ -93,7 +93,7 @@ export function ConnectorDetailDialog({
 
         <div className="dialog-body dialog-body--scroll soft-scrollbar flex-1">
           {loading ? (
-            <div className="flex min-h-32 items-center justify-center text-sm text-[color:var(--text-soft)]">
+            <div className="flex min-h-32 items-center justify-center text-sm text-(--text-soft)">
               加载中…
             </div>
           ) : detail ? (
@@ -127,12 +127,12 @@ export function ConnectorDetailDialog({
 
               {detail.features.length > 0 && (
                 <div>
-                  <h3 className="mb-2 text-[13px] font-semibold text-[color:var(--text-default)]">支持的功能</h3>
+                  <h3 className="mb-2 text-[13px] font-semibold text-(--text-default)">支持的功能</h3>
                   <div className="grid grid-cols-2 gap-2">
                     {detail.features.map((f) => (
                       <div
                         key={f}
-                        className="surface-card flex items-center gap-2 rounded-xl px-3 py-2 text-[12px] text-[color:var(--text-muted)]"
+                        className="surface-card flex items-center gap-2 rounded-xl px-3 py-2 text-[12px] text-(--text-muted)"
                       >
                         <Check className="h-3 w-3 shrink-0 text-emerald-500" />
                         {f}
@@ -144,11 +144,11 @@ export function ConnectorDetailDialog({
 
               {!is_coming_soon && (
                 <div className={getDialogNoteClassName("default")} style={getDialogNoteStyle("default")}>
-                  <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-default)]">
+                  <div className="flex items-center gap-2 text-[13px] font-medium text-(--text-default)">
                     <Shield className="h-4 w-4" />
                     安全授权
                   </div>
-                  <p className="mt-1 text-[12px] leading-relaxed text-[color:var(--text-muted)]">
+                  <p className="mt-1 text-[12px] leading-relaxed text-(--text-muted)">
                     连接后，Agent 将通过安全的 MCP 协议访问此应用。你可以随时断开连接并撤销授权。
                   </p>
                 </div>

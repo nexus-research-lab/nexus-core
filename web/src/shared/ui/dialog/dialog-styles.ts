@@ -27,16 +27,16 @@ export const DIALOG_POPOVER_CLASS_NAME =
   "surface-popover radius-shell-lg overflow-hidden";
 
 export const DIALOG_HEADER_ICON_CLASS_NAME =
-  "dialog-card flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-[color:var(--text-strong)]";
+  "dialog-card flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-(--text-strong)";
 
 export const DIALOG_ICON_BUTTON_CLASS_NAME =
-  "inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-[color:var(--icon-default)] transition duration-[var(--motion-duration-fast)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--icon-strong)]";
+  "inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-(--icon-default) transition duration-[var(--motion-duration-fast)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-(--icon-strong)";
 
 export const DIALOG_EMPTY_CLASS_NAME =
-  "surface-inset flex items-center justify-center rounded-[20px] px-4 py-4 text-[13px] text-[color:var(--text-muted)]";
+  "surface-inset flex items-center justify-center rounded-[20px] px-4 py-4 text-[13px] text-(--text-muted)";
 
 export const DIALOG_TAG_CLASS_NAME =
-  "chip-default inline-flex items-center gap-1 rounded-full px-[0.7rem] py-[0.3rem] text-[11px] font-semibold text-[color:var(--text-muted)]";
+  "chip-default inline-flex items-center gap-1 rounded-full px-[0.7rem] py-[0.3rem] text-[11px] font-semibold text-(--text-muted)";
 
 export function getDialogActionClassName(
   tone: "default" | "primary" | "danger",
@@ -44,9 +44,9 @@ export function getDialogActionClassName(
 ): string {
   return cn(
     "inline-flex items-center justify-center gap-1.5 rounded-[12px] px-4 py-2.5 text-sm font-semibold transition duration-[var(--motion-duration-fast)] disabled:cursor-not-allowed disabled:opacity-[var(--disabled-opacity)]",
-    tone === "default" && "text-[color:var(--text-default)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--text-strong)]",
-    tone === "primary" && "border border-[color:color-mix(in_srgb,var(--primary)_26%,var(--divider-subtle-color))] bg-[color:color-mix(in_srgb,var(--primary)_12%,transparent)] text-[color:var(--primary)] hover:bg-[color:color-mix(in_srgb,var(--primary)_18%,transparent)]",
-    tone === "danger" && "border border-[color:color-mix(in_srgb,var(--destructive)_24%,var(--divider-subtle-color))] bg-[color:color-mix(in_srgb,var(--destructive)_10%,transparent)] text-[color:var(--destructive)] hover:bg-[color:color-mix(in_srgb,var(--destructive)_14%,transparent)]",
+    tone === "default" && "text-(--text-default) hover:bg-[var(--surface-interactive-hover-background)] hover:text-(--text-strong)",
+    tone === "primary" && "border border-[color:color-mix(in_srgb,var(--primary)_26%,var(--divider-subtle-color))] bg-[color:color-mix(in_srgb,var(--primary)_12%,transparent)] text-(--primary) hover:bg-[color:color-mix(in_srgb,var(--primary)_18%,transparent)]",
+    tone === "danger" && "border border-[color:color-mix(in_srgb,var(--destructive)_24%,var(--divider-subtle-color))] bg-[color:color-mix(in_srgb,var(--destructive)_10%,transparent)] text-(--destructive) hover:bg-[color:color-mix(in_srgb,var(--destructive)_14%,transparent)]",
     class_name,
   );
 }
@@ -55,8 +55,8 @@ export function getDialogNoteClassName(tone: "default" | "danger", class_name?: 
   return cn(
     "rounded-[18px] px-4 py-[0.95rem] text-[13px] leading-[1.65]",
     tone === "default"
-      ? "surface-card text-[color:var(--text-default)]"
-      : "border text-[color:var(--text-default)]",
+      ? "surface-card text-(--text-default)"
+      : "border text-(--text-default)",
     class_name,
   );
 }
@@ -78,7 +78,7 @@ export function getDialogChoiceClassName(is_active: boolean, class_name?: string
     "inline-flex items-center justify-center gap-1.5 rounded-[12px] border px-3 py-2 text-[12px] font-semibold transition-[background,color,border-color] duration-[var(--motion-duration-normal)] ease-out",
     is_active
       ? "text-[var(--primary)]"
-      : "border-[var(--divider-subtle-color)] text-[color:var(--text-muted)] hover:border-[var(--surface-interactive-hover-border)] hover:text-[color:var(--text-strong)]",
+      : "border-[var(--divider-subtle-color)] text-(--text-muted) hover:border-[var(--surface-interactive-hover-border)] hover:text-(--text-strong)",
     class_name,
   );
 }

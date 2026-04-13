@@ -143,20 +143,20 @@ function AgentStatusCardInner({
       tabIndex={0}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") on_click_thread(); }}
     >
-      <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--divider-subtle-color)] bg-[var(--surface-inset-background)] text-[color:var(--icon-default)]">
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--divider-subtle-color)] bg-[var(--surface-inset-background)] text-(--icon-default)">
         <Bot className="h-4 w-4" />
       </div>
 
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="shrink-0 text-sm font-bold text-[color:var(--text-strong)]">{agent_name}</span>
+          <span className="shrink-0 text-sm font-bold text-(--text-strong)">{agent_name}</span>
           {(status === "pending" || status === "streaming") && !is_waiting_permission ? (
             <Loader2 className="h-3 w-3 shrink-0 animate-spin text-primary" />
           ) : null}
-          <span className="hidden shrink-0 text-xs text-[color:var(--text-muted)] sm:inline">
+          <span className="hidden shrink-0 text-xs text-(--text-muted) sm:inline">
             {timestamp ? formatTime(timestamp) : "--:--"}
           </span>
-          {model ? <span className="min-w-0 truncate text-xs text-[color:var(--text-soft)]">{model}</span> : null}
+          {model ? <span className="min-w-0 truncate text-xs text-(--text-soft)">{model}</span> : null}
           <div className="min-w-0 flex-1" />
 
           <button
@@ -165,8 +165,8 @@ function AgentStatusCardInner({
             className={cn(
               "rounded-md border px-2 py-1 text-[11px] font-medium transition-colors",
               is_thread_active
-                ? "border-[var(--status-info-soft-border)] bg-[var(--status-info-soft-bg)] text-[color:var(--status-info-soft-text)]"
-                : "border-[var(--divider-subtle-color)] bg-[var(--material-chip-background)] text-[color:var(--text-muted)] hover:bg-[var(--interaction-hover-background)] hover:text-[color:var(--text-default)]",
+                ? "border-[var(--status-info-soft-border)] bg-[var(--status-info-soft-bg)] text-(--status-info-soft-text)"
+                : "border-[var(--divider-subtle-color)] bg-[var(--material-chip-background)] text-(--text-muted) hover:bg-[var(--interaction-hover-background)] hover:text-(--text-default)",
             )}
           >
             {is_thread_active ? "关闭 Thread" : "查看 Thread"}
@@ -180,7 +180,7 @@ function AgentStatusCardInner({
                 disabled={!can_respond_to_permissions}
                 title={!can_respond_to_permissions ? permission_read_only_reason : undefined}
                 className={cn(
-                  "rounded-md border border-[var(--divider-subtle-color)] bg-[var(--material-chip-background)] px-2 py-1 text-[11px] font-medium text-[color:var(--text-default)] transition-colors",
+                  "rounded-md border border-[var(--divider-subtle-color)] bg-[var(--material-chip-background)] px-2 py-1 text-[11px] font-medium text-(--text-default) transition-colors",
                   can_respond_to_permissions
                     ? "hover:bg-[var(--interaction-hover-background)]"
                     : "cursor-not-allowed opacity-[var(--disabled-opacity)]",
@@ -209,7 +209,7 @@ function AgentStatusCardInner({
             <button
               type="button"
               onClick={handle_stop}
-              className="flex h-6 items-center gap-1 rounded px-1.5 text-xs text-[color:var(--icon-muted)] transition-colors hover:bg-[var(--interaction-hover-background)] hover:text-[color:var(--icon-default)]"
+              className="flex h-6 items-center gap-1 rounded px-1.5 text-xs text-(--icon-muted) transition-colors hover:bg-[var(--interaction-hover-background)] hover:text-(--icon-default)"
             >
               <Square className="h-3 w-3 fill-current" />
             </button>
@@ -221,19 +221,19 @@ function AgentStatusCardInner({
             <MarkdownRendererContent
               content={preview}
               variant="summary"
-              class_name="line-clamp-1 text-[color:var(--text-strong)]"
+              class_name="line-clamp-1 text-(--text-strong)"
             />
           ) : (
             <p
               className={cn(
                 "truncate text-[15px] leading-7",
                 status === "error"
-                  ? "text-[color:var(--destructive)]"
+                  ? "text-(--destructive)"
                   : status === "cancelled"
-                    ? "text-[color:var(--text-soft)] italic"
+                    ? "text-(--text-soft) italic"
                     : is_waiting_permission
-                      ? "text-[color:var(--text-default)]"
-                      : "text-[color:var(--text-strong)]",
+                      ? "text-(--text-default)"
+                      : "text-(--text-strong)",
               )}
             >
               {summary_text}

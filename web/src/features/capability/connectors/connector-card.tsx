@@ -81,7 +81,7 @@ export function ConnectorCard({
             <WorkspaceCatalogTitle class_name="min-w-0" size="sm" truncate>
               {title}
             </WorkspaceCatalogTitle>
-            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[color:var(--text-soft)]">
+            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-(--text-soft)">
               <span>{category}</span>
               {is_coming_soon ? <span>即将推出</span> : null}
             </div>
@@ -96,7 +96,7 @@ export function ConnectorCard({
       </WorkspaceCatalogBody>
 
       <WorkspaceCatalogFooter>
-        <div className="min-w-0 text-[11px] text-[color:var(--text-soft)]">
+        <div className="min-w-0 text-[11px] text-(--text-soft)">
           {auth_label}
         </div>
 

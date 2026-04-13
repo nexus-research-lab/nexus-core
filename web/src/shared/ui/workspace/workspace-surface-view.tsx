@@ -34,10 +34,10 @@ export function WorkspaceSurfaceView({
         <div className="border-b divider-subtle px-5 py-3 xl:px-6">
           <div className={cn("mx-auto flex w-full items-center justify-between gap-3", max_width_class_name)}>
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--text-soft)]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-(--text-soft)">
                 {eyebrow}
               </p>
-              <h2 className="mt-1 truncate text-[17px] font-black tracking-[-0.045em] text-[color:var(--text-strong)]">
+              <h2 className="mt-1 truncate text-[17px] font-black tracking-[-0.045em] text-(--text-strong)">
                 {title}
               </h2>
             </div>

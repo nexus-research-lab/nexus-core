@@ -51,8 +51,8 @@ export function SkillsSearchBar({ ctrl }: SkillsSearchBarProps) {
                 className={cn(
                   "inline-flex h-8 shrink-0 items-center border-b-2 border-transparent px-0 py-1 text-[11px] font-semibold transition-[color,border-color] duration-[var(--motion-duration-fast)]",
                   is_active
-                    ? "border-[var(--surface-interactive-active-border)] text-[color:var(--text-strong)]"
-                    : "text-[color:var(--text-default)] hover:text-[color:var(--text-strong)]",
+                    ? "border-[var(--surface-interactive-active-border)] text-(--text-strong)"
+                    : "text-(--text-default) hover:text-(--text-strong)",
                 )}
                 onClick={() => ctrl.set_active_category(category.key)}
                 type="button"

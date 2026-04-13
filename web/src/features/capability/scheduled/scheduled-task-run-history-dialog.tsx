@@ -161,7 +161,7 @@ export function ScheduledTaskRunHistoryDialog({
           </div>
           <div className="flex items-center gap-2">
             <button
-              className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[color:var(--text-default)] transition duration-[var(--motion-duration-fast)] hover:text-[color:var(--text-strong)]"
+              className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-(--text-default) transition duration-[var(--motion-duration-fast)] hover:text-(--text-strong)"
               onClick={() => void handle_refresh()}
               type="button"
             >
@@ -170,7 +170,7 @@ export function ScheduledTaskRunHistoryDialog({
             </button>
             <button
               aria-label="关闭"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-[color:var(--icon-default)] transition duration-[var(--motion-duration-fast)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--icon-strong)]"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] text-(--icon-default) transition duration-[var(--motion-duration-fast)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-(--icon-strong)"
               onClick={on_close}
               type="button"
             >
@@ -191,20 +191,20 @@ export function ScheduledTaskRunHistoryDialog({
             </div>
           ) : error_message ? (
             <div className="flex min-h-[320px] flex-col items-center justify-center rounded-[18px] border border-[color:color-mix(in_srgb,var(--destructive)_15%,transparent)] px-5 text-center">
-              <p className="text-sm font-semibold text-[color:var(--destructive)]">运行历史加载失败</p>
-              <p className="mt-2 max-w-md text-sm leading-6 text-[color:var(--text-default)]">
+              <p className="text-sm font-semibold text-(--destructive)">运行历史加载失败</p>
+              <p className="mt-2 max-w-md text-sm leading-6 text-(--text-default)">
                 {error_message}
               </p>
             </div>
           ) : runs.length === 0 ? (
             <div className="flex min-h-[320px] flex-col items-center justify-center rounded-[18px] border border-dashed border-[var(--divider-subtle-color)] px-5 text-center">
               <div className="flex h-14 w-14 items-center justify-center rounded-[16px] border border-[var(--divider-subtle-color)]">
-                <History className="h-6 w-6 text-[color:var(--icon-strong)]" />
+                <History className="h-6 w-6 text-(--icon-strong)" />
               </div>
-              <h4 className="mt-5 text-lg font-bold tracking-[-0.03em] text-[color:var(--text-strong)]">
+              <h4 className="mt-5 text-lg font-bold tracking-[-0.03em] text-(--text-strong)">
                 还没有运行记录
               </h4>
-              <p className="mt-2 max-w-sm text-sm leading-6 text-[color:var(--text-default)]">
+              <p className="mt-2 max-w-sm text-sm leading-6 text-(--text-default)">
                 手动执行或等调度器首次触发后，这里会显示每次运行的状态、耗时和错误信息。
               </p>
             </div>
@@ -221,38 +221,38 @@ export function ScheduledTaskRunHistoryDialog({
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <WorkspaceStatusBadge label={status.label} size="compact" tone={status.tone} />
-                          <span className="text-xs font-medium text-[color:var(--text-default)]">
+                          <span className="text-xs font-medium text-(--text-default)">
                             Run ID {run.run_id}
                           </span>
                         </div>
-                        <div className="mt-3 grid gap-3 text-sm text-[color:var(--text-default)] md:grid-cols-2">
+                        <div className="mt-3 grid gap-3 text-sm text-(--text-default) md:grid-cols-2">
                           <div>
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-(--text-muted)">
                               调度时间
                             </p>
-                            <p className="mt-1.5 font-medium text-[color:var(--text-strong)]">
+                            <p className="mt-1.5 font-medium text-(--text-strong)">
                               {format_datetime(run.scheduled_for)}
                             </p>
                           </div>
                           <div>
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-(--text-muted)">
                               执行耗时
                             </p>
-                            <p className="mt-1.5 font-medium text-[color:var(--text-strong)]">
+                            <p className="mt-1.5 font-medium text-(--text-strong)">
                               {format_duration(run.started_at, run.finished_at)}
                             </p>
                           </div>
                         </div>
                       </div>
 
-                      <div className="shrink-0 text-right text-sm text-[color:var(--text-default)]">
+                      <div className="shrink-0 text-right text-sm text-(--text-default)">
                         <p>开始 {format_datetime(run.started_at)}</p>
                         <p className="mt-1">结束 {format_datetime(run.finished_at)}</p>
                         <p className="mt-1">尝试次数 {run.attempts}</p>
                       </div>
                     </div>
                     {run.error_message ? (
-                      <div className="mt-3 rounded-[14px] border border-[color:color-mix(in_srgb,var(--destructive)_15%,transparent)] px-3 py-2.5 text-sm text-[color:var(--destructive)]">
+                      <div className="mt-3 rounded-[14px] border border-[color:color-mix(in_srgb,var(--destructive)_15%,transparent)] px-3 py-2.5 text-sm text-(--destructive)">
                         {run.error_message}
                       </div>
                     ) : null}

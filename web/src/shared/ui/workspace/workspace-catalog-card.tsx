@@ -50,7 +50,7 @@ const BADGE_STYLE_MAP: Record<CatalogBadgeTone, { background: string; border: st
 };
 
 const ICON_FRAME_TONE_CLASS_MAP: Record<IconFrameTone, string> = {
-  default: "border-transparent bg-[var(--chip-default-background)] text-[color:var(--text-default)]",
+  default: "border-transparent bg-[var(--chip-default-background)] text-(--text-default)",
   primary: "",
   success: "",
   warning: "",
@@ -231,7 +231,7 @@ export function WorkspaceCatalogTitle({
     <Component
       className={cn(
         CATALOG_TITLE_CLASS_MAP[size],
-        "text-[color:var(--text-strong)]",
+        "text-(--text-strong)",
         truncate && "truncate",
         class_name,
       )}
@@ -262,7 +262,7 @@ export function WorkspaceCatalogDescription({
     <p
       className={cn(
         CATALOG_DESCRIPTION_CLASS_MAP[size],
-        "text-[color:var(--text-default)]",
+        "text-(--text-default)",
         line_clamp_class_name,
         min_height && lines === 2 && "min-h-[40px]",
         class_name,
@@ -348,7 +348,7 @@ export function WorkspaceCatalogAction({
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center rounded-[10px] border border-transparent bg-transparent text-[color:var(--icon-default)] transition duration-[var(--motion-duration-fast)] ease-out hover:border-[var(--surface-interactive-hover-border)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--icon-strong)]",
+        "inline-flex items-center justify-center rounded-[10px] border border-transparent bg-transparent text-(--icon-default) transition duration-[var(--motion-duration-fast)] ease-out hover:border-[var(--surface-interactive-hover-border)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-(--icon-strong)",
         size === "sm"
           ? "h-6 w-6 rounded-[8px]"
           : "h-8 w-8 rounded-[10px]",
@@ -378,8 +378,8 @@ export function WorkspaceCatalogTextAction({
     <button
       className={cn(
         "inline-flex items-center gap-1.5 text-xs font-semibold transition duration-[var(--motion-duration-fast)] ease-out",
-        tone === "default" && "text-[color:var(--text-default)] hover:text-[color:var(--text-strong)]",
-        tone === "primary" && "text-[color:var(--primary)] hover:text-[color:color-mix(in_srgb,var(--primary)_86%,var(--foreground)_14%)]",
+        tone === "default" && "text-(--text-default) hover:text-(--text-strong)",
+        tone === "primary" && "text-(--primary) hover:text-[color:color-mix(in_srgb,var(--primary)_86%,var(--foreground)_14%)]",
         tone === "danger" && "text-rose-600/88 hover:text-rose-700",
         class_name,
       )}
@@ -420,7 +420,7 @@ export function WorkspaceCatalogTag({
   return (
     <span
       className={cn(
-        "inline-flex h-5 items-center rounded-full px-2 text-2xs font-medium leading-none text-[color:var(--text-default)]",
+        "inline-flex h-5 items-center rounded-full px-2 text-2xs font-medium leading-none text-(--text-default)",
         class_name,
       )}
       style={{

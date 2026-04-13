@@ -51,7 +51,7 @@ function MemberAvatarStack({
 
   return (
     <button
-      className="flex h-7 items-center gap-1.5 rounded-full border border-[var(--divider-subtle-color)] bg-[var(--surface-panel-background)] px-2 text-[10.5px] font-medium text-[color:var(--text-default)] transition-[border-color,background,color,transform] duration-[var(--motion-duration-fast)] hover:-translate-y-[1px] hover:border-[var(--surface-interactive-hover-border)] hover:text-[color:var(--text-strong)]"
+      className="flex h-7 items-center gap-1.5 rounded-full border border-[var(--divider-subtle-color)] bg-[var(--surface-panel-background)] px-2 text-[10.5px] font-medium text-(--text-default) transition-[border-color,background,color,transform] duration-[var(--motion-duration-fast)] hover:-translate-y-[1px] hover:border-[var(--surface-interactive-hover-border)] hover:text-(--text-strong)"
       onClick={on_click}
       type="button"
     >
@@ -60,7 +60,7 @@ function MemberAvatarStack({
           const avatar_src = getIconAvatarSrc(member.avatar);
           return (
             <span
-              className="flex h-5.5 w-5.5 items-center justify-center overflow-hidden rounded-full border border-[var(--surface-avatar-border)] bg-[var(--surface-avatar-background)] text-[8px] font-bold text-[color:var(--text-strong)] shadow-[var(--surface-avatar-shadow)]"
+              className="flex h-5.5 w-5.5 items-center justify-center overflow-hidden rounded-full border border-[var(--surface-avatar-border)] bg-[var(--surface-avatar-background)] text-[8px] font-bold text-(--text-strong) shadow-[var(--surface-avatar-shadow)]"
               key={member.agent_id}
               title={member.name}
             >
@@ -77,7 +77,7 @@ function MemberAvatarStack({
           );
         })}
         {overflow_count > 0 ? (
-          <span className="flex h-5.5 w-5.5 items-center justify-center rounded-full border border-[var(--surface-avatar-border)] bg-[var(--surface-avatar-background)] text-[8px] font-bold text-[color:var(--text-strong)] shadow-[var(--surface-avatar-shadow)]">
+          <span className="flex h-5.5 w-5.5 items-center justify-center rounded-full border border-[var(--surface-avatar-border)] bg-[var(--surface-avatar-background)] text-[8px] font-bold text-(--text-strong) shadow-[var(--surface-avatar-shadow)]">
             +{overflow_count}
           </span>
         ) : null}
@@ -158,7 +158,7 @@ const RoomConversationHeaderView = memo(({
             src={room_avatar_src}
           />
         ) : (
-          <Hash size={14} className="text-[color:var(--icon-default)]" />
+          <Hash size={14} className="text-(--icon-default)" />
         )}
         on_change_tab={on_change_tab}
         tabs={room_tabs}

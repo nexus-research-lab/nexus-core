@@ -135,7 +135,7 @@ export const MentionTargetPopover = memo(({
                         key={item.id}
                         className={cn(
                             "flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors duration-[var(--motion-duration-fast)]",
-                            index === active_index ? "text-[color:var(--text-strong)]" : "text-[color:var(--text-default)] hover:bg-[var(--surface-interactive-hover-background)] hover:text-[color:var(--text-strong)]",
+                            index === active_index ? "text-(--text-strong)" : "text-(--text-default) hover:bg-[var(--surface-interactive-hover-background)] hover:text-(--text-strong)",
                         )}
                         style={index === active_index ? { background: "var(--surface-interactive-active-background)" } : undefined}
                         onMouseDown={(e) => {
@@ -158,7 +158,7 @@ export const MentionTargetPopover = memo(({
                         <span className="min-w-0 flex-1">
                             <span className="block truncate font-medium">{item.label}</span>
                             {item.subtitle ? (
-                                <span className="block truncate text-[11px] text-[color:var(--text-soft)]">
+                                <span className="block truncate text-[11px] text-(--text-soft)">
                                     {item.subtitle}
                                 </span>
                             ) : null}

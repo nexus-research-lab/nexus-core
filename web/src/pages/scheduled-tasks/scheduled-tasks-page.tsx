@@ -178,7 +178,7 @@ export function ScheduledTasksPage() {
             leading={<CalendarClock className="h-4 w-4" />}
             title="定时任务"
             title_trailing={(
-              <span className="truncate text-[11px] font-medium text-[color:var(--text-default)]">
+              <span className="truncate text-[11px] font-medium text-(--text-default)">
                 Agent {automation.agent_id}
               </span>
             )}

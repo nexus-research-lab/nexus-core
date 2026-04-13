@@ -89,7 +89,7 @@ export function DmsPage() {
           </WorkspaceCatalogTextAction>
         )}
         description="从左侧侧边栏或 Contacts 选择一个 Agent，即可创建新的 DM。"
-        icon={<MessageCircle className="h-6 w-6 text-[color:var(--icon-default)]" />}
+        icon={<MessageCircle className="h-6 w-6 text-(--icon-default)" />}
         title="还没有打开中的私聊"
       />
     </WorkspacePageFrame>

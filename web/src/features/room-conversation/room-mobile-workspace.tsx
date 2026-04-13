@@ -68,7 +68,7 @@ export function RoomMobileWorkspace({
       <div className="px-2 pb-2 pt-2">
         <div className="radius-shell-lg flex items-center gap-2 px-2 py-2">
           <button
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-[color:var(--text-strong)] transition hover:bg-[var(--interaction-hover-background)] hover:text-[color:var(--text-strong)]"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-(--text-strong) transition hover:bg-[var(--interaction-hover-background)] hover:text-(--text-strong)"
             onClick={on_back_to_directory}
             type="button"
           >
@@ -80,21 +80,21 @@ export function RoomMobileWorkspace({
             onClick={() => setIsConversationSheetOpen(true)}
             type="button"
           >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--divider-subtle-color)] text-[color:var(--text-muted)]">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--divider-subtle-color)] text-(--text-muted)">
               <Search className="h-4 w-4" />
             </div>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-[color:var(--text-strong)]">{current_agent.name}</p>
-              <p className="truncate text-[12px] text-[color:var(--text-muted)]">
+              <p className="truncate text-sm font-semibold text-(--text-strong)">{current_agent.name}</p>
+              <p className="truncate text-[12px] text-(--text-muted)">
                 {current_room_title || current_room_conversation_title}
               </p>
             </div>
 
-            <ChevronDown className="h-4 w-4 shrink-0 text-[color:var(--text-muted)]" />
+            <ChevronDown className="h-4 w-4 shrink-0 text-(--text-muted)" />
           </button>
 
-          <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[var(--divider-subtle-color)] text-[color:var(--text-muted)]">
+          <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[var(--divider-subtle-color)] text-(--text-muted)">
             <MessageSquare className="h-4 w-4" />
           </div>
         </div>
@@ -146,14 +146,14 @@ export function RoomMobileWorkspace({
 
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-[color:var(--text-strong)]">切换会话</p>
-                <p className="text-xs text-[color:var(--text-muted)]">
+                <p className="text-sm font-semibold text-(--text-strong)">切换会话</p>
+                <p className="text-xs text-(--text-muted)">
                   {current_room_conversations.length} 个会话
                 </p>
               </div>
 
               <button
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--text-muted)] transition hover:bg-[var(--interaction-hover-background)] hover:text-[color:var(--text-strong)]"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-(--text-muted) transition hover:bg-[var(--interaction-hover-background)] hover:text-(--text-strong)"
                 onClick={() => setIsConversationSheetOpen(false)}
                 type="button"
               >
@@ -174,15 +174,15 @@ export function RoomMobileWorkspace({
                     }}
                     type="button"
                   >
-                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--divider-subtle-color)] text-[color:var(--text-strong)]">
+                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[var(--divider-subtle-color)] text-(--text-strong)">
                       {is_active ? <Check className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-[color:var(--text-strong)]">
+                      <p className="truncate text-sm font-medium text-(--text-strong)">
                         {conversation.title?.trim() || "未命名会话"}
                       </p>
-                      <p className="mt-1 text-xs text-[color:var(--text-muted)]">
+                      <p className="mt-1 text-xs text-(--text-muted)">
                         {formatRelativeTime(conversation.last_activity_at)} · {conversation.message_count ?? 0} 条
                       </p>
                     </div>

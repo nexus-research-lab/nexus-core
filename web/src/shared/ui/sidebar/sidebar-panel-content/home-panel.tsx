@@ -76,7 +76,7 @@ function render_agent_avatar_icon(agent_name: string, avatar?: string | null) {
   }
 
   return (
-    <span className="flex h-4 w-4 items-center justify-center rounded-full border border-[var(--surface-avatar-border)] bg-[var(--surface-avatar-background)] text-[8px] font-bold text-[color:var(--text-strong)] shadow-[var(--surface-avatar-shadow)]">
+    <span className="flex h-4 w-4 items-center justify-center rounded-full border border-(--surface-avatar-border) bg-(--surface-avatar-background) text-[8px] font-bold text-(--text-strong) shadow-(--surface-avatar-shadow)">
       {agent_name.trim().slice(0, 1).toUpperCase()}
     </span>
   );
@@ -311,7 +311,7 @@ export const HomePanelContent = memo(function HomePanelContent() {
             />
           ))
         ) : (
-          <p className="px-2 py-2 text-[13px] text-[color:var(--text-soft)]">{t("home.no_rooms")}</p>
+          <p className="px-2 py-2 text-[13px] text-(--text-soft)">{t("home.no_rooms")}</p>
         )}
       </CollapsibleSection>
 
@@ -343,7 +343,7 @@ export const HomePanelContent = memo(function HomePanelContent() {
             />
           ))
         ) : (
-          <p className="px-2 py-2 text-[13px] text-[color:var(--text-soft)]">{t("home.no_dms")}</p>
+          <p className="px-2 py-2 text-[13px] text-(--text-soft)">{t("home.no_dms")}</p>
         )}
       </CollapsibleSection>
 
@@ -372,7 +372,7 @@ export const HomePanelContent = memo(function HomePanelContent() {
             />
           ))
         ) : (
-          <p className="px-2 py-2 text-[13px] text-[color:var(--text-soft)]">{t("home.no_agents")}</p>
+          <p className="px-2 py-2 text-[13px] text-(--text-soft)">{t("home.no_agents")}</p>
         )}
       </CollapsibleSection>
 

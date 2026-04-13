@@ -28,10 +28,10 @@ export function WorkspaceEmptyState({
         <div className={EMPTY_STATE_ICON_CLASS_NAME}>
           {icon}
         </div>
-        <h1 className="mt-5 text-[28px] font-black tracking-[-0.05em] text-[color:var(--text-strong)]">
+        <h1 className="mt-5 text-[28px] font-black tracking-[-0.05em] text-(--text-strong)">
           {title}
         </h1>
-        <p className="mt-3 text-sm leading-7 text-[color:var(--text-muted)]">
+        <p className="mt-3 text-sm leading-7 text-(--text-muted)">
           {description}
         </p>
         {actions ? (

@@ -73,14 +73,14 @@ export function FeedbackBanner({ tone, title, message, on_dismiss }: FeedbackBan
             ))}
           </div>
         ) : (
-          <p className={cn("mt-0.5 text-[11px] text-[color:var(--text-soft)]")}>
+          <p className={cn("mt-0.5 text-[11px] text-(--text-soft)")}>
             {message}
           </p>
         )}
       </div>
       {on_dismiss && (
         <button
-          className="shrink-0 text-[11px] text-[color:var(--text-muted)] transition-colors hover:text-[color:var(--text-default)]"
+          className="shrink-0 text-[11px] text-(--text-muted) transition-colors hover:text-(--text-default)"
           onClick={on_dismiss}
           type="button"
         >

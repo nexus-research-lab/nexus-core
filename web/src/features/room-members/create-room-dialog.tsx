@@ -149,13 +149,13 @@ export function CreateRoomDialog({
                 <Hash className="h-7 w-7" />
               </div>
               <div className="min-w-0">
-                  <h2 className="dialog-title truncate" data-size="hero">
-                    {resolved_dialog_title}
-                  </h2>
-                  <p className="dialog-subtitle truncate">
-                    {resolved_dialog_subtitle}
-                  </p>
-                </div>
+                <h2 className="dialog-title truncate" data-size="hero">
+                  {resolved_dialog_title}
+                </h2>
+                <p className="dialog-subtitle truncate">
+                  {resolved_dialog_subtitle}
+                </p>
+              </div>
             </div>
             <button
               aria-label={t("common.close")}
@@ -184,11 +184,11 @@ export function CreateRoomDialog({
                         src={preview_avatar_src}
                       />
                     ) : (
-                      <Hash className="h-4.5 w-4.5 text-[color:var(--icon-default)]" />
+                      <Hash className="h-4.5 w-4.5 text-(--icon-default)" />
                     )}
                   </div>
                   <input
-                    className="dialog-input min-w-0 flex-1 rounded-xl px-3 py-2 text-sm text-[color:var(--text-strong)] placeholder:text-[color:var(--text-soft)] focus-visible:outline-none"
+                    className="dialog-input min-w-0 flex-1 rounded-xl px-3 py-2 text-sm text-(--text-strong) placeholder:text-(--text-soft) focus-visible:outline-none"
                     maxLength={64}
                     onChange={(e) => set_room_name(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter" && can_create) handle_create(); }}
@@ -225,7 +225,7 @@ export function CreateRoomDialog({
                       className="flex items-center gap-2 rounded-xl px-2.5 py-1.5 transition-colors hover:bg-black/3"
                     >
                       <WorkspaceIconFrame
-                        class_name="h-6 w-6 overflow-hidden text-[color:var(--icon-default)]"
+                        class_name="h-6 w-6 overflow-hidden text-(--icon-default)"
                         shape="round"
                         size="sm"
                       >
@@ -239,11 +239,11 @@ export function CreateRoomDialog({
                           getInitials(agent.name)
                         )}
                       </WorkspaceIconFrame>
-                      <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-[color:var(--text-strong)]">
+                      <span className="min-w-0 flex-1 truncate text-[12px] font-medium text-(--text-strong)">
                         {agent.name}
                       </span>
                       <button
-                        className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[color:var(--text-soft)] transition-colors hover:text-red-500"
+                        className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-(--text-soft) transition-colors hover:text-red-500"
                         onClick={() => toggle_agent(agent.agent_id)}
                         type="button"
                       >
@@ -252,7 +252,7 @@ export function CreateRoomDialog({
                     </div>
                   ))
                 ) : (
-                  <p className="flex flex-1 items-center justify-center text-[12px] text-[color:var(--text-soft)]">
+                  <p className="flex flex-1 items-center justify-center text-[12px] text-(--text-soft)">
                     {t("room.add_from_left")}
                   </p>
                 )}
@@ -263,9 +263,9 @@ export function CreateRoomDialog({
             <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
               {/* 搜索框 */}
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[color:var(--text-soft)]" />
+                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-(--text-soft)" />
                 <input
-                  className="dialog-input w-full rounded-xl py-2 pl-8 pr-3 text-sm text-[color:var(--text-strong)] placeholder:text-[color:var(--text-soft)] focus-visible:outline-none"
+                  className="dialog-input w-full rounded-xl py-2 pl-8 pr-3 text-sm text-(--text-strong) placeholder:text-(--text-soft) focus-visible:outline-none"
                   onChange={(e) => set_search_query(e.target.value)}
                   placeholder={t("room.search_agent_placeholder")}
                   type="text"
@@ -292,7 +292,7 @@ export function CreateRoomDialog({
                         type="button"
                       >
                         <WorkspaceIconFrame
-                          class_name="overflow-hidden text-[color:var(--icon-default)]"
+                          class_name="overflow-hidden text-(--icon-default)"
                           shape="round"
                           size="sm"
                         >
@@ -308,10 +308,10 @@ export function CreateRoomDialog({
                         </WorkspaceIconFrame>
 
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-semibold text-[color:var(--text-strong)]">
+                          <p className="truncate text-sm font-semibold text-(--text-strong)">
                             {agent.name}
                           </p>
-                          <p className="truncate text-[10px] text-[color:var(--text-muted)]">
+                          <p className="truncate text-[10px] text-(--text-muted)">
                             {agent.options?.system_prompt
                               ? agent.options.system_prompt.slice(0, 50) + (agent.options.system_prompt.length > 50 ? "..." : "")
                               : agent.status ?? t("status.idle")}
@@ -323,7 +323,7 @@ export function CreateRoomDialog({
                             "flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-all",
                             is_selected
                               ? "bg-primary text-white"
-                              : "border border-[var(--surface-interactive-hover-border)] text-[color:var(--text-soft)]",
+                              : "border border-[var(--surface-interactive-hover-border)] text-(--text-soft)",
                           )}
                         >
                           {is_selected ? (
@@ -350,14 +350,14 @@ export function CreateRoomDialog({
             >
               {t("common.cancel")}
             </button>
-              <button
-                className={getDialogActionClassName(can_create ? "primary" : "default")}
-                disabled={!can_create}
-                onClick={handle_create}
-                type="button"
-              >
-                {is_creating ? t("room.creating_action") : resolved_confirm_label}
-              </button>
+            <button
+              className={getDialogActionClassName(can_create ? "primary" : "default")}
+              disabled={!can_create}
+              onClick={handle_create}
+              type="button"
+            >
+              {is_creating ? t("room.creating_action") : resolved_confirm_label}
+            </button>
           </div>
         </div>
       </div>

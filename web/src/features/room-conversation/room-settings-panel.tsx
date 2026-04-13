@@ -184,7 +184,7 @@ export function RoomSettingsPanel({
                       }}
                       placeholder={t("room.name_placeholder")}
                       maxLength={64}
-                      className="dialog-input radius-shell-sm w-full px-3.5 py-2.5 text-sm text-[color:var(--text-strong)] placeholder:text-[color:var(--text-soft)] focus-visible:outline-none"
+                      className="dialog-input radius-shell-sm w-full px-3.5 py-2.5 text-sm text-(--text-strong) placeholder:text-(--text-soft) focus-visible:outline-none"
                     />
                     <div className="flex items-center justify-end gap-2">
                       <button
@@ -211,12 +211,12 @@ export function RoomSettingsPanel({
                 ) : (
                   <div className="flex items-start justify-between gap-3 rounded-[16px] border border-[var(--divider-subtle-color)] px-4 py-3.5">
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-[color:var(--text-strong)]">
+                      <p className="text-sm font-semibold text-(--text-strong)">
                         {room_name || t("room.untitled_room")}
                       </p>
                     </div>
                     <button
-                      className="text-[11px] font-semibold text-[color:var(--primary)] transition duration-[var(--motion-duration-fast)] hover:text-[color:color-mix(in_srgb,var(--primary)_86%,var(--foreground)_14%)]"
+                      className="text-[11px] font-semibold text-(--primary) transition duration-[var(--motion-duration-fast)] hover:text-[color:color-mix(in_srgb,var(--primary)_86%,var(--foreground)_14%)]"
                       onClick={() => set_is_editing_name(true)}
                       type="button"
                     >
@@ -246,7 +246,7 @@ export function RoomSettingsPanel({
                       placeholder={t("room.description_placeholder")}
                       maxLength={256}
                       rows={4}
-                      className="dialog-input radius-shell-sm w-full resize-none px-3.5 py-2.5 text-sm text-[color:var(--text-strong)] placeholder:text-[color:var(--text-soft)] focus-visible:outline-none"
+                      className="dialog-input radius-shell-sm w-full resize-none px-3.5 py-2.5 text-sm text-(--text-strong) placeholder:text-(--text-soft) focus-visible:outline-none"
                     />
                     <div className="flex items-center justify-end gap-2">
                       <button
@@ -273,12 +273,12 @@ export function RoomSettingsPanel({
                 ) : (
                   <div className="flex items-start justify-between gap-3 rounded-[16px] border border-[var(--divider-subtle-color)] px-4 py-3.5">
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm text-[color:var(--text-strong)]">
+                      <p className="text-sm text-(--text-strong)">
                         {room_description || t("room.no_description")}
                       </p>
                     </div>
                     <button
-                      className="text-[11px] font-semibold text-[color:var(--primary)] transition duration-[var(--motion-duration-fast)] hover:text-[color:color-mix(in_srgb,var(--primary)_86%,var(--foreground)_14%)]"
+                      className="text-[11px] font-semibold text-(--primary) transition duration-[var(--motion-duration-fast)] hover:text-[color:color-mix(in_srgb,var(--primary)_86%,var(--foreground)_14%)]"
                       onClick={() => set_is_editing_description(true)}
                       type="button"
                     >
@@ -327,10 +327,10 @@ export function RoomSettingsPanel({
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-[color:var(--text-strong)]">
+                  <p className="text-sm font-semibold text-(--text-strong)">
                     {t("room.delete_title")}
                   </p>
-                  <p className="mt-1 text-sm leading-6 text-[color:var(--text-default)]">
+                  <p className="mt-1 text-sm leading-6 text-(--text-default)">
                     删除后会移除这个房间及其会话入口，请确认当前成员已经完成迁移。
                   </p>
                 </div>

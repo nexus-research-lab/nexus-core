@@ -30,10 +30,10 @@ export function ThinkingBlock({ thinking, is_streaming }: ThinkingBlockProps) {
         type="button"
       >
         <MessageRailLabel active={Boolean(is_streaming)} class_name="flex-1">
-          <Brain className={is_streaming ? "h-3 w-3 animate-pulse text-[color:var(--primary)]" : "h-3 w-3 text-[color:var(--icon-muted)]"} />
+          <Brain className={is_streaming ? "h-3 w-3 animate-pulse text-(--primary)" : "h-3 w-3 text-(--icon-muted)"} />
           <span>{is_streaming ? "Thinking……" : "Thought"}</span>
         </MessageRailLabel>
-        <span className="shrink-0 text-[color:var(--icon-muted)]">
+        <span className="shrink-0 text-(--icon-muted)">
           <ChevronRight
             className={is_expanded
               ? "h-3.5 w-3.5 rotate-90 transition-transform duration-[var(--motion-duration-fast)]"

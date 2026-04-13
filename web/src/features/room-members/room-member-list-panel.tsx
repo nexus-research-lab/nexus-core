@@ -74,7 +74,7 @@ export function RoomMemberListPanel({
         >
           <div className="dialog-header">
             <div className="flex min-w-0 flex-1 items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[var(--surface-avatar-border)] bg-[var(--surface-avatar-background)] text-[color:var(--text-strong)] shadow-[var(--surface-avatar-shadow)]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[var(--surface-avatar-border)] bg-[var(--surface-avatar-background)] text-(--text-strong) shadow-[var(--surface-avatar-shadow)]">
                 <Users className="h-4.5 w-4.5" />
               </div>
               <div className="min-w-0">
@@ -98,7 +98,7 @@ export function RoomMemberListPanel({
             <section className="dialog-card rounded-[20px] p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold text-[color:var(--text-strong)]">
+                  <p className="text-sm font-semibold text-(--text-strong)">
                     {t("room.current_members")}
                   </p>
                 </div>
@@ -126,7 +126,7 @@ export function RoomMemberListPanel({
                         key={member.agent_id}
                         className="flex items-center gap-3 rounded-[16px] border border-[var(--divider-subtle-color)] px-3.5 py-3"
                       >
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--surface-avatar-border)] bg-[var(--surface-avatar-background)] text-[11px] font-bold text-[color:var(--text-strong)] shadow-[var(--surface-avatar-shadow)]">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--surface-avatar-border)] bg-[var(--surface-avatar-background)] text-[11px] font-bold text-(--text-strong) shadow-[var(--surface-avatar-shadow)]">
                           {avatar_src ? (
                             <img
                               alt={member.name}
@@ -139,22 +139,22 @@ export function RoomMemberListPanel({
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
-                            <p className="truncate text-sm font-semibold text-[color:var(--text-strong)]">
+                            <p className="truncate text-sm font-semibold text-(--text-strong)">
                               {member.name}
                             </p>
                             {is_owner ? (
-                              <span className="inline-flex h-5 items-center rounded-full border border-[var(--divider-subtle-color)] px-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--text-soft)]">
+                              <span className="inline-flex h-5 items-center rounded-full border border-[var(--divider-subtle-color)] px-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-(--text-soft)">
                                 {t("room.member_owner")}
                               </span>
                             ) : null}
                           </div>
-                          <p className="mt-1 text-xs text-[color:var(--text-muted)]">
+                          <p className="mt-1 text-xs text-(--text-muted)">
                             {is_owner ? t("room.member_owner_hint") : t("room.member_collaborator_hint")}
                           </p>
                         </div>
                         {can_remove ? (
                           <button
-                            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-[color:var(--icon-muted)] transition duration-[var(--motion-duration-fast)] hover:bg-[color:color-mix(in_srgb,var(--destructive)_10%,transparent)] hover:text-[color:var(--destructive)]"
+                            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] text-(--icon-muted) transition duration-[var(--motion-duration-fast)] hover:bg-[color:color-mix(in_srgb,var(--destructive)_10%,transparent)] hover:text-(--destructive)"
                             disabled={is_removing === member.agent_id}
                             onClick={() => {
                               void handle_remove_member(member.agent_id);
@@ -171,7 +171,7 @@ export function RoomMemberListPanel({
                     );
                   })
                 ) : (
-                  <div className="surface-inset flex items-center justify-center rounded-[16px] px-4 py-8 text-[13px] text-[color:var(--text-muted)]">
+                  <div className="surface-inset flex items-center justify-center rounded-[16px] px-4 py-8 text-[13px] text-(--text-muted)">
                     {t("room.no_members")}
                   </div>
                 )}
@@ -179,7 +179,7 @@ export function RoomMemberListPanel({
             </section>
 
             {available_agents.length === 0 && removable_members.length === 0 ? (
-              <div className="rounded-[18px] border border-[var(--divider-subtle-color)] px-4 py-3 text-[12px] leading-6 text-[color:var(--text-muted)]">
+              <div className="rounded-[18px] border border-[var(--divider-subtle-color)] px-4 py-3 text-[12px] leading-6 text-(--text-muted)">
                 {t("room.no_available_members")}
               </div>
             ) : null}

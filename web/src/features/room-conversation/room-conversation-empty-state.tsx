@@ -57,7 +57,7 @@ export function RoomConversationEmptyState({
 
             <WorkspaceCatalogBody class_name="mt-5">
               <WorkspaceCatalogDescription lines={3} size="md">
-              Room 不再只是一个容器，它会承接会话历史、线程、文件和多人协作视图。创建第一条对话后，当前工作区就会进入真正的协作态。
+                Room 不再只是一个容器，它会承接会话历史、线程、文件和多人协作视图。创建第一条对话后，当前工作区就会进入真正的协作态。
               </WorkspaceCatalogDescription>
             </WorkspaceCatalogBody>
 
@@ -77,7 +77,7 @@ export function RoomConversationEmptyState({
           <div className="grid min-w-0 flex-1 gap-3 lg:max-w-[22rem]">
             {HIGHLIGHTS.map((highlight) => (
               <WorkspaceCatalogCard key={highlight} size="stat">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--text-soft)]">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-(--text-soft)">
                   Capability
                 </p>
                 <WorkspaceCatalogTitle class_name="mt-2" size="sm">

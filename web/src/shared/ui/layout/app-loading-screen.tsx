@@ -21,7 +21,7 @@ export function AppLoadingState({
         class_name={animation_class_name}
         src={ANIMATIONS.CAT}
       />
-      <p className="text-sm text-[color:var(--text-muted)]">{message}</p>
+      <p className="text-sm text-(--text-muted)">{message}</p>
     </div>
   );
 }

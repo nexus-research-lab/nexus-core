@@ -77,7 +77,7 @@ export function ContactsDirectory({
       <WorkspaceSurfaceHeader
         badge="AGENTS"
         density="compact"
-        leading={<Users className="h-4 w-4 text-[color:var(--icon-default)]" />}
+        leading={<Users className="h-4 w-4 text-(--icon-default)" />}
         title={t("contacts.title")}
         trailing={header_trailing}
       />
