@@ -26,7 +26,7 @@ import { useWebSocket } from "@/lib/websocket";
 import { CreateRoomDialog } from "@/features/room-members/create-room-dialog";
 import { createRoom, deleteRoom, listRooms, subscribe_room_list_updates } from "@/lib/room-api";
 import { useI18n } from "@/shared/i18n/i18n-context";
-import { ConfirmDialog, PromptDialog } from "@/shared/ui/dialog/confirm-dialog";
+import { ConfirmDialog } from "@/shared/ui/dialog/confirm-dialog";
 import { CollapsibleSection, SidebarListItem } from "@/shared/ui/sidebar/collapsible-section";
 import { useAgentStore } from "@/store/agent";
 import { useSidebarStore } from "@/store/sidebar";
@@ -240,10 +240,16 @@ export const HomePanelContent = memo(function HomePanelContent() {
   // 删除 Room
   const handle_delete_room = useCallback(async () => {
     if (!delete_target) return;
-    await deleteRoom(delete_target.id);
+    const deleted_room_id = delete_target.id;
+    await deleteRoom(deleted_room_id);
     set_delete_target(null);
+    // 中文注释：如果删除的是当前激活房间，先退出到 Launcher，避免继续停留在失效路由。
+    if (active_item_id === deleted_room_id) {
+      set_active_item(null);
+      navigate(AppRouteBuilders.launcher());
+    }
     refresh_rooms();
-  }, [delete_target, refresh_rooms]);
+  }, [active_item_id, delete_target, navigate, refresh_rooms, set_active_item]);
 
   return (
     <div className="flex flex-col">

@@ -198,11 +198,11 @@ export function SidebarWidePanel() {
             height={34}
             width={58}
           >
-            <span className="text-[13px] font-black tracking-[-0.08em] text-(--text-strong)">N</span>
+            <span className="text-[24px] font-black tracking-[-0.08em] text-primary ">N</span>
           </GlassMagnifierStatic>
         </Link>
         <div className="min-w-0">
-          <p className="text-[32px] font-semibold uppercase tracking-[0.24em] text-(--text-strong)">
+          <p className="text-[26px] font-semibold uppercase tracking-[0.24em] text-(--text-strong)">
             NEXUS
           </p>
         </div>

@@ -63,7 +63,7 @@ export function WorkspaceTaskStrip({
       <div className="relative z-40">
         <button
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full text-left transition duration-[var(--motion-duration-fast)] ease-out",
+            "inline-flex items-center gap-1.5 rounded-full text-left transition duration-(--motion-duration-fast) ease-out",
             density === "compact" ? "h-7 px-2" : "h-8 px-3",
           )}
           style={trigger_style}
@@ -106,7 +106,7 @@ export function WorkspaceTaskStrip({
           >
 
 
-            <div className="max-h-[320px] overflow-y-auto px-4">
+            <div className="max-h-80 overflow-y-auto px-4">
               <div
                 className="grid grid-cols-[36px_76px_minmax(0,1fr)_24px] items-center gap-3 border-b divider-subtle px-2 py-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-(--text-soft)">
                 <span>{t("tasks.id")}</span>
@@ -114,7 +114,7 @@ export function WorkspaceTaskStrip({
                 <span>{t("tasks.subject")}</span>
                 <button
                   aria-label={t("tasks.close_panel")}
-                  className="ml-1 inline-flex h-6 w-6 items-center justify-center rounded-full text-(--icon-muted) transition-colors hover:bg-[var(--surface-interactive-hover-background)] hover:text-(--icon-default)"
+                  className="ml-1 inline-flex h-6 w-6 items-center justify-center rounded-full text-(--icon-muted) transition-colors hover:bg-(--surface-interactive-hover-background) hover:text-(--icon-default)"
                   onClick={() => {
                     set_expanded_task_index(null);
                     set_is_open(false);
@@ -140,8 +140,8 @@ export function WorkspaceTaskStrip({
                       >
                         <button
                           className={cn(
-                            "grid w-full grid-cols-[36px_76px_minmax(0,1fr)_24px] gap-3 rounded-[12px] px-2 py-1.25 text-left transition-colors",
-                            is_expanded && has_detail ? "" : "hover:bg-[var(--surface-interactive-hover-background)]",
+                            "grid w-full grid-cols-[36px_76px_minmax(0,1fr)_24px] gap-3 rounded-xl px-2 py-1.25 text-left transition-colors",
+                            is_expanded && has_detail ? "" : "hover:bg-(--surface-interactive-hover-background)",
                           )}
                           style={is_expanded && has_detail ? {
                             background: "var(--surface-interactive-active-background)",
@@ -161,9 +161,9 @@ export function WorkspaceTaskStrip({
                           <span
                             className={cn(
                               "inline-flex h-fit items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold",
-                              is_completed && "bg-[color:color-mix(in_srgb,var(--success)_12%,transparent)] text-(--success)",
-                              is_running && "bg-[color:color-mix(in_srgb,var(--primary)_12%,transparent)] text-(--primary)",
-                              todo.status === "pending" && "bg-[var(--surface-panel-subtle-background)] text-(--text-muted)",
+                              is_completed && "bg-[color-mix(in_srgb,var(--success)_12%,transparent)] text-success",
+                              is_running && "bg-[color-mix(in_srgb,var(--primary)_12%,transparent)] text-primary",
+                              todo.status === "pending" && "bg-(--surface-panel-subtle-background) text-(--text-muted)",
                             )}
                           >
                             {is_completed ? (
@@ -203,7 +203,7 @@ export function WorkspaceTaskStrip({
                           <div className="min-h-0 overflow-hidden">
                             <div className="px-[calc(36px+76px+0.75rem)] pb-1.5 pr-2">
                               <div
-                                className="rounded-[12px] px-3 py-1.5 text-[10.5px] leading-5 text-(--text-muted)"
+                                className="rounded-xl px-3 py-1.5 text-[10.5px] leading-5 text-(--text-muted)"
                                 style={{
                                   background: "var(--card-default-background)",
                                   border: "1px solid var(--card-default-border)",
