@@ -15,8 +15,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/nexus-research-lab/nexus/internal/model/session"
 	"github.com/nexus-research-lab/nexus/internal/protocol"
-	"github.com/nexus-research-lab/nexus/internal/session"
 )
 
 // SessionRepository 提供 PostgreSQL 的 Room Session 视图查询。

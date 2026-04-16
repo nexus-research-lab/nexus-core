@@ -14,7 +14,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/nexus-research-lab/nexus/internal/agent"
+	agentmodel "github.com/nexus-research-lab/nexus/internal/model/agent"
 )
 
 // AgentRepository 提供 SQLite 的 Agent 仓储实现。
@@ -28,7 +28,7 @@ func NewAgentRepository(db *sql.DB) *AgentRepository {
 }
 
 // ListActiveAgents 返回所有活跃 Agent。
-func (r *AgentRepository) ListActiveAgents(ctx context.Context) ([]agent.Agent, error) {
+func (r *AgentRepository) ListActiveAgents(ctx context.Context) ([]agentmodel.Agent, error) {
 	rows, err := r.db.QueryContext(ctx, `
 	SELECT
 	    a.id,
@@ -56,7 +56,7 @@ ORDER BY a.created_at ASC`)
 	}
 	defer rows.Close()
 
-	var result []agent.Agent
+	var result []agentmodel.Agent
 	for rows.Next() {
 		item, err := scanAgent(rows)
 		if err != nil {
@@ -68,7 +68,7 @@ ORDER BY a.created_at ASC`)
 }
 
 // GetAgent 返回指定 Agent。
-func (r *AgentRepository) GetAgent(ctx context.Context, agentID string) (*agent.Agent, error) {
+func (r *AgentRepository) GetAgent(ctx context.Context, agentID string) (*agentmodel.Agent, error) {
 	row := r.db.QueryRowContext(ctx, `
 	SELECT
 	    a.id,
@@ -102,7 +102,7 @@ WHERE a.id = ?`, agentID)
 }
 
 // CreateAgent 创建 Agent、Profile 与 Runtime。
-func (r *AgentRepository) CreateAgent(ctx context.Context, record agent.CreateRecord) (*agent.Agent, error) {
+func (r *AgentRepository) CreateAgent(ctx context.Context, record agentmodel.CreateRecord) (*agentmodel.Agent, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -163,7 +163,7 @@ VALUES (?, ?, ?, NULL, ?, ?)`,
 }
 
 // UpdateAgent 更新 Agent 配置。
-func (r *AgentRepository) UpdateAgent(ctx context.Context, record agent.UpdateRecord) (*agent.Agent, error) {
+func (r *AgentRepository) UpdateAgent(ctx context.Context, record agentmodel.UpdateRecord) (*agentmodel.Agent, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -236,9 +236,9 @@ func (r *AgentRepository) ExistsActiveAgentName(ctx context.Context, name string
 
 func scanAgent(scanner interface {
 	Scan(dest ...any) error
-}) (agent.Agent, error) {
+}) (agentmodel.Agent, error) {
 	var (
-		item                agent.Agent
+		item                agentmodel.Agent
 		vibeTagsJSON        string
 		allowedToolsJSON    string
 		disallowedToolsJSON string
@@ -268,15 +268,15 @@ func scanAgent(scanner interface {
 		&settingSourcesJSON,
 	)
 	if err != nil {
-		return agent.Agent{}, err
+		return agentmodel.Agent{}, err
 	}
 
 	item.CreatedAt = createdAt
 	item.VibeTags = decodeStringSlice(vibeTagsJSON)
-	item.Options.AllowedTools = agent.ParseJSONStringSlice(allowedToolsJSON)
-	item.Options.DisallowedTools = agent.ParseJSONStringSlice(disallowedToolsJSON)
-	item.Options.MCPServers = agent.ParseJSONMap(mcpServersJSON)
-	item.Options.SettingSources = agent.ParseJSONStringSlice(settingSourcesJSON)
+	item.Options.AllowedTools = agentmodel.ParseJSONStringSlice(allowedToolsJSON)
+	item.Options.DisallowedTools = agentmodel.ParseJSONStringSlice(disallowedToolsJSON)
+	item.Options.MCPServers = agentmodel.ParseJSONMap(mcpServersJSON)
+	item.Options.SettingSources = agentmodel.ParseJSONStringSlice(settingSourcesJSON)
 	if maxTurns.Valid {
 		value := int(maxTurns.Int64)
 		item.Options.MaxTurns = &value

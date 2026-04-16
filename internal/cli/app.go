@@ -27,7 +27,6 @@ import (
 	runtimectx "github.com/nexus-research-lab/nexus/internal/runtime"
 	sessionsvc "github.com/nexus-research-lab/nexus/internal/session"
 	skillsvc "github.com/nexus-research-lab/nexus/internal/skills"
-	"github.com/nexus-research-lab/nexus/internal/storage"
 	workspacepkg "github.com/nexus-research-lab/nexus/internal/workspace"
 
 	"github.com/spf13/cobra"
@@ -35,24 +34,24 @@ import (
 
 // New 创建 CLI 应用。
 func New(cfg config.Config) (*cobra.Command, error) {
-	db, err := storage.OpenDB(cfg)
+	core, err := bootstrap.NewCoreServices(cfg)
 	if err != nil {
 		return nil, err
 	}
-	agentService := bootstrap.NewAgentServiceWithDB(cfg, db)
-	authService := authsvc.NewServiceWithDB(cfg, db)
-	roomService := bootstrap.NewRoomServiceWithDB(cfg, db, agentService)
-	sessionService := bootstrap.NewSessionServiceWithDB(cfg, db, agentService)
+	agentService := core.Agent
+	roomService := core.Room
+	sessionService := core.Session
+	authService := authsvc.NewServiceWithDB(cfg, core.DB)
 	workspaceService := workspacepkg.NewService(cfg, agentService)
 	skillService := skillsvc.NewService(cfg, agentService, workspaceService)
-	connectorService := connectorsvc.NewService(cfg, db)
+	connectorService := connectorsvc.NewService(cfg, core.DB)
 	launcherService := launcher.NewService(cfg, agentService, roomService)
 	permission := permissionctx.NewContext()
 	runtimeManager := runtimectx.NewManager()
-	channelRouter := channels.NewRouter(cfg, db, agentService, permission)
+	channelRouter := channels.NewRouter(cfg, core.DB, agentService, permission)
 	chatService := chatsvc.NewService(cfg, agentService, runtimeManager, permission)
 	ingressService := channels.NewIngressService(cfg, agentService, chatService, channelRouter)
-	automationService := automationsvc.NewService(cfg, db, agentService, chatService, nil, permission, workspaceService, channelRouter)
+	automationService := automationsvc.NewService(cfg, core.DB, agentService, chatService, nil, permission, workspaceService, channelRouter)
 
 	root := &cobra.Command{
 		Use:   "nexusctl",

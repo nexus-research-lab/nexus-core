@@ -36,7 +36,6 @@ import (
 	runtimectx "github.com/nexus-research-lab/nexus/internal/runtime"
 	sessionsvc "github.com/nexus-research-lab/nexus/internal/session"
 	skillsvc "github.com/nexus-research-lab/nexus/internal/skills"
-	"github.com/nexus-research-lab/nexus/internal/storage"
 	workspacepkg "github.com/nexus-research-lab/nexus/internal/workspace"
 
 	"github.com/coder/websocket"
@@ -97,21 +96,21 @@ func NewServerWithLogger(cfg config.Config, logger *slog.Logger) (*Server, error
 			},
 		})
 	}
-	db, err := storage.OpenDB(cfg)
+	core, err := bootstrap.NewCoreServices(cfg)
 	if err != nil {
 		return nil, err
 	}
-	agentService := bootstrap.NewAgentServiceWithDB(cfg, db)
-	authService := authsvc.NewServiceWithDB(cfg, db)
-	providerService := providercfg.NewServiceWithDB(cfg, db)
-	roomService := bootstrap.NewRoomServiceWithDB(cfg, db, agentService)
-	sessionService := bootstrap.NewSessionServiceWithDB(cfg, db, agentService)
+	agentService := core.Agent
+	roomService := core.Room
+	sessionService := core.Session
+	authService := authsvc.NewServiceWithDB(cfg, core.DB)
+	providerService := providercfg.NewServiceWithDB(cfg, core.DB)
 	workspaceService := workspacepkg.NewService(cfg, agentService)
 	skillService := skillsvc.NewService(cfg, agentService, workspaceService)
-	connectorService := connectorsvc.NewService(cfg, db)
+	connectorService := connectorsvc.NewService(cfg, core.DB)
 	permission := permissionctx.NewContext()
 	runtimeManager := runtimectx.NewManager()
-	channelRouter := channels3.NewRouter(cfg, db, agentService, permission)
+	channelRouter := channels3.NewRouter(cfg, core.DB, agentService, permission)
 	channelRouter.SetLogger(logger.With("component", "channels"))
 	chatService := chatsvc.NewService(cfg, agentService, runtimeManager, permission)
 	chatService.SetLogger(logger.With("component", "chat"))
@@ -141,7 +140,7 @@ func NewServerWithLogger(cfg config.Config, logger *slog.Logger) (*Server, error
 			Status:           status,
 		}
 	})
-	automationService := automationsvc.NewService(cfg, db, agentService, chatService, roomRealtime, permission, workspaceService, channelRouter)
+	automationService := automationsvc.NewService(cfg, core.DB, agentService, chatService, roomRealtime, permission, workspaceService, channelRouter)
 	automationService.SetLogger(logger.With("component", "automation"))
 
 	server := &Server{

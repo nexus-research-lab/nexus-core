@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nexus-research-lab/nexus/internal/room"
+	"github.com/nexus-research-lab/nexus/internal/model/room"
 )
 
 type roomQueryer interface {

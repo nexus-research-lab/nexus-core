@@ -22,14 +22,42 @@ import (
 	sqliterepo "github.com/nexus-research-lab/nexus/internal/storage/sqlite"
 )
 
+// CoreServices 表示核心领域服务与共享 DB 的统一装配结果。
+type CoreServices struct {
+	DB      *sql.DB
+	Agent   *agent.Service
+	Room    *room.Service
+	Session *session.Service
+}
+
 // OpenDB 打开数据库连接。
 func OpenDB(cfg config.Config) (*sql.DB, error) {
 	return storage.OpenDB(cfg)
 }
 
+// NewCoreServices 创建核心领域服务与共享数据库连接。
+func NewCoreServices(cfg config.Config) (*CoreServices, error) {
+	db, err := OpenDB(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return NewCoreServicesWithDB(cfg, db), nil
+}
+
+// NewCoreServicesWithDB 使用共享 DB 创建核心领域服务。
+func NewCoreServicesWithDB(cfg config.Config, db *sql.DB) *CoreServices {
+	agentService := NewAgentServiceWithDB(cfg, db)
+	return &CoreServices{
+		DB:      db,
+		Agent:   agentService,
+		Room:    NewRoomServiceWithDB(cfg, db, agentService),
+		Session: NewSessionServiceWithDB(cfg, db, agentService),
+	}
+}
+
 // NewAgentService 创建 Agent 服务。
 func NewAgentService(cfg config.Config) (*agent.Service, *sql.DB, error) {
-	db, err := storage.OpenDB(cfg)
+	db, err := OpenDB(cfg)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -43,7 +71,7 @@ func NewAgentServiceWithDB(cfg config.Config, db *sql.DB) *agent.Service {
 
 // NewRoomService 创建 Room 服务。
 func NewRoomService(cfg config.Config, agentService *agent.Service) (*room.Service, *sql.DB, error) {
-	db, err := storage.OpenDB(cfg)
+	db, err := OpenDB(cfg)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -57,7 +85,7 @@ func NewRoomServiceWithDB(cfg config.Config, db *sql.DB, agentService *agent.Ser
 
 // NewSessionService 创建 Session 服务。
 func NewSessionService(cfg config.Config, agentService *agent.Service) (*session.Service, *sql.DB, error) {
-	db, err := storage.OpenDB(cfg)
+	db, err := OpenDB(cfg)
 	if err != nil {
 		return nil, nil, err
 	}
