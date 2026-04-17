@@ -16,7 +16,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { is_main_agent } from "@/config/options";
 import { useRoomPageAgentDialog } from "@/hooks/room-page-controller/use-room-page-agent-dialog";
 import { list_rooms, subscribe_room_list_updates } from "@/lib/api/room-api";
-import { useConversationStore } from "@/store/conversation";
 import { useAgentStore } from "@/store/agent";
 import { RoomAggregate } from "@/types/conversation/room";
 
@@ -28,8 +27,6 @@ export function useLauncherPageController() {
   const delete_agent = useAgentStore((state) => state.delete_agent);
   const set_current_agent = useAgentStore((state) => state.set_current_agent);
   const load_agents_from_server = useAgentStore((state) => state.load_agents_from_server);
-  const conversations = useConversationStore((state) => state.conversations);
-  const load_conversations_from_server = useConversationStore((state) => state.load_conversations_from_server);
   const [is_hydrated, set_is_hydrated] = useState(false);
   const [rooms, set_rooms] = useState<RoomAggregate[]>([]);
   const regular_agents = useMemo(
@@ -56,7 +53,6 @@ export function useLauncherPageController() {
 
     void Promise.all([
       load_agents_from_server(),
-      load_conversations_from_server(),
       list_rooms(200).then(set_rooms),
     ])
       .catch((error) => {
@@ -71,27 +67,23 @@ export function useLauncherPageController() {
     return () => {
       is_cancelled = true;
     };
-  }, [load_agents_from_server, load_conversations_from_server]);
+  }, [load_agents_from_server]);
 
   useEffect(() => subscribe_room_list_updates(refresh_rooms), [refresh_rooms]);
 
   return useMemo(() => ({
     agents: regular_agents,
     rooms,
-    conversations,
     current_agent_id,
     is_hydrated,
-    refresh_conversations: load_conversations_from_server,
     handle_select_agent: set_current_agent,
     handle_delete_agent: delete_agent,
     ...agent_dialog,
   }), [
     regular_agents,
     rooms,
-    conversations,
     current_agent_id,
     is_hydrated,
-    load_conversations_from_server,
     set_current_agent,
     delete_agent,
     agent_dialog,

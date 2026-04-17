@@ -1,5 +1,4 @@
 import { Agent } from "@/types/agent/agent";
-import { Conversation } from "@/types/conversation/conversation";
 
 export interface BlobPoint {
   x: number;
@@ -19,9 +18,3 @@ export interface SpotlightToken {
   kind: "agent" | "room";
   swatch: LauncherTokenSwatch;
 }
-
-export interface ConversationWithOwner {
-  owner: Agent | null;
-  conversation: Conversation;
-}
-

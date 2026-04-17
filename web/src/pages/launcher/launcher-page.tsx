@@ -114,7 +114,6 @@ export function LauncherPage() {
       >
         <LauncherConsole
           agents={controller.agents}
-          conversations={controller.conversations}
           rooms={controller.rooms}
           current_agent_id={controller.current_agent_id}
           on_open_main_agent_dm={handle_open_main_agent_dm}

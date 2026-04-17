@@ -49,6 +49,9 @@ func TestMiddlewareWritesRequestIDAndAccessLog(t *testing.T) {
 	if !strings.Contains(output, "\"request_id\"") {
 		t.Fatalf("access log 缺少 request_id: %s", output)
 	}
+	if strings.Contains(output, "\"ok\"") {
+		t.Fatalf("access log 不应包含响应体: %s", output)
+	}
 }
 
 func TestRecoverMiddlewareReturnsInternalError(t *testing.T) {

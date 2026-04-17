@@ -9,9 +9,9 @@
 
 import { MentionTargetItem } from "@/features/conversation/shared/mention-popover";
 import { Agent } from "@/types/agent/agent";
-import { ConversationWithOwner, SpotlightToken } from "@/types/app/launcher";
+import { SpotlightToken } from "@/types/app/launcher";
 import { RoomAggregate } from "@/types/conversation/room";
-import { parse_session_key } from "@/lib/conversation/session-key";
+import { get_room_timestamp } from "@/lib/conversation/room-utils";
 
 import { LauncherMentionMatch, RecentLauncherEntry } from "./launcher-console-types";
 
@@ -59,7 +59,7 @@ export function is_launcher_chip_truncated(label: string, max_chars: number = 6)
 
 export function build_decorative_tokens(
   agents: Agent[],
-  conversations_with_owners: ConversationWithOwner[],
+  rooms: RoomAggregate[],
 ): SpotlightToken[] {
   const agent_tokens: SpotlightToken[] =
     agents.map((agent, index) => ({
@@ -71,10 +71,14 @@ export function build_decorative_tokens(
     }));
 
   const room_tokens: SpotlightToken[] =
-    conversations_with_owners.slice(0, 8).map(({ conversation }, index) => ({
-      key: `room-${conversation.session_key}`,
-      label: get_initials(conversation.title || "Room"),
-      agent_id: conversation.agent_id ?? null,
+    rooms
+      .filter((room) => room.room.room_type === "room")
+      .sort((left, right) => get_room_timestamp(right) - get_room_timestamp(left))
+      .slice(0, 8)
+      .map((room, index) => ({
+      key: `room-${room.room.id}`,
+      label: get_initials(room.room.name?.trim() || "Room"),
+      agent_id: null,
       kind: "room" as const,
       swatch: TOKEN_SWATCHES[(agent_tokens.length + index) % TOKEN_SWATCHES.length],
     }));
@@ -118,7 +122,6 @@ export function build_decorative_tokens(
 export function build_launcher_mention_targets(
   agents: Agent[],
   rooms: RoomAggregate[],
-  conversations_with_owners: ConversationWithOwner[],
 ): MentionTargetItem[] {
   const agent_targets = agents
     .slice()
@@ -130,36 +133,15 @@ export function build_launcher_mention_targets(
       kind: "agent" as const,
     }));
 
-  const room_name_map = new Map(
-    rooms
+  const room_targets = rooms
       .filter((room) => room.room.room_type === "room")
-      .map((room) => [room.room.id, room.room.name?.trim() || "未命名 Room"]),
-  );
-  const latest_room_by_id = new Map<string, MentionTargetItem & { last_activity_at: number }>();
-  for (const { conversation } of conversations_with_owners) {
-    if (!conversation.room_id || !conversation.conversation_id) {
-      continue;
-    }
-    const parsed_session_key = parse_session_key(conversation.session_key);
-    if (parsed_session_key.chat_type !== "group") {
-      continue;
-    }
-    const existing_room = latest_room_by_id.get(conversation.room_id);
-    if (existing_room && existing_room.last_activity_at >= conversation.last_activity_at) {
-      continue;
-    }
-    latest_room_by_id.set(conversation.room_id, {
-      id: `room-${conversation.room_id}`,
-      label: room_name_map.get(conversation.room_id) || "未命名 Room",
+      .sort((left, right) => get_room_timestamp(right) - get_room_timestamp(left))
+      .map((room) => ({
+      id: `room-${room.room.id}`,
+      label: room.room.name?.trim() || "未命名 Room",
       subtitle: "Room",
-      kind: "room",
-      last_activity_at: conversation.last_activity_at,
-    });
-  }
-
-  const room_targets = Array.from(latest_room_by_id.values())
-    .sort((left, right) => right.last_activity_at - left.last_activity_at)
-    .map(({ last_activity_at: _, ...item }) => item);
+      kind: "room" as const,
+    }));
 
   return [...agent_targets, ...room_targets];
 }
@@ -184,47 +166,37 @@ export function find_launcher_mention_match(
 }
 
 export function build_recent_launcher_entries(
-  conversations_with_owners: ConversationWithOwner[],
+  rooms: RoomAggregate[],
+  agents: Agent[],
 ): RecentLauncherEntry[] {
-  const latest_dm_by_agent = new Map<string, RecentLauncherEntry>();
-  const latest_room_by_id = new Map<string, RecentLauncherEntry>();
+  const agents_by_id = new Map(agents.map((agent) => [agent.agent_id, agent]));
 
-  for (const { conversation, owner } of conversations_with_owners) {
-    if (conversation.room_id && conversation.conversation_id) {
-      const existing_room = latest_room_by_id.get(conversation.room_id);
-      if (!existing_room || conversation.last_activity_at > existing_room.last_activity_at) {
-        latest_room_by_id.set(conversation.room_id, {
-          key: `room-${conversation.room_id}`,
-          type: "room",
-          room_id: conversation.room_id,
-          conversation_id: conversation.conversation_id,
-          label: conversation.title || "未命名 Room",
-          last_activity_at: conversation.last_activity_at,
-        });
+  return rooms
+    .slice()
+    .sort((left, right) => get_room_timestamp(right) - get_room_timestamp(left))
+    .map((room) => {
+      const last_activity_at = get_room_timestamp(room);
+      if (room.room.room_type === "dm") {
+        const dm_agent_id = room.members.find((member) => member.member_agent_id)?.member_agent_id ?? undefined;
+        const dm_agent = dm_agent_id ? agents_by_id.get(dm_agent_id) : null;
+        return {
+          key: `dm-${room.room.id}`,
+          type: "dm" as const,
+          agent_id: dm_agent_id,
+          room_id: room.room.id,
+          label: dm_agent?.name ?? room.room.name?.trim() ?? "未命名私聊",
+          last_activity_at,
+        };
       }
-      continue;
-    }
 
-    if (!conversation.agent_id || !owner) {
-      continue;
-    }
-
-    const existing_dm = latest_dm_by_agent.get(conversation.agent_id);
-    if (!existing_dm || conversation.last_activity_at > existing_dm.last_activity_at) {
-      latest_dm_by_agent.set(conversation.agent_id, {
-        key: `dm-${conversation.agent_id}`,
-        type: "dm",
-        agent_id: conversation.agent_id,
-        label: owner.name,
-        last_activity_at: conversation.last_activity_at,
-      });
-    }
-  }
-
-  return [
-    ...Array.from(latest_dm_by_agent.values()),
-    ...Array.from(latest_room_by_id.values()),
-  ]
-    .sort((left, right) => right.last_activity_at - left.last_activity_at)
+      return {
+        key: `room-${room.room.id}`,
+        type: "room" as const,
+        room_id: room.room.id,
+        label: room.room.name?.trim() || "未命名 Room",
+        last_activity_at,
+      };
+    })
+    .filter((entry) => entry.type === "room" || Boolean(entry.agent_id))
     .slice(0, 3);
 }

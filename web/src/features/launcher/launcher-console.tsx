@@ -8,7 +8,6 @@ import { ANIMATIONS } from "@/config/animation-assets";
 import { LottiePlayer } from "@/shared/ui/feedback/lottie-player";
 import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/store/sidebar";
-import { ConversationWithOwner } from "@/types/app/launcher";
 import { query_launcher } from "@/lib/api/launcher-api";
 import { ensure_direct_room, get_room_contexts } from "@/lib/api/room-api";
 import { build_decorative_tokens, build_launcher_mention_targets, build_recent_launcher_entries } from "./launcher-console-helpers";
@@ -17,7 +16,6 @@ import { LauncherHeroStage } from "./launcher-hero-stage";
 
 export function LauncherConsole({
   agents,
-  conversations,
   rooms,
   current_agent_id,
   on_open_main_agent_dm,
@@ -28,33 +26,19 @@ export function LauncherConsole({
   const navigate = useNavigate();
   const set_active_panel_item = useSidebarStore((s) => s.set_active_panel_item);
 
-  const agents_by_id = useMemo(
-    () => new Map(agents.map((agent) => [agent.agent_id, agent])),
-    [agents],
-  );
-
-  const conversations_with_owners = useMemo(() => {
-    return conversations
-      .map((conversation) => ({
-        conversation,
-        owner: conversation.agent_id ? agents_by_id.get(conversation.agent_id) ?? null : null,
-      }))
-      .sort((left, right) => right.conversation.last_activity_at - left.conversation.last_activity_at);
-  }, [agents_by_id, conversations]);
-
   const decorative_tokens = useMemo(
-    () => build_decorative_tokens(agents, conversations_with_owners),
-    [agents, conversations_with_owners],
+    () => build_decorative_tokens(agents, rooms),
+    [agents, rooms],
   );
 
   const mention_targets = useMemo(
-    () => build_launcher_mention_targets(agents, rooms, conversations_with_owners),
-    [agents, rooms, conversations_with_owners],
+    () => build_launcher_mention_targets(agents, rooms),
+    [agents, rooms],
   );
 
   const recent_entries = useMemo(
-    () => build_recent_launcher_entries(conversations_with_owners),
-    [conversations_with_owners],
+    () => build_recent_launcher_entries(rooms, agents),
+    [rooms, agents],
   );
 
   const handle_open_recent_entry = useCallback((entry: RecentLauncherEntry) => {

@@ -10,12 +10,10 @@
 import { MentionTargetItem } from "@/features/conversation/shared/mention-popover";
 import { Agent } from "@/types/agent/agent";
 import { SpotlightToken } from "@/types/app/launcher";
-import { Conversation } from "@/types/conversation/conversation";
 import { RoomAggregate } from "@/types/conversation/room";
 
 export interface LauncherConsoleProps {
   agents: Agent[];
-  conversations: Conversation[];
   rooms: RoomAggregate[];
   current_agent_id: string | null;
   on_open_main_agent_dm: (initial_prompt?: string) => void;
