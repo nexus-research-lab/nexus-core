@@ -326,7 +326,7 @@ export const HomePanelContent = memo(function HomePanelContent() {
                   room.room.name,
                   room.room.avatar,
                 );
-                const room_avatar_src = get_icon_avatar_src(room_avatar_id);
+                const room_avatar_src = get_icon_avatar_src(room_avatar_id, "room");
 
                 return room_avatar_src ? (
                   <img

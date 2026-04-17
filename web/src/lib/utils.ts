@@ -122,11 +122,20 @@ export function get_initials(
  * 将头像标识解析为可直接使用的图片地址。
  *
  * 兼容三种输入：
- * 1. 纯数字 / 约定字符串：映射到本地 `/icon/*.png`
+ * 1. 纯数字 / 约定字符串：映射到本地 `/icon/{agent|room}/*.png`
  * 2. 绝对 URL / data URL / blob URL
  * 3. 站内绝对路径
  */
-export function get_icon_avatar_src(avatar: string | null | undefined): string | null {
+export type AvatarIconFamily = "agent" | "room";
+export const AGENT_ICON_ID_START = 1;
+export const AGENT_ICON_ID_END = 53;
+export const ROOM_ICON_ID_START = 1;
+export const ROOM_ICON_ID_END = 36;
+
+export function get_icon_avatar_src(
+  avatar: string | null | undefined,
+  icon_family: AvatarIconFamily = "agent",
+): string | null {
   const normalizedAvatar = avatar?.trim();
   if (!normalizedAvatar) {
     return null;
@@ -142,7 +151,7 @@ export function get_icon_avatar_src(avatar: string | null | undefined): string |
     return normalizedAvatar;
   }
 
-  return `/icon/${normalizedAvatar}.png`;
+  return `/icon/${icon_family}/${normalizedAvatar}.png`;
 }
 
 /**
@@ -165,12 +174,12 @@ export function get_stable_icon_id(
 }
 
 /**
- * 房间头像默认使用 13-24 号像素图标，保证未设置时也有稳定的视觉锚点。
+ * 房间头像默认使用 room 图标全集里的稳定编号，保证未设置时也有稳定的视觉锚点。
  */
 export function get_room_avatar_icon_id(
   roomId: string | null | undefined,
   roomName: string | null | undefined,
   explicitAvatar?: string | null,
 ): string {
-  return explicitAvatar?.trim() || get_stable_icon_id(roomId || roomName, 13, 24);
+  return explicitAvatar?.trim() || get_stable_icon_id(roomId || roomName, ROOM_ICON_ID_START, ROOM_ICON_ID_END);
 }

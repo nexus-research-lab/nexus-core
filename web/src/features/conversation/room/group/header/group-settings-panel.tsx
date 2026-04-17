@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { Settings, Trash2, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { get_icon_avatar_src } from "@/lib/utils";
+import { get_icon_avatar_src, ROOM_ICON_ID_END, ROOM_ICON_ID_START } from "@/lib/utils";
 import { useI18n } from "@/shared/i18n/i18n-context";
 import { ConfirmDialog } from "@/shared/ui/dialog/confirm-dialog";
 import { IconPicker } from "@/shared/ui/icon-picker/icon-picker";
@@ -115,7 +115,7 @@ export function RoomSettingsPanel({
     }
   };
 
-  const preview_avatar_src = get_icon_avatar_src(edit_avatar_value || fallback_avatar);
+  const preview_avatar_src = get_icon_avatar_src(edit_avatar_value || fallback_avatar, "room");
 
   const handle_delete_room = async () => {
     set_is_delete_confirm_open(false);
@@ -310,8 +310,9 @@ export function RoomSettingsPanel({
                   <IconPicker
                     value={edit_avatar_value}
                     on_select={handle_update_avatar}
-                    max_icons={12}
-                    start_icon_id={13}
+                    icon_family="room"
+                    max_icons={ROOM_ICON_ID_END - ROOM_ICON_ID_START + 1}
+                    start_icon_id={ROOM_ICON_ID_START}
                     columns={6}
                     icon_size="md"
                     show_clear

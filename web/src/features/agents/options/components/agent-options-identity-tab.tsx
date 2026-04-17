@@ -14,7 +14,7 @@ import type { AgentNameValidationResult, AgentProvider } from "@/types/agent/age
 import type { ProviderOption } from "@/types/capability/provider";
 import { useI18n } from "@/shared/i18n/i18n-context";
 import { IconPicker } from "@/shared/ui/icon-picker/icon-picker";
-import { get_icon_avatar_src } from "@/lib/utils";
+import { AGENT_ICON_ID_END, AGENT_ICON_ID_START, get_icon_avatar_src } from "@/lib/utils";
 import { format_provider_label } from "@/types/capability/provider";
 
 interface AgentOptionsIdentityTabProps {
@@ -191,9 +191,10 @@ export function AgentOptionsIdentityTab({
               columns={6}
               icon_size="sm"
               layout="row"
-              max_icons={12}
+              max_icons={AGENT_ICON_ID_END - AGENT_ICON_ID_START + 1}
               on_select={on_avatar_change}
               show_clear={false}
+              start_icon_id={AGENT_ICON_ID_START}
               value={avatar}
             />
 
@@ -303,9 +304,10 @@ export function AgentOptionsIdentityTab({
             columns={6}
             icon_size="md"
             layout="row"
-            max_icons={12}
+            max_icons={AGENT_ICON_ID_END - AGENT_ICON_ID_START + 1}
             on_select={on_avatar_change}
             show_clear={false}
+            start_icon_id={AGENT_ICON_ID_START}
             value={avatar}
           />
 

@@ -12,7 +12,7 @@ import { createPortal } from "react-dom";
 import { Bot, Check, Hash, Plus, Search, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { get_icon_avatar_src, get_initials, get_room_avatar_icon_id } from "@/lib/utils";
+import { get_icon_avatar_src, get_initials, get_room_avatar_icon_id, ROOM_ICON_ID_END, ROOM_ICON_ID_START } from "@/lib/utils";
 import { useI18n } from "@/shared/i18n/i18n-context";
 import {
   DIALOG_BACKDROP_CLASS_NAME,
@@ -127,7 +127,7 @@ export function CreateRoomDialog({
 
   const can_create = selected_ids.length > 0 && room_name.trim().length > 0 && !is_creating;
   const preview_avatar_id = get_room_avatar_icon_id(null, room_name, selected_avatar);
-  const preview_avatar_src = get_icon_avatar_src(preview_avatar_id);
+  const preview_avatar_src = get_icon_avatar_src(preview_avatar_id, "room");
   const resolved_dialog_title = dialog_title ?? (mode === "manage" ? t("room.manage_dialog_title") : t("room.create_dialog_title"));
   const resolved_dialog_subtitle = dialog_subtitle ?? (mode === "manage" ? t("room.manage_dialog_subtitle") : t("room.create_dialog_subtitle"));
   const resolved_confirm_label = confirm_label ?? (mode === "manage" ? t("common.save") : t("room.create_action"));
@@ -223,12 +223,13 @@ export function CreateRoomDialog({
                 <IconPicker
                   class_name="mt-3"
                   disabled={is_creating}
+                  icon_family="room"
                   layout="row"
                   icon_size="sm"
-                  max_icons={12}
+                  max_icons={ROOM_ICON_ID_END - ROOM_ICON_ID_START + 1}
                   on_select={set_selected_avatar}
                   show_clear={false}
-                  start_icon_id={13}
+                  start_icon_id={ROOM_ICON_ID_START}
                   value={selected_avatar}
                 />
               </div>

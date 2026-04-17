@@ -116,7 +116,7 @@ const GroupConversationHeaderView = memo(({
   ];
 
   const resolved_room_avatar_id = get_room_avatar_icon_id(room_id, header_title, room_avatar);
-  const room_avatar_src = get_icon_avatar_src(resolved_room_avatar_id);
+  const room_avatar_src = get_icon_avatar_src(resolved_room_avatar_id, "room");
 
   const member_agent_ids = room_members.map((member) => member.agent_id);
   const all_room_agents = [

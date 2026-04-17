@@ -4,13 +4,13 @@
  * 通用图标选择器
  * 
  * 用于 Room Avatar、Agent Avatar 等场景。
- * 支持 1-24 号图标 (icon/{number}.png)
+ * 支持按目录族选择图标：icon/agent/{number}.png、icon/room/{number}.png
  */
 
 import { X } from "lucide-react";
 import { useMemo } from "react";
 
-import { cn } from "@/lib/utils";
+import { AvatarIconFamily, cn } from "@/lib/utils";
 import { useI18n } from "@/shared/i18n/i18n-context";
 
 interface IconPickerProps {
@@ -21,6 +21,7 @@ interface IconPickerProps {
     columns?: number; // 默认 4
     layout?: "grid" | "row";
     icon_size?: "sm" | "md" | "lg"; // 默认 md
+    icon_family?: AvatarIconFamily; // 默认 agent
     show_clear?: boolean;
     disabled?: boolean;
     class_name?: string;
@@ -40,6 +41,7 @@ export function IconPicker({
     columns = 6,
     layout = "grid",
     icon_size = "md",
+    icon_family = "agent",
     show_clear = true,
     disabled = false,
     class_name,
@@ -83,7 +85,7 @@ export function IconPicker({
             >
                 {icon_ids.map((icon_id) => {
                     const is_selected = value === icon_id;
-                    const icon_path = `/icon/${icon_id}.png`;
+                    const icon_path = `/icon/${icon_family}/${icon_id}.png`;
 
                     return (
                         <button
