@@ -64,6 +64,7 @@ function MessageItemInner({
         copied_user={state.copied_user}
         on_copy_user={state.handle_copy_user}
         on_edit_user_message={on_edit_user_message}
+        on_open_workspace_file={on_open_workspace_file}
       />
 
       <MessageAssistantSection

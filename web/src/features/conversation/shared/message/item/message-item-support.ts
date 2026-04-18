@@ -141,11 +141,20 @@ export function extract_text_from_content_blocks(content?: ContentBlock[] | null
 
 export function format_message_time(timestamp?: number | null): string {
   if (!timestamp) {
-    return "--:--";
+    return "-- --:--";
   }
-  return new Date(timestamp).toLocaleTimeString("zh-CN", {
+
+  const message_date = new Date(timestamp);
+  const now = new Date();
+  const is_same_year = message_date.getFullYear() === now.getFullYear();
+
+  return message_date.toLocaleString("zh-CN", {
+    ...(is_same_year ? {} : { year: "numeric" }),
+    month: "2-digit",
+    day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    hour12: false,
   });
 }
 

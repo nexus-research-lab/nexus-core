@@ -52,6 +52,7 @@ interface MessageUserSectionProps {
   copied_user: boolean;
   on_copy_user: () => Promise<void>;
   on_edit_user_message?: (message_id: string, new_content: string) => void;
+  on_open_workspace_file?: (path: string) => void;
 }
 
 export function MessageUserSection({
@@ -61,6 +62,7 @@ export function MessageUserSection({
   copied_user,
   on_copy_user,
   on_edit_user_message,
+  on_open_workspace_file,
 }: MessageUserSectionProps) {
   if (!user_message) {
     return null;
@@ -112,12 +114,16 @@ export function MessageUserSection({
             </div>
 
             <div className="rounded-2xl bg-[color-mix(in_srgb,var(--primary)_6%,var(--material-card-background))] px-4 py-3">
-              <p className={cn(
-                "w-full message-cjk-font whitespace-pre-wrap text-left text-(--text-strong) wrap-anywhere",
-                compact ? "text-[15px] leading-6" : "text-[16px] leading-7",
-              )}>
-                {user_content}
-              </p>
+              <ContentRenderer
+                content={user_content}
+                on_open_workspace_file={on_open_workspace_file}
+                class_name={cn(
+                  "w-full text-left text-(--text-strong)",
+                  compact
+                    ? "text-[15px] leading-6 [&_.katex-display]:my-2"
+                    : "text-[16px] leading-7 [&_.katex-display]:my-3",
+                )}
+              />
             </div>
           </div>
         </div>
