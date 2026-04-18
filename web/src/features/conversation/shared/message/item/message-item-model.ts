@@ -39,6 +39,19 @@ import {
   type OrderedAssistantEntry,
 } from "./message-item-support";
 
+function format_compact_count(value: number): string {
+  if (!Number.isFinite(value)) {
+    return "0";
+  }
+  if (value >= 1_000_000) {
+    return `${(value / 1_000_000).toFixed(value >= 10_000_000 ? 0 : 1)}m`;
+  }
+  if (value >= 1_000) {
+    return `${(value / 1_000).toFixed(value >= 10_000 ? 0 : 1)}k`;
+  }
+  return `${value}`;
+}
+
 export function useMessageItemState({
   is_last_round,
   is_loading,
@@ -97,16 +110,16 @@ export function useMessageItemState({
 
     const cache_hit = result_message.usage?.cache_read_input_tokens;
     return {
-      duration: result_message.duration_ms >= 1000
+      duration: result_message.duration_ms > 0
         ? `${(result_message.duration_ms / 1000).toFixed(1)}s`
-        : `${result_message.duration_ms}ms`,
+        : "0s",
       tokens: result_message.usage
-        ? `↑ ${result_message.usage.input_tokens} ↓ ${result_message.usage.output_tokens}`
+        ? `${format_compact_count(result_message.usage.input_tokens)}↑ ${format_compact_count(result_message.usage.output_tokens)}↓`
         : null,
       cost: result_message.total_cost_usd !== undefined
-        ? `$ ${result_message.total_cost_usd ? result_message.total_cost_usd.toFixed(4) : null}`
+        ? `$${result_message.total_cost_usd.toFixed(4)}`
         : null,
-      cache_hit: cache_hit && cache_hit > 0 ? `💾 ${cache_hit}` : null,
+      cache_hit: cache_hit && cache_hit > 0 ? `缓存 ${format_compact_count(cache_hit)}` : null,
     };
   }, [result_message]);
 

@@ -394,6 +394,8 @@ export function MessageAssistantSection({
                         permission_read_only_reason={permission_read_only_reason}
                         on_open_workspace_file={on_open_workspace_file}
                         hidden_tool_names={hidden_tool_names}
+                        class_name="ml-1"
+                        show_timeline_dots
                       />
 
                       {pending_permission_block}

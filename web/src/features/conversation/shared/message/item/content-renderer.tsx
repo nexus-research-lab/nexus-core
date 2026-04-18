@@ -1,5 +1,11 @@
 "use client";
 
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+
+import { cn } from "@/lib/utils";
+import { ContentBlock, TaskProgressContent, ToolResultContent, ToolUseContent } from "@/types/conversation/message";
+import { PendingPermission, PermissionDecisionPayload } from "@/types/conversation/permission";
+
 import { AskUserQuestionBlock } from "../blocks/ask-user-question-block";
 import { CodeBlock } from "../blocks/code-block";
 import { ThinkingBlock } from "../blocks/thinking-block";
@@ -12,8 +18,6 @@ import {
   MessageRail,
   MessageResultLabel,
 } from "../ui/message-rail";
-import { ContentBlock, TaskProgressContent, ToolResultContent, ToolUseContent } from "@/types/conversation/message";
-import { PendingPermission, PermissionDecisionPayload } from "@/types/conversation/permission";
 
 interface ContentRendererProps {
   content: string | ContentBlock[];
@@ -26,6 +30,109 @@ interface ContentRendererProps {
   permission_read_only_reason?: string;
   on_open_workspace_file?: (path: string) => void;
   hidden_tool_names?: string[];
+  class_name?: string;
+  show_timeline_dots?: boolean;
+}
+
+const DEFAULT_TIMELINE_DOT_TOP = 12;
+
+function get_timeline_anchor_element(content_element: HTMLElement): HTMLElement | null {
+  return content_element.querySelector<HTMLElement>("[data-timeline-anchor]")
+    ?? content_element.querySelector<HTMLElement>("[data-markdown-anchor], button, li, h1, h2, h3, h4, pre, blockquote, th, td");
+}
+
+function get_first_text_line_top(content_element: HTMLElement): number | null {
+  const text_walker = document.createTreeWalker(
+    content_element,
+    NodeFilter.SHOW_TEXT,
+    {
+      acceptNode(node) {
+        return node.textContent?.trim()
+          ? NodeFilter.FILTER_ACCEPT
+          : NodeFilter.FILTER_SKIP;
+      },
+    },
+  );
+
+  const first_text_node = text_walker.nextNode();
+  if (!(first_text_node instanceof Text) || !first_text_node.textContent) {
+    return null;
+  }
+
+  const range = document.createRange();
+  range.selectNodeContents(first_text_node);
+  const first_line_rect = range.getClientRects()[0] ?? range.getBoundingClientRect();
+  if (!first_line_rect) {
+    return null;
+  }
+
+  const content_rect = content_element.getBoundingClientRect();
+  return first_line_rect.top - content_rect.top + first_line_rect.height / 2;
+}
+
+function get_timeline_anchor_top(content_element: HTMLElement, anchor_element: HTMLElement | null): number {
+  if (!anchor_element) {
+    return get_first_text_line_top(content_element) ?? DEFAULT_TIMELINE_DOT_TOP;
+  }
+
+  const content_rect = content_element.getBoundingClientRect();
+  const candidate_rect = anchor_element.getBoundingClientRect();
+  const anchor_mode = anchor_element.dataset.timelineAnchorMode;
+  if (anchor_mode === "box") {
+    return candidate_rect.top - content_rect.top + candidate_rect.height / 2;
+  }
+
+  const computed_style = window.getComputedStyle(anchor_element);
+  const parsed_line_height = Number.parseFloat(computed_style.lineHeight);
+  const anchor_height = Number.isFinite(parsed_line_height) ? parsed_line_height : candidate_rect.height;
+
+  return candidate_rect.top - content_rect.top + anchor_height / 2;
+}
+
+function TimelineBlock({
+  children,
+  active = false,
+}: {
+  children: ReactNode;
+  active?: boolean;
+}) {
+  const content_ref = useRef<HTMLDivElement | null>(null);
+  const [dot_top, set_dot_top] = useState(DEFAULT_TIMELINE_DOT_TOP);
+
+  useLayoutEffect(() => {
+    const content_element = content_ref.current;
+    if (!content_element) {
+      return;
+    }
+
+    const anchor_element = get_timeline_anchor_element(content_element);
+
+    const update_dot_top = () => {
+      set_dot_top(get_timeline_anchor_top(content_element, anchor_element));
+    };
+
+    update_dot_top();
+
+    const frame_id = window.requestAnimationFrame(update_dot_top);
+    return () => window.cancelAnimationFrame(frame_id);
+  }, [children]);
+
+  return (
+    <div className="relative grid min-w-0 grid-cols-[12px_minmax(0,1fr)] gap-3 items-start">
+      <div className="relative">
+        <span
+          className={cn(
+            "absolute left-1/2 block h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-(--divider-subtle-color)",
+            active ? "bg-primary/70" : null,
+          )}
+          style={{ top: `${dot_top}px` }}
+        />
+      </div>
+      <div ref={content_ref} className="min-w-0">
+        {children}
+      </div>
+    </div>
+  );
 }
 
 export function ContentRenderer(
@@ -40,15 +147,33 @@ export function ContentRenderer(
     permission_read_only_reason,
     on_open_workspace_file,
     hidden_tool_names = [],
+    class_name,
+    show_timeline_dots = false,
   }: ContentRendererProps) {
   // Handle string content (Markdown)
   if (typeof content === 'string') {
-    return (
+    const markdown = (
       <MarkdownRenderer
         content={content}
         is_streaming={is_streaming}
         on_open_workspace_file={on_open_workspace_file}
       />
+    );
+
+    if (!class_name) {
+      return markdown;
+    }
+
+    return (
+      <div className={cn(class_name, show_timeline_dots ? "relative before:absolute before:bottom-0 before:left-[5.5px] before:top-0 before:w-px before:bg-(--divider-subtle-color)" : null)}>
+        {show_timeline_dots ? (
+          <TimelineBlock active={is_streaming}>
+            {markdown}
+          </TimelineBlock>
+        ) : (
+          markdown
+        )}
+      </div>
     );
   }
 
@@ -94,7 +219,7 @@ export function ContentRenderer(
     : null;
 
   return (
-    <div className="min-w-0 space-y-2.5">
+    <div className={cn("min-w-0 space-y-2.5", class_name, show_timeline_dots ? "relative before:absolute before:bottom-0 before:left-[5.5px] before:top-0 before:w-px before:bg-(--divider-subtle-color)" : null)}>
       {content.map((block, index) => {
         const blockIsStreaming = streaming_block_indexes?.has(index) ?? false;
 
@@ -103,32 +228,48 @@ export function ContentRenderer(
           return null;
         }
 
-        if (block.type === 'text') {
+        const wrap_block = (
+          key: React.Key,
+          node: React.ReactNode,
+        ) => {
+          if (!show_timeline_dots) {
+            return <div key={key}>{node}</div>;
+          }
+
           return (
-            <div key={index}>
-              <ContentRenderer
-                content={block.text}
-                is_streaming={blockIsStreaming}
-                fallback_activity_state={blockIsStreaming ? "replying" : null}
-                on_open_workspace_file={on_open_workspace_file}
-              />
-            </div>
+            <TimelineBlock
+              key={key}
+              active={blockIsStreaming}
+            >
+              {node}
+            </TimelineBlock>
+          );
+        };
+
+        if (block.type === 'text') {
+          return wrap_block(
+            index,
+            <ContentRenderer
+              content={block.text}
+              is_streaming={blockIsStreaming}
+              fallback_activity_state={blockIsStreaming ? "replying" : null}
+              on_open_workspace_file={on_open_workspace_file}
+            />,
           );
         }
 
         if (block.type === 'thinking') {
-          return (
-            <div key={index}>
-              <ThinkingBlock thinking={block.thinking || ''} is_streaming={blockIsStreaming} />
-            </div>
+          return wrap_block(
+            index,
+            <ThinkingBlock thinking={block.thinking || ''} is_streaming={blockIsStreaming} />,
           );
         }
 
         if (block.type === 'task_progress') {
-          return (
-            <MessageRail key={index}>
+          return wrap_block(index, (
+            <MessageRail>
               <MessageCallout>
-                <MessageCalloutTitle>
+                <MessageCalloutTitle data-timeline-anchor>
                   {block.last_tool_name || '后台任务'} 正在执行
                 </MessageCalloutTitle>
                 <div className="mt-1 whitespace-pre-wrap break-words text-(--text-muted)">
@@ -136,7 +277,7 @@ export function ContentRenderer(
                 </div>
               </MessageCallout>
             </MessageRail>
-          );
+          ));
         }
 
         if (block.type === 'tool_use') {
@@ -147,8 +288,8 @@ export function ContentRenderer(
             const toolResult = toolData?.result as ToolResultContent | undefined;
             const pending_permission = pending_permissions_by_tool_use_id?.get(block.id);
             const isThisToolPending = Boolean(pending_permission && !hasResult);
-            return (
-              <div key={index}>
+            return wrap_block(index, (
+              <div>
                 <AskUserQuestionBlock
                   tool_use={block}
                   tool_result={toolResult}
@@ -168,7 +309,7 @@ export function ContentRenderer(
                   }}
                 />
               </div>
-            );
+            ));
           }
 
           // 如果工具在隐藏列表中，则不渲染
@@ -188,8 +329,8 @@ export function ContentRenderer(
             toolStatus = toolData.result.is_error ? 'error' : 'success';
           }
 
-          return (
-            <div key={index} className="min-w-0">
+          return wrap_block(index, (
+            <div className="min-w-0">
               <ToolBlock
                 tool_use={block}
                 tool_result={toolData?.result}
@@ -217,15 +358,18 @@ export function ContentRenderer(
                 interaction_disabled_reason={permission_read_only_reason}
               />
             </div>
-          );
+          ));
         }
 
         // 独立的 tool_result（没有对应的 tool_use）
         if (block.type === 'tool_result') {
-          return (
-            <MessageRail key={index}>
+          return wrap_block(index, (
+            <MessageRail>
               <div className="ml-4">
-                <MessageResultLabel tone={block.is_error ? "error" : "success"}>
+                <MessageResultLabel
+                  data-timeline-anchor
+                  tone={block.is_error ? "error" : "success"}
+                >
                   {block.is_error ? (
                     <span>Error</span>
                   ) : (
@@ -243,7 +387,7 @@ export function ContentRenderer(
                 </div>
               </div>
             </MessageRail>
-          );
+          ));
         }
 
         return null;

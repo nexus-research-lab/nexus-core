@@ -86,12 +86,13 @@ export function MessageCallout({
 export function MessageCalloutTitle({
   children,
   class_name,
+  ...props
 }: {
   children: ReactNode;
   class_name?: string;
-}) {
+} & HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("font-semibold text-(--status-info-soft-text)", class_name)}>
+    <div className={cn("font-semibold text-(--status-info-soft-text)", class_name)} {...props}>
       {children}
     </div>
   );

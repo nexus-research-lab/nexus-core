@@ -30,7 +30,9 @@ export function ThinkingBlock({ thinking, is_streaming }: ThinkingBlockProps) {
         type="button"
       >
         <MessageRailLabel active={Boolean(is_streaming)} class_name="flex-1">
-          <Brain className={is_streaming ? "h-3 w-3 animate-pulse text-(--primary)" : "h-3 w-3 text-(--icon-muted)"} />
+          <span data-timeline-anchor data-timeline-anchor-mode="box" className="flex h-4 w-4 shrink-0 items-center justify-center">
+            <Brain className={is_streaming ? "h-3 w-3 animate-pulse text-(--primary)" : "h-3 w-3 text-(--icon-muted)"} />
+          </span>
           <span>{is_streaming ? "Thinking……" : "Thought"}</span>
         </MessageRailLabel>
         <span className="shrink-0 text-(--icon-muted)">

@@ -428,7 +428,7 @@ export function AskUserQuestionBlock({
                 <div className={cn(
                     "flex h-5 w-5 items-center justify-center rounded-full",
                     headerToneClassName,
-                )}>
+                )} data-timeline-anchor data-timeline-anchor-mode="box">
                     {isTimedOut || isFailed ? (
                         <AlertCircle className="w-3.5 h-3.5" />
                     ) : isSubmitted ? (

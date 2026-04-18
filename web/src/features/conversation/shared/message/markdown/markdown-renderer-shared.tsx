@@ -161,20 +161,20 @@ export function create_markdown_components(
       );
     },
     p({ children }) {
-      return <div className="mb-2 mt-2 min-w-0 max-w-full leading-relaxed text-foreground/90 wrap-anywhere last:mb-0">{children}</div>;
+      return <div data-markdown-anchor className="mb-2 mt-2 min-w-0 max-w-full leading-relaxed text-foreground/90 wrap-anywhere last:mb-0">{children}</div>;
     },
     ul({ children }) {
-      return <ul className="mb-4 max-w-full list-disc space-y-2 pl-5 text-foreground/90 marker:text-muted-foreground sm:pl-6">{children}</ul>;
+      return <ul className="mb-4 max-w-full list-inside list-disc space-y-2 text-foreground/90 marker:text-muted-foreground">{children}</ul>;
     },
     ol({ children }) {
-      return <ol className="mb-4 max-w-full list-decimal space-y-2 pl-5 text-foreground/90 marker:text-muted-foreground sm:pl-6">{children}</ol>;
+      return <ol className="mb-4 max-w-full list-inside list-decimal space-y-2 text-foreground/90 marker:font-medium marker:tabular-nums marker:text-muted-foreground">{children}</ol>;
     },
     li({ children }) {
-      return <li className="max-w-full pl-1 leading-relaxed wrap-anywhere [&>p]:m-0 [&>p]:leading-relaxed">{children}</li>;
+      return <li data-markdown-anchor className="max-w-full overflow-visible leading-relaxed wrap-anywhere [&>p]:m-0 [&>p]:leading-relaxed">{children}</li>;
     },
     blockquote({ children }) {
       return (
-        <blockquote className="my-4 w-full min-w-0 max-w-full overflow-hidden border-l-[3px] border-primary/40 bg-primary/4 px-1 py-2 pl-4 italic text-(--text-muted) wrap-anywhere">
+        <blockquote data-markdown-anchor className="my-4 w-full min-w-0 max-w-full overflow-hidden border-l-[3px] border-primary/40 bg-primary/4 px-1 py-2 pl-4 italic text-(--text-muted) wrap-anywhere">
           <div className="min-w-0 max-w-full">{children}</div>
         </blockquote>
       );
@@ -199,13 +199,13 @@ export function create_markdown_components(
       return <img alt={alt || ""} className="my-4 h-auto max-w-full rounded-[18px] border border-white/40 object-cover" loading="lazy" src={src || ""} />;
     },
     h1({ children }) {
-      return <h1 className="mb-4 mt-6 max-w-full break-words text-2xl font-bold text-foreground first:mt-0">{children}</h1>;
+      return <h1 data-markdown-anchor className="mb-4 mt-6 max-w-full break-words text-2xl font-bold text-foreground first:mt-0">{children}</h1>;
     },
     h2({ children }) {
-      return <h2 className="mb-3 mt-5 max-w-full break-words text-xl font-bold text-foreground">{children}</h2>;
+      return <h2 data-markdown-anchor className="mb-3 mt-5 max-w-full break-words text-xl font-bold text-foreground">{children}</h2>;
     },
     h3({ children }) {
-      return <h3 className="mb-2 mt-4 max-w-full break-words text-lg font-bold text-foreground">{children}</h3>;
+      return <h3 data-markdown-anchor className="mb-2 mt-4 max-w-full break-words text-lg font-bold text-foreground">{children}</h3>;
     },
     table({ children }) {
       return <table className="my-4 w-full max-w-full table-fixed border-collapse overflow-hidden rounded-[14px] border border-(--divider-subtle-color) text-left text-sm sm:table-auto">{children}</table>;
@@ -220,10 +220,10 @@ export function create_markdown_components(
       return <tr className="align-top">{children}</tr>;
     },
     th({ children }) {
-      return <th className="border-b px-3 py-2 font-semibold sm:px-4 sm:py-3" style={{ borderColor: "var(--divider-subtle-color)" }}>{children}</th>;
+      return <th data-markdown-anchor className="border-b px-3 py-2 font-semibold sm:px-4 sm:py-3" style={{ borderColor: "var(--divider-subtle-color)" }}>{children}</th>;
     },
     td({ children }) {
-      return <td className="border-t border-b px-3 py-2 align-top whitespace-normal break-words sm:px-4 sm:py-3" style={{ borderColor: "var(--divider-subtle-color)" }}>{children}</td>;
+      return <td data-markdown-anchor className="border-t border-b px-3 py-2 align-top whitespace-normal break-words sm:px-4 sm:py-3" style={{ borderColor: "var(--divider-subtle-color)" }}>{children}</td>;
     },
   };
 }

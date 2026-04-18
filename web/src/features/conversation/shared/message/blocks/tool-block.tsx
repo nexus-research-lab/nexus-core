@@ -315,7 +315,7 @@ export function ToolBlock({
         onClick={() => hasResult && toggleExpanded()}
       >
         {/* 工具图标 */}
-        <div className={cn("flex h-5 w-5 items-center justify-center rounded-full", TOOL_TONE_STYLES[statusTone])}>
+        <div data-timeline-anchor data-timeline-anchor-mode="box" className={cn("flex h-5 w-5 items-center justify-center rounded-full", TOOL_TONE_STYLES[statusTone])}>
           {isRunning ? (
             <Loader className="h-3.5 w-3.5 animate-spin" />
           ) : isSuccess ? (
