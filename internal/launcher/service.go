@@ -172,6 +172,48 @@ func (s *Service) Suggestions(ctx context.Context) (SuggestionsResponse, error) 
 	}, nil
 }
 
+// Bootstrap 返回 Launcher 首屏最小必要数据。
+func (s *Service) Bootstrap(ctx context.Context) (BootstrapResponse, error) {
+	agents, err := s.agentService.ListAgents(ctx)
+	if err != nil {
+		return BootstrapResponse{}, err
+	}
+	rooms, err := s.roomService.ListRooms(ctx, 200)
+	if err != nil {
+		return BootstrapResponse{}, err
+	}
+
+	agentItems := make([]BootstrapAgent, 0, len(agents))
+	for _, agentValue := range agents {
+		if agentValue.AgentID == s.config.DefaultAgentID {
+			continue
+		}
+		agentItems = append(agentItems, BootstrapAgent{
+			ID:     agentValue.AgentID,
+			Name:   agentValue.Name,
+			Avatar: agentValue.Avatar,
+		})
+	}
+
+	roomItems := make([]BootstrapRoom, 0, len(rooms))
+	for _, roomValue := range rooms {
+		roomItems = append(roomItems, BootstrapRoom{
+			ID:              roomValue.Room.ID,
+			RoomType:        roomValue.Room.RoomType,
+			Name:            roomValue.Room.Name,
+			Avatar:          roomValue.Room.Avatar,
+			DMTargetAgentID: firstRoomAgentID(roomValue),
+			CreatedAt:       isoString(roomValue.Room.CreatedAt),
+			UpdatedAt:       isoString(roomValue.Room.UpdatedAt),
+		})
+	}
+
+	return BootstrapResponse{
+		Agents: agentItems,
+		Rooms:  roomItems,
+	}, nil
+}
+
 func (s *Service) findAgentByKeyword(ctx context.Context, keyword string) (*agent2.Agent, error) {
 	agents, err := s.agentService.ListAgents(ctx)
 	if err != nil {
@@ -256,6 +298,15 @@ func splitTriggeredQuery(value string, trigger string) (string, string, bool) {
 		initialMessage = strings.Join(parts[1:], " ")
 	}
 	return keyword, initialMessage, true
+}
+
+func firstRoomAgentID(roomValue roomsvc.RoomAggregate) string {
+	for _, member := range roomValue.Members {
+		if strings.TrimSpace(member.MemberAgentID) != "" {
+			return member.MemberAgentID
+		}
+	}
+	return ""
 }
 
 func isoString(value interface {

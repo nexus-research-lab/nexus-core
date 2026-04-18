@@ -1,3 +1,5 @@
+import { Agent, ApiAgent } from "@/types/agent/agent";
+
 export interface RoomMember {
   id: string;
   room_id: string;
@@ -27,6 +29,7 @@ export interface RoomConversationRecord {
   room_id: string;
   conversation_type: string;
   title?: string | null;
+  message_count?: number | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -60,6 +63,15 @@ export interface RoomSessionSelection {
 export interface RoomContextAggregate {
   room: RoomRecord;
   members: RoomMember[];
+  member_agents: Agent[];
+  conversation: RoomConversationRecord;
+  sessions: RoomSessionRecord[];
+}
+
+export interface ApiRoomContextAggregate {
+  room: RoomRecord;
+  members: RoomMember[];
+  member_agents?: ApiAgent[] | null;
   conversation: RoomConversationRecord;
   sessions: RoomSessionRecord[];
 }

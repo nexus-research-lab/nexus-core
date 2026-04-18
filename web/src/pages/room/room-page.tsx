@@ -229,6 +229,7 @@ export function RoomPage() {
             is_resizing_editor={controller.is_resizing_editor}
             is_conversation_busy={controller.is_conversation_busy}
             on_add_room_member={controller.handle_add_room_member}
+            on_open_member_manager={controller.handle_prepare_room_agent_catalog}
             on_remove_room_member={controller.handle_remove_room_member}
             on_back_to_directory={handleBackToLauncher}
             on_close_workspace_pane={controller.handle_close_workspace_pane}
@@ -284,7 +285,7 @@ export function RoomPage() {
     <WorkspacePageFrame>
       <GroupRouteEntry
         agents={controller.room_members}
-        conversations={controller.conversations}
+        conversations={controller.current_room_conversations}
         conversation_id={params.conversation_id}
         room_id={params.room_id}
       />

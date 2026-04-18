@@ -909,11 +909,6 @@ func (s *RealtimeService) persistPrivateMessage(slot *activeRoomSlot, message se
 	if err := s.files.AppendSessionMessage(slot.WorkspacePath, slot.RuntimeSessionKey, privateMessage); err != nil {
 		return err
 	}
-	if privateMessage["role"] == "result" {
-		if err := s.files.AppendSessionCost(slot.WorkspacePath, slot.RuntimeSessionKey, buildRoomCostRow(privateMessage)); err != nil {
-			return err
-		}
-	}
 	return s.touchPrivateSession(slot, privateMessage)
 }
 
@@ -1265,28 +1260,6 @@ func resultStatus(subtype any) string {
 	}
 }
 
-func buildRoomCostRow(message session.Message) map[string]any {
-	usage, _ := message["usage"].(map[string]any)
-	return map[string]any{
-		"entry_id":                    "cost_" + anyString(message["message_id"]),
-		"agent_id":                    anyString(message["agent_id"]),
-		"session_key":                 anyString(message["session_key"]),
-		"session_id":                  anyString(message["session_id"]),
-		"round_id":                    anyString(message["round_id"]),
-		"message_id":                  anyString(message["message_id"]),
-		"subtype":                     anyString(message["subtype"]),
-		"input_tokens":                intValue(usage["input_tokens"]),
-		"output_tokens":               intValue(usage["output_tokens"]),
-		"cache_creation_input_tokens": intValue(usage["cache_creation_input_tokens"]),
-		"cache_read_input_tokens":     intValue(usage["cache_read_input_tokens"]),
-		"total_cost_usd":              floatValue(message["total_cost_usd"]),
-		"duration_ms":                 intValue(message["duration_ms"]),
-		"duration_api_ms":             intValue(message["duration_api_ms"]),
-		"num_turns":                   intValue(message["num_turns"]),
-		"created_at":                  time.Now().UTC().Format(time.RFC3339),
-	}
-}
-
 func cloneMessageWithSessionKey(message session.Message, sessionKey string) session.Message {
 	result := make(session.Message, len(message))
 	for key, value := range message {
@@ -1309,21 +1282,6 @@ func stringPointer(value string) *string {
 	}
 	normalized := strings.TrimSpace(value)
 	return &normalized
-}
-
-func floatValue(value any) float64 {
-	switch typed := value.(type) {
-	case float64:
-		return typed
-	case float32:
-		return float64(typed)
-	case int:
-		return float64(typed)
-	case int64:
-		return float64(typed)
-	default:
-		return 0
-	}
 }
 
 func normalizeInt64(value any) int64 {

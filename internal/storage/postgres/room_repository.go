@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	agentmodel "github.com/nexus-research-lab/nexus/internal/model/agent"
 	"github.com/nexus-research-lab/nexus/internal/model/room"
 )
 
@@ -131,6 +132,10 @@ func (r *RoomRepository) GetRoomContexts(ctx context.Context, roomID string) ([]
 	if err != nil || roomAggregate == nil {
 		return nil, err
 	}
+	memberAgents, err := r.listMemberAgents(ctx, r.db, roomID)
+	if err != nil {
+		return nil, err
+	}
 
 	conversations, err := r.listConversations(ctx, r.db, roomID)
 	if err != nil {
@@ -146,6 +151,7 @@ func (r *RoomRepository) GetRoomContexts(ctx context.Context, roomID string) ([]
 		contexts = append(contexts, room.ConversationContextAggregate{
 			Room:         roomAggregate.Room,
 			Members:      roomAggregate.Members,
+			MemberAgents: memberAgents,
 			Conversation: conversation,
 			Sessions:     sessions,
 		})
@@ -676,10 +682,66 @@ ORDER BY joined_at ASC`, roomID)
 	return result, rows.Err()
 }
 
+func (r *RoomRepository) listMemberAgents(
+	ctx context.Context,
+	querier roomQueryer,
+	roomID string,
+) ([]agentmodel.Agent, error) {
+	rows, err := querier.QueryContext(ctx, `
+SELECT
+    a.id,
+    a.name,
+    a.workspace_path,
+    a.status,
+    COALESCE(a.avatar, ''),
+    COALESCE(a.description, ''),
+    COALESCE(a.vibe_tags::text, '[]'),
+    a.created_at,
+    COALESCE(rt.provider, ''),
+    COALESCE(rt.permission_mode, ''),
+    COALESCE(rt.allowed_tools_json, '[]'),
+    COALESCE(rt.disallowed_tools_json, '[]'),
+    COALESCE(rt.mcp_servers_json, '{}'),
+    rt.max_turns,
+    rt.max_thinking_tokens,
+    COALESCE(rt.setting_sources_json, '[]')
+FROM members m
+JOIN agents a ON a.id = m.member_agent_id
+LEFT JOIN runtimes rt ON rt.agent_id = a.id
+WHERE m.room_id = $1 AND m.member_type = 'agent'
+ORDER BY m.joined_at ASC`, roomID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make([]agentmodel.Agent, 0)
+	for rows.Next() {
+		item, scanErr := scanRoomMemberAgent(rows)
+		if scanErr != nil {
+			return nil, scanErr
+		}
+		result = append(result, item)
+	}
+	return result, rows.Err()
+}
+
 func (r *RoomRepository) listConversations(ctx context.Context, querier roomQueryer, roomID string) ([]room.ConversationRecord, error) {
 	rows, err := querier.QueryContext(ctx, `
-SELECT id, room_id, conversation_type, COALESCE(title, ''), created_at, updated_at
-FROM conversations
+SELECT
+    c.id,
+    c.room_id,
+    c.conversation_type,
+    COALESCE(c.title, ''),
+    COALESCE(mc.message_count, 0),
+    c.created_at,
+    c.updated_at
+FROM conversations c
+LEFT JOIN (
+    SELECT conversation_id, COUNT(id) AS message_count
+    FROM messages
+    GROUP BY conversation_id
+) mc ON mc.conversation_id = c.id
 WHERE room_id = $1
 ORDER BY created_at ASC`, roomID)
 	if err != nil {
@@ -790,6 +852,58 @@ func scanMemberRecord(scanner interface{ Scan(...any) error }) (room.MemberRecor
 	return item, nil
 }
 
+func scanRoomMemberAgent(scanner interface{ Scan(...any) error }) (agentmodel.Agent, error) {
+	var (
+		item                agentmodel.Agent
+		vibeTagsJSON        string
+		allowedToolsJSON    string
+		disallowedToolsJSON string
+		mcpServersJSON      string
+		settingSourcesJSON  string
+		maxTurns            sql.NullInt64
+		maxThinkingTokens   sql.NullInt64
+		createdAt           time.Time
+	)
+
+	err := scanner.Scan(
+		&item.AgentID,
+		&item.Name,
+		&item.WorkspacePath,
+		&item.Status,
+		&item.Avatar,
+		&item.Description,
+		&vibeTagsJSON,
+		&createdAt,
+		&item.Options.Provider,
+		&item.Options.PermissionMode,
+		&allowedToolsJSON,
+		&disallowedToolsJSON,
+		&mcpServersJSON,
+		&maxTurns,
+		&maxThinkingTokens,
+		&settingSourcesJSON,
+	)
+	if err != nil {
+		return agentmodel.Agent{}, err
+	}
+
+	item.CreatedAt = createdAt
+	item.VibeTags = agentmodel.ParseJSONStringSlice(vibeTagsJSON)
+	item.Options.AllowedTools = agentmodel.ParseJSONStringSlice(allowedToolsJSON)
+	item.Options.DisallowedTools = agentmodel.ParseJSONStringSlice(disallowedToolsJSON)
+	item.Options.MCPServers = agentmodel.ParseJSONMap(mcpServersJSON)
+	item.Options.SettingSources = agentmodel.ParseJSONStringSlice(settingSourcesJSON)
+	if maxTurns.Valid {
+		value := int(maxTurns.Int64)
+		item.Options.MaxTurns = &value
+	}
+	if maxThinkingTokens.Valid {
+		value := int(maxThinkingTokens.Int64)
+		item.Options.MaxThinkingTokens = &value
+	}
+	return item, nil
+}
+
 func scanConversationRecord(scanner interface{ Scan(...any) error }) (room.ConversationRecord, error) {
 	var (
 		item      room.ConversationRecord
@@ -801,6 +915,7 @@ func scanConversationRecord(scanner interface{ Scan(...any) error }) (room.Conve
 		&item.RoomID,
 		&item.ConversationType,
 		&item.Title,
+		&item.MessageCount,
 		&createdAt,
 		&updatedAt,
 	)

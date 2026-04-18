@@ -255,60 +255,6 @@ func (s *Service) GetSessionMessages(ctx context.Context, rawSessionKey string) 
 	return s.files.ReadSessionMessagesWithActiveRounds(workspacePaths, sessionKey, s.activeRoundIDs(sessionKey))
 }
 
-// GetSessionCostSummary 读取或回算 session 成本汇总。
-func (s *Service) GetSessionCostSummary(ctx context.Context, rawSessionKey string) (CostSummary, error) {
-	sessionKey, parsed, err := s.requireSessionKey(rawSessionKey)
-	if err != nil {
-		return CostSummary{}, err
-	}
-	if parsed.Kind == protocol.SessionKeyKindRoom {
-		return CostSummary{
-			AgentID:    s.config.DefaultAgentID,
-			SessionKey: sessionKey,
-			SessionID:  "",
-			UpdatedAt:  time.Now().UTC(),
-		}, nil
-	}
-
-	workspacePaths, err := s.resolveWorkspacePaths(ctx, parsed.AgentID)
-	if err != nil {
-		return CostSummary{}, err
-	}
-	return s.files.ReadSessionCostSummary(workspacePaths, sessionKey, parsed.AgentID)
-}
-
-// GetAgentCostSummary 汇总指定 Agent 的成本视图。
-func (s *Service) GetAgentCostSummary(ctx context.Context, agentID string) (AgentCostSummary, error) {
-	sessions, err := s.ListAgentSessions(ctx, agentID)
-	if err != nil {
-		return AgentCostSummary{}, err
-	}
-
-	summary := AgentCostSummary{
-		AgentID:   agentID,
-		UpdatedAt: time.Now().UTC(),
-	}
-	for _, item := range sessions {
-		cost, costErr := s.GetSessionCostSummary(ctx, item.SessionKey)
-		if costErr != nil {
-			return AgentCostSummary{}, costErr
-		}
-		if cost.TotalTokens == 0 && cost.TotalCostUSD == 0 && cost.CompletedRounds == 0 {
-			continue
-		}
-		summary.TotalInputTokens += cost.TotalInputTokens
-		summary.TotalOutputTokens += cost.TotalOutputTokens
-		summary.TotalCacheCreationInputTokens += cost.TotalCacheCreationInputTokens
-		summary.TotalCacheReadInputTokens += cost.TotalCacheReadInputTokens
-		summary.TotalCostUSD += cost.TotalCostUSD
-		summary.CompletedRounds += cost.CompletedRounds
-		summary.ErrorRounds += cost.ErrorRounds
-		summary.CostSessions++
-	}
-	summary.TotalTokens = summary.TotalInputTokens + summary.TotalOutputTokens
-	return summary, nil
-}
-
 func (s *Service) loadMutableWorkspaceSession(ctx context.Context, rawSessionKey string) (*Session, string, protocol.SessionKey, error) {
 	sessionKey, parsed, err := s.requireSessionKey(rawSessionKey)
 	if err != nil {

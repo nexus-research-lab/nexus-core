@@ -1,8 +1,8 @@
 /**
  * Conversation API 服务模块
  *
- * [INPUT]: 依赖 @/types/conversation/conversation, @/types/conversation/message, @/types/system/cost, @/types/system/api
- * [OUTPUT]: 对外提供 conversation CRUD、消息、成本等 API 函数
+ * [INPUT]: 依赖 @/types/conversation/conversation, @/types/system/api
+ * [OUTPUT]: 对外提供 conversation CRUD API 函数
  * [POS]: lib 模块的 Conversation API 层
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
  */
@@ -13,8 +13,6 @@ import {
   UpdateConversationParams,
 } from '@/types/conversation/conversation';
 import { ApiAgentSession as ApiAgentSessionRecord, AgentSession as AgentSessionRecord } from '@/types/agent/agent';
-import { Message as ChatMessage } from '@/types/conversation/message';
-import { ConversationCostSummary } from '@/types/system/cost';
 import { get_agent_api_base_url } from '@/config/options';
 import { request_api } from '@/lib/api/http';
 import { assert_structured_session_key } from '@/lib/conversation/session-key';
@@ -83,20 +81,6 @@ export const get_agent_sessions_api = async (agent_id: string): Promise<AgentSes
     method: 'GET',
   });
   return result.map(transform_api_agent_session);
-};
-
-export const get_conversation_messages = async (session_key: string): Promise<ChatMessage[]> => {
-  const normalized_session_key = assert_structured_session_key(session_key);
-  return request_api<ChatMessage[]>(`${AGENT_API_BASE_URL}/sessions/${normalized_session_key}/messages`, {
-    method: 'GET',
-  });
-};
-
-export const get_conversation_cost_summary = async (session_key: string): Promise<ConversationCostSummary> => {
-  const normalized_session_key = assert_structured_session_key(session_key);
-  return request_api<ConversationCostSummary>(`${AGENT_API_BASE_URL}/sessions/${normalized_session_key}/cost/summary`, {
-    method: 'GET',
-  });
 };
 
 export const delete_conversation = async (session_key: string): Promise<{ success: boolean }> => {

@@ -24,10 +24,19 @@ import {
 } from "@/shared/ui/dialog/dialog-styles";
 import { IconPicker } from "@/shared/ui/icon-picker/icon-picker";
 import { WorkspaceIconFrame } from "@/shared/ui/workspace/catalog/workspace-catalog-card";
-import { Agent } from "@/types/agent/agent";
+
+export interface RoomMemberAgentOption {
+  agent_id: string;
+  name: string;
+  avatar?: string | null;
+  status?: string;
+  options?: {
+    system_prompt?: string;
+  };
+}
 
 interface CreateRoomDialogProps {
-  agents: Agent[];
+  agents: RoomMemberAgentOption[];
   is_open: boolean;
   is_creating?: boolean;
   mode?: "create" | "manage";
@@ -202,7 +211,7 @@ export function CreateRoomDialog({
                     {preview_avatar_src ? (
                       <img
                         alt="room-avatar-preview"
-                        className="h-full w-full object-contain"
+                        className="h-full w-full object-cover"
                         src={preview_avatar_src}
                       />
                     ) : (

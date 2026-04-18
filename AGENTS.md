@@ -15,7 +15,7 @@
 - 后端入口在 `cmd/`，业务实现放在 `internal/`，协议真相源在 `internal/protocol/`。
 - 所有 API 路由统一挂在 `/agent/v1/...` 下，WebSocket 入口固定为 `/agent/v1/chat/ws`。
 - 数据库迁移统一走 Goose，目录为 `db/migrations/sqlite` 和 `db/migrations/postgres`。
-- Workspace、session JSONL、telemetry cost 文件继续作为文件侧真相源保留。
+- Workspace 与 session JSONL 文件继续作为文件侧真相源保留。
 
 ## Architecture Flow
 - 服务入口：`cmd/nexus-server`

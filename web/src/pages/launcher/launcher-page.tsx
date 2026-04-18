@@ -85,7 +85,7 @@ export function LauncherPage() {
   }, [controller, navigate, set_active_panel_item]);
 
   const handle_request_delete_agent = useCallback((agent_id: string) => {
-    const target_agent = controller.agents.find((agent) => agent.agent_id === agent_id);
+    const target_agent = controller.agents.find((agent) => agent.id === agent_id);
     controller.set_is_dialog_open(false);
     set_pending_delete_agent({
       id: agent_id,

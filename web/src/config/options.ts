@@ -13,6 +13,7 @@ export let DEFAULT_AGENT_PROVIDER: AgentProvider = "";
 
 const DEFAULT_API_PATH = "/agent/v1";
 const DEFAULT_WS_PATH = "/agent/v1/chat/ws";
+const ENABLE_STRICT_MODE = false;
 
 function build_browser_url(pathname: string, use_websocket_protocol: boolean): string {
   if (typeof window === "undefined") {
@@ -45,6 +46,10 @@ export function get_agent_api_base_url(): string {
 
 export function get_agent_ws_url(): string {
   return resolve_runtime_url(import.meta.env.VITE_WS_URL, DEFAULT_WS_PATH, true);
+}
+
+export function is_strict_mode_enabled(): boolean {
+  return ENABLE_STRICT_MODE;
 }
 
 export function get_default_agent_id(): string {

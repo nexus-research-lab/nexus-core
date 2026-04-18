@@ -192,6 +192,14 @@ func (s *Service) ListTasks(ctx context.Context, agentID string) ([]CronJob, err
 	return result, nil
 }
 
+// CountEnabledTasks 返回启用中的定时任务数量。
+func (s *Service) CountEnabledTasks(ctx context.Context, agentID string) (int, error) {
+	if err := s.ensureReady(ctx); err != nil {
+		return 0, err
+	}
+	return s.repository.CountEnabledCronJobs(ctx, strings.TrimSpace(agentID))
+}
+
 // CreateTask 创建任务。
 func (s *Service) CreateTask(ctx context.Context, input CreateJobInput) (*CronJob, error) {
 	if err := s.ensureReady(ctx); err != nil {

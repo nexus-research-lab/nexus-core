@@ -299,7 +299,7 @@ export function RoomSettingsPanel({
                     <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-[12px] border border-(--surface-avatar-border) bg-(--surface-avatar-background) shadow-(--surface-avatar-shadow)">
                       <img
                         alt="room-avatar"
-                        className="h-full w-full object-contain"
+                        className="h-full w-full object-cover"
                         crossOrigin="anonymous"
                         src={preview_avatar_src ?? undefined}
                       />

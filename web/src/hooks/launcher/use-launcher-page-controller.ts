@@ -15,46 +15,80 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { is_main_agent } from "@/config/options";
 import { useRoomPageAgentDialog } from "@/hooks/room-page-controller/use-room-page-agent-dialog";
-import { list_rooms, subscribe_room_list_updates } from "@/lib/api/room-api";
+import { get_launcher_bootstrap_api } from "@/lib/api/launcher-api";
+import { subscribe_room_list_updates } from "@/lib/api/room-api";
 import { useAgentStore } from "@/store/agent";
-import { RoomAggregate } from "@/types/conversation/room";
+import { LauncherAgentSummary, LauncherRoomSummary } from "@/types/app/launcher";
+
+interface LauncherBootstrapState {
+  agents: LauncherAgentSummary[];
+  rooms: LauncherRoomSummary[];
+}
+
+let launcher_bootstrap_inflight: Promise<LauncherBootstrapState> | null = null;
+
+function run_launcher_bootstrap(): Promise<LauncherBootstrapState> {
+  if (launcher_bootstrap_inflight) {
+    return launcher_bootstrap_inflight;
+  }
+
+  launcher_bootstrap_inflight = get_launcher_bootstrap_api()
+    .then((payload) => ({
+      agents: payload.agents,
+      rooms: payload.rooms,
+    }))
+    .finally(() => {
+      launcher_bootstrap_inflight = null;
+    });
+  return launcher_bootstrap_inflight;
+}
 
 export function useLauncherPageController() {
-  const agents = useAgentStore((state) => state.agents);
+  const stored_agents = useAgentStore((state) => state.agents);
   const current_agent_id = useAgentStore((state) => state.current_agent_id);
   const create_agent = useAgentStore((state) => state.create_agent);
   const update_agent = useAgentStore((state) => state.update_agent);
   const delete_agent = useAgentStore((state) => state.delete_agent);
   const set_current_agent = useAgentStore((state) => state.set_current_agent);
-  const load_agents_from_server = useAgentStore((state) => state.load_agents_from_server);
   const [is_hydrated, set_is_hydrated] = useState(false);
-  const [rooms, set_rooms] = useState<RoomAggregate[]>([]);
-  const regular_agents = useMemo(
-    () => agents.filter((agent) => !is_main_agent(agent.agent_id)),
-    [agents],
+  const [agents, set_agents] = useState<LauncherAgentSummary[]>([]);
+  const [rooms, set_rooms] = useState<LauncherRoomSummary[]>([]);
+  const dialog_agents = useMemo(
+    () => stored_agents.filter((agent) => !is_main_agent(agent.agent_id)),
+    [stored_agents],
   );
 
+  const refresh_bootstrap = useCallback(() => {
+    void get_launcher_bootstrap_api().then((payload) => {
+      set_agents(payload.agents);
+      set_rooms(payload.rooms);
+    });
+  }, []);
+
   const agent_dialog = useRoomPageAgentDialog({
-    agents: regular_agents,
+    agents: dialog_agents,
     create_agent: async (params) => {
       const next_agent_id = await create_agent(params);
       set_current_agent(next_agent_id);
+      refresh_bootstrap();
       return next_agent_id;
     },
-    update_agent,
+    update_agent: async (agent_id, params) => {
+      await update_agent(agent_id, params);
+      refresh_bootstrap();
+    },
   });
-
-  const refresh_rooms = useCallback(() => {
-    void list_rooms(200).then(set_rooms);
-  }, []);
 
   useEffect(() => {
     let is_cancelled = false;
 
-    void Promise.all([
-      load_agents_from_server(),
-      list_rooms(200).then(set_rooms),
-    ])
+    void run_launcher_bootstrap()
+      .then((payload) => {
+        if (!is_cancelled) {
+          set_agents(payload.agents);
+          set_rooms(payload.rooms);
+        }
+      })
       .catch((error) => {
         console.error("[useLauncherPageController] 初始化 Launcher 数据失败:", error);
       })
@@ -67,25 +101,29 @@ export function useLauncherPageController() {
     return () => {
       is_cancelled = true;
     };
-  }, [load_agents_from_server]);
+  }, []);
 
-  useEffect(() => subscribe_room_list_updates(refresh_rooms), [refresh_rooms]);
+  useEffect(() => subscribe_room_list_updates(refresh_bootstrap), [refresh_bootstrap]);
 
   return useMemo(() => ({
-    agents: regular_agents,
+    agents,
     rooms,
     current_agent_id,
     is_hydrated,
     handle_select_agent: set_current_agent,
-    handle_delete_agent: delete_agent,
+    handle_delete_agent: async (agent_id: string) => {
+      await delete_agent(agent_id);
+      refresh_bootstrap();
+    },
     ...agent_dialog,
   }), [
-    regular_agents,
+    agents,
     rooms,
     current_agent_id,
     is_hydrated,
     set_current_agent,
     delete_agent,
+    refresh_bootstrap,
     agent_dialog,
   ]);
 }

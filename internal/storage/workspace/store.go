@@ -54,21 +54,6 @@ func (s *Store) SessionMessagePath(workspacePath string, sessionKey string) stri
 	return filepath.Join(s.SessionDir(workspacePath, sessionKey), "messages.jsonl")
 }
 
-// SessionCostPath 返回 telemetry_cost.jsonl 路径。
-func (s *Store) SessionCostPath(workspacePath string, sessionKey string) string {
-	return filepath.Join(s.SessionDir(workspacePath, sessionKey), "telemetry_cost.jsonl")
-}
-
-// SessionCostSummaryPath 返回 telemetry_cost_summary.json 路径。
-func (s *Store) SessionCostSummaryPath(workspacePath string, sessionKey string) string {
-	return filepath.Join(s.SessionDir(workspacePath, sessionKey), "telemetry_cost_summary.json")
-}
-
-// AgentCostSummaryPath 返回 Agent 汇总路径。
-func (s *Store) AgentCostSummaryPath(workspacePath string) string {
-	return filepath.Join(workspacePath, ".agents", "telemetry_cost_summary.json")
-}
-
 // RoomConversationDir 返回 Room 对话目录。
 func (s *Store) RoomConversationDir(conversationID string) string {
 	return filepath.Join(s.HomeRoot, "rooms", encodeSessionKey(conversationID))

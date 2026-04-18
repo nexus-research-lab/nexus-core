@@ -148,11 +148,6 @@ func (c *sessionDeliveryChannel) persistMessage(
 	if err := c.files.AppendSessionMessage(workspacePath, sessionValue.SessionKey, message); err != nil {
 		return session.Session{}, err
 	}
-	if strings.TrimSpace(stringValue(message["role"])) == "result" {
-		if err := c.files.AppendSessionCost(workspacePath, sessionValue.SessionKey, buildDeliveryCostRow(message)); err != nil {
-			return session.Session{}, err
-		}
-	}
 
 	sessionValue.MessageCount++
 	sessionValue.LastActivity = time.Now().UTC()
@@ -188,28 +183,6 @@ func (c *sessionDeliveryChannel) broadcastMessage(
 	c.permission.BroadcastEvent(ctx, sessionKey, event)
 }
 
-func buildDeliveryCostRow(message session.Message) map[string]any {
-	usage, _ := message["usage"].(map[string]any)
-	return map[string]any{
-		"entry_id":                    "cost_" + stringValue(message["message_id"]),
-		"agent_id":                    stringValue(message["agent_id"]),
-		"session_key":                 stringValue(message["session_key"]),
-		"session_id":                  stringValue(message["session_id"]),
-		"round_id":                    stringValue(message["round_id"]),
-		"message_id":                  stringValue(message["message_id"]),
-		"subtype":                     stringValue(message["subtype"]),
-		"input_tokens":                intValue(usage["input_tokens"]),
-		"output_tokens":               intValue(usage["output_tokens"]),
-		"cache_creation_input_tokens": intValue(usage["cache_creation_input_tokens"]),
-		"cache_read_input_tokens":     intValue(usage["cache_read_input_tokens"]),
-		"total_cost_usd":              floatValue(message["total_cost_usd"]),
-		"duration_ms":                 intValue(message["duration_ms"]),
-		"duration_api_ms":             intValue(message["duration_api_ms"]),
-		"num_turns":                   intValue(message["num_turns"]),
-		"created_at":                  time.Now().UTC().Format(time.RFC3339),
-	}
-}
-
 func firstNonEmpty(values ...string) string {
 	for _, item := range values {
 		if strings.TrimSpace(item) != "" {
@@ -233,30 +206,4 @@ func stringPointerValue(value *string) string {
 		return ""
 	}
 	return strings.TrimSpace(*value)
-}
-
-func intValue(value any) int {
-	switch typed := value.(type) {
-	case int:
-		return typed
-	case int64:
-		return int(typed)
-	case float64:
-		return int(typed)
-	default:
-		return 0
-	}
-}
-
-func floatValue(value any) float64 {
-	switch typed := value.(type) {
-	case float64:
-		return typed
-	case int:
-		return float64(typed)
-	case int64:
-		return float64(typed)
-	default:
-		return 0
-	}
 }

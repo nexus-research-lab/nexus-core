@@ -151,6 +151,34 @@ func (s *Service) ListSkills(ctx context.Context, query Query) ([]Info, error) {
 	return items, nil
 }
 
+// CountSkills 返回符合查询条件的技能数量。
+func (s *Service) CountSkills(ctx context.Context, query Query) (int, error) {
+	records, installedNames, isMainAgent, err := s.catalogWithAgentState(ctx, strings.TrimSpace(query.AgentID))
+	if err != nil {
+		return 0, err
+	}
+	needle := strings.ToLower(strings.TrimSpace(query.Q))
+	count := 0
+	for _, record := range records {
+		detail := record.Detail
+		if detail.Scope == scopeMain && query.AgentID != "" && !isMainAgent {
+			continue
+		}
+		detail.Installed = installedNames[detail.Name]
+		if query.CategoryKey != "" && detail.CategoryKey != query.CategoryKey {
+			continue
+		}
+		if query.SourceType != "" && detail.SourceType != query.SourceType {
+			continue
+		}
+		if needle != "" && !matchSkillQuery(detail, needle) {
+			continue
+		}
+		count += 1
+	}
+	return count, nil
+}
+
 // GetSkillDetail 返回单个 skill 详情。
 func (s *Service) GetSkillDetail(ctx context.Context, skillName string, agentID string) (*Detail, error) {
 	records, installedNames, isMainAgent, err := s.catalogWithAgentState(ctx, strings.TrimSpace(agentID))

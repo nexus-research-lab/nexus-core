@@ -112,19 +112,6 @@ func (s *Server) handleListAgentSessions(writer http.ResponseWriter, request *ht
 	s.writeSuccess(writer, items)
 }
 
-func (s *Server) handleAgentCostSummary(writer http.ResponseWriter, request *http.Request) {
-	item, err := s.session.GetAgentCostSummary(request.Context(), chi.URLParam(request, "agent_id"))
-	if errors.Is(err, agent2.ErrAgentNotFound) {
-		s.writeFailure(writer, http.StatusNotFound, "资源不存在")
-		return
-	}
-	if err != nil {
-		s.writeFailure(writer, http.StatusInternalServerError, err.Error())
-		return
-	}
-	s.writeSuccess(writer, item)
-}
-
 func (s *Server) handleListSessions(writer http.ResponseWriter, request *http.Request) {
 	items, err := s.session.ListSessions(request.Context())
 	if err != nil {
@@ -177,32 +164,6 @@ func (s *Server) handleUpdateSession(writer http.ResponseWriter, request *http.R
 	}
 	if errors.Is(err, sessionsvc.ErrSessionMutationUnsupported) || isClientMessageError(err) {
 		s.writeFailure(writer, http.StatusBadRequest, err.Error())
-		return
-	}
-	if err != nil {
-		s.writeFailure(writer, http.StatusInternalServerError, err.Error())
-		return
-	}
-	s.writeSuccess(writer, item)
-}
-
-func (s *Server) handleSessionMessages(writer http.ResponseWriter, request *http.Request) {
-	items, err := s.session.GetSessionMessages(request.Context(), chi.URLParam(request, "session_key"))
-	if isStructuredSessionKeyError(err) {
-		s.writeFailure(writer, http.StatusUnprocessableEntity, err.Error())
-		return
-	}
-	if err != nil {
-		s.writeFailure(writer, http.StatusInternalServerError, err.Error())
-		return
-	}
-	s.writeSuccess(writer, items)
-}
-
-func (s *Server) handleSessionCostSummary(writer http.ResponseWriter, request *http.Request) {
-	item, err := s.session.GetSessionCostSummary(request.Context(), chi.URLParam(request, "session_key"))
-	if isStructuredSessionKeyError(err) {
-		s.writeFailure(writer, http.StatusUnprocessableEntity, err.Error())
 		return
 	}
 	if err != nil {

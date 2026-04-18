@@ -1,4 +1,4 @@
-import { get_conversation_messages } from '@/lib/api/agent-api';
+import { get_room_conversation_messages } from '@/lib/api/room-api';
 import { build_room_shared_session_key, build_ws_dm_session_key } from '@/lib/conversation/session-key';
 import { generate_uuid } from '@/lib/uuid';
 import { AgentConversationLifecycleContext } from '@/types/agent/agent-conversation';
@@ -74,7 +74,14 @@ export async function load_agent_session(
   }
 
   try {
-    const data = await get_conversation_messages(session_key);
+    if (!context.identity?.room_id || !context.identity?.conversation_id) {
+      throw new Error('room_id 与 conversation_id 不能为空');
+    }
+
+    const data = await get_room_conversation_messages(
+      context.identity.room_id,
+      context.identity.conversation_id,
+    );
     if (
       context.load_request_id_ref.current !== request_id ||
       context.active_session_key_ref.current !== session_key

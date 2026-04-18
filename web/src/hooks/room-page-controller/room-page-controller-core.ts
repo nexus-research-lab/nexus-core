@@ -10,7 +10,7 @@
 import { build_room_agent_session_key, build_room_shared_session_key } from "@/lib/conversation/session-key";
 import { Agent } from "@/types/agent/agent";
 import { AgentConversationIdentity } from "@/types/agent/agent-conversation";
-import { Conversation, RoomConversationView } from "@/types/conversation/conversation";
+import { RoomConversationView } from "@/types/conversation/conversation";
 import { RoomContextAggregate } from "@/types/conversation/room";
 
 function to_timestamp(value?: string | null): number {
@@ -35,14 +35,9 @@ function get_context_last_activity_timestamp(context: RoomContextAggregate): num
 
 function get_room_conversation_session_key(
   context: RoomContextAggregate,
-  latest_conversation: Conversation | undefined,
   fallback_session: RoomContextAggregate["sessions"][number] | undefined,
 ): string {
   if (context.room.room_type === "dm") {
-    if (latest_conversation?.session_key) {
-      return latest_conversation.session_key;
-    }
-
     if (fallback_session?.agent_id) {
       return build_room_agent_session_key(
         context.conversation.id,
@@ -85,19 +80,10 @@ function build_fallback_room_member_agent(
 
 export function build_room_conversation_views(
   room_contexts: RoomContextAggregate[],
-  conversations: Conversation[],
 ): RoomConversationView[] {
   return room_contexts
     .filter((context) => Boolean(context.conversation.id))
     .map((context) => {
-      const session_conversations = conversations.filter(
-        (conversation) =>
-          conversation.room_id === context.room.id &&
-          conversation.conversation_id === context.conversation.id,
-      );
-      const latest_conversation = [...session_conversations].sort(
-        (left, right) => right.last_activity_at - left.last_activity_at,
-      )[0];
       const context_last_activity_at = get_context_last_activity_timestamp(context);
       const fallback_session = [...context.sessions].sort((left, right) => {
         const left_timestamp = (
@@ -116,28 +102,19 @@ export function build_room_conversation_views(
       return {
         session_key: get_room_conversation_session_key(
           context,
-          latest_conversation,
           fallback_session,
         ),
         room_id: context.room.id,
         conversation_id: context.conversation.id,
         conversation_type: context.conversation.conversation_type,
-        session_id: latest_conversation?.session_id ?? fallback_session?.sdk_session_id ?? null,
-        agent_id: latest_conversation?.agent_id ?? fallback_session?.agent_id,
+        session_id: fallback_session?.sdk_session_id ?? null,
+        agent_id: fallback_session?.agent_id,
         title: context.conversation.title?.trim() || context.room.name || "未命名对话",
-        options: latest_conversation?.options ?? {},
-        created_at:
-          latest_conversation?.created_at ??
-          (to_timestamp(context.conversation.created_at) || context_last_activity_at),
-        last_activity_at:
-          latest_conversation?.last_activity_at ?? context_last_activity_at,
-        is_active: latest_conversation?.is_active,
-        message_count:
-          latest_conversation?.message_count ??
-          session_conversations.reduce(
-            (count, conversation) => count + (conversation.message_count ?? 0),
-            0,
-          ),
+        options: {},
+        created_at: to_timestamp(context.conversation.created_at) || context_last_activity_at,
+        last_activity_at: context_last_activity_at,
+        is_active: fallback_session?.status === "active",
+        message_count: context.conversation.message_count ?? 0,
       } satisfies RoomConversationView;
     })
     .sort((left, right) => right.last_activity_at - left.last_activity_at);
@@ -190,28 +167,24 @@ export function resolve_selected_member_agent_id(
 }
 
 export function resolve_current_agent_session_identity(params: {
-  current_agent_conversation: Conversation | null;
   current_room_id: string | null;
+  current_conversation_id: string | null;
   active_room_session: RoomContextAggregate["sessions"][number] | null;
   current_room_type: string;
 }): AgentConversationIdentity | null {
   const {
-    current_agent_conversation,
     current_room_id,
+    current_conversation_id,
     active_room_session,
     current_room_type,
   } = params;
 
-  const resolved_agent_id = current_agent_conversation?.agent_id ?? active_room_session?.agent_id ?? null;
-  const resolved_conversation_id = (
-    current_agent_conversation?.conversation_id ??
-    active_room_session?.conversation_id ??
-    null
-  );
-  const resolved_room_id = current_agent_conversation?.room_id ?? current_room_id ?? null;
-  const resolved_room_session_id = current_agent_conversation?.room_session_id ?? active_room_session?.id ?? null;
+  const resolved_agent_id = active_room_session?.agent_id ?? null;
+  const resolved_conversation_id = current_conversation_id ?? active_room_session?.conversation_id ?? null;
+  const resolved_room_id = current_room_id ?? null;
+  const resolved_room_session_id = active_room_session?.id ?? null;
 
-  let resolved_session_key = current_agent_conversation?.session_key ?? null;
+  let resolved_session_key: string | null = null;
   if (!resolved_session_key && resolved_conversation_id) {
     resolved_session_key = (
       current_room_type === "dm" && resolved_agent_id
@@ -234,10 +207,12 @@ export function resolve_current_agent_session_identity(params: {
   };
 }
 
-export function resolve_room_member_agents(
-  agents: Agent[],
-  room_contexts: RoomContextAggregate[],
-): Agent[] {
+export function resolve_room_member_agents(room_contexts: RoomContextAggregate[]): Agent[] {
+  const member_agents = room_contexts[0]?.member_agents ?? [];
+  if (member_agents.length > 0) {
+    return member_agents;
+  }
+
   const member_agent_ids =
     room_contexts[0]?.members
       .filter((member) => member.member_type === "agent")
@@ -245,7 +220,6 @@ export function resolve_room_member_agents(
       .filter((member_agent_id): member_agent_id is string => Boolean(member_agent_id)) ?? [];
 
   return member_agent_ids.map((agent_id) => (
-    agents.find((agent) => agent.agent_id === agent_id) ??
     build_fallback_room_member_agent(agent_id, room_contexts)
   ));
 }

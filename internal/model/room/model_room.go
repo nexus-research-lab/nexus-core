@@ -9,7 +9,11 @@
 
 package room
 
-import "time"
+import (
+	"time"
+
+	agentmodel "github.com/nexus-research-lab/nexus/internal/model/agent"
+)
 
 const (
 	// RoomTypeDM 表示单成员直聊房间。
@@ -61,6 +65,7 @@ type ConversationRecord struct {
 	RoomID           string    `json:"room_id"`
 	ConversationType string    `json:"conversation_type"`
 	Title            string    `json:"title,omitempty"`
+	MessageCount     int       `json:"message_count"`
 	CreatedAt        time.Time `json:"created_at,omitempty"`
 	UpdatedAt        time.Time `json:"updated_at,omitempty"`
 }
@@ -85,6 +90,7 @@ type SessionRecord struct {
 type ConversationContextAggregate struct {
 	Room         RoomRecord         `json:"room"`
 	Members      []MemberRecord     `json:"members"`
+	MemberAgents []agentmodel.Agent `json:"member_agents,omitempty"`
 	Conversation ConversationRecord `json:"conversation"`
 	Sessions     []SessionRecord    `json:"sessions"`
 }

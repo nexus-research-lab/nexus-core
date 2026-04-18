@@ -36,6 +36,7 @@ interface GroupConversationHeaderProps {
   on_create_conversation?: (title?: string) => Promise<string | null>;
   on_add_room_member: (agent_id: string) => Promise<void>;
   on_remove_room_member: (agent_id: string) => Promise<void>;
+  on_open_member_manager: () => Promise<void>;
   on_update_room: (room_id: string, params: UpdateRoomParams) => Promise<void>;
 }
 
@@ -103,6 +104,7 @@ const GroupConversationHeaderView = memo(({
   on_create_conversation,
   on_add_room_member,
   on_remove_room_member,
+  on_open_member_manager,
   on_update_room,
 }: GroupConversationHeaderProps) => {
   const { t } = useI18n();
@@ -126,6 +128,11 @@ const GroupConversationHeaderView = memo(({
     ),
   ];
 
+  const handle_open_member_list = async () => {
+    await on_open_member_manager();
+    set_is_member_list_open(true);
+  };
+
   const title_trailing = (
     <WorkspaceConversationSwitcher
       conversations={conversations}
@@ -141,7 +148,9 @@ const GroupConversationHeaderView = memo(({
     <>
       <div className="hidden lg:flex">
         <MemberAvatarStack
-          on_click={() => set_is_member_list_open(true)}
+          on_click={() => {
+            void handle_open_member_list();
+          }}
           room_members={room_members}
         />
       </div>
@@ -156,7 +165,7 @@ const GroupConversationHeaderView = memo(({
         leading={room_avatar_src ? (
           <img
             alt={header_title}
-            className="h-5 w-5 rounded-[6px] object-contain"
+            className="h-5 w-5 rounded-[6px] object-cover"
             src={room_avatar_src}
           />
         ) : (

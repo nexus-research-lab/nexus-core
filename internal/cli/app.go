@@ -609,28 +609,6 @@ func newSessionCommand(service *sessionsvc.Service) *cobra.Command {
 
 	command.AddCommand(func() *cobra.Command {
 		var sessionKey string
-		costCommand := &cobra.Command{
-			Use:   "cost",
-			Short: "读取会话成本汇总",
-			RunE: func(cmd *cobra.Command, args []string) error {
-				item, err := service.GetSessionCostSummary(context.Background(), sessionKey)
-				if err != nil {
-					return err
-				}
-				return emitJSON(map[string]any{
-					"domain": "session",
-					"action": "cost",
-					"item":   item,
-				})
-			},
-		}
-		costCommand.Flags().StringVar(&sessionKey, "session-key", "", "structured session key")
-		_ = costCommand.MarkFlagRequired("session-key")
-		return costCommand
-	}())
-
-	command.AddCommand(func() *cobra.Command {
-		var sessionKey string
 		deleteCommand := &cobra.Command{
 			Use:   "delete",
 			Short: "删除会话",

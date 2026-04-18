@@ -25,6 +25,7 @@ import { useRoomPageAgentDialog } from "@/hooks/room-page-controller/use-room-pa
 import { useRoomPageData } from "@/hooks/room-page-controller/use-room-page-data";
 import { useAgentStore } from "@/store/agent";
 import { useConversationStore } from "@/store/conversation";
+import { AgentIdentityDraft, AgentOptions } from "@/types/agent/agent";
 import { ConversationSnapshotPayload, RoomConversationView } from "@/types/conversation/conversation";
 import { UpdateRoomParams } from "@/types/conversation/room";
 import { RoomPageControllerOptions } from "@/types/app/route";
@@ -41,24 +42,18 @@ export function useRoomPageController({
   const delete_agent = useAgentStore((s) => s.delete_agent);
   const load_agents_from_server = useAgentStore((s) => s.load_agents_from_server);
 
-  const conversations = useConversationStore((s) => s.conversations);
   const sync_conversation_snapshot = useConversationStore((s) => s.sync_conversation_snapshot);
-  const load_conversations_from_server = useConversationStore((s) => s.load_conversations_from_server);
 
   const [selected_member_agent_id, set_selected_member_agent_id] = useState<string | null>(null);
   const {
     is_bootstrapped,
     room_contexts,
     set_room_contexts,
-    rooms,
     room_error,
     is_room_loading,
-    refresh_rooms,
     refresh_room_contexts,
   } = useRoomPageData({
     room_id,
-    load_agents_from_server,
-    load_conversations_from_server,
   });
   const {
     is_dialog_open,
@@ -93,12 +88,12 @@ export function useRoomPageController({
   );
 
   const room_member_agents = useMemo(() => {
-    return resolve_room_member_agents(agents, scoped_room_contexts);
-  }, [agents, scoped_room_contexts]);
+    return resolve_room_member_agents(scoped_room_contexts);
+  }, [scoped_room_contexts]);
 
   const room_conversations = useMemo<RoomConversationView[]>(() => {
-    return build_room_conversation_views(scoped_room_contexts, conversations);
-  }, [conversations, scoped_room_contexts]);
+    return build_room_conversation_views(scoped_room_contexts);
+  }, [scoped_room_contexts]);
 
   const selected_conversation_id = useMemo(() => {
     return resolve_selected_conversation_id(conversation_id, room_conversations);
@@ -138,24 +133,21 @@ export function useRoomPageController({
     [current_room_context, selected_member_agent_id],
   );
 
-  const current_agent_conversation = useMemo(
-    () =>
-      conversations.find(
-        (conversation) => conversation.room_session_id === active_room_session?.id,
-      ) ?? null,
-    [active_room_session?.id, conversations],
-  );
-
-  // DM 模式下，store 里可能暂时没有对应 conversation，
-  // 这里直接回退到 room session，避免 workspace loader 被空 session_key 卡住。
+  // Room 详情页现在直接基于当前 room context 解析 session 身份，
+  // 不再依赖全局 conversations 列表做首屏补全。
   const current_agent_session_identity = useMemo(() => {
     return resolve_current_agent_session_identity({
-      current_agent_conversation,
       current_room_id: current_room?.id ?? null,
+      current_conversation_id: current_room_context?.conversation.id ?? null,
       active_room_session,
       current_room_type: current_room?.room_type ?? "dm",
     });
-  }, [active_room_session, current_agent_conversation, current_room?.id, current_room?.room_type]);
+  }, [
+    active_room_session,
+    current_room?.id,
+    current_room?.room_type,
+    current_room_context?.conversation.id,
+  ]);
 
   const current_agent = useMemo(
     () =>
@@ -172,10 +164,12 @@ export function useRoomPageController({
     ));
   }, [agents, room_member_agents]);
 
+  const handle_prepare_room_agent_catalog = useCallback(async () => {
+    await load_agents_from_server();
+  }, [load_agents_from_server]);
+
   const workspace = useHomeWorkspaceController({
     current_agent_id: current_agent?.agent_id ?? null,
-    current_agent_conversation,
-    current_agent_session_identity,
   });
 
   const handle_select_agent = useCallback((agent_id: string) => {
@@ -205,6 +199,12 @@ export function useRoomPageController({
       ? new Date(snapshot.last_activity_at).toISOString()
       : undefined;
 
+    const next_snapshot = {
+      message_count: snapshot.message_count,
+      ...(snapshot.last_activity_at ? { last_activity_at: snapshot.last_activity_at } : {}),
+      session_id: snapshot.session_id,
+    };
+
     set_room_contexts((prev) => {
       if (!snapshot_conversation_id) {
         return prev;
@@ -218,6 +218,12 @@ export function useRoomPageController({
         }
 
         let context_changed = false;
+        const next_conversation_updated_at = next_last_activity_at ?? context.conversation.updated_at;
+        const next_conversation_message_count = snapshot.message_count;
+        const conversation_changed =
+          context.conversation.updated_at !== next_conversation_updated_at ||
+          (context.conversation.message_count ?? 0) !== next_conversation_message_count;
+
         const next_sessions = context.sessions.map((session) => {
           if (!snapshot_room_session_id || session.id !== snapshot_room_session_id) {
             return session;
@@ -243,11 +249,19 @@ export function useRoomPageController({
         });
 
         if (!context_changed) {
-          return context;
+          if (!conversation_changed) {
+            return context;
+          }
         }
 
+        has_changed = true;
         return {
           ...context,
+          conversation: {
+            ...context.conversation,
+            message_count: next_conversation_message_count,
+            updated_at: next_conversation_updated_at,
+          },
           sessions: next_sessions,
         };
       });
@@ -263,33 +277,10 @@ export function useRoomPageController({
       return;
     }
 
-    const snapshot_conversation = conversations.find((conversation) => (
-      (snapshot_room_session_id && conversation.room_session_id === snapshot_room_session_id) ||
-      conversation.session_key === snapshot_session_key
-    )) ?? null;
-
-    const next_snapshot = {
-      message_count: snapshot.message_count,
-      ...(snapshot.last_activity_at ? { last_activity_at: snapshot.last_activity_at } : {}),
-      session_id: snapshot.session_id,
-    };
-
-    const conversation_changed =
-      !snapshot_conversation ||
-      snapshot_conversation.message_count !== next_snapshot.message_count ||
-      (next_snapshot.last_activity_at !== undefined &&
-        snapshot_conversation.last_activity_at !== next_snapshot.last_activity_at) ||
-      snapshot_conversation.session_id !== next_snapshot.session_id;
-
-    if (!conversation_changed) {
-      return;
-    }
-
     sync_conversation_snapshot(snapshot_session_key, next_snapshot);
   }, [
     active_room_session?.id,
     current_room_context?.conversation.id,
-    conversations,
     current_agent_session_identity?.session_key,
     set_room_contexts,
     sync_conversation_snapshot,
@@ -300,18 +291,15 @@ export function useRoomPageController({
       return;
     }
     await update_room(room_id, params);
-    await refresh_rooms();
     await refresh_room_contexts(room_id);
-    await load_conversations_from_server();
-  }, [load_conversations_from_server, refresh_room_contexts, refresh_rooms, room_id]);
+  }, [refresh_room_contexts, room_id]);
 
   const handle_delete_room = useCallback(async () => {
     if (!room_id) {
       return;
     }
     await delete_room(room_id);
-    await refresh_rooms();
-  }, [refresh_rooms, room_id]);
+  }, [room_id]);
 
   const handle_create_conversation = useCallback(async (title?: string) => {
     if (!room_id) {
@@ -319,9 +307,8 @@ export function useRoomPageController({
     }
     const context = await create_room_conversation(room_id, {title});
     await refresh_room_contexts(room_id);
-    await load_conversations_from_server();
     return context.conversation.id;
-  }, [load_conversations_from_server, refresh_room_contexts, room_id]);
+  }, [refresh_room_contexts, room_id]);
 
   const handle_delete_conversation = useCallback(async (conversation_id: string) => {
     if (!room_id) {
@@ -329,36 +316,43 @@ export function useRoomPageController({
     }
     const fallback_context = await delete_room_conversation(room_id, conversation_id);
     await refresh_room_contexts(room_id);
-    await load_conversations_from_server();
     return fallback_context.conversation.id;
-  }, [load_conversations_from_server, refresh_room_contexts, room_id]);
+  }, [refresh_room_contexts, room_id]);
 
   const handle_update_conversation_title = useCallback(async (conversation_id: string, title: string) => {
     if (!room_id) return;
     await update_room_conversation(room_id, conversation_id, { title });
     await refresh_room_contexts(room_id);
-    await load_conversations_from_server();
-  }, [load_conversations_from_server, refresh_room_contexts, room_id]);
+  }, [refresh_room_contexts, room_id]);
 
   const handle_add_room_member = useCallback(async (agent_id: string) => {
     if (!room_id) {
       return;
     }
     await add_room_member(room_id, agent_id);
-    await refresh_rooms();
     await refresh_room_contexts(room_id);
-    await load_conversations_from_server();
-  }, [load_conversations_from_server, refresh_room_contexts, refresh_rooms, room_id]);
+  }, [refresh_room_contexts, room_id]);
+
+  const handle_save_existing_room_member_options = useCallback(async (
+    agent_id: string,
+    title: string,
+    options: AgentOptions,
+    identity: AgentIdentityDraft,
+  ) => {
+    await handle_save_existing_agent_options(agent_id, title, options, identity);
+    if (!room_id) {
+      return;
+    }
+    await refresh_room_contexts(room_id);
+  }, [handle_save_existing_agent_options, refresh_room_contexts, room_id]);
 
   const handle_remove_room_member = useCallback(async (agent_id: string) => {
     if (!room_id) {
       return;
     }
     await remove_room_member(room_id, agent_id);
-    await refresh_rooms();
     await refresh_room_contexts(room_id);
-    await load_conversations_from_server();
-  }, [load_conversations_from_server, refresh_room_contexts, refresh_rooms, room_id]);
+  }, [refresh_room_contexts, room_id]);
 
   const handle_open_conversation_from_launcher = useCallback((conversation_id: string, agent_id?: string) => {
     // Launcher 打开 Room 时只认 conversation_id，不再接受其他回退标识。
@@ -387,11 +381,8 @@ export function useRoomPageController({
       return;
     }
 
-    await Promise.all([
-      refresh_room_contexts(room_id),
-      load_conversations_from_server(),
-    ]);
-  }, [load_conversations_from_server, refresh_room_contexts, room_id]);
+    await refresh_room_contexts(room_id);
+  }, [refresh_room_contexts, room_id]);
 
   const is_hydrated = is_bootstrapped && !is_room_loading;
 
@@ -399,8 +390,6 @@ export function useRoomPageController({
   // 产生无意义重渲染。
   return useMemo(() => ({
     agents,
-    conversations,
-    rooms,
     room_error,
     current_room,
     current_room_type: current_room?.room_type ?? "room",
@@ -408,11 +397,11 @@ export function useRoomPageController({
     current_room_description: current_room?.description ?? "",
     room_members: room_member_agents,
     available_room_agents,
+    handle_prepare_room_agent_catalog,
     current_agent,
     current_agent_id: current_agent?.agent_id ?? null,
     current_room_conversations: room_conversations,
     current_room_conversation,
-    current_agent_conversation,
     current_agent_session_identity,
     conversation_id: selected_conversation_id,
     recent_agents: room_member_agents,
@@ -434,7 +423,7 @@ export function useRoomPageController({
     handle_delete_agent,
     handle_create_conversation,
     handle_save_agent_options,
-    handle_save_existing_agent_options,
+    handle_save_existing_agent_options: handle_save_existing_room_member_options,
     handle_validate_agent_name,
     handle_validate_agent_name_for_agent,
     handle_open_conversation_from_launcher,
@@ -449,15 +438,15 @@ export function useRoomPageController({
     route_room_id: room_id ?? null,
     ...workspace,
   }), [
-    agents, conversations, rooms, room_error, current_room, current_agent,
-    room_member_agents, available_room_agents, room_conversations, current_room_conversation, current_agent_conversation,
+    agents, room_error, current_room, current_agent,
+    room_member_agents, available_room_agents, room_conversations, current_room_conversation,
     current_agent_session_identity, selected_conversation_id, is_hydrated, is_dialog_open, dialog_mode,
     editing_agent_id, dialog_initial_title, dialog_initial_avatar, dialog_initial_description, dialog_initial_options, dialog_initial_vibe_tags, set_is_dialog_open,
     handle_open_create_agent, handle_edit_agent, handle_select_agent,
     handle_select_conversation, handle_back_to_directory, handle_delete_agent,
-    handle_create_conversation, handle_save_agent_options, handle_save_existing_agent_options, handle_validate_agent_name, handle_validate_agent_name_for_agent,
+    handle_create_conversation, handle_save_agent_options, handle_save_existing_room_member_options, handle_validate_agent_name, handle_validate_agent_name_for_agent,
     handle_open_conversation_from_launcher, handle_refresh_room_state, handle_conversation_snapshot_change,
     handle_delete_conversation, handle_update_conversation_title, handle_update_room, handle_delete_room,
-    handle_add_room_member, handle_remove_room_member, room_id, workspace,
+    handle_add_room_member, handle_remove_room_member, handle_prepare_room_agent_catalog, room_id, workspace,
   ]);
 }

@@ -91,7 +91,7 @@ export function IconPicker({
                         <button
                             key={icon_id}
                             className={cn(
-                                "relative inline-flex items-center justify-center rounded-[12px] transition-[background,transform,border-color,box-shadow] duration-(--motion-duration-fast) cursor-pointer",
+                                "relative inline-flex items-center justify-center overflow-hidden rounded-[12px] transition-[background,transform,border-color,box-shadow] duration-(--motion-duration-fast) cursor-pointer",
                                 ICON_SIZE_MAP[icon_size],
                                 layout === "row" && "shrink-0",
                                 is_selected
@@ -106,7 +106,7 @@ export function IconPicker({
                         >
                             <img
                                 alt={`icon-${icon_id}`}
-                                className="h-full w-full object-contain"
+                                className="h-full w-full rounded-[inherit] object-cover"
                                 crossOrigin="anonymous"
                                 src={icon_path}
                             />

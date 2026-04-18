@@ -28,6 +28,19 @@ const DEFAULT_UNAUTHORIZED_STATUS: AuthStatus = {
   username: null,
 };
 
+let auth_status_bootstrap_inflight: Promise<AuthStatus> | null = null;
+
+function run_auth_status_bootstrap(loader: () => Promise<AuthStatus>): Promise<AuthStatus> {
+  if (auth_status_bootstrap_inflight) {
+    return auth_status_bootstrap_inflight;
+  }
+
+  auth_status_bootstrap_inflight = loader().finally(() => {
+    auth_status_bootstrap_inflight = null;
+  });
+  return auth_status_bootstrap_inflight;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, set_status] = useState<AuthStatus | null>(null);
   const [loading, set_loading] = useState(true);
@@ -57,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    void refresh_status().catch(() => undefined);
+    void run_auth_status_bootstrap(refresh_status).catch(() => undefined);
   }, [refresh_status]);
 
   useEffect(() => {

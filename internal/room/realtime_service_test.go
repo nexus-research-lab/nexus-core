@@ -277,17 +277,6 @@ func TestRealtimeServiceHandleChatWithDirectRoomFallbackTarget(t *testing.T) {
 	if privateMessages[0]["role"] != "user" || privateMessages[1]["role"] != "assistant" || privateMessages[2]["role"] != "result" {
 		t.Fatalf("私有 runtime 消息顺序不正确: %+v", privateMessages)
 	}
-
-	costSummary, err := files.ReadSessionCostSummary([]string{memberAgent.WorkspacePath}, privateSessionKey, memberAgent.AgentID)
-	if err != nil {
-		t.Fatalf("读取私有 runtime 成本失败: %v", err)
-	}
-	if costSummary.SessionKey != privateSessionKey {
-		t.Fatalf("成本 session_key 不正确: got=%s want=%s", costSummary.SessionKey, privateSessionKey)
-	}
-	if costSummary.TotalOutputTokens != 5 {
-		t.Fatalf("输出 token 统计不正确: %+v", costSummary)
-	}
 }
 
 func TestRealtimeServiceKeepsThinkingDuringStreamingAndHistoryReplay(t *testing.T) {

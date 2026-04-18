@@ -5,7 +5,7 @@ import { AppRouteBuilders } from "@/app/router/route-paths";
 import { useI18n } from "@/shared/i18n/i18n-context";
 import { WorkspaceActionBar, WorkspaceActionCard } from "@/shared/ui/workspace/controls/workspace-action-bar";
 import { Agent } from "@/types/agent/agent";
-import { Conversation } from "@/types/conversation/conversation";
+import { RoomConversationView } from "@/types/conversation/conversation";
 
 const METRIC_ROW_CLASS_NAME = "flex items-center justify-between gap-3 border-b border-(--divider-subtle-color) py-3 last:border-b-0";
 
@@ -13,7 +13,7 @@ interface GroupRouteEntryProps {
   room_id?: string;
   conversation_id?: string;
   agents: Agent[];
-  conversations: Conversation[];
+  conversations: RoomConversationView[];
 }
 
 export function GroupRouteEntry({
@@ -26,7 +26,7 @@ export function GroupRouteEntry({
   const navigate = useNavigate();
   const room_agent = agents[0] ?? null;
   const recent_room_conversations = conversations
-    .filter((conversation): conversation is Conversation & { conversation_id: string } => (
+    .filter((conversation): conversation is RoomConversationView & { conversation_id: string } => (
       conversation.room_id === room_id && Boolean(conversation.conversation_id)
     ))
     .sort((left, right) => right.last_activity_at - left.last_activity_at)

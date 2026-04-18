@@ -1,7 +1,7 @@
 /**
  * Agent API 服务模块
  *
- * [INPUT]: 依赖 @/types/agent/agent, @/types/system/cost, @/types/system/api
+ * [INPUT]: 依赖 @/types/agent/agent, @/types/system/api
  * [OUTPUT]: 对外提供 getAgents、createAgent、updateAgent、deleteAgent 等 API 函数
  * [POS]: lib 模块的 Agent API 层，被 agent store 消费
  * [PROTOCOL]: 变更时更新此头部，然后检查 CLAUDE.md
@@ -19,7 +19,6 @@ import {
     WorkspaceEntryMutationResponse,
     WorkspaceEntryRenameResponse,
 } from '@/types/agent/agent';
-import { AgentCostSummary } from '@/types/system/cost';
 import { get_agent_api_base_url } from '@/config/options';
 import { request_api } from '@/lib/api/http';
 
@@ -50,13 +49,6 @@ export const get_agents = async (): Promise<Agent[]> => {
         method: 'GET',
     });
     return result.map(transform_api_agent);
-};
-
-/** 获取 Agent 运行态快照 */
-export const get_agent_runtime_statuses_api = async (): Promise<AgentRuntimeStatus[]> => {
-    return request_api<AgentRuntimeStatus[]>(`${AGENT_API_BASE_URL}/agents/runtime/statuses`, {
-        method: 'GET',
-    });
 };
 
 /** 创建 Agent */
@@ -175,12 +167,6 @@ export const delete_workspace_entry_api = async (
     const query = new URLSearchParams({ path });
     return request_api<WorkspaceEntryMutationResponse>(`${AGENT_API_BASE_URL}/agents/${agent_id}/workspace/entry?${query.toString()}`, {
         method: 'DELETE',
-    });
-};
-
-export const get_agent_cost_summary_api = async (agent_id: string): Promise<AgentCostSummary> => {
-    return request_api<AgentCostSummary>(`${AGENT_API_BASE_URL}/agents/${agent_id}/cost/summary`, {
-        method: 'GET',
     });
 };
 

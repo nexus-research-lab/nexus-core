@@ -111,13 +111,13 @@ const WorkspaceFileTreeRow = memo(function WorkspaceFileTreeRow({
     <div>
       <div
         className={cn(
-          "group relative flex w-full items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-left transition-colors",
+          "group relative flex w-full items-center gap-1.25 rounded-xl px-2 py-1.25 text-left transition-colors",
           "hover:bg-(--surface-interactive-hover-background)",
           is_selected
             ? "bg-[color:color-mix(in_srgb,var(--foreground)_4%,transparent)] text-(--text-strong)"
             : "text-(--text-default)",
         )}
-        style={{ paddingLeft: `${8 + depth * 14}px` }}
+        style={{ paddingLeft: `${8 + depth * 12}px` }}
         onClick={handle_click}
         onContextMenu={handle_context_menu}
       >
@@ -131,38 +131,38 @@ const WorkspaceFileTreeRow = memo(function WorkspaceFileTreeRow({
         {entry.is_dir ? (
           <ChevronRight
             className={cn(
-              "h-3.5 w-3.5 shrink-0 transition-transform",
+              "h-3 w-3 shrink-0 transition-transform",
               is_selected ? "text-(--icon-default)" : "text-(--icon-muted)",
               is_open && "rotate-90",
             )}
           />
         ) : (
-          <span className="w-3.5 shrink-0" />
+          <span className="w-3 shrink-0" />
         )}
 
         {entry.is_dir ? (
           is_open ? (
             <FolderOpen
               className={cn(
-                "h-4 w-4 shrink-0",
+                "h-3.5 w-3.5 shrink-0",
                 is_directory_target ? "text-[color:color-mix(in_srgb,var(--accent)_82%,var(--foreground)_18%)]" : "text-[var(--accent)]",
               )}
             />
           ) : (
             <Folder
               className={cn(
-                "h-4 w-4 shrink-0",
+                "h-3.5 w-3.5 shrink-0",
                 is_directory_target ? "text-[color:color-mix(in_srgb,var(--accent)_82%,var(--foreground)_18%)]" : "text-[var(--accent)]",
               )}
             />
           )
         ) : (
-          <FileIcon className={cn("h-4 w-4 shrink-0", icon_class_name)} />
+          <FileIcon className={cn("h-3.5 w-3.5 shrink-0", icon_class_name)} />
         )}
 
         <span
           className={cn(
-            "min-w-0 flex-1 truncate text-[14px] leading-[1.45rem]",
+            "min-w-0 flex-1 truncate text-[13px] leading-[1.3rem]",
             entry.is_dir || is_selected ? "font-medium" : "font-normal",
           )}
         >
@@ -177,26 +177,26 @@ const WorkspaceFileTreeRow = memo(function WorkspaceFileTreeRow({
         >
           <button
             type="button"
-            className="flex h-6 w-6 items-center justify-center rounded-md text-(--icon-muted) transition hover:bg-(--surface-interactive-hover-background) hover:text-(--icon-default)"
+            className="flex h-5.5 w-5.5 items-center justify-center rounded-md text-(--icon-muted) transition hover:bg-(--surface-interactive-hover-background) hover:text-(--icon-default)"
             onClick={(event) => {
               event.stopPropagation();
               on_rename_entry(entry);
             }}
             title={t("home.rename")}
           >
-            <Pencil className="h-3.5 w-3.5" />
+            <Pencil className="h-3 w-3" />
           </button>
 
           <button
             type="button"
-            className="flex h-6 w-6 items-center justify-center rounded-md text-(--icon-muted) transition hover:bg-[color:color-mix(in_srgb,var(--destructive)_8%,transparent)] hover:text-(--destructive)"
+            className="flex h-5.5 w-5.5 items-center justify-center rounded-md text-(--icon-muted) transition hover:bg-[color:color-mix(in_srgb,var(--destructive)_8%,transparent)] hover:text-(--destructive)"
             onClick={(event) => {
               event.stopPropagation();
               on_delete_entry(entry);
             }}
             title={t("common.delete")}
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash2 className="h-3 w-3" />
           </button>
         </div>
       </div>

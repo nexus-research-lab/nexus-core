@@ -115,22 +115,6 @@ func TestSessionServiceLifecycle(t *testing.T) {
 		t.Fatalf("Room 未终止 round 未物化 interrupted result: %+v", roomMessages)
 	}
 
-	cost, err := sessionService.GetSessionCostSummary(ctx, dmKey)
-	if err != nil {
-		t.Fatalf("读取 session 成本失败: %v", err)
-	}
-	if cost.TotalTokens != 42 || cost.CompletedRounds != 1 {
-		t.Fatalf("session 成本汇总不正确: %+v", cost)
-	}
-
-	agentCost, err := sessionService.GetAgentCostSummary(ctx, agentA.AgentID)
-	if err != nil {
-		t.Fatalf("读取 agent 成本失败: %v", err)
-	}
-	if agentCost.TotalTokens != 42 || agentCost.CostSessions != 1 {
-		t.Fatalf("agent 成本汇总不正确: %+v", agentCost)
-	}
-
 	updatedTitle := "Launcher 重命名"
 	updated, err := sessionService.UpdateSession(ctx, dmKey, sessionsvc.UpdateRequest{Title: &updatedTitle})
 	if err != nil {
@@ -188,9 +172,7 @@ func TestSessionServiceGetSessionMessagesSkipsActiveRoundMaterialization(t *test
 func seedWorkspaceSessionArtifacts(t *testing.T, cfg config.Config, agentID string, workspacePath string, sessionKey string) {
 	t.Helper()
 
-	store := workspace2.NewSessionFileStore(cfg.WorkspacePath)
 	messagePath := workspace2.New(cfg.WorkspacePath).SessionMessagePath(workspacePath, sessionKey)
-	costPath := workspace2.New(cfg.WorkspacePath).SessionCostPath(workspacePath, sessionKey)
 
 	rows := []map[string]any{
 		{
@@ -222,29 +204,6 @@ func seedWorkspaceSessionArtifacts(t *testing.T, cfg config.Config, agentID stri
 		},
 	}
 	writeJSONL(t, messagePath, rows)
-
-	costRows := []map[string]any{
-		{
-			"agent_id":                    agentID,
-			"session_key":                 sessionKey,
-			"session_id":                  "sdk_1",
-			"round_id":                    "round_1",
-			"subtype":                     "success",
-			"input_tokens":                10,
-			"output_tokens":               32,
-			"cache_creation_input_tokens": 0,
-			"cache_read_input_tokens":     0,
-			"total_cost_usd":              0.12,
-			"duration_ms":                 900,
-			"message_id":                  "msg_result_1",
-		},
-	}
-	writeJSONL(t, costPath, costRows)
-
-	_, err := store.ReadSessionCostSummary([]string{workspacePath}, sessionKey, agentID)
-	if err != nil {
-		t.Fatalf("预热 session 成本汇总失败: %v", err)
-	}
 }
 
 func seedRoomConversationMessages(t *testing.T, cfg config.Config, conversationID string) {

@@ -40,6 +40,7 @@ interface RoomSurfaceShellProps {
   on_delete_conversation: (conversation_id: string) => Promise<string | null>;
   on_add_room_member: (agent_id: string) => Promise<void>;
   on_remove_room_member: (agent_id: string) => Promise<void>;
+  on_open_member_manager: () => Promise<void>;
   on_save_agent_options: (agent_id: string, title: string, options: AgentOptions, identity: AgentIdentityDraft) => Promise<void>;
   on_validate_agent_name: (name: string, agent_id?: string) => Promise<AgentNameValidationResult>;
   on_update_room: (room_id: string, params: UpdateRoomParams) => Promise<void>;
@@ -80,6 +81,7 @@ export function RoomSurfaceShell({
   on_delete_conversation,
   on_add_room_member,
   on_remove_room_member,
+  on_open_member_manager,
   on_save_agent_options,
   on_validate_agent_name,
   on_update_room,
@@ -168,6 +170,7 @@ export function RoomSurfaceShell({
       is_resizing_editor={is_resizing_editor}
       is_conversation_busy={is_conversation_busy}
       on_add_room_member={on_add_room_member}
+      on_open_member_manager={on_open_member_manager}
       on_remove_room_member={on_remove_room_member}
       on_save_agent_options={on_save_agent_options}
       on_validate_agent_name={on_validate_agent_name}

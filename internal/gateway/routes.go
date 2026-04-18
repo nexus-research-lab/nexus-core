@@ -45,7 +45,6 @@ func (s *Server) mountAgentRoutes() {
 	s.router.Patch("/agent/v1/agents/{agent_id}", s.handleUpdateAgent)
 	s.router.Delete("/agent/v1/agents/{agent_id}", s.handleDeleteAgent)
 	s.router.Get("/agent/v1/agents/{agent_id}/sessions", s.handleListAgentSessions)
-	s.router.Get("/agent/v1/agents/{agent_id}/cost/summary", s.handleAgentCostSummary)
 	s.router.Get("/agent/v1/agents/{agent_id}/workspace/files", s.handleWorkspaceFiles)
 	s.router.Get("/agent/v1/agents/{agent_id}/workspace/file", s.handleWorkspaceFile)
 	s.router.Put("/agent/v1/agents/{agent_id}/workspace/file", s.handleUpdateWorkspaceFile)
@@ -61,8 +60,6 @@ func (s *Server) mountAgentRoutes() {
 	s.router.Get("/agent/v1/sessions", s.handleListSessions)
 	s.router.Post("/agent/v1/sessions", s.handleCreateSession)
 	s.router.Patch("/agent/v1/sessions/{session_key}", s.handleUpdateSession)
-	s.router.Get("/agent/v1/sessions/{session_key}/messages", s.handleSessionMessages)
-	s.router.Get("/agent/v1/sessions/{session_key}/cost/summary", s.handleSessionCostSummary)
 	s.router.Delete("/agent/v1/sessions/{session_key}", s.handleDeleteSession)
 }
 
@@ -78,15 +75,19 @@ func (s *Server) mountRoomRoutes() {
 	s.router.Post("/agent/v1/rooms/{room_id}/members", s.handleAddRoomMember)
 	s.router.Delete("/agent/v1/rooms/{room_id}/members/{agent_id}", s.handleRemoveRoomMember)
 	s.router.Post("/agent/v1/rooms/{room_id}/conversations", s.handleCreateConversation)
+	s.router.Get("/agent/v1/rooms/{room_id}/conversations/{conversation_id}/messages", s.handleConversationMessages)
 	s.router.Patch("/agent/v1/rooms/{room_id}/conversations/{conversation_id}", s.handleUpdateConversation)
 	s.router.Delete("/agent/v1/rooms/{room_id}/conversations/{conversation_id}", s.handleDeleteConversation)
 
 	s.router.Post("/agent/v1/launcher/query", s.handleLauncherQuery)
+	s.router.Get("/agent/v1/launcher/bootstrap", s.handleLauncherBootstrap)
 	s.router.Get("/agent/v1/launcher/suggestions", s.handleLauncherSuggestions)
 }
 
 // mountCapabilityRoutes 挂载技能、连接器、通道与自动化能力路由。
 func (s *Server) mountCapabilityRoutes() {
+	s.router.Get("/agent/v1/capability/summary", s.handleCapabilitySummary)
+
 	s.router.Get("/agent/v1/skills", s.handleListSkills)
 	s.router.Get("/agent/v1/skills/{skill_name}", s.handleGetSkillDetail)
 	s.router.Post("/agent/v1/skills/import/local", s.handleImportLocalSkill)

@@ -30,8 +30,10 @@ export const get_connectors_api = async (params?: {
 
 /** 获取已连接连接器数量 */
 export const get_connected_count_api = async (): Promise<number> => {
-  const connectors = await get_connectors_api();
-  return connectors.filter((connector) => connector.connection_state === "connected").length;
+  const result = await request_api<{ count: number }>(`${BASE}/connectors/count`, {
+    method: 'GET',
+  });
+  return result.count;
 };
 
 /** 获取连接器详情 */

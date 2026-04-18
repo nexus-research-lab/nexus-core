@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, RefObject, useCallback } from "react";
-import { GripVertical, X } from "lucide-react";
+import { X } from "lucide-react";
 
 import { DmChatPanel } from "@/features/conversation/room/dm/dm-chat-panel";
 import { DmConversationHeader } from "@/features/conversation/room/dm/dm-conversation-header";
@@ -22,6 +22,7 @@ import { GroupThreadContextProvider } from "../group/thread/group-thread-context
 import { GroupThreadDetailPanel } from "../group/thread/group-thread-detail-panel";
 import { useGroupThread, useGroupThreadPanelData } from "../group/thread/group-thread-state";
 import { RoomWorkspaceView } from "../workspace/room-workspace-view";
+import { ConversationResizeHandle } from "@/features/conversation/shared/editor/conversation-resize-handle";
 import { RoomAgentAboutSurface } from "./room-agent-about-surface";
 import { RoomHistorySurface } from "./room-history-surface";
 
@@ -54,6 +55,7 @@ interface RoomSurfaceLayoutProps {
   on_delete_conversation: (conversation_id: string) => Promise<string | null>;
   on_add_room_member: (agent_id: string) => Promise<void>;
   on_remove_room_member: (agent_id: string) => Promise<void>;
+  on_open_member_manager: () => Promise<void>;
   on_save_agent_options: (agent_id: string, title: string, options: AgentOptions, identity: AgentIdentityDraft) => Promise<void>;
   on_validate_agent_name: (name: string, agent_id?: string) => Promise<AgentNameValidationResult>;
   on_update_room: (room_id: string, params: UpdateRoomParams) => Promise<void>;
@@ -112,6 +114,7 @@ function RoomSurfaceLayoutInner({
                                     on_delete_conversation,
                                     on_add_room_member,
                                     on_remove_room_member,
+                                    on_open_member_manager,
                                     on_save_agent_options,
                                     on_validate_agent_name,
                                     on_update_room,
@@ -174,6 +177,7 @@ function RoomSurfaceLayoutInner({
               conversations={current_room_conversations}
               current_room_title={current_room_title}
               on_add_room_member={on_add_room_member}
+              on_open_member_manager={on_open_member_manager}
               on_change_tab={on_change_surface_tab}
               on_create_conversation={on_create_conversation}
               on_remove_room_member={on_remove_room_member}
@@ -235,14 +239,10 @@ function RoomSurfaceLayoutInner({
                   maxWidth: active_surface_tab === "workspace" ? "860px" : "560px",
                 }}
               >
-                <button
-                  aria-label="调整右侧面板宽度"
-                  className="absolute -left-3 top-0 z-20 hidden h-full w-6 cursor-col-resize items-center justify-center text-muted-foreground/60 transition-colors hover:text-primary lg:flex"
-                  onMouseDown={on_start_editor_resize}
-                  type="button"
-                >
-                  <GripVertical className="h-4 w-4"/>
-                </button>
+                <ConversationResizeHandle
+                  aria_label="调整右侧面板宽度"
+                  on_mouse_down={on_start_editor_resize}
+                />
 
                 <div
                   className={cn("flex h-full min-h-0 min-w-0 flex-1 flex-col", active_surface_tab !== "history" && "hidden")}>
@@ -329,14 +329,10 @@ function GroupThreadInlinePanel({
         maxWidth: "560px",
       }}
     >
-      <button
-        aria-label="调整 Thread 面板宽度"
-        className="absolute -left-3 top-0 z-20 hidden h-full w-6 cursor-col-resize items-center justify-center text-muted-foreground/60 transition-colors hover:text-primary lg:flex"
-        onMouseDown={on_start_editor_resize}
-        type="button"
-      >
-        <GripVertical className="h-4 w-4"/>
-      </button>
+      <ConversationResizeHandle
+        aria_label="调整 Thread 面板宽度"
+        on_mouse_down={on_start_editor_resize}
+      />
 
       <GroupThreadDetailPanel
         round_id={active_thread.round_id}

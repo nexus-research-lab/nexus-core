@@ -20,13 +20,10 @@ import { useNavigate } from "react-router-dom";
 
 import { AppRouteBuilders } from "@/app/router/route-paths";
 import { resolve_agent_id } from "@/config/options";
-import { get_connected_count_api } from "@/lib/api/connector-api";
-import { list_scheduled_tasks_api } from "@/lib/api/scheduled-task-api";
-import { get_available_skills_api } from "@/lib/api/skill-api";
+import { get_capability_summary_api, type CapabilitySummary } from "@/lib/api/capability-api";
 import { useI18n } from "@/shared/i18n/i18n-context";
 import { SidebarListItem } from "@/shared/ui/sidebar/collapsible-section";
 import { SIDEBAR_CAPABILITY_ITEM_IDS, useSidebarStore } from "@/store/sidebar";
-import { SkillInfo } from "@/types/capability/skill";
 
 const SCHEDULED_TASKS_MUTATED_EVENT = "nexus:scheduled-tasks-mutated";
 
@@ -44,50 +41,38 @@ export const CapabilitiesPanelContent = memo(function CapabilitiesPanelContent()
   const active_panel_item_id = useSidebarStore((s) => s.active_panel_item_id);
   const set_active_panel_item = useSidebarStore((s) => s.set_active_panel_item);
   const agent_id = resolve_agent_id();
-  const [skills, set_skills] = useState<SkillInfo[]>([]);
-  const [connector_count, set_connector_count] = useState(0);
-  const [scheduled_task_enabled_count, set_scheduled_task_enabled_count] = useState(0);
+  const [summary, set_summary] = useState<CapabilitySummary>({
+    skills_count: 0,
+    connected_connectors_count: 0,
+    enabled_scheduled_tasks_count: 0,
+  });
 
   useEffect(() => {
     let cancelled = false;
-    void get_available_skills_api()
-      .then((data) => {
-        if (!cancelled) {
-          set_skills(data.filter((skill) => skill.installed));
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          set_skills([]);
-        }
-      });
-    void get_connected_count_api()
-      .then((count: number) => {
-        if (!cancelled) {
-          set_connector_count(count);
-        }
-      })
-      .catch(() => { });
-    const refresh_scheduled_task_count = async () => {
+    const refresh_capability_summary = async () => {
       try {
-        const tasks = await list_scheduled_tasks_api({ agent_id });
+        const next_summary = await get_capability_summary_api({ agent_id });
         if (!cancelled) {
-          set_scheduled_task_enabled_count(tasks.filter((task) => task.enabled).length);
+          set_summary(next_summary);
         }
       } catch {
         if (!cancelled) {
-          set_scheduled_task_enabled_count(0);
+          set_summary({
+            skills_count: 0,
+            connected_connectors_count: 0,
+            enabled_scheduled_tasks_count: 0,
+          });
         }
       }
     };
-    void refresh_scheduled_task_count();
+    void refresh_capability_summary();
 
     const handle_scheduled_tasks_mutated = (event: Event) => {
       const custom_event = event as CustomEvent<{ agent_id?: string }>;
       if (custom_event.detail?.agent_id && custom_event.detail.agent_id !== agent_id) {
         return;
       }
-      void refresh_scheduled_task_count();
+      void refresh_capability_summary();
     };
     window.addEventListener(SCHEDULED_TASKS_MUTATED_EVENT, handle_scheduled_tasks_mutated);
 
@@ -97,8 +82,6 @@ export const CapabilitiesPanelContent = memo(function CapabilitiesPanelContent()
     };
   }, [agent_id]);
 
-  const skill_count = useMemo(() => skills.length, [skills]);
-
   const channel_count = 0;
   const pairing_count = 0;
   const capability_items = useMemo<CapabilitySidebarItem[]>(() => [
@@ -106,21 +89,21 @@ export const CapabilitiesPanelContent = memo(function CapabilitiesPanelContent()
       id: SIDEBAR_CAPABILITY_ITEM_IDS.skills,
       icon: Puzzle,
       label: t("capability.skills"),
-      meta: String(skill_count),
+      meta: String(summary.skills_count),
       path: AppRouteBuilders.skills(),
     },
     {
       id: SIDEBAR_CAPABILITY_ITEM_IDS.connectors,
       icon: Link2,
       label: t("capability.connectors"),
-      meta: String(connector_count),
+      meta: String(summary.connected_connectors_count),
       path: AppRouteBuilders.connectors(),
     },
     {
       id: SIDEBAR_CAPABILITY_ITEM_IDS.scheduled_tasks,
       icon: Calendar,
       label: t("capability.scheduled"),
-      meta: String(scheduled_task_enabled_count),
+      meta: String(summary.enabled_scheduled_tasks_count),
       path: AppRouteBuilders.scheduled_tasks(),
     },
     {
@@ -139,10 +122,8 @@ export const CapabilitiesPanelContent = memo(function CapabilitiesPanelContent()
     },
   ], [
     channel_count,
-    connector_count,
     pairing_count,
-    scheduled_task_enabled_count,
-    skill_count,
+    summary,
     t,
   ]);
 

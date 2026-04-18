@@ -96,6 +96,21 @@ FROM automation_cron_jobs`
 	return items, rows.Err()
 }
 
+// CountEnabledCronJobs 统计启用中的定时任务数量。
+func (r *sqlRepository) CountEnabledCronJobs(ctx context.Context, agentID string) (int, error) {
+	query := "SELECT COUNT(1) FROM automation_cron_jobs WHERE enabled = " + r.bind(1)
+	args := []any{true}
+	if strings.TrimSpace(agentID) != "" {
+		query += " AND agent_id = " + r.bind(2)
+		args = append(args, strings.TrimSpace(agentID))
+	}
+	var count int
+	if err := r.db.QueryRowContext(ctx, query, args...).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 // GetCronJob 读取单个任务。
 func (r *sqlRepository) GetCronJob(ctx context.Context, jobID string) (*CronJob, error) {
 	query := `

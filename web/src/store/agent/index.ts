@@ -20,11 +20,12 @@ import {
 import { create_browser_json_storage } from '@/lib/storage/browser-storage';
 import {
     get_agents,
-    get_agent_runtime_statuses_api,
     create_agent_api,
     update_agent_api,
     delete_agent_api,
 } from '@/lib/api/agent-manage-api';
+
+export const AGENT_LIST_UPDATED_EVENT_NAME = "nexus:agent-list-updated";
 
 // ==================== Store 类型 ====================
 
@@ -49,7 +50,6 @@ export interface AgentStoreState {
 
     // 服务器同步
     load_agents_from_server: () => Promise<void>;
-    load_agent_runtime_statuses: () => Promise<void>;
     apply_agent_runtime_status: (status: AgentRuntimeStatus) => void;
 }
 
@@ -59,6 +59,26 @@ function build_idle_runtime_status(agent_id: string): AgentRuntimeStatus {
         running_task_count: 0,
         status: 'idle',
     };
+}
+
+let load_agents_inflight: Promise<Agent[]> | null = null;
+
+function run_agent_list_request(): Promise<Agent[]> {
+    if (load_agents_inflight) {
+        return load_agents_inflight;
+    }
+
+    load_agents_inflight = get_agents().finally(() => {
+        load_agents_inflight = null;
+    });
+    return load_agents_inflight;
+}
+
+function dispatch_agent_list_updated() {
+    if (typeof window === 'undefined') {
+        return;
+    }
+    window.dispatchEvent(new CustomEvent(AGENT_LIST_UPDATED_EVENT_NAME));
 }
 
 // ==================== Store 创建 ====================
@@ -86,6 +106,7 @@ export const useAgentStore = create<AgentStoreState>()(
                         },
                         error: null,
                     }));
+                    dispatch_agent_list_updated();
                     console.debug('[AgentStore] Agent created:', agent.agent_id);
                     return agent.agent_id;
                 } catch (error) {
@@ -113,6 +134,7 @@ export const useAgentStore = create<AgentStoreState>()(
                             error: null,
                         };
                     });
+                    dispatch_agent_list_updated();
                 } catch (error) {
                     console.error('[AgentStore] Failed to delete agent:', error);
                     set({ error: 'Failed to delete agent' });
@@ -133,6 +155,7 @@ export const useAgentStore = create<AgentStoreState>()(
                         },
                         error: null,
                     }));
+                    dispatch_agent_list_updated();
                     console.debug('[AgentStore] Agent updated:', agent_id);
                 } catch (error) {
                     console.error('[AgentStore] Failed to update agent:', error);
@@ -155,7 +178,7 @@ export const useAgentStore = create<AgentStoreState>()(
             load_agents_from_server: async (): Promise<void> => {
                 try {
                     set({ loading: true, error: null });
-                    const agents = await get_agents();
+                    const agents = await run_agent_list_request();
                     set((state) => ({
                         agents,
                         agent_runtime_statuses: Object.fromEntries(
@@ -175,22 +198,6 @@ export const useAgentStore = create<AgentStoreState>()(
                         loading: false,
                         error: err instanceof Error ? err.message : 'Unknown error',
                     });
-                }
-            },
-
-            load_agent_runtime_statuses: async (): Promise<void> => {
-                try {
-                    const statuses = await get_agent_runtime_statuses_api();
-                    set((state) => ({
-                        agent_runtime_statuses: {
-                            ...state.agent_runtime_statuses,
-                            ...Object.fromEntries(
-                                statuses.map((status) => [status.agent_id, status])
-                            ),
-                        },
-                    }));
-                } catch (error) {
-                    console.error('[AgentStore] Failed to load agent runtime statuses:', error);
                 }
             },
 

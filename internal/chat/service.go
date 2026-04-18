@@ -317,9 +317,6 @@ func (s *Service) persistInterruptedRound(
 	if err := s.files.AppendSessionMessage(agentValue.WorkspacePath, sessionKey, resultMessage); err != nil {
 		return err
 	}
-	if err := s.files.AppendSessionCost(agentValue.WorkspacePath, sessionKey, buildCostRow(resultMessage)); err != nil {
-		return err
-	}
 	_, err = s.files.RefreshSessionMeta(agentValue.WorkspacePath, sessionKey, sessionValue)
 	return err
 }
@@ -638,11 +635,6 @@ func (r *roundRunner) persistMessage(message session.Message) error {
 	if err := r.service.files.AppendSessionMessage(r.workspacePath, r.sessionKey, message); err != nil {
 		return err
 	}
-	if message["role"] == "result" {
-		if err := r.service.files.AppendSessionCost(r.workspacePath, r.sessionKey, buildCostRow(message)); err != nil {
-			return err
-		}
-	}
 	r.session.SessionID = preferSessionID(r.session.SessionID, normalizeString(message["session_id"]))
 	if message["role"] == "result" {
 		r.session.Status = "active"
@@ -658,68 +650,11 @@ func (r *roundRunner) persistMessage(message session.Message) error {
 	return nil
 }
 
-func buildCostRow(message session.Message) map[string]any {
-	usage, _ := message["usage"].(map[string]any)
-	return map[string]any{
-		"entry_id":                    "cost_" + normalizeString(message["message_id"]),
-		"agent_id":                    normalizeString(message["agent_id"]),
-		"session_key":                 normalizeString(message["session_key"]),
-		"session_id":                  normalizeString(message["session_id"]),
-		"round_id":                    normalizeString(message["round_id"]),
-		"message_id":                  normalizeString(message["message_id"]),
-		"subtype":                     normalizeString(message["subtype"]),
-		"input_tokens":                normalizeIntFromMap(usage, "input_tokens"),
-		"output_tokens":               normalizeIntFromMap(usage, "output_tokens"),
-		"cache_creation_input_tokens": normalizeIntFromMap(usage, "cache_creation_input_tokens"),
-		"cache_read_input_tokens":     normalizeIntFromMap(usage, "cache_read_input_tokens"),
-		"total_cost_usd":              normalizeFloat(message["total_cost_usd"]),
-		"duration_ms":                 normalizeIntValue(message["duration_ms"]),
-		"duration_api_ms":             normalizeIntValue(message["duration_api_ms"]),
-		"num_turns":                   normalizeIntValue(message["num_turns"]),
-		"created_at":                  time.Now().UTC().Format(time.RFC3339),
-	}
-}
-
 func preferSessionID(current *string, next string) *string {
 	if strings.TrimSpace(next) != "" {
 		return &next
 	}
 	return current
-}
-
-func normalizeIntFromMap(raw map[string]any, key string) int {
-	if raw == nil {
-		return 0
-	}
-	return normalizeIntValue(raw[key])
-}
-
-func normalizeIntValue(value any) int {
-	switch typed := value.(type) {
-	case int:
-		return typed
-	case int64:
-		return int(typed)
-	case float64:
-		return int(typed)
-	default:
-		return 0
-	}
-}
-
-func normalizeFloat(value any) float64 {
-	switch typed := value.(type) {
-	case float64:
-		return typed
-	case float32:
-		return float64(typed)
-	case int:
-		return float64(typed)
-	case int64:
-		return float64(typed)
-	default:
-		return 0
-	}
 }
 
 func normalizeString(value any) string {

@@ -334,7 +334,7 @@ Heartbeat 相关能力当前通过后端 automation API 暴露：
 - Web 普通 ChatService 回退
 - Discord 通道
 - Telegram 通道
-- 部分文件会话/成本汇总的默认 agent 补位
+- 部分文件会话的默认 agent 补位
 
 规则如下：
 

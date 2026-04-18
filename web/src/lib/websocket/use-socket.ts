@@ -95,7 +95,9 @@ class SharedWebSocketChannel {
 }
 
 const shared_channels = new Map<string, SharedWebSocketChannel>();
+const shared_channel_cleanup_timers = new Map<string, number>();
 let next_subscriber_id = 1;
+const SHARED_SOCKET_RELEASE_DELAY_MS = 300;
 
 function build_shared_channel_config(options: UseWebSocketOptions): WebSocketConfig {
   return {
@@ -158,6 +160,12 @@ export function useWebSocket(options: UseWebSocketOptions) {
   }, []);
 
   useEffect(() => {
+    const cleanup_timer = shared_channel_cleanup_timers.get(options.url);
+    if (cleanup_timer) {
+      window.clearTimeout(cleanup_timer);
+      shared_channel_cleanup_timers.delete(options.url);
+    }
+
     const channel = get_or_create_shared_channel(options);
     const subscriber_id = next_subscriber_id++;
 
@@ -180,11 +188,18 @@ export function useWebSocket(options: UseWebSocketOptions) {
     return () => {
       channel.unsubscribe(subscriber_id);
       if (!channel.has_subscribers()) {
-        console.debug('[useWebSocket] Cleaning up shared WebSocket client');
-        channel.disconnect();
-        if (shared_channels.get(options.url) === channel) {
-          shared_channels.delete(options.url);
-        }
+        const next_timer = window.setTimeout(() => {
+          if (channel.has_subscribers()) {
+            return;
+          }
+          console.debug('[useWebSocket] Cleaning up shared WebSocket client');
+          channel.disconnect();
+          if (shared_channels.get(options.url) === channel) {
+            shared_channels.delete(options.url);
+          }
+          shared_channel_cleanup_timers.delete(options.url);
+        }, SHARED_SOCKET_RELEASE_DELAY_MS);
+        shared_channel_cleanup_timers.set(options.url, next_timer);
       }
       if (channel_ref.current === channel) {
         channel_ref.current = null;

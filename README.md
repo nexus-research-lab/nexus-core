@@ -232,8 +232,7 @@ Agent 自身只保存 `provider` 选择，不再保存独立 `model`。
 - `GET /agent/v1/agents/{agent_id}/workspace/files`
 - `GET /agent/v1/sessions`
 - `POST /agent/v1/sessions`
-- `GET /agent/v1/sessions/{session_key}/messages`
-- `GET /agent/v1/sessions/{session_key}/cost/summary`
+- `GET /agent/v1/rooms/{room_id}/conversations/{conversation_id}/messages`
 - `GET /agent/v1/skills` — 技能市场列表
 - `POST /agent/v1/skills/{name}/install` — 安装技能
 - `POST /agent/v1/skills/{name}/uninstall` — 卸载技能

@@ -64,6 +64,50 @@ func (s *Server) handleGetRoomContexts(writer http.ResponseWriter, request *http
 	s.writeSuccess(writer, items)
 }
 
+func (s *Server) handleConversationMessages(writer http.ResponseWriter, request *http.Request) {
+	roomID := chi.URLParam(request, "room_id")
+	conversationID := chi.URLParam(request, "conversation_id")
+
+	contextValue, err := s.roomService.GetConversationContext(request.Context(), conversationID)
+	if errors.Is(err, room2.ErrConversationNotFound) {
+		s.writeFailure(writer, http.StatusNotFound, "资源不存在")
+		return
+	}
+	if err != nil {
+		s.writeFailure(writer, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if contextValue.Room.ID != roomID {
+		s.writeFailure(writer, http.StatusNotFound, "资源不存在")
+		return
+	}
+
+	sessionKey := protocol.BuildRoomSharedSessionKey(conversationID)
+	if contextValue.Room.RoomType == room2.RoomTypeDM {
+		primarySession := findPrimaryConversationSession(contextValue.Sessions)
+		if primarySession == nil || strings.TrimSpace(primarySession.AgentID) == "" {
+			s.writeFailure(writer, http.StatusNotFound, "资源不存在")
+			return
+		}
+		sessionKey = protocol.BuildRoomAgentSessionKey(
+			conversationID,
+			strings.TrimSpace(primarySession.AgentID),
+			room2.RoomTypeDM,
+		)
+	}
+
+	items, err := s.session.GetSessionMessages(request.Context(), sessionKey)
+	if isStructuredSessionKeyError(err) {
+		s.writeFailure(writer, http.StatusUnprocessableEntity, err.Error())
+		return
+	}
+	if err != nil {
+		s.writeFailure(writer, http.StatusInternalServerError, err.Error())
+		return
+	}
+	s.writeSuccess(writer, items)
+}
+
 func (s *Server) handleCreateRoom(writer http.ResponseWriter, request *http.Request) {
 	var payload room2.CreateRoomRequest
 	if err := json.NewDecoder(request.Body).Decode(&payload); err != nil {
@@ -84,6 +128,18 @@ func (s *Server) handleCreateRoom(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 	s.writeSuccess(writer, item)
+}
+
+func findPrimaryConversationSession(sessions []room2.SessionRecord) *room2.SessionRecord {
+	for index := range sessions {
+		if sessions[index].IsPrimary {
+			return &sessions[index]
+		}
+	}
+	if len(sessions) == 0 {
+		return nil
+	}
+	return &sessions[0]
 }
 
 func (s *Server) handleUpdateRoom(writer http.ResponseWriter, request *http.Request) {
@@ -295,6 +351,15 @@ func (s *Server) handleLauncherQuery(writer http.ResponseWriter, request *http.R
 
 func (s *Server) handleLauncherSuggestions(writer http.ResponseWriter, request *http.Request) {
 	item, err := s.launcher.Suggestions(request.Context())
+	if err != nil {
+		s.writeFailure(writer, http.StatusInternalServerError, err.Error())
+		return
+	}
+	s.writeSuccess(writer, item)
+}
+
+func (s *Server) handleLauncherBootstrap(writer http.ResponseWriter, request *http.Request) {
+	item, err := s.launcher.Bootstrap(request.Context())
 	if err != nil {
 		s.writeFailure(writer, http.StatusInternalServerError, err.Error())
 		return

@@ -4,6 +4,7 @@
 
 import { get_agent_api_base_url } from '@/config/options';
 import { request_api } from '@/lib/api/http';
+import type { LauncherBootstrapResponse } from '@/types/app/launcher';
 
 export interface LauncherQueryParams {
   query: string;
@@ -26,6 +27,12 @@ export interface LauncherSuggestion {
 export interface LauncherSuggestionsResponse {
   agents: LauncherSuggestion[];
   rooms: LauncherSuggestion[];
+}
+
+export async function get_launcher_bootstrap_api(): Promise<LauncherBootstrapResponse> {
+  return request_api<LauncherBootstrapResponse>(`${get_agent_api_base_url()}/launcher/bootstrap`, {
+    method: 'GET',
+  });
 }
 
 /**

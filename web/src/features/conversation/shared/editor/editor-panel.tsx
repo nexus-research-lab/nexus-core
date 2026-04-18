@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  FileText, GripVertical, LoaderCircle, Minimize2, Save, FileWarning, Download, Eye, EyeOff, FileImage,
+  FileText, LoaderCircle, Minimize2, Save, FileWarning, Download, Eye, EyeOff, FileImage,
 } from "lucide-react";
 
 import { get_workspace_file_content_api, update_workspace_file_content_api, get_workspace_file_download_url } from "@/lib/api/agent-manage-api";
@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { useWorkspaceLiveStore } from "@/store/workspace-live";
 import { TypewriterFileView } from "@/shared/ui/feedback/typewriter-file-view";
 import { MarkdownRendererContent } from "@/features/conversation/shared/message/markdown/markdown-renderer-content";
+import { ConversationResizeHandle } from "./conversation-resize-handle";
 
 // 文件类型检测
 function get_file_type(path: string): "text" | "pdf" | "image" | "binary" | "unknown" {
@@ -123,14 +124,11 @@ function PdfPreview({
   return (
     <>
       {!embedded ? (
-        <button
-          aria-label="调整编辑器宽度"
-          className="absolute -left-3 top-0 z-20 flex h-full w-6 cursor-col-resize items-center justify-center text-muted-foreground/60 transition-colors hover:text-primary"
-          onMouseDown={on_resize_start}
-          type="button"
-        >
-          <GripVertical className="h-4 w-4" />
-        </button>
+        <ConversationResizeHandle
+          aria_label="调整编辑器宽度"
+          class_name="flex"
+          on_mouse_down={on_resize_start}
+        />
       ) : null}
 
       <EditorPanelHeader
@@ -221,14 +219,11 @@ function ImagePreview({
   return (
     <>
       {!embedded ? (
-        <button
-          aria-label="调整编辑器宽度"
-          className="absolute -left-3 top-0 z-20 flex h-full w-6 cursor-col-resize items-center justify-center text-muted-foreground/60 transition-colors hover:text-primary"
-          onMouseDown={on_resize_start}
-          type="button"
-        >
-          <GripVertical className="h-4 w-4" />
-        </button>
+        <ConversationResizeHandle
+          aria_label="调整编辑器宽度"
+          class_name="flex"
+          on_mouse_down={on_resize_start}
+        />
       ) : null}
 
       <EditorPanelHeader
@@ -580,14 +575,11 @@ export function EditorPanel({
             // 文本文件编辑器
             <>
               {!embedded ? (
-                <button
-                  aria-label="调整编辑器宽度"
-                  className="absolute -left-3 top-0 z-20 flex h-full w-6 cursor-col-resize items-center justify-center text-muted-foreground/60 transition-colors hover:text-primary"
-                  onMouseDown={on_resize_start}
-                  type="button"
-                >
-                  <GripVertical className="h-4 w-4" />
-                </button>
+                <ConversationResizeHandle
+                  aria_label="调整编辑器宽度"
+                  class_name="flex"
+                  on_mouse_down={on_resize_start}
+                />
               ) : null}
 
               <EditorPanelHeader

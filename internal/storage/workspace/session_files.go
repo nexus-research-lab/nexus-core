@@ -19,7 +19,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	sessionmodel "github.com/nexus-research-lab/nexus/internal/model/session"
 )
@@ -154,11 +153,6 @@ func (s *SessionFileStore) AppendSessionMessage(workspacePath string, sessionKey
 	return s.appendJSONL(s.paths.SessionMessagePath(workspacePath, sessionKey), message)
 }
 
-// AppendSessionCost 追加一条成本账本记录到 telemetry_cost.jsonl。
-func (s *SessionFileStore) AppendSessionCost(workspacePath string, sessionKey string, row map[string]any) error {
-	return s.appendJSONL(s.paths.SessionCostPath(workspacePath, sessionKey), row)
-}
-
 // ReadSessionMessages 读取 workspace 会话消息。
 func (s *SessionFileStore) ReadSessionMessages(workspacePaths []string, sessionKey string) ([]sessionmodel.Message, error) {
 	return s.ReadSessionMessagesWithActiveRounds(workspacePaths, sessionKey, nil)
@@ -206,38 +200,6 @@ func (s *SessionFileStore) RefreshSessionMeta(workspacePath string, sessionKey s
 		return nil, err
 	}
 	return s.UpsertSession(workspacePath, refreshSessionMetaFromMessages(current, rows))
-}
-
-// ReadSessionCostSummary 读取或回算 Session 成本汇总。
-func (s *SessionFileStore) ReadSessionCostSummary(workspacePaths []string, sessionKey string, fallbackAgentID string) (sessionmodel.CostSummary, error) {
-	for _, workspacePath := range workspacePaths {
-		summaryPath := s.paths.SessionCostSummaryPath(workspacePath, sessionKey)
-		item, err := s.readCostSummaryFile(summaryPath)
-		if errors.Is(err, os.ErrNotExist) {
-			logRows, logErr := s.readJSONL(s.paths.SessionCostPath(workspacePath, sessionKey))
-			if errors.Is(logErr, os.ErrNotExist) {
-				continue
-			}
-			if logErr != nil {
-				return sessionmodel.CostSummary{}, logErr
-			}
-			if len(logRows) == 0 {
-				continue
-			}
-			return buildCostSummaryFromRows(sessionKey, fallbackAgentID, logRows), nil
-		}
-		if err != nil {
-			return sessionmodel.CostSummary{}, err
-		}
-		if strings.TrimSpace(item.AgentID) == "" {
-			item.AgentID = strings.TrimSpace(fallbackAgentID)
-		}
-		if strings.TrimSpace(item.SessionKey) == "" {
-			item.SessionKey = sessionKey
-		}
-		return item, nil
-	}
-	return defaultCostSummary(sessionKey, fallbackAgentID), nil
 }
 
 func (s *SessionFileStore) readSessionMeta(metaPath string) (sessionmodel.Session, error) {
@@ -332,21 +294,6 @@ func (s *SessionFileStore) readJSONL(path string) ([]map[string]any, error) {
 		rows = append(rows, item)
 	}
 	return rows, reader.Err()
-}
-
-func (s *SessionFileStore) readCostSummaryFile(path string) (sessionmodel.CostSummary, error) {
-	payload, err := os.ReadFile(path)
-	if err != nil {
-		return sessionmodel.CostSummary{}, err
-	}
-	var item sessionmodel.CostSummary
-	if err = json.Unmarshal(payload, &item); err != nil {
-		return sessionmodel.CostSummary{}, err
-	}
-	if item.UpdatedAt.IsZero() {
-		item.UpdatedAt = time.Now().UTC()
-	}
-	return item, nil
 }
 
 func compactMessages(rows []sessionmodel.Message) []sessionmodel.Message {
@@ -572,55 +519,6 @@ func boolFromAny(value any) bool {
 	default:
 		return false
 	}
-}
-
-func defaultCostSummary(sessionKey string, agentID string) sessionmodel.CostSummary {
-	return sessionmodel.CostSummary{
-		AgentID:    strings.TrimSpace(agentID),
-		SessionKey: sessionKey,
-		SessionID:  "",
-		UpdatedAt:  time.Now().UTC(),
-	}
-}
-
-func buildCostSummaryFromRows(sessionKey string, fallbackAgentID string, rows []map[string]any) sessionmodel.CostSummary {
-	summary := defaultCostSummary(sessionKey, fallbackAgentID)
-	if len(rows) == 0 {
-		return summary
-	}
-
-	for _, row := range rows {
-		summary.TotalInputTokens += intFromAny(row["input_tokens"])
-		summary.TotalOutputTokens += intFromAny(row["output_tokens"])
-		summary.TotalCacheCreationInputTokens += intFromAny(row["cache_creation_input_tokens"])
-		summary.TotalCacheReadInputTokens += intFromAny(row["cache_read_input_tokens"])
-		summary.TotalCostUSD += floatFromAny(row["total_cost_usd"])
-		if strings.TrimSpace(stringFromAny(row["subtype"])) != "" && strings.TrimSpace(stringFromAny(row["subtype"])) != "success" {
-			summary.ErrorRounds++
-		}
-	}
-
-	latest := rows[len(rows)-1]
-	summary.TotalTokens = summary.TotalInputTokens + summary.TotalOutputTokens
-	summary.CompletedRounds = len(rows)
-	summary.SessionID = stringFromAny(latest["session_id"])
-	if summary.AgentID == "" {
-		summary.AgentID = firstNonEmpty(
-			stringFromAny(latest["agent_id"]),
-			strings.TrimSpace(fallbackAgentID),
-		)
-	}
-	if value := strings.TrimSpace(stringFromAny(latest["round_id"])); value != "" {
-		summary.LastRoundID = stringPointer(value)
-	}
-	if value := intFromAny(latest["duration_ms"]); value > 0 {
-		summary.LastRunDurationMS = intPointer(value)
-	}
-	if value := floatFromAny(latest["total_cost_usd"]); value > 0 {
-		summary.LastRunCostUSD = floatPointer(value)
-	}
-	summary.UpdatedAt = time.Now().UTC()
-	return summary
 }
 
 func messageTimestamp(row sessionmodel.Message) int64 {

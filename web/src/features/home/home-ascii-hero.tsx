@@ -20,11 +20,6 @@ const HERO_LABEL = "nexus";
 const DEFAULT_HERO_INK = "#516dff";
 const DEFAULT_CLOCK_INK = "rgba(32, 45, 62, 0.88)";
 
-interface HomeAsciiHeroProps {
-  agent_count: number;
-  room_count: number;
-}
-
 interface AsciiParticle {
   x: number;
   y: number;
@@ -48,7 +43,7 @@ function pad2(n: number) {
   return n.toString().padStart(2, "0");
 }
 
-export function HomeAsciiHero({ agent_count, room_count }: HomeAsciiHeroProps) {
+export function HomeAsciiHero() {
   const { theme } = useTheme();
   const section_ref = useRef<HTMLDivElement | null>(null);
   const canvas_ref = useRef<HTMLCanvasElement | null>(null);
@@ -357,14 +352,6 @@ export function HomeAsciiHero({ agent_count, room_count }: HomeAsciiHeroProps) {
         last_alpha = 0.38;
         hero_ctx.fillText(`:${clock_ss}`, clock_pad_x + clock_hm_width + 2, clock_y + (clock_big_size - clock_small_size) * 0.82);
 
-        hero_ctx.font = clock_font_meta;
-        hero_ctx.globalAlpha = 0.28;
-        hero_ctx.fillText(
-          `AGENTS ${agent_count}  ·  ROOMS ${room_count}`,
-          clock_pad_x,
-          height - clock_pad_y - clock_big_size - 6,
-        );
-
         hero_ctx.globalAlpha = 1;
         frame_id = requestAnimationFrame(draw);
       };
@@ -398,7 +385,7 @@ export function HomeAsciiHero({ agent_count, room_count }: HomeAsciiHeroProps) {
       hero_canvas.removeEventListener("touchmove", on_touch);
       hero_canvas.removeEventListener("touchend", clear_pointer);
     };
-  }, [prefers_reduced_motion, agent_count, room_count, theme]);
+  }, [prefers_reduced_motion, theme]);
 
   return (
     <div
