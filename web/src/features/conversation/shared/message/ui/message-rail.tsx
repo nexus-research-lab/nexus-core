@@ -63,7 +63,7 @@ export function MessageRailBody({
   class_name?: string;
 }) {
   return (
-    <div className={cn("min-w-0 max-w-full overflow-hidden break-words text-[11px] leading-[1.45] text-(--text-default)", class_name)}>
+    <div className={cn("message-cjk-font min-w-0 max-w-full overflow-hidden break-words text-[11px] leading-[1.45] text-(--text-default)", class_name)}>
       {children}
     </div>
   );
@@ -77,7 +77,13 @@ export function MessageCallout({
   class_name?: string;
 }) {
   return (
-    <div className={cn("rounded-[14px] border border-(--status-info-soft-border) bg-(--status-info-soft-bg) px-3.5 py-2.5 text-xs text-(--status-info-soft-text)", class_name)}>
+    <div
+      className={cn("message-cjk-font rounded-[10px] border px-3 py-2 text-xs text-(--status-info-soft-text)", class_name)}
+      style={{
+        background: "color-mix(in srgb, var(--surface-panel-background) 86%, transparent)",
+        borderColor: "color-mix(in srgb, var(--surface-panel-subtle-border) 80%, transparent)",
+      }}
+    >
       {children}
     </div>
   );

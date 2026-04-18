@@ -185,10 +185,10 @@ const TOOL_LABEL_STYLES: Record<string, string> = {
 
 const get_permission_choice_class_name = (selected: boolean) =>
   cn(
-    "rounded-full border px-2.5 py-0.5 text-[10px] font-medium transition-colors",
+    "inline-flex items-center rounded-[7px] border px-2 py-1 text-[11px] font-medium transition-colors",
     selected
-      ? "border-white/12 bg-primary/8 text-primary"
-      : "border-white/12 bg-white/6 text-(--text-muted) hover:bg-(--surface-interactive-hover-background) hover:text-(--text-strong)",
+      ? "border-primary/24 bg-primary/6 text-primary"
+      : "border-(--divider-subtle-color) bg-transparent text-(--text-muted) hover:bg-(--surface-interactive-hover-background) hover:text-(--text-strong)",
   );
 
 const TOOL_DETAIL_SCROLL_CLASS_NAME =
@@ -269,6 +269,10 @@ export function ToolBlock({
     if (!tool_result) return null;
     return get_result_summary(tool_result.content);
   }, [tool_result]);
+  const expandedInputDetail = useMemo(
+    () => get_primary_input_detail(tool_use.input),
+    [tool_use.input],
+  );
   const permissionFieldSummary = useMemo(() => {
     if (readablePermissionFields.length === 0) return null;
     return readablePermissionFields.map((field) => `${field.label}：${field.value}`).join(' · ');
@@ -296,6 +300,25 @@ export function ToolBlock({
   const waitingActionHint = interaction_disabled
     ? interaction_disabled_reason || '当前窗口是观察视图'
     : waitingConfirmationText;
+  const collapsedDetailText = useMemo(() => {
+    if (isWaiting && permissionFieldSummary) {
+      return permissionFieldSummary;
+    }
+    if (inputSummary) {
+      return inputSummary;
+    }
+    if (hasResult) {
+      return resultSummary;
+    }
+    return null;
+  }, [hasResult, inputSummary, isWaiting, permissionFieldSummary, resultSummary]);
+  const expandedDetailText = useMemo(() => {
+    if (isWaiting && permissionFieldSummary) {
+      return permissionFieldSummary;
+    }
+    return expandedInputDetail?.value.trim() || inputSummary || resultSummary || null;
+  }, [expandedInputDetail, inputSummary, isWaiting, permissionFieldSummary, resultSummary]);
+  const headerDetailText = isExpanded ? expandedDetailText : collapsedDetailText;
 
   useEffect(() => {
     setSelectedSuggestionIndex(-1);
@@ -309,7 +332,7 @@ export function ToolBlock({
     >
       <div
         className={cn(
-          "flex min-w-0 flex-wrap cursor-pointer select-none items-center gap-x-2 gap-y-1 py-1 text-xs transition-colors sm:flex-nowrap",
+          "message-cjk-font flex min-w-0 flex-wrap cursor-pointer select-none items-center gap-x-2 gap-y-1 py-1 text-xs transition-colors sm:flex-nowrap",
           isRunning && "animate-pulse"
         )}
         onClick={() => hasResult && toggleExpanded()}
@@ -341,12 +364,18 @@ export function ToolBlock({
             ) : null}
           </div>
           <div className="mt-0.5 min-w-0 text-[12px] text-(--text-muted)">
-            {isWaiting && permissionFieldSummary ? (
-              <span className="block truncate">{permissionFieldSummary}</span>
-            ) : hasResult && !isExpanded && resultSummary ? (
-              <span className="block truncate">{resultSummary}</span>
-            ) : inputSummary ? (
-              <span className="block truncate">{inputSummary}</span>
+            {headerDetailText ? (
+              <span
+                className={cn(
+                  "block",
+                  isExpanded
+                    ? "whitespace-pre-wrap break-all"
+                    : "truncate",
+                  "message-cjk-font",
+                )}
+              >
+                {headerDetailText}
+              </span>
             ) : (
               <span>{isWaiting ? '等待确认' : '处理中…'}</span>
             )}
@@ -366,10 +395,10 @@ export function ToolBlock({
               disabled={interaction_disabled}
               title={interaction_disabled ? interaction_disabled_reason : undefined}
               className={cn(
-                "dialog-button-secondary rounded-lg px-3 py-1.5 text-xs font-medium text-(--text-muted) transition-colors",
+                "rounded-[8px] border border-(--divider-subtle-color) px-2.5 py-1 text-xs font-medium text-(--text-muted) transition-colors",
                 interaction_disabled
                   ? "cursor-not-allowed opacity-(--disabled-opacity)"
-                  : "hover:text-(--text-strong)",
+                  : "hover:bg-(--surface-interactive-hover-background) hover:text-(--text-strong)",
               )}
             >
               拒绝
@@ -386,10 +415,10 @@ export function ToolBlock({
               disabled={interaction_disabled}
               title={interaction_disabled ? interaction_disabled_reason : undefined}
               className={cn(
-                "rounded-lg px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors",
+                "rounded-[8px] border px-2.5 py-1 text-xs font-medium transition-colors",
                 interaction_disabled
-                  ? "cursor-not-allowed bg-(--muted)"
-                  : "bg-primary hover:bg-primary/90",
+                  ? "cursor-not-allowed border-(--divider-subtle-color) bg-transparent text-(--text-soft)"
+                  : "border-primary/24 bg-primary/8 text-primary hover:bg-primary/12",
               )}
             >
               允许
@@ -440,16 +469,10 @@ export function ToolBlock({
       )}
 
       {hasResult && isExpanded && (
-        <div className="ml-7 mt-2 min-w-0">
+        <div className="message-cjk-font ml-7 mt-2 min-w-0">
           <div className={TOOL_DETAIL_SCROLL_CLASS_NAME}>
             {typeof tool_result.content === 'string' ? (
-              <pre
-                className="rounded-2xl border p-3 text-xs whitespace-pre-wrap break-all text-(--text-strong)"
-                style={{
-                  background: "var(--surface-panel-subtle-background)",
-                  borderColor: "var(--surface-panel-subtle-border)",
-                }}
-              >
+              <pre className="message-cjk-font px-0 py-0 text-xs whitespace-pre-wrap break-all text-(--text-strong)">
                 {tool_result.content}
               </pre>
             ) : (
@@ -460,17 +483,14 @@ export function ToolBlock({
       )}
 
       {permission_request && isWaiting && (
-        <div className="ml-7 mt-1.5 space-y-1.5">
+        <div className="message-cjk-font ml-7 mt-2 space-y-2 border-t border-(--divider-subtle-color) pt-2">
           {primaryInputDetail?.value.trim() ? (
-            <div
-              className="rounded-xl border px-2.5 py-1.5 text-[12px] leading-5 text-(--text-default)"
-              style={{
-                background: "var(--surface-panel-subtle-background)",
-                borderColor: "var(--surface-panel-subtle-border)",
-              }}
-            >
+            <div className="space-y-1 px-0 py-0 text-[12px] leading-5 text-(--text-default)">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-(--text-soft)">
+                {FIELD_LABEL_MAP[primaryInputDetail.key] || primaryInputDetail.key}
+              </div>
               <div className={TOOL_DETAIL_SCROLL_CLASS_NAME}>
-                <pre className="whitespace-pre-wrap break-all">
+                <pre className="message-cjk-font whitespace-pre-wrap break-all text-[12px] leading-5 text-(--text-default)">
                   {primaryInputDetail.value}
                 </pre>
               </div>
@@ -479,7 +499,7 @@ export function ToolBlock({
 
           {readableSuggestions.length > 0 ? (
             <div className="space-y-1">
-              <div className="text-[10px] font-medium text-(--text-soft)">权限范围</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-(--text-soft)">权限范围</div>
               <div className="flex flex-wrap items-center gap-1.5">
                 <label
                   className={get_permission_choice_class_name(selectedSuggestionIndex === -1)}

@@ -44,12 +44,96 @@ interface AskUserQuestionBlockProps {
     interaction_disabled_reason?: string;
 }
 
+type QuestionSelectionState = {
+    selections: Map<number, Set<string>>;
+    custom_answers: Map<number, string>;
+};
+
 function normalize_question(question: UserQuestion): UserQuestion {
     return {
         ...question,
         // 兼容 SDK 直接透传的 camelCase 字段，组件内部统一使用 snake_case。
         multi_select: question.multi_select ?? question.multiSelect ?? false,
     };
+}
+
+function create_empty_question_selection_state(
+    questions: UserQuestion[],
+): QuestionSelectionState {
+    const selections = new Map<number, Set<string>>();
+    const custom_answers = new Map<number, string>();
+    questions.forEach((_, index) => {
+        selections.set(index, new Set());
+        custom_answers.set(index, '');
+    });
+    return { selections, custom_answers };
+}
+
+function extract_answer_pairs_from_tool_result_content(
+    content: string,
+): Map<string, string> {
+    const pairs = new Map<string, string>();
+    const matcher = /"([^"]+)"="([^"]*)"/g;
+    let match: RegExpExecArray | null = matcher.exec(content);
+    while (match) {
+        const [, question_text, answer_text] = match;
+        pairs.set(question_text, answer_text);
+        match = matcher.exec(content);
+    }
+    return pairs;
+}
+
+function build_submitted_selection_state(
+    questions: UserQuestion[],
+    tool_result?: ToolResultContent,
+): QuestionSelectionState {
+    const empty_state = create_empty_question_selection_state(questions);
+    if (!tool_result || tool_result.is_error || typeof tool_result.content !== 'string') {
+        return empty_state;
+    }
+
+    const answer_pairs = extract_answer_pairs_from_tool_result_content(tool_result.content);
+    if (answer_pairs.size === 0) {
+        return empty_state;
+    }
+
+    questions.forEach((question, index) => {
+        const answer_text = answer_pairs.get(question.question);
+        if (!answer_text) {
+            return;
+        }
+
+        const normalized_question = normalize_question(question);
+        const option_labels = new Set(normalized_question.options.map((option) => option.label));
+
+        if (normalized_question.multi_select) {
+            const answer_items = answer_text
+                .split(', ')
+                .map((item) => item.trim())
+                .filter(Boolean);
+            const selected_options = answer_items.filter((item) => option_labels.has(item));
+            const custom_items = answer_items.filter((item) => !option_labels.has(item));
+            empty_state.selections.set(index, new Set(selected_options));
+            empty_state.custom_answers.set(index, custom_items.join(', '));
+            return;
+        }
+
+        if (option_labels.has(answer_text)) {
+            empty_state.selections.set(index, new Set([answer_text]));
+            empty_state.custom_answers.set(index, '');
+            return;
+        }
+
+        empty_state.selections.set(index, new Set());
+        empty_state.custom_answers.set(index, answer_text);
+    });
+
+    return empty_state;
+}
+
+function has_selection_state_content(state: QuestionSelectionState): boolean {
+    return Array.from(state.selections.values()).some((values) => values.size > 0)
+        || Array.from(state.custom_answers.values()).some((value) => value.trim().length > 0);
 }
 
 // ==================== 子组件 ====================
@@ -79,31 +163,36 @@ function QuestionCard({
 
     return (
         <div className={cn(
-            "overflow-hidden rounded-[14px] border transition duration-(--motion-duration-fast) ease-out",
+            "overflow-hidden rounded-[10px] border transition duration-(--motion-duration-fast) ease-out",
             hasSelection
-                ? "border-primary/18 bg-white/10"
-                : "border-white/12 bg-white/5",
-        )}>
+                ? "border-primary/18"
+                : "border-(--divider-subtle-color)",
+        )}
+        style={{
+            background: hasSelection
+                ? "color-mix(in srgb, var(--surface-panel-background) 90%, var(--primary) 6%)"
+                : "color-mix(in srgb, var(--surface-panel-background) 84%, transparent)",
+        }}>
             {/* 问题头部（可点击收起） */}
             <div
                 className={cn(
-                    "flex cursor-pointer select-none items-center gap-1 px-2.5 py-1 transition duration-(--motion-duration-fast) ease-out",
-                    isExpanded && "border-b border-white/12",
-                    !isExpanded && "hover:bg-white/6",
+                    "message-cjk-font flex cursor-pointer select-none items-center gap-2 px-3 py-2 transition duration-(--motion-duration-fast) ease-out",
+                    isExpanded && "border-b border-(--divider-subtle-color)",
+                    !isExpanded && "hover:bg-white/4",
                 )}
                 onClick={() => setIsExpanded(!isExpanded)}
             >
                 {/* 序号 */}
                 <span className={cn(
-                    "flex h-5 w-5 items-center justify-center rounded-full bg-(--material-chip-background) text-[10px] font-bold text-(--text-muted)",
-                    hasSelection && "bg-primary/12 text-primary",
+                    "shrink-0 text-[10px] font-semibold tabular-nums tracking-[0.12em] text-(--text-soft)",
+                    hasSelection && "text-primary",
                 )}>
-                    {question_index + 1}
+                    {String(question_index + 1).padStart(2, "0")}
                 </span>
 
                 {/* header 标签 */}
                 {question.header && (
-                    <span className="rounded-xl bg-primary/8 px-1.5 text-[9px] font-bold uppercase tracking-[0.08em] text-primary/80">
+                    <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary/80">
                         {question.header}
                     </span>
                 )}
@@ -126,8 +215,8 @@ function QuestionCard({
 
                 {/* 选中数量 */}
                 {hasSelection && (
-                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                        {selectedCount}
+                    <span className="shrink-0 text-[10px] font-semibold text-primary/80">
+                        {selectedCount} 项
                     </span>
                 )}
 
@@ -143,93 +232,95 @@ function QuestionCard({
 
             {/* 选项列表（可收起） */}
             {isExpanded && (
-                <div className="space-y-1.5 p-2.5">
-                    {question.options.map((option, optIndex) => {
-                        const isSelected = selected_options.has(option.label);
-                        const Icon = isMultiSelect
-                            ? (isSelected ? CheckSquare : Square)
-                            : (isSelected ? CheckCircle : Circle);
+                <div className="message-cjk-font p-2.5">
+                    <div className="overflow-hidden rounded-[8px] border border-(--divider-subtle-color)">
+                        {question.options.map((option, optIndex) => {
+                            const isSelected = selected_options.has(option.label);
+                            const Icon = isMultiSelect
+                                ? (isSelected ? CheckSquare : Square)
+                                : (isSelected ? CheckCircle : Circle);
 
-                        return (
-                            <button
-                                key={optIndex}
-                                className={cn(
-                                    "w-full rounded-[12px] border px-2.5 py-0.5 text-left transition duration-(--motion-duration-fast) ease-out",
-                                    isSelected
-                                        ? "border-primary/20 bg-primary/6"
-                                        : "border-white/12 bg-white/5 hover:border-primary/16 hover:bg-primary/4",
-                                    is_submitted && "cursor-not-allowed opacity-60",
-                                )}
-                                disabled={is_submitted}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    on_toggle_option(question_index, option.label, isMultiSelect);
-                                }}
-                            >
-                                <div className="flex items-start gap-2.5">
-                                    <Icon className={cn(
-                                        "mt-0.5 h-4 w-4 flex-shrink-0 transition-colors",
-                                        isSelected ? "text-primary" : "text-muted-foreground/50"
-                                    )} />
-                                    <div className="flex-1 min-w-0">
-                                        <div className={cn(
-                                            "text-[13px] font-medium leading-tight",
-                                            isSelected ? "text-primary" : "text-foreground"
-                                        )}>
-                                            {option.label}
-                                        </div>
-                                        {option.description && (
-                                            <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
-                                                {option.description}
+                            return (
+                                <button
+                                    key={optIndex}
+                                    className={cn(
+                                        "w-full border-b border-(--divider-subtle-color) px-3 py-2 text-left transition duration-(--motion-duration-fast) ease-out last:border-b-0",
+                                        isSelected
+                                            ? "bg-primary/4"
+                                            : "bg-transparent hover:bg-white/4",
+                                        is_submitted && "cursor-not-allowed opacity-60",
+                                    )}
+                                    disabled={is_submitted}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        on_toggle_option(question_index, option.label, isMultiSelect);
+                                    }}
+                                >
+                                    <div className="flex items-start gap-2.5">
+                                        <Icon className={cn(
+                                            "mt-0.5 h-4 w-4 flex-shrink-0 transition-colors",
+                                            isSelected ? "text-primary" : "text-muted-foreground/50"
+                                        )} />
+                                        <div className="min-w-0 flex-1">
+                                            <div className={cn(
+                                                "text-[13px] font-medium leading-tight",
+                                                isSelected ? "text-primary" : "text-foreground"
+                                            )}>
+                                                {option.label}
                                             </div>
+                                            {option.description && (
+                                                <div className="mt-1 text-[11px] leading-snug text-muted-foreground">
+                                                    {option.description}
+                                                </div>
+                                            )}
+                                        </div>
+                                        {isSelected && (
+                                            <span className="shrink-0 text-[10px] font-medium text-primary/80">
+                                                已选
+                                            </span>
                                         )}
                                     </div>
-                                    {isSelected && (
-                                        <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                                            已选
+                                </button>
+                            );
+                        })}
+
+                        {showCustomAnswer ? (
+                            <div
+                                className="px-3 py-2"
+                                onClick={(event) => event.stopPropagation()}
+                            >
+                                <div className="mb-1 flex items-center justify-between gap-2">
+                                    <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-(--text-soft)">自定义回答</div>
+                                    {hasCustomAnswer && (
+                                        <span className="text-[10px] font-medium text-primary/80">
+                                            已填写
                                         </span>
                                     )}
                                 </div>
-                            </button>
-                        );
-                    })}
-
-                    {showCustomAnswer ? (
-                        <div
-                            className="px-0.5 pt-1"
-                            onClick={(event) => event.stopPropagation()}
-                        >
-                            <div className="mb-1 flex items-center justify-between gap-2">
-                                <div className="text-[13px] font-medium text-foreground">自定义回答</div>
-                                {hasCustomAnswer && (
-                                    <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                                        已填写
-                                    </span>
-                                )}
+                                <div className="border-b border-(--divider-subtle-color)">
+                                    <textarea
+                                        className={cn(
+                                            "h-7 min-h-7 w-full resize-none border-0 bg-transparent px-0 py-0 text-[13px] leading-7 text-(--text-strong) outline-none shadow-none ring-0 transition duration-(--motion-duration-fast) ease-out focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none",
+                                            "placeholder:text-muted-foreground/70",
+                                            is_submitted && "cursor-not-allowed opacity-60"
+                                        )}
+                                        disabled={is_submitted}
+                                        value={custom_answer}
+                                        onChange={(event) => {
+                                            on_custom_answer_change(
+                                                question_index,
+                                                event.target.value,
+                                                isMultiSelect,
+                                            );
+                                        }}
+                                        onClick={(event) => event.stopPropagation()}
+                                        placeholder={isMultiSelect ? "可补充其他答案…" : "没有合适选项时，在这里输入你的回答…"}
+                                        rows={1}
+                                    />
+                                </div>
                             </div>
-                            <div className="border-b border-white/14">
-                                <textarea
-                                    className={cn(
-                                        "h-7 min-h-7 w-full resize-none border-0 bg-transparent px-0 py-0 text-[13px] leading-7 text-(--text-strong) outline-none shadow-none ring-0 transition duration-(--motion-duration-fast) ease-out focus:border-0 focus:bg-transparent focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 focus-visible:shadow-none",
-                                        "placeholder:text-muted-foreground/70",
-                                        is_submitted && "cursor-not-allowed opacity-60"
-                                    )}
-                                    disabled={is_submitted}
-                                    value={custom_answer}
-                                    onChange={(event) => {
-                                        on_custom_answer_change(
-                                            question_index,
-                                            event.target.value,
-                                            isMultiSelect,
-                                        );
-                                    }}
-                                    onClick={(event) => event.stopPropagation()}
-                                    placeholder={isMultiSelect ? "可补充其他答案…" : "没有合适选项时，在这里输入你的回答…"}
-                                    rows={1}
-                                />
-                            </div>
-                        </div>
-                    ) : null}
+                        ) : null}
+                    </div>
                 </div>
             )}
         </div>
@@ -253,18 +344,22 @@ export function AskUserQuestionBlock({
         () => (input?.questions || []).map(normalize_question),
         [input?.questions],
     );
+    const submitted_selection_state = useMemo(
+        () => build_submitted_selection_state(questions, tool_result),
+        [questions, tool_result],
+    );
+    const has_submitted_selection_state = useMemo(
+        () => has_selection_state_content(submitted_selection_state),
+        [submitted_selection_state],
+    );
 
     // 状态：每个问题的选中选项
-    const [selections, setSelections] = useState<Map<number, Set<string>>>(() => {
-        const map = new Map();
-        questions.forEach((_, index) => map.set(index, new Set()));
-        return map;
-    });
-    const [customAnswers, setCustomAnswers] = useState<Map<number, string>>(() => {
-        const map = new Map();
-        questions.forEach((_, index) => map.set(index, ''));
-        return map;
-    });
+    const [selections, setSelections] = useState<Map<number, Set<string>>>(
+        () => create_empty_question_selection_state(questions).selections,
+    );
+    const [customAnswers, setCustomAnswers] = useState<Map<number, string>>(
+        () => create_empty_question_selection_state(questions).custom_answers,
+    );
     const isTimedOut = is_ask_user_question_timed_out_result(tool_result);
     const isFailed = Boolean(tool_result?.is_error && !isTimedOut);
     const [hasLocalSubmission, setHasLocalSubmission] = useState(false);
@@ -279,6 +374,22 @@ export function AskUserQuestionBlock({
             setIsExpanded(false);
         }
     }, [initialSubmitted, isFailed, isTimedOut]);
+
+    useEffect(() => {
+        const empty_state = create_empty_question_selection_state(questions);
+        setSelections(empty_state.selections);
+        setCustomAnswers(empty_state.custom_answers);
+    }, [questions]);
+
+    useEffect(() => {
+        if (!initialSubmitted && !has_submitted_selection_state) {
+            return;
+        }
+        setSelections(new Map(
+            Array.from(submitted_selection_state.selections.entries()).map(([index, values]) => [index, new Set(values)]),
+        ));
+        setCustomAnswers(new Map(submitted_selection_state.custom_answers));
+    }, [has_submitted_selection_state, initialSubmitted, submitted_selection_state]);
 
     // 切换选项
     const handleToggleOption = useCallback((questionIndex: number, optionLabel: string, multiSelect: boolean) => {
@@ -464,7 +575,7 @@ export function AskUserQuestionBlock({
                 <div className="flex-1" />
 
                 {!isReadOnly && totalSelected > 0 && (
-                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                    <span className="text-[10px] font-semibold text-primary/80">
                         已选 {totalSelected} 项
                     </span>
                 )}
@@ -500,7 +611,7 @@ export function AskUserQuestionBlock({
 
             {/* ═══════════ 底部操作栏 ═══════════ */}
             {!isReadOnly && isExpanded && (
-                <div className="flex min-h-0 items-center justify-between gap-3 border-t border-white/12">
+                <div className="message-cjk-font mt-2 flex min-h-0 items-center justify-between gap-3 border-t border-(--divider-subtle-color) pt-2">
                     <span className="text-[11px] leading-none text-muted-foreground">
                         {!is_ready
                             ? '等待提问就绪'
@@ -519,10 +630,10 @@ export function AskUserQuestionBlock({
                         disabled={!canSubmit || !is_ready || interaction_disabled}
                         title={interaction_disabled ? interaction_disabled_reason : undefined}
                         className={cn(
-                            "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium leading-none transition-colors",
+                            "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[8px] border px-2.5 py-1 text-xs font-medium leading-none transition-colors",
                             canSubmit && is_ready && !interaction_disabled
-                                ? "border-primary/24 bg-primary/10 text-primary hover:bg-primary/14"
-                                : "border-white/14 bg-white/6 text-(--text-soft)",
+                                ? "border-primary/24 bg-primary/8 text-primary hover:bg-primary/12"
+                                : "border-(--divider-subtle-color) bg-transparent text-(--text-soft)",
                         )}
                     >
                         <Send className="h-3 w-3" />
@@ -533,7 +644,7 @@ export function AskUserQuestionBlock({
 
             {/* ═══════════ 已提交状态（展开时显示） ═══════════ */}
             {isSubmitted && isExpanded && (
-                <div className="mt-2 flex items-center gap-2 border-t border-[color:color-mix(in_srgb,var(--success)_18%,transparent)] pt-2 text-xs font-semibold text-(--success)">
+                <div className="message-cjk-font mt-2 flex items-center gap-2 border-t border-[color:color-mix(in_srgb,var(--success)_18%,transparent)] pt-2 text-xs font-semibold text-(--success)">
                     <Check className="w-3.5 h-3.5 text-(--success)" />
                     <span className="text-xs font-medium text-(--success)">已收到你的回应</span>
                 </div>

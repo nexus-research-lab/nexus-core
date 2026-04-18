@@ -18,6 +18,11 @@ import {
   MessageRail,
   MessageResultLabel,
 } from "../ui/message-rail";
+import {
+  DEFAULT_TIMELINE_DOT_TOP,
+  get_timeline_anchor_element,
+  get_timeline_anchor_top,
+} from "./message-item-support";
 
 interface ContentRendererProps {
   content: string | ContentBlock[];
@@ -32,61 +37,6 @@ interface ContentRendererProps {
   hidden_tool_names?: string[];
   class_name?: string;
   show_timeline_dots?: boolean;
-}
-
-const DEFAULT_TIMELINE_DOT_TOP = 12;
-
-function get_timeline_anchor_element(content_element: HTMLElement): HTMLElement | null {
-  return content_element.querySelector<HTMLElement>("[data-timeline-anchor]")
-    ?? content_element.querySelector<HTMLElement>("[data-markdown-anchor], button, li, h1, h2, h3, h4, pre, blockquote, th, td");
-}
-
-function get_first_text_line_top(content_element: HTMLElement): number | null {
-  const text_walker = document.createTreeWalker(
-    content_element,
-    NodeFilter.SHOW_TEXT,
-    {
-      acceptNode(node) {
-        return node.textContent?.trim()
-          ? NodeFilter.FILTER_ACCEPT
-          : NodeFilter.FILTER_SKIP;
-      },
-    },
-  );
-
-  const first_text_node = text_walker.nextNode();
-  if (!(first_text_node instanceof Text) || !first_text_node.textContent) {
-    return null;
-  }
-
-  const range = document.createRange();
-  range.selectNodeContents(first_text_node);
-  const first_line_rect = range.getClientRects()[0] ?? range.getBoundingClientRect();
-  if (!first_line_rect) {
-    return null;
-  }
-
-  const content_rect = content_element.getBoundingClientRect();
-  return first_line_rect.top - content_rect.top + first_line_rect.height / 2;
-}
-
-function get_timeline_anchor_top(content_element: HTMLElement, anchor_element: HTMLElement | null): number {
-  if (!anchor_element) {
-    return get_first_text_line_top(content_element) ?? DEFAULT_TIMELINE_DOT_TOP;
-  }
-
-  const content_rect = content_element.getBoundingClientRect();
-  const candidate_rect = anchor_element.getBoundingClientRect();
-  const anchor_mode = anchor_element.dataset.timelineAnchorMode;
-  if (anchor_mode === "box") {
-    return candidate_rect.top - content_rect.top + candidate_rect.height / 2;
-  }
-
-  const computed_style = window.getComputedStyle(anchor_element);
-  const parsed_line_height = Number.parseFloat(computed_style.lineHeight);
-  const anchor_height = Number.isFinite(parsed_line_height) ? parsed_line_height : candidate_rect.height;
-
-  return candidate_rect.top - content_rect.top + anchor_height / 2;
 }
 
 function TimelineBlock({
@@ -378,7 +328,7 @@ export function ContentRenderer(
                 </MessageResultLabel>
                 <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
                   {typeof block.content === 'string' ? (
-                    <pre className="rounded-2xl border border-(--divider-subtle-color) bg-(--surface-inset-background) p-3 text-xs text-(--text-default) whitespace-pre-wrap break-words">
+                    <pre className="px-0 py-0 text-xs text-(--text-default) whitespace-pre-wrap break-words">
                       {block.content}
                     </pre>
                   ) : (
