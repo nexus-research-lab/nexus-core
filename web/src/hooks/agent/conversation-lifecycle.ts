@@ -1,3 +1,4 @@
+import { get_message_history_round_page_size } from "@/config/options";
 import { get_room_conversation_messages } from '@/lib/api/room-api';
 import { build_room_shared_session_key, build_ws_dm_session_key } from '@/lib/conversation/session-key';
 import { generate_uuid } from '@/lib/uuid';
@@ -81,6 +82,9 @@ export async function load_agent_session(
     const data = await get_room_conversation_messages(
       context.identity.room_id,
       context.identity.conversation_id,
+      {
+        limit: get_message_history_round_page_size(),
+      },
     );
     if (
       context.load_request_id_ref.current !== request_id ||
@@ -88,18 +92,19 @@ export async function load_agent_session(
     ) {
       return;
     }
-    if (Array.isArray(data)) {
-      const sorted_messages = sort_messages(data);
-      let merged_messages = sorted_messages;
-      context.set_messages((current_messages) => {
-        merged_messages = merge_loaded_messages(sorted_messages, current_messages);
-        return merged_messages;
-      });
-      context.on_session_messages_loaded?.(merged_messages, {
-        session_key,
-        is_reload,
-      });
-    }
+    const sorted_messages = sort_messages(data.items ?? []);
+    let merged_messages = sorted_messages;
+    context.set_messages((current_messages) => {
+      merged_messages = merge_loaded_messages(sorted_messages, current_messages);
+      return merged_messages;
+    });
+    context.on_session_messages_loaded?.(merged_messages, {
+      session_key,
+      is_reload,
+      has_more_history: data.has_more ?? false,
+      next_before_round_id: data.next_before_round_id ?? null,
+      next_before_round_timestamp: data.next_before_round_timestamp ?? null,
+    });
     // Cache is now stale — clear it
     context.bg_message_cache_ref?.current.delete(session_key);
   } catch (err) {

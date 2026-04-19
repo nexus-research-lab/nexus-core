@@ -21,6 +21,7 @@ import (
 
 	agent2 "github.com/nexus-research-lab/nexus/internal/agent"
 	"github.com/nexus-research-lab/nexus/internal/config"
+	sessionmodel "github.com/nexus-research-lab/nexus/internal/model/session"
 	"github.com/nexus-research-lab/nexus/internal/protocol"
 	runtimectx "github.com/nexus-research-lab/nexus/internal/runtime"
 	workspacestore "github.com/nexus-research-lab/nexus/internal/storage/workspace"
@@ -43,6 +44,13 @@ type CreateRequest struct {
 // UpdateRequest 表示更新会话请求。
 type UpdateRequest struct {
 	Title *string `json:"title,omitempty"`
+}
+
+// MessagePageRequest 表示消息分页读取请求。
+type MessagePageRequest struct {
+	Limit                int
+	BeforeRoundID        string
+	BeforeRoundTimestamp int64
 }
 
 // Service 负责编排文件会话与 Room SQL 会话视图。
@@ -253,6 +261,55 @@ func (s *Service) GetSessionMessages(ctx context.Context, rawSessionKey string) 
 		return nil, err
 	}
 	return s.files.ReadSessionMessagesWithActiveRounds(workspacePaths, sessionKey, s.activeRoundIDs(sessionKey))
+}
+
+// GetSessionMessagesPage 分页读取 session 历史消息。
+func (s *Service) GetSessionMessagesPage(
+	ctx context.Context,
+	rawSessionKey string,
+	request MessagePageRequest,
+) (*sessionmodel.MessagePage, error) {
+	sessionKey, parsed, err := s.requireSessionKey(rawSessionKey)
+	if err != nil {
+		return nil, err
+	}
+	if parsed.Kind == protocol.SessionKeyKindRoom {
+		logPath, err := s.repository.GetConversationLogPath(ctx, parsed.ConversationID)
+		if err != nil {
+			return nil, err
+		}
+		if strings.TrimSpace(logPath) == "" {
+			logPath = s.files.RoomConversationMessagePath(parsed.ConversationID)
+		}
+		page, err := s.files.ReadRoomMessagesPageWithActiveRounds(
+			logPath,
+			s.activeRoundIDs(sessionKey),
+			request.Limit,
+			request.BeforeRoundID,
+			request.BeforeRoundTimestamp,
+		)
+		if err != nil {
+			return nil, err
+		}
+		return &page, nil
+	}
+
+	workspacePaths, err := s.resolveWorkspacePaths(ctx, parsed.AgentID)
+	if err != nil {
+		return nil, err
+	}
+	page, err := s.files.ReadSessionMessagesPageWithActiveRounds(
+		workspacePaths,
+		sessionKey,
+		s.activeRoundIDs(sessionKey),
+		request.Limit,
+		request.BeforeRoundID,
+		request.BeforeRoundTimestamp,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &page, nil
 }
 
 func (s *Service) loadMutableWorkspaceSession(ctx context.Context, rawSessionKey string) (*Session, string, protocol.SessionKey, error) {

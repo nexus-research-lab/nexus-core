@@ -101,6 +101,22 @@ func TestSessionServiceLifecycle(t *testing.T) {
 		t.Fatalf("未终止 round 未物化 interrupted result: %+v", messages)
 	}
 
+	messagePage, err := sessionService.GetSessionMessagesPage(ctx, dmKey, sessionsvc.MessagePageRequest{
+		Limit: 1,
+	})
+	if err != nil {
+		t.Fatalf("分页读取普通 session 消息失败: %v", err)
+	}
+	if len(messagePage.Items) != 3 || messagePage.HasMore {
+		t.Fatalf("普通 session 最新页结果不正确: %+v", messagePage)
+	}
+	if messagePage.Items[0]["message_id"] != "msg_user_1" {
+		t.Fatalf("普通 session 最新页起点不正确: %+v", messagePage.Items)
+	}
+	if messagePage.Items[2]["message_id"] != "result_round_1" {
+		t.Fatalf("普通 session 最新页终点不正确: %+v", messagePage.Items)
+	}
+
 	roomMessages, err := sessionService.GetSessionMessages(ctx, protocol.BuildRoomSharedSessionKey(dmContext.Conversation.ID))
 	if err != nil {
 		t.Fatalf("读取 Room 共享流失败: %v", err)
@@ -113,6 +129,21 @@ func TestSessionServiceLifecycle(t *testing.T) {
 	}
 	if roomMessages[1]["role"] != "result" || roomMessages[1]["subtype"] != "interrupted" {
 		t.Fatalf("Room 未终止 round 未物化 interrupted result: %+v", roomMessages)
+	}
+
+	roomMessagePage, err := sessionService.GetSessionMessagesPage(
+		ctx,
+		protocol.BuildRoomSharedSessionKey(dmContext.Conversation.ID),
+		sessionsvc.MessagePageRequest{Limit: 1},
+	)
+	if err != nil {
+		t.Fatalf("分页读取 Room 共享流失败: %v", err)
+	}
+	if len(roomMessagePage.Items) != 2 || roomMessagePage.HasMore {
+		t.Fatalf("Room 最新页结果不正确: %+v", roomMessagePage)
+	}
+	if roomMessagePage.Items[0]["role"] != "assistant" || roomMessagePage.Items[1]["role"] != "result" {
+		t.Fatalf("Room 最新页应返回完整 round: %+v", roomMessagePage.Items)
 	}
 
 	updatedTitle := "Launcher 重命名"

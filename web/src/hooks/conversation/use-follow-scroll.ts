@@ -68,6 +68,8 @@ interface UseFollowScrollOptions {
   trigger_deps: readonly unknown[];
   /** session 切换时重置跟随状态 */
   session_key: string | null;
+  /** 历史消息 prepend 完成后，用于恢复滚动锚点 */
+  history_prepend_token?: number;
 }
 
 interface UseFollowScrollReturn {
@@ -81,6 +83,10 @@ interface UseFollowScrollReturn {
   show_scroll_to_bottom: boolean;
   /** 滚动到底部 */
   scroll_to_bottom: (behavior?: ScrollBehavior) => void;
+  /** 在 prepend 历史消息前记录当前滚动锚点 */
+  prepare_history_prepend_restore: () => void;
+  /** prepend 被取消或失败时清理锚点 */
+  cancel_history_prepend_restore: () => void;
   /** 事件处理器：挂载到滚动容器的 onScroll */
   on_scroll: () => void;
   /** 事件处理器：挂载到滚动容器的 onWheel */
@@ -96,6 +102,7 @@ interface UseFollowScrollReturn {
 export function useFollowScroll({
   trigger_deps,
   session_key,
+  history_prepend_token = 0,
 }: UseFollowScrollOptions): UseFollowScrollReturn {
   const scroll_ref = useRef<HTMLDivElement>(null);
   const feed_ref = useRef<HTMLDivElement>(null);
@@ -104,6 +111,10 @@ export function useFollowScroll({
   const last_scroll_top_ref = useRef(0);
   const pending_scroll_frame_ref = useRef<number | null>(null);
   const pending_scroll_inner_frame_ref = useRef<number | null>(null);
+  const pending_prepend_restore_ref = useRef<{
+    scroll_height: number;
+    scroll_top: number;
+  } | null>(null);
   const touch_start_y_ref = useRef<number | null>(null);
   const show_scroll_to_bottom_ref = useRef(false);
   const [show_scroll_to_bottom, setShowScrollToBottom] = useState(false);
@@ -197,6 +208,23 @@ export function useFollowScroll({
     schedule_scroll_to_bottom(behavior);
   }, [schedule_scroll_to_bottom, set_scroll_to_bottom_visibility]);
 
+  const prepare_history_prepend_restore = useCallback(() => {
+    const container = scroll_ref.current;
+    if (!container) {
+      return;
+    }
+    cancel_pending_scroll();
+    should_follow_latest_ref.current = false;
+    pending_prepend_restore_ref.current = {
+      scroll_height: container.scrollHeight,
+      scroll_top: container.scrollTop,
+    };
+  }, [cancel_pending_scroll]);
+
+  const cancel_history_prepend_restore = useCallback(() => {
+    pending_prepend_restore_ref.current = null;
+  }, []);
+
   // ==================== 副作用 ====================
 
   // 新消息 / loading 变化时自动滚动
@@ -210,6 +238,20 @@ export function useFollowScroll({
     schedule_scroll_to_bottom(is_loading ? "auto" : "smooth");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, trigger_deps);
+
+  useLayoutEffect(() => {
+    const container = scroll_ref.current;
+    const snapshot = pending_prepend_restore_ref.current;
+    if (!container || !snapshot) {
+      return;
+    }
+    pending_prepend_restore_ref.current = null;
+    const height_delta = container.scrollHeight - snapshot.scroll_height;
+    const next_scroll_top = snapshot.scroll_top + height_delta;
+    container.scrollTop = next_scroll_top;
+    last_scroll_top_ref.current = next_scroll_top;
+    set_scroll_to_bottom_visibility(true);
+  }, [history_prepend_token, set_scroll_to_bottom_visibility]);
 
   // feed 内容高度变化时保持跟随
   useEffect(() => {
@@ -232,6 +274,7 @@ export function useFollowScroll({
   useEffect(() => {
     update_follow_state();
     last_scroll_top_ref.current = scroll_ref.current?.scrollTop || 0;
+    pending_prepend_restore_ref.current = null;
   }, [update_follow_state, session_key]);
 
   // 卸载时清理
@@ -277,6 +320,8 @@ export function useFollowScroll({
     bottom_anchor_ref,
     show_scroll_to_bottom,
     scroll_to_bottom,
+    prepare_history_prepend_restore,
+    cancel_history_prepend_restore,
     on_scroll,
     on_wheel,
     on_touch_start,

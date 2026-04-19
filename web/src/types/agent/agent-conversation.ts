@@ -94,6 +94,9 @@ export interface UseAgentConversationReturn {
   ws_state: WebSocketState;
   is_loading: boolean;
   is_session_loading: boolean;
+  is_history_loading: boolean;
+  has_more_history: boolean;
+  history_prepend_token: number;
   runtime_phase: AgentConversationRuntimePhase;
   session_control_state: AgentConversationSessionControlState;
   is_session_controller: boolean;
@@ -105,6 +108,7 @@ export interface UseAgentConversationReturn {
   bind_session_key: (key: string | null) => void;
   start_session: () => void;
   load_session: (key: string) => Promise<void>;
+  load_older_messages: () => Promise<boolean>;
   clear_session: () => void;
   reset_session: () => void;
   stop_generation: (msg_id?: string) => void;
@@ -155,6 +159,9 @@ export interface AgentConversationLifecycleContext {
     meta: {
       session_key: string;
       is_reload: boolean;
+      has_more_history: boolean;
+      next_before_round_id: string | null;
+      next_before_round_timestamp: number | null;
     },
   ) => void;
 }

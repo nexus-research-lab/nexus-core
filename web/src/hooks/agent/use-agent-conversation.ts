@@ -1,5 +1,6 @@
 import { SetStateAction, useCallback, useEffect, useMemo, useRef, useState, startTransition } from 'react';
-import { get_agent_ws_url } from '@/config/options';
+import { get_agent_ws_url, get_message_history_round_page_size } from '@/config/options';
+import { get_room_conversation_messages } from '@/lib/api/room-api';
 import { are_equivalent_session_keys } from '@/lib/conversation/session-key';
 import { get_browser_client_id } from '@/lib/uuid';
 import { useWebSocket } from '@/lib/websocket';
@@ -37,7 +38,7 @@ import {
   reset_agent_session,
   start_agent_session,
 } from './conversation-lifecycle';
-import { apply_stream_message, dedupe_messages_by_id } from './message-helpers';
+import { apply_stream_message, dedupe_messages_by_id, merge_loaded_messages, sort_messages } from './message-helpers';
 import { handle_agent_conversation_web_socket_message } from './websocket-event-handler';
 import {
   send_session_message,
@@ -149,6 +150,9 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
   const [error, set_error] = useState<string | null>(null);
   const [session_key, set_session_key] = useState<string | null>(identity?.session_key ?? null);
   const [is_session_loading, set_is_session_loading] = useState(false);
+  const [is_history_loading, set_is_history_loading_state] = useState(false);
+  const [has_more_history, set_has_more_history_state] = useState(false);
+  const [history_prepend_token, set_history_prepend_token] = useState(0);
   const [pending_agent_slots, set_pending_agent_slots_state] = useState<RoomPendingAgentSlotState[]>([]);
   const [pending_permissions, set_pending_permissions_state] = useState<UseAgentConversationReturn['pending_permissions']>([]);
   const [agent_thinking, set_agent_thinking] = useState<AgentThinkingPayload | null>(null);
@@ -162,6 +166,15 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
   const load_request_id_ref = useRef(0);
   const session_seq_cursor_ref = useRef(0);
   const room_seq_cursor_ref = useRef(0);
+  const is_history_loading_ref = useRef(false);
+  const has_more_history_ref = useRef(false);
+  const history_cursor_ref = useRef<{
+    before_round_id: string | null;
+    before_round_timestamp: number | null;
+  }>({
+    before_round_id: null,
+    before_round_timestamp: null,
+  });
   const pending_agent_slots_ref = useRef<RoomPendingAgentSlotState[]>([]);
   const pending_permissions_ref = useRef<UseAgentConversationReturn['pending_permissions']>([]);
   const ws_send_ref = useRef<(payload: WebSocketMessage) => void>(() => {});
@@ -185,6 +198,29 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
       return dedupe_messages_by_id(next_messages);
     });
   }, []);
+
+  const set_history_loading = useCallback((next_value: boolean) => {
+    is_history_loading_ref.current = next_value;
+    set_is_history_loading_state((current_value) => (
+      current_value === next_value ? current_value : next_value
+    ));
+  }, []);
+
+  const set_has_more_history = useCallback((next_value: boolean) => {
+    has_more_history_ref.current = next_value;
+    set_has_more_history_state((current_value) => (
+      current_value === next_value ? current_value : next_value
+    ));
+  }, []);
+
+  const reset_history_state = useCallback(() => {
+    history_cursor_ref.current = {
+      before_round_id: null,
+      before_round_timestamp: null,
+    };
+    set_history_loading(false);
+    set_has_more_history(false);
+  }, [set_has_more_history, set_history_loading]);
 
   // ── Stream batching ──────────────────────────────────────────────────────
   // WebSocket fires on every token (~50-100/sec during streaming).
@@ -306,7 +342,14 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
     set_pending_permissions,
     set_error,
     bg_message_cache_ref,
-    on_session_messages_loaded: (loaded_messages) => {
+    on_session_messages_loaded: (loaded_messages, meta) => {
+      if (!meta.is_reload) {
+        history_cursor_ref.current = {
+          before_round_id: meta.next_before_round_id,
+          before_round_timestamp: meta.next_before_round_timestamp,
+        };
+        set_has_more_history(meta.has_more_history);
+      }
       reconcile_runtime_state_from_snapshot(loaded_messages);
     },
   }), [
@@ -321,6 +364,7 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
     set_error,
     bg_message_cache_ref,
     reconcile_runtime_state_from_snapshot,
+    set_has_more_history,
   ]);
 
   const reload_current_session = useCallback(async () => {
@@ -331,6 +375,67 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
 
     await load_agent_session(active_session_key, lifecycle_context, true);
   }, [lifecycle_context]);
+
+  const load_older_messages = useCallback(async (): Promise<boolean> => {
+    const active_session_key = active_session_key_ref.current;
+    const current_room_id = identity?.room_id?.trim() ?? '';
+    const current_conversation_id = identity?.conversation_id?.trim() ?? '';
+    const before_round_id = history_cursor_ref.current.before_round_id;
+    const before_round_timestamp = history_cursor_ref.current.before_round_timestamp;
+
+    if (
+      !active_session_key ||
+      !current_room_id ||
+      !current_conversation_id ||
+      !has_more_history_ref.current ||
+      is_history_loading_ref.current ||
+      !before_round_timestamp
+    ) {
+      return false;
+    }
+
+    set_history_loading(true);
+    try {
+      const page = await get_room_conversation_messages(current_room_id, current_conversation_id, {
+        limit: get_message_history_round_page_size(),
+        before_round_id,
+        before_round_timestamp,
+      });
+      if (active_session_key_ref.current !== active_session_key) {
+        return false;
+      }
+
+      const sorted_messages = sort_messages(page.items ?? []);
+      if (sorted_messages.length === 0) {
+        history_cursor_ref.current = {
+          before_round_id: null,
+          before_round_timestamp: null,
+        };
+        set_has_more_history(false);
+        return false;
+      }
+
+      set_messages((current_messages) => merge_loaded_messages(sorted_messages, current_messages));
+      history_cursor_ref.current = {
+        before_round_id: page.next_before_round_id ?? null,
+        before_round_timestamp: page.next_before_round_timestamp ?? null,
+      };
+      set_has_more_history(page.has_more ?? false);
+      set_history_prepend_token((current_token) => current_token + 1);
+      return true;
+    } catch (err) {
+      if (active_session_key_ref.current !== active_session_key) {
+        return false;
+      }
+      console.error('[useAgentConversation] 加载更早消息失败:', err);
+      set_error(err instanceof Error ? err.message : 'Failed to load older messages');
+      return false;
+    } finally {
+      if (active_session_key_ref.current === active_session_key) {
+        set_history_loading(false);
+      }
+    }
+  }, [identity?.conversation_id, identity?.room_id, set_error, set_has_more_history, set_history_loading, set_messages]);
 
   const flush_stream_buffer = useCallback(() => {
     stream_raf_ref.current = null;
@@ -691,10 +796,12 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
     room_seq_cursor_ref.current = 0;
     reset_runtime_machine();
     reset_session_control();
+    reset_history_state();
+    set_history_prepend_token(0);
     set_pending_agent_slots((current_slots) => (current_slots.length ? [] : current_slots));
     set_pending_permissions((current_permissions) => (current_permissions.length ? [] : current_permissions));
     set_agent_thinking(null);
-  }, [identity, reset_runtime_machine, reset_session_control, set_pending_agent_slots, set_pending_permissions]);
+  }, [identity, reset_history_state, reset_runtime_machine, reset_session_control, set_pending_agent_slots, set_pending_permissions]);
 
   useEffect(() => {
     const next_session_key = identity?.session_key?.trim() || null;
@@ -869,9 +976,11 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
 
   const start_session = useCallback(() => {
     start_agent_session(lifecycle_context);
+    reset_history_state();
+    set_history_prepend_token(0);
     reset_runtime_machine();
     set_agent_thinking(null);
-  }, [lifecycle_context, reset_runtime_machine]);
+  }, [lifecycle_context, reset_history_state, reset_runtime_machine]);
 
   const load_session = useCallback(async (id: string): Promise<void> => {
     await load_agent_session(id, lifecycle_context);
@@ -879,9 +988,11 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
 
   const clear_session = useCallback(() => {
     clear_agent_session(lifecycle_context);
+    reset_history_state();
+    set_history_prepend_token(0);
     reset_runtime_machine();
     set_agent_thinking(null);
-  }, [lifecycle_context, reset_runtime_machine]);
+  }, [lifecycle_context, reset_history_state, reset_runtime_machine]);
 
   const bind_session_key = useCallback((key: string | null) => {
     const normalized_key = key?.trim() || null;
@@ -890,6 +1001,8 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
     }
 
     active_session_key_ref.current = normalized_key;
+    reset_history_state();
+    set_history_prepend_token(0);
     set_session_key((current_key) => (
       current_key === normalized_key ? current_key : normalized_key
     ));
@@ -905,13 +1018,15 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
       ));
       set_agent_thinking(null);
     }
-  }, [reset_runtime_machine, reset_session_control, set_is_session_loading, set_pending_agent_slots, set_pending_permissions]);
+  }, [reset_history_state, reset_runtime_machine, reset_session_control, set_is_session_loading, set_pending_agent_slots, set_pending_permissions]);
 
   const reset_session = useCallback(() => {
     reset_agent_session(lifecycle_context);
+    reset_history_state();
+    set_history_prepend_token(0);
     reset_runtime_machine();
     set_agent_thinking(null);
-  }, [lifecycle_context, reset_runtime_machine]);
+  }, [lifecycle_context, reset_history_state, reset_runtime_machine]);
 
   return {
     error,
@@ -920,6 +1035,9 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
     ws_state,
     is_loading,
     is_session_loading,
+    is_history_loading,
+    has_more_history,
+    history_prepend_token,
     runtime_phase,
     session_control_state,
     is_session_controller,
@@ -932,6 +1050,7 @@ export function useAgentConversation(options: UseAgentConversationOptions = {}):
     bind_session_key,
     start_session,
     load_session,
+    load_older_messages,
     clear_session,
     reset_session,
     stop_generation,

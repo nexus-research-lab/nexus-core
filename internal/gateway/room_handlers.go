@@ -19,6 +19,7 @@ import (
 	"github.com/nexus-research-lab/nexus/internal/launcher"
 	"github.com/nexus-research-lab/nexus/internal/protocol"
 	room2 "github.com/nexus-research-lab/nexus/internal/room"
+	session "github.com/nexus-research-lab/nexus/internal/session"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -67,6 +68,25 @@ func (s *Server) handleGetRoomContexts(writer http.ResponseWriter, request *http
 func (s *Server) handleConversationMessages(writer http.ResponseWriter, request *http.Request) {
 	roomID := chi.URLParam(request, "room_id")
 	conversationID := chi.URLParam(request, "conversation_id")
+	limit := 0
+	if rawLimit := strings.TrimSpace(request.URL.Query().Get("limit")); rawLimit != "" {
+		parsedLimit, parseErr := strconv.Atoi(rawLimit)
+		if parseErr != nil || parsedLimit <= 0 {
+			s.writeFailure(writer, http.StatusBadRequest, "limit 参数错误")
+			return
+		}
+		limit = parsedLimit
+	}
+	beforeRoundID := strings.TrimSpace(request.URL.Query().Get("before_round_id"))
+	beforeRoundTimestamp := int64(0)
+	if rawBeforeTimestamp := strings.TrimSpace(request.URL.Query().Get("before_round_timestamp")); rawBeforeTimestamp != "" {
+		parsedBeforeTimestamp, parseErr := strconv.ParseInt(rawBeforeTimestamp, 10, 64)
+		if parseErr != nil || parsedBeforeTimestamp <= 0 {
+			s.writeFailure(writer, http.StatusBadRequest, "before_round_timestamp 参数错误")
+			return
+		}
+		beforeRoundTimestamp = parsedBeforeTimestamp
+	}
 
 	contextValue, err := s.roomService.GetConversationContext(request.Context(), conversationID)
 	if errors.Is(err, room2.ErrConversationNotFound) {
@@ -96,7 +116,11 @@ func (s *Server) handleConversationMessages(writer http.ResponseWriter, request 
 		)
 	}
 
-	items, err := s.session.GetSessionMessages(request.Context(), sessionKey)
+	items, err := s.session.GetSessionMessagesPage(request.Context(), sessionKey, session.MessagePageRequest{
+		Limit:                limit,
+		BeforeRoundID:        beforeRoundID,
+		BeforeRoundTimestamp: beforeRoundTimestamp,
+	})
 	if isStructuredSessionKeyError(err) {
 		s.writeFailure(writer, http.StatusUnprocessableEntity, err.Error())
 		return

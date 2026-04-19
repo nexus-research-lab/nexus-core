@@ -19,7 +19,6 @@ import { Fragment, memo, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { AppRouteBuilders } from "@/app/router/route-paths";
-import { resolve_agent_id } from "@/config/options";
 import { get_capability_summary_api, type CapabilitySummary } from "@/lib/api/capability-api";
 import { useI18n } from "@/shared/i18n/i18n-context";
 import { SidebarListItem } from "@/shared/ui/sidebar/collapsible-section";
@@ -40,7 +39,6 @@ export const CapabilitiesPanelContent = memo(function CapabilitiesPanelContent()
   const navigate = useNavigate();
   const active_panel_item_id = useSidebarStore((s) => s.active_panel_item_id);
   const set_active_panel_item = useSidebarStore((s) => s.set_active_panel_item);
-  const agent_id = resolve_agent_id();
   const [summary, set_summary] = useState<CapabilitySummary>({
     skills_count: 0,
     connected_connectors_count: 0,
@@ -51,7 +49,7 @@ export const CapabilitiesPanelContent = memo(function CapabilitiesPanelContent()
     let cancelled = false;
     const refresh_capability_summary = async () => {
       try {
-        const next_summary = await get_capability_summary_api({ agent_id });
+        const next_summary = await get_capability_summary_api();
         if (!cancelled) {
           set_summary(next_summary);
         }
@@ -67,11 +65,7 @@ export const CapabilitiesPanelContent = memo(function CapabilitiesPanelContent()
     };
     void refresh_capability_summary();
 
-    const handle_scheduled_tasks_mutated = (event: Event) => {
-      const custom_event = event as CustomEvent<{ agent_id?: string }>;
-      if (custom_event.detail?.agent_id && custom_event.detail.agent_id !== agent_id) {
-        return;
-      }
+    const handle_scheduled_tasks_mutated = () => {
       void refresh_capability_summary();
     };
     window.addEventListener(SCHEDULED_TASKS_MUTATED_EVENT, handle_scheduled_tasks_mutated);
@@ -80,7 +74,7 @@ export const CapabilitiesPanelContent = memo(function CapabilitiesPanelContent()
       cancelled = true;
       window.removeEventListener(SCHEDULED_TASKS_MUTATED_EVENT, handle_scheduled_tasks_mutated);
     };
-  }, [agent_id]);
+  }, []);
 
   const channel_count = 0;
   const pairing_count = 0;

@@ -126,17 +126,19 @@ func (s *Server) accessLogMiddleware(next http.Handler) http.Handler {
 		duration := time.Since(startedAt)
 		fields := []any{
 			"method", request.Method,
-			"path", request.URL.Path,
 			"status", recorder.status,
 			"duration_ms", duration.Milliseconds(),
 			"bytes", recorder.bytesWritten,
 			"remote_ip", clientIP(request),
+			"path", request.URL.Path,
 		}
+
+		if rawQuery := strings.TrimSpace(request.URL.RawQuery); rawQuery != "" {
+			fields = append(fields, "query", rawQuery)
+		}
+
 		//if userAgent := strings.TrimSpace(request.UserAgent()); userAgent != "" {
 		//	fields = append(fields, "user_agent", userAgent)
-		//}
-		//if rawQuery := strings.TrimSpace(request.URL.RawQuery); rawQuery != "" {
-		//	fields = append(fields, "query", rawQuery)
 		//}
 
 		switch {

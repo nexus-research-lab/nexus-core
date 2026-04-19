@@ -1,4 +1,5 @@
 import { Agent, ApiAgent } from "@/types/agent/agent";
+import { Message as ChatMessage } from "@/types/conversation/message";
 
 export interface RoomMember {
   id: string;
@@ -97,4 +98,18 @@ export interface CreateRoomConversationParams {
 
 export interface UpdateRoomConversationParams {
   title?: string;
+}
+
+export interface ApiRoomConversationMessagePage {
+  items: ChatMessage[];
+  has_more: boolean;
+  next_before_round_id?: string | null;
+  next_before_round_timestamp?: number | null;
+}
+
+export interface RoomConversationMessagePage {
+  items: ChatMessage[];
+  has_more: boolean;
+  next_before_round_id: string | null;
+  next_before_round_timestamp: number | null;
 }

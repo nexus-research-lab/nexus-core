@@ -31,6 +31,8 @@ import { GroupConversationFeed } from "./group-conversation-feed";
 import { useGroupThread, useSetGroupThreadPanelData } from "../thread/group-thread-state";
 import { GroupConversationEmptyState } from "./group-conversation-empty-state";
 
+const HISTORY_LOAD_THRESHOLD_PX = 120;
+
 export interface GroupChatPanelProps {
   agent_id: string | null;
   current_agent_name?: string | null;
@@ -140,6 +142,9 @@ export function GroupChatPanel({
     error,
     messages,
     is_loading,
+    is_history_loading,
+    has_more_history,
+    history_prepend_token,
     session_control_state,
     session_observer_count,
     pending_agent_slots,
@@ -147,6 +152,7 @@ export function GroupChatPanel({
     send_message,
     stop_generation,
     load_session,
+    load_older_messages,
     send_permission_response,
   } = useAgentConversation({
     identity: session_identity,
@@ -162,6 +168,8 @@ export function GroupChatPanel({
     bottom_anchor_ref,
     show_scroll_to_bottom,
     scroll_to_bottom,
+    prepare_history_prepend_restore,
+    cancel_history_prepend_restore,
     on_scroll,
     on_wheel,
     on_touch_start,
@@ -170,6 +178,7 @@ export function GroupChatPanel({
   } = useFollowScroll({
     trigger_deps: [messages, is_loading] as const,
     session_key,
+    history_prepend_token,
   });
 
   const todos = useExtractTodos(messages, session_key);
@@ -227,6 +236,50 @@ export function GroupChatPanel({
     }
     return Array.from(next_ids);
   }, [message_groups, pending_slot_groups, round_ids]);
+
+  const maybe_load_older_messages = useCallback(async () => {
+    const container = scroll_ref.current;
+    if (
+      !container
+      || !has_more_history
+      || is_history_loading
+      || container.scrollTop > HISTORY_LOAD_THRESHOLD_PX
+    ) {
+      return;
+    }
+
+    prepare_history_prepend_restore();
+    const did_prepend = await load_older_messages();
+    if (!did_prepend) {
+      cancel_history_prepend_restore();
+    }
+  }, [
+    cancel_history_prepend_restore,
+    has_more_history,
+    is_history_loading,
+    load_older_messages,
+    prepare_history_prepend_restore,
+    scroll_ref,
+  ]);
+
+  const handle_scroll = useCallback(() => {
+    on_scroll();
+    void maybe_load_older_messages();
+  }, [maybe_load_older_messages, on_scroll]);
+
+  useEffect(() => {
+    const container = scroll_ref.current;
+    if (
+      !container
+      || !has_more_history
+      || is_history_loading
+      || is_loading
+      || container.scrollHeight > container.clientHeight + 24
+    ) {
+      return;
+    }
+    void maybe_load_older_messages();
+  }, [has_more_history, is_history_loading, is_loading, maybe_load_older_messages, messages.length, scroll_ref]);
 
   const handle_send_message = async (content: string) => {
     if (!content.trim()) return;
@@ -403,12 +456,17 @@ export function GroupChatPanel({
                 : "soft-scrollbar relative z-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto px-4 py-5 sm:px-6 sm:py-6 xl:px-8 xl:py-7"
             }
             style={{ overflowAnchor: "none" }}
-            onScroll={on_scroll}
+            onScroll={handle_scroll}
             onTouchEnd={on_touch_end}
             onTouchMove={on_touch_move}
             onTouchStart={on_touch_start}
             onWheel={on_wheel}
           >
+            {is_history_loading ? (
+              <div className="mx-auto mb-3 flex w-full max-w-[980px] items-center justify-center text-xs text-muted-foreground">
+                正在加载更早消息...
+              </div>
+            ) : null}
             <GroupConversationFeed
               agent_name_map={agent_name_map}
               agent_avatar_map={agent_avatar_map}

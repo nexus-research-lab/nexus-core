@@ -14,6 +14,7 @@ export let DEFAULT_AGENT_PROVIDER: AgentProvider = "";
 const DEFAULT_API_PATH = "/agent/v1";
 const DEFAULT_WS_PATH = "/agent/v1/chat/ws";
 const ENABLE_STRICT_MODE = false;
+const MESSAGE_HISTORY_ROUND_PAGE_SIZE = 3;
 
 function build_browser_url(pathname: string, use_websocket_protocol: boolean): string {
   if (typeof window === "undefined") {
@@ -50,6 +51,10 @@ export function get_agent_ws_url(): string {
 
 export function is_strict_mode_enabled(): boolean {
   return ENABLE_STRICT_MODE;
+}
+
+export function get_message_history_round_page_size(): number {
+  return MESSAGE_HISTORY_ROUND_PAGE_SIZE;
 }
 
 export function get_default_agent_id(): string {

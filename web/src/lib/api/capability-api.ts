@@ -18,16 +18,9 @@ export interface CapabilitySummary {
   enabled_scheduled_tasks_count: number;
 }
 
-export async function get_capability_summary_api(
-  params?: { agent_id?: string },
-): Promise<CapabilitySummary> {
-  const search_params = new URLSearchParams();
-  if (params?.agent_id) {
-    search_params.set("agent_id", params.agent_id);
-  }
-  const query = search_params.toString();
+export async function get_capability_summary_api(): Promise<CapabilitySummary> {
   return request_api<CapabilitySummary>(
-    `${AGENT_API_BASE_URL}/capability/summary${query ? `?${query}` : ""}`,
+    `${AGENT_API_BASE_URL}/capability/summary`,
     {
       method: "GET",
       headers: { "Content-Type": "application/json" },

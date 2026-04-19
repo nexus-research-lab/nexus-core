@@ -16,11 +16,7 @@ import (
 )
 
 func (s *Server) handleCapabilitySummary(writer http.ResponseWriter, request *http.Request) {
-	agentID := request.URL.Query().Get("agent_id")
-
-	skillCount, err := s.skills.CountSkills(request.Context(), skillsvc.Query{
-		AgentID: agentID,
-	})
+	skillCount, err := s.skills.CountSkills(request.Context(), skillsvc.Query{})
 	if err != nil {
 		s.writeFailure(writer, http.StatusInternalServerError, err.Error())
 		return
@@ -32,7 +28,7 @@ func (s *Server) handleCapabilitySummary(writer http.ResponseWriter, request *ht
 		return
 	}
 
-	scheduledTaskEnabledCount, err := s.automation.CountEnabledTasks(request.Context(), agentID)
+	scheduledTaskEnabledCount, err := s.automation.CountEnabledTasks(request.Context(), "")
 	if err != nil {
 		s.writeFailure(writer, http.StatusInternalServerError, err.Error())
 		return

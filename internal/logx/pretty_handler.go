@@ -183,10 +183,30 @@ func formatPrettyLine(
 		builder.WriteByte(' ')
 		builder.WriteString(field.Key)
 		builder.WriteByte('=')
-		builder.WriteString(quoteIfNeeded(field.Value))
+		if padded, ok := formatAlignedField(field.Key, field.Value); ok {
+			builder.WriteString(padded)
+		} else {
+			builder.WriteString(quoteIfNeeded(field.Value))
+		}
 	}
 	builder.WriteByte('\n')
 	return builder.String()
+}
+
+// formatAlignedField 对特定字段做定宽格式化，保证多行日志对齐。
+// 数值类右对齐，字符串类左对齐。
+func formatAlignedField(key, value string) (string, bool) {
+	switch key {
+	case "method":
+		return fmt.Sprintf("%-5s", value), true
+	case "duration_ms":
+		return fmt.Sprintf("%-6s", value), true
+	case "bytes":
+		return fmt.Sprintf("%-7s", value), true
+	case "remote_ip":
+		return fmt.Sprintf("%-15s", value), true
+	}
+	return "", false
 }
 
 func buildScope(service string, component string) string {
