@@ -20,6 +20,7 @@ from claude_agent_sdk.types import AssistantMessage, StreamEvent, UserMessage
 
 from agent.schema.model_message import Message, StreamMessage
 from agent.service.message.assistant_segment import AssistantSegment
+from agent.service.permission.permission_error_codes import infer_permission_error_code
 from agent.service.message.sdk_message_logger import message_log
 from agent.service.message.sdk_message_mapper import SdkMessageMapper
 from agent.service.session.session_manager import session_manager
@@ -38,6 +39,7 @@ class ChatMessageProcessor:
         self,
         session_key: str,
         query: str,
+        display_query: Optional[str] = None,
         round_id: Optional[str] = None,
         agent_id: str = None,
         session_id: Optional[str] = None,
@@ -45,6 +47,7 @@ class ChatMessageProcessor:
         register_session: Optional[RegisterSessionCallback] = None,
     ) -> None:
         self.query = query
+        self.display_query = display_query or query
         self.session_key = session_key
         self.agent_id = resolve_agent_id(agent_id)
         self.round_id = round_id or str(uuid.uuid4())
@@ -106,7 +109,7 @@ class ChatMessageProcessor:
             round_id=self.round_id,
             session_id=self.session_id,
             role="user",
-            content=self.query,
+            content=self.display_query,
         )
         await self._persist_message(user_message)
         self._is_user_message_saved = True
@@ -322,19 +325,31 @@ class ChatMessageProcessor:
         subtype: str,
     ) -> Message | None:
         """把可见的 SDK system 事件转换为统一消息。"""
-        if subtype != "api_retry":
-            return None
-
-        content = self._format_api_retry_message(payload)
         metadata = {
             "subtype": subtype,
-            "attempt": payload.get("attempt"),
-            "max_retries": payload.get("max_retries"),
-            "retry_delay_ms": payload.get("retry_delay_ms"),
-            "error_status": payload.get("error_status"),
-            "error": payload.get("error"),
             "uuid": payload.get("uuid"),
         }
+
+        if subtype == "api_retry":
+            content = self._format_api_retry_message(payload)
+            metadata.update({
+                "attempt": payload.get("attempt"),
+                "max_retries": payload.get("max_retries"),
+                "retry_delay_ms": payload.get("retry_delay_ms"),
+                "error_status": payload.get("error_status"),
+                "error": payload.get("error"),
+            })
+        elif subtype == "task_started":
+            content = self._format_task_started_message(payload)
+            data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
+            metadata.update({
+                "task_id": data.get("task_id") or payload.get("task_id"),
+                "task_type": data.get("task_type") or payload.get("task_type"),
+                "tool_use_id": data.get("tool_use_id") or payload.get("tool_use_id"),
+            })
+        else:
+            return None
+
         return Message(
             message_id=str(uuid.uuid4()),
             session_key=self.session_key,
@@ -380,12 +395,28 @@ class ChatMessageProcessor:
         reason_text = f"（原因：{'，'.join(reason_parts)}）" if reason_parts else ""
         return f"接口调用失败，系统将在 {delay_text} 自动进行{retry_progress_text}{reason_text}。"
 
+    def _format_task_started_message(self, payload: dict) -> str:
+        """把 task_started 事件格式化为用户可读文本。"""
+        data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
+        description = str(data.get("description") or payload.get("description") or "").strip()
+        task_type = str(data.get("task_type") or payload.get("task_type") or "").strip()
+
+        task_type_label = {
+            "local_agent": "子代理",
+            "local_bash": "本地任务",
+        }.get(task_type, "后台任务")
+
+        if description:
+            return f"已启动{task_type_label}：{description}"
+        return f"已启动{task_type_label}"
+
     def _handle_tool_result_message(self, response_msg: UserMessage) -> list[Message]:
         """将工具结果回填到当前 assistant 段。"""
         payload = SdkMessageMapper.to_plain_dict(response_msg)
         content = SdkMessageMapper.normalize_content_blocks(payload.get("content"))
         if not content or not all(block.get("type") == "tool_result" for block in content):
             return []
+        content = [self._enrich_tool_result_block(block) for block in content]
         self._segment.append_tool_results(content)
         message = self._segment.build_message(
             session_key=self.session_key,
@@ -397,6 +428,25 @@ class ChatMessageProcessor:
         )
         self._remember_assistant_message(message)
         return [message]
+
+    def _enrich_tool_result_block(self, block: dict) -> dict:
+        """给权限类工具结果补齐结构化错误码。"""
+        enriched_block = dict(block)
+        if not enriched_block.get("is_error"):
+            return enriched_block
+
+        tool_use_id = str(enriched_block.get("tool_use_id") or "").strip()
+        if not tool_use_id:
+            return enriched_block
+
+        tool_name = self._segment.find_tool_name(tool_use_id)
+        error_code = infer_permission_error_code(
+            tool_name=tool_name,
+            message=enriched_block.get("content"),
+        )
+        if error_code:
+            enriched_block["error_code"] = error_code
+        return enriched_block
 
     def _build_result_message(self, response_msg: ResultMessage) -> Message:
         """构建结果消息。"""

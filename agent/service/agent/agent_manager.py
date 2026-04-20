@@ -15,8 +15,13 @@ from agent.schema.model_agent import AAgent, AgentOptions, ValidateAgentNameResp
 from agent.service.agent.agent_name_policy import AgentNamePolicy
 from agent.service.agent.agent_prompt_builder import AgentPromptBuilder
 from agent.service.agent.agent_repository import agent_repository
+from agent.service.agent.main_agent_scheduled_task_sdk_server import (
+    SERVER_NAME as BUILTIN_AUTOMATION_SERVER_NAME,
+    get_main_agent_scheduled_task_sdk_server,
+)
 from agent.service.agent.agent_workspace import AgentWorkspaceRegistry
 from agent.service.agent.main_agent_profile import MainAgentProfile
+from agent.service.settings.provider_config_service import provider_config_service
 from agent.service.session.session_manager import session_manager
 from agent.utils.logger import logger
 
@@ -168,7 +173,7 @@ class AgentManager:
     async def build_sdk_options(self, agent_id: str) -> dict:
         """从 Agent 配置 + Workspace 构建 ClaudeAgentOptions 参数
 
-        合并顺序: workspace options (cwd + system_prompt) → agent options (model + tools + ...)
+        合并顺序: workspace options (cwd + system_prompt) → agent options (provider + tools + ...)
         每次调用重新读取 workspace 文件，修改后立即生效。
         """
         agent = await agent_repository.get_agent(agent_id)
@@ -182,11 +187,46 @@ class AgentManager:
             base_options["system_prompt"] = system_prompt
 
         agent_options = agent.options.model_dump(exclude_none=True)
+        # 中文注释：仅在用户未配置工具白名单时补默认值；
+        # 显式传入空数组表示不预授权任何工具，不能被默认值覆盖。
+        if "allowed_tools" not in agent_options:
+            default_tools = (
+                MainAgentProfile.ALLOWED_TOOLS
+                if MainAgentProfile.is_main_agent(agent_id)
+                else MainAgentProfile.REGULAR_AGENT_ALLOWED_TOOLS
+            )
+            agent_options["allowed_tools"] = default_tools.copy()
+
+        provider = agent_options.pop("provider", None)
+        runtime_config = await provider_config_service.resolve_runtime_config(provider)
+        # 中文注释：Provider 配置的 base_url/model 以用户输入为准。
+        # 这里仅把同一份模型值投影到 Claude Code 会读取的多个环境变量，
+        # 不对用户输入做语义改写。
+        runtime_env = {
+            "ANTHROPIC_AUTH_TOKEN": runtime_config.auth_token,
+            "ANTHROPIC_BASE_URL": runtime_config.base_url,
+            "ANTHROPIC_MODEL": runtime_config.model,
+        }
+        if "kimi" in runtime_config.model.lower():
+            runtime_env["ENABLE_TOOL_SEARCH"]="false"
+
+        base_options.update({
+            "model": runtime_config.model,
+            "env": runtime_env,
+        })
         connector_mcp_servers = await self._load_connector_mcp_servers()
+        builtin_mcp_servers = self._load_builtin_mcp_servers()
         if connector_mcp_servers:
             existing_mcp_servers = agent_options.get("mcp_servers") or {}
             agent_options["mcp_servers"] = {
+                **builtin_mcp_servers,
                 **connector_mcp_servers,
+                **existing_mcp_servers,
+            }
+        elif builtin_mcp_servers:
+            existing_mcp_servers = agent_options.get("mcp_servers") or {}
+            agent_options["mcp_servers"] = {
+                **builtin_mcp_servers,
                 **existing_mcp_servers,
             }
         base_options.update(agent_options)
@@ -197,6 +237,13 @@ class AgentManager:
         from agent.service.capability.connectors.connector_service import connector_service
 
         return await connector_service.build_runtime_mcp_servers()
+
+    @staticmethod
+    def _load_builtin_mcp_servers() -> dict:
+        """为所有 agent 注入内置 orchestration tools。"""
+        return {
+            BUILTIN_AUTOMATION_SERVER_NAME: get_main_agent_scheduled_task_sdk_server(),
+        }
 
 
 # 全局实例

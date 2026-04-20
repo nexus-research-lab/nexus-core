@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any, Dict, TypeVar
 
 from agent.config.config import settings
+from agent.service.agent.main_agent_scheduled_task_sdk_server import TOOL_NAMES as SCHEDULED_TASK_TOOL_NAMES
 
 _T = TypeVar("_T")
 
@@ -22,7 +23,7 @@ class MainAgentProfile:
     """负责描述系统保留主智能体的固定身份与默认运行参数。"""
 
     AGENT_ID = settings.DEFAULT_AGENT_ID
-    ALLOWED_TOOLS = [
+    _BASE_ALLOWED_TOOLS = [
         "AskUserQuestion",
         "Bash",
         "Edit",
@@ -36,6 +37,8 @@ class MainAgentProfile:
         "WebSearch",
         "Write",
     ]
+    ALLOWED_TOOLS = _BASE_ALLOWED_TOOLS + list(SCHEDULED_TASK_TOOL_NAMES)
+    REGULAR_AGENT_ALLOWED_TOOLS = _BASE_ALLOWED_TOOLS + list(SCHEDULED_TASK_TOOL_NAMES)
     SETTING_SOURCES = ["project"]
 
     @classmethod
@@ -81,8 +84,6 @@ class MainAgentProfile:
             "permission_mode": "default",
             "setting_sources": cls.SETTING_SOURCES,
         }
-        if settings.MAIN_AGENT_MODEL:
-            options["model"] = settings.MAIN_AGENT_MODEL
         return options
 
     @classmethod
@@ -104,6 +105,16 @@ class MainAgentProfile:
         merged_options["allowed_tools"] = default_options["allowed_tools"]
         merged_options["permission_mode"] = default_options["permission_mode"]
         merged_options["setting_sources"] = default_options["setting_sources"]
-        if "model" in default_options:
-            merged_options["model"] = default_options["model"]
         return merged_options
+
+    @classmethod
+    def build_regular_agent_options(cls, provider: str | None = None) -> Dict[str, Any]:
+        """构建普通成员 agent 的默认运行参数。"""
+        options: Dict[str, Any] = {
+            "allowed_tools": cls.REGULAR_AGENT_ALLOWED_TOOLS.copy(),
+            "permission_mode": "default",
+            "setting_sources": cls.SETTING_SOURCES,
+        }
+        if provider:
+            options["provider"] = provider
+        return options

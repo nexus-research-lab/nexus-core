@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import Matter from "matter-js";
 
 import { cn } from "@/lib/utils";
-import { SpotlightToken } from "@/types/launcher";
+import { SpotlightToken } from "@/types/app/launcher";
 
 interface SpotlightTokenPileProps {
   class_name?: string;
@@ -39,31 +39,31 @@ type TokenBrandStyle = {
   ring: boolean;
 };
 
-function seededUnit(seed: number, salt: number) {
+function seeded_unit(seed: number, salt: number) {
   const value = Math.sin(seed * 12.9898 + salt * 78.233) * 43758.5453;
   return value - Math.floor(value);
 }
 
-function createTokenConfig(tokens: SpotlightToken[], width: number): TokenPhysicsConfig[] {
+function create_token_config(tokens: SpotlightToken[], width: number): TokenPhysicsConfig[] {
   const horizontalPadding = 108;
   return tokens.map((token, index) => {
-    const seed = hashString(token.key);
+    const seed = hash_string(token.key);
     const baseSize = token.kind === "agent" ? 40 : 44;
-    const size = baseSize + Math.round(seededUnit(seed, 1) * 12);
+    const size = baseSize + Math.round(seeded_unit(seed, 1) * 12);
     return {
       key: token.key,
       size,
       radius: token.kind === "agent" ? size / 2 : Math.max(12, Math.round(size * 0.28)),
       spawn_x:
-        horizontalPadding + seededUnit(seed, 2) * Math.max(width - horizontalPadding * 2, 72),
-      spawn_y: -180 - seededUnit(seed, 3) * 240 - index * 14,
-      angle: ((seededUnit(seed, 4) * 36 - 18) * Math.PI) / 180,
+        horizontalPadding + seeded_unit(seed, 2) * Math.max(width - horizontalPadding * 2, 72),
+      spawn_y: -180 - seeded_unit(seed, 3) * 240 - index * 14,
+      angle: ((seeded_unit(seed, 4) * 36 - 18) * Math.PI) / 180,
       delay: 40 + index * 55,
     };
   });
 }
 
-function hexToRgba(hex: string, alpha: number) {
+function hex_to_rgba(hex: string, alpha: number) {
   const normalized = hex.replace("#", "");
   const value =
     normalized.length === 3
@@ -78,14 +78,14 @@ function hexToRgba(hex: string, alpha: number) {
   return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
-function getLabelSize(label: string) {
+function get_label_size(label: string) {
   if (label.length >= 3) {
-    return "text-[10px]";
+    return "text-2xs";
   }
-  return "text-[12px]";
+  return "text-sm";
 }
 
-function hashString(value: string) {
+function hash_string(value: string) {
   let hash = 0;
   for (let index = 0; index < value.length; index += 1) {
     hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
@@ -93,13 +93,13 @@ function hashString(value: string) {
   return hash;
 }
 
-function getTokenBrandStyle(token: SpotlightToken): TokenBrandStyle {
-  const hash = hashString(token.key);
+function get_token_brand_style(token: SpotlightToken): TokenBrandStyle {
+  const hash = hash_string(token.key);
   const variant = hash % 5;
 
   if (variant === 0) {
     return {
-      label_class_name: token.label.length >= 3 ? "text-[9px] tracking-[-0.03em]" : "text-[13px] tracking-[-0.08em]",
+      label_class_name: token.label.length >= 3 ? "text-2xs tracking-[-0.03em]" : "text-sm tracking-[-0.08em]",
       label_transform: "none",
       tag: token.kind === "agent" ? "core" : "room",
       tag_class_name: "text-[6px] tracking-[0.2em]",
@@ -117,7 +117,7 @@ function getTokenBrandStyle(token: SpotlightToken): TokenBrandStyle {
 
   if (variant === 1) {
     return {
-      label_class_name: token.label.length >= 3 ? "text-[8px] tracking-[0.04em]" : "text-[12px] tracking-[0.08em]",
+      label_class_name: token.label.length >= 3 ? "text-[8px] tracking-[0.04em]" : "text-sm tracking-[0.08em]",
       label_transform: "uppercase",
       tag: token.kind === "agent" ? "lab" : "sync",
       tag_class_name: "text-[6px] tracking-[0.24em]",
@@ -135,7 +135,7 @@ function getTokenBrandStyle(token: SpotlightToken): TokenBrandStyle {
 
   if (variant === 2) {
     return {
-      label_class_name: token.label.length >= 3 ? "text-[10px] tracking-[-0.08em]" : "text-[14px] tracking-[-0.1em]",
+      label_class_name: token.label.length >= 3 ? "text-2xs tracking-[-0.08em]" : "text-base tracking-[-0.1em]",
       label_transform: "none",
       tag: token.kind === "agent" ? "net" : "grid",
       tag_class_name: "text-[6px] tracking-[0.16em]",
@@ -153,7 +153,7 @@ function getTokenBrandStyle(token: SpotlightToken): TokenBrandStyle {
 
   if (variant === 3) {
     return {
-      label_class_name: getLabelSize(token.label),
+      label_class_name: get_label_size(token.label),
       label_transform: "capitalize",
       tag: token.kind === "agent" ? "ai" : "hub",
       tag_class_name: "text-[6px] tracking-[0.28em]",
@@ -170,7 +170,7 @@ function getTokenBrandStyle(token: SpotlightToken): TokenBrandStyle {
   }
 
   return {
-    label_class_name: token.label.length >= 3 ? "text-[8px] tracking-[0.12em]" : "text-[11px] tracking-[0.16em]",
+    label_class_name: token.label.length >= 3 ? "text-[8px] tracking-[0.12em]" : "text-xs tracking-[0.16em]",
     label_transform: "uppercase",
     tag: token.kind === "agent" ? "os" : "flow",
     tag_class_name: "text-[5px] tracking-[0.3em]",
@@ -195,7 +195,7 @@ export function AgentPile({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const tokenRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
-  const configs = useMemo(() => createTokenConfig(tokens, 560), [tokens]);
+  const configs = useMemo(() => create_token_config(tokens, 560), [tokens]);
   const configByKey = useMemo(
     () => new Map(configs.map((config) => [config.key, config])),
     [configs],
@@ -230,6 +230,16 @@ export function AgentPile({
       restitution: 0.16,
       friction: 0.84,
     });
+    const leftWall = Bodies.rectangle(-18, height / 2, 36, height * 2, {
+      isStatic: true,
+      restitution: 0.12,
+      friction: 0.9,
+    });
+    const rightWall = Bodies.rectangle(width + 18, height / 2, 36, height * 2, {
+      isStatic: true,
+      restitution: 0.12,
+      friction: 0.9,
+    });
     const leftRamp = Bodies.rectangle(-42, height / 2, 180, height * 2, {
       isStatic: true,
       angle: -0.16,
@@ -243,7 +253,7 @@ export function AgentPile({
       friction: 0.88,
     });
 
-    World.add(engine.world, [ground, leftRamp, rightRamp]);
+    World.add(engine.world, [ground, leftWall, rightWall, leftRamp, rightRamp]);
 
     configs.forEach((config) => {
       const token = tokenByKey.get(config.key);
@@ -316,8 +326,11 @@ export function AgentPile({
         }
 
         const nextOpacity = "1";
-        const nextZIndex = `${Math.round(body.position.y)}`;
-        const nextTransform = `translate3d(${Math.round((body.position.x - config.size / 2) * 10) / 10}px, ${Math.round((body.position.y - config.size / 2) * 10) / 10}px, 0) rotate(${Math.round(body.angle * 1000) / 1000}rad)`;
+        // z-index 不能跟随掉落过程进入负值，否则 token 会在动画中被压到容器层后面，看起来像“消失”。
+        const nextZIndex = `${1000 + Math.max(0, Math.round(body.position.y))}`;
+        // 这里改回 2D transform，不再用 translate3d 强制提 GPU 合成层。
+        // Token 数量不多时，2D 位移足够流畅，同时能显著减少层树里“一颗 token 一层”的情况。
+        const nextTransform = `translate(${Math.round((body.position.x - config.size / 2) * 10) / 10}px, ${Math.round((body.position.y - config.size / 2) * 10) / 10}px) rotate(${Math.round(body.angle * 1000) / 1000}rad)`;
         const previousRender = renderCache.get(config.key);
 
         const changed =
@@ -344,14 +357,14 @@ export function AgentPile({
       animationFrame = window.requestAnimationFrame(update);
     };
 
-    const stopAnimation = () => {
+    const stop_animation = () => {
       if (animationFrame !== 0) {
         window.cancelAnimationFrame(animationFrame);
         animationFrame = 0;
       }
     };
 
-    const startAnimation = () => {
+    const start_animation = () => {
       if (disposed || animationFrame !== 0 || !isDocumentVisible || !isInView) {
         return;
       }
@@ -360,38 +373,38 @@ export function AgentPile({
       animationFrame = window.requestAnimationFrame(update);
     };
 
-    const syncAnimationState = () => {
+    const sync_animation_state = () => {
       if (isDocumentVisible && isInView) {
-        startAnimation();
+        start_animation();
         return;
       }
 
-      stopAnimation();
+      stop_animation();
     };
 
     const intersectionObserver = new IntersectionObserver(
       ([entry]) => {
         isInView = entry?.isIntersecting ?? true;
-        syncAnimationState();
+        sync_animation_state();
       },
       { threshold: 0.05 },
     );
     intersectionObserver.observe(container);
 
-    const handleVisibilityChange = () => {
+    const handle_visibility_change = () => {
       isDocumentVisible = document.visibilityState !== "hidden";
-      syncAnimationState();
+      sync_animation_state();
     };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener("visibilitychange", handle_visibility_change);
 
-    syncAnimationState();
+    sync_animation_state();
 
     return () => {
       disposed = true;
       timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
-      stopAnimation();
+      stop_animation();
       intersectionObserver.disconnect();
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener("visibilitychange", handle_visibility_change);
       Matter.World.clear(engine.world, false);
       Matter.Engine.clear(engine);
     };
@@ -401,13 +414,10 @@ export function AgentPile({
     <div
       ref={containerRef}
       className={cn(
-        "relative mt-14 h-[286px] w-full max-w-[640px] overflow-hidden [mask-image:linear-gradient(180deg,transparent_0,black_14%,black_92%,transparent_100%)]",
+        "pointer-events-none relative z-0 mt-14 h-[286px] w-full max-w-[640px] overflow-hidden mask-[linear-gradient(180deg,transparent_0,black_14%,black_92%,transparent_100%)]",
         class_name,
       )}
     >
-      <div className="pointer-events-none absolute inset-x-[10%] top-[64px] h-28 rounded-full bg-[radial-gradient(circle,rgba(154,127,255,0.18),rgba(154,127,255,0)_72%)] blur-3xl" />
-      <div className="pointer-events-none absolute inset-x-[18%] bottom-[58px] h-24 rounded-full bg-[radial-gradient(circle,rgba(255,255,255,0.18),rgba(255,255,255,0)_76%)] blur-2xl" />
-      <div className="pointer-events-none absolute left-1/2 top-[108px] h-[124px] w-px -translate-x-1/2 bg-[linear-gradient(180deg,rgba(255,255,255,0.24),rgba(255,255,255,0))]" />
       <div className="pointer-events-none absolute bottom-[34px] left-1/2 h-[114px] w-[128%] -translate-x-1/2 rounded-[999px] border-t border-white/22 bg-[radial-gradient(circle_at_50%_8%,rgba(255,255,255,0.14),rgba(255,255,255,0.03)_28%,rgba(255,255,255,0)_62%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-[194px] h-px bg-[linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,0.1),rgba(255,255,255,0.3),rgba(255,255,255,0.1),rgba(255,255,255,0))]" />
 
@@ -418,7 +428,7 @@ export function AgentPile({
         }
 
         const isActive = token.agent_id && token.agent_id === current_agent_id;
-        const brandStyle = getTokenBrandStyle(token);
+        const brandStyle = get_token_brand_style(token);
 
         return (
           <button
@@ -427,7 +437,7 @@ export function AgentPile({
               tokenRefs.current[token.key] = node;
             }}
             className={cn(
-              "absolute left-0 top-0 overflow-hidden border opacity-0 will-change-transform transition-[filter] duration-200 hover:brightness-[1.04]",
+              "pointer-events-auto absolute left-0 top-0 border opacity-0",
               token.kind === "agent" ? "rounded-full" : "rounded-[14px]",
               isActive && "ring-2 ring-white/80",
             )}
@@ -438,11 +448,11 @@ export function AgentPile({
               height: config.size,
               background: `linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(247,248,244,0.92) 100%)`,
               color: token.swatch.text,
-              borderColor: hexToRgba("#ffffff", 0.46),
+              borderColor: hex_to_rgba("#ffffff", 0.46),
               boxShadow:
                 token.kind === "agent"
-                  ? `inset 0 1px 0 ${hexToRgba("#ffffff", 0.74)}, 0 16px 34px rgba(10,14,28,0.16), 0 0 18px ${hexToRgba(token.swatch.fill, 0.18)}`
-                  : `inset 0 1px 0 ${hexToRgba("#ffffff", 0.68)}, 0 18px 38px rgba(10,14,28,0.18), 0 0 20px ${hexToRgba(token.swatch.fill, 0.2)}`,
+                  ? `inset 0 1px 0 ${hex_to_rgba("#ffffff", 0.74)}, 0 16px 34px rgba(10,14,28,0.16), 0 0 18px ${hex_to_rgba(token.swatch.fill, 0.18)}`
+                  : `inset 0 1px 0 ${hex_to_rgba("#ffffff", 0.68)}, 0 18px 38px rgba(10,14,28,0.18), 0 0 20px ${hex_to_rgba(token.swatch.fill, 0.2)}`,
             }}
             type="button"
           >
@@ -455,57 +465,11 @@ export function AgentPile({
               style={{
                 inset: brandStyle.inner_inset,
                 borderRadius: brandStyle.inner_radius,
-                background: `radial-gradient(circle at 28% 24%, ${hexToRgba("#ffffff", 0.32)} 0%, transparent 34%), linear-gradient(180deg, ${hexToRgba(token.swatch.fill, 0.88)} 0%, ${hexToRgba(token.swatch.fill, 1)} 100%)`,
-                borderColor: hexToRgba(token.swatch.ring, 0.78),
-                boxShadow: `inset 0 1px 0 ${hexToRgba("#ffffff", 0.34)}, inset 0 -3px 8px ${hexToRgba("#000000", 0.06)}`,
+                background: `radial-gradient(circle at 28% 24%, ${hex_to_rgba("#ffffff", 0.32)} 0%, transparent 34%), linear-gradient(180deg, ${hex_to_rgba(token.swatch.fill, 0.88)} 0%, ${hex_to_rgba(token.swatch.fill, 1)} 100%)`,
+                borderColor: hex_to_rgba(token.swatch.ring, 0.78),
+                boxShadow: `inset 0 1px 0 ${hex_to_rgba("#ffffff", 0.34)}, inset 0 -3px 8px ${hex_to_rgba("#000000", 0.06)}`,
               }}
             />
-            {brandStyle.stacked && (
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "pointer-events-none absolute border",
-                  token.kind === "agent" ? "rounded-full" : "rounded-[12px]",
-                )}
-                style={{
-                  inset: 4,
-                  transform: "translate(2px, 3px)",
-                  borderColor: hexToRgba(token.swatch.ring, 0.28),
-                  background: hexToRgba(token.swatch.fill, 0.16),
-                  zIndex: 0,
-                }}
-              />
-            )}
-            {brandStyle.fold && token.kind === "room" && (
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute right-[7%] top-[7%] h-[26%] w-[26%] overflow-hidden rounded-[8px]"
-                style={{
-                  background: `linear-gradient(135deg, ${hexToRgba("#ffffff", 0.84)} 0%, ${hexToRgba(token.swatch.fill, 0.16)} 58%, transparent 58%)`,
-                  boxShadow: `inset 0 1px 0 ${hexToRgba("#ffffff", 0.46)}`,
-                }}
-              >
-                <span
-                  className="absolute inset-0"
-                  style={{
-                    background: `linear-gradient(135deg, transparent 0 48%, ${hexToRgba("#000000", 0.08)} 52%, transparent 60%)`,
-                  }}
-                />
-              </span>
-            )}
-            {brandStyle.ring && (
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "pointer-events-none absolute border",
-                  token.kind === "agent" ? "rounded-full" : "rounded-[10px]",
-                )}
-                style={{
-                  inset: token.kind === "agent" ? "24%" : "22%",
-                  borderColor: hexToRgba(token.swatch.text, 0.28),
-                }}
-              />
-            )}
             <span
               aria-hidden="true"
               className={cn(
@@ -517,34 +481,7 @@ export function AgentPile({
                 right: "16%",
                 top: token.kind === "agent" ? "18%" : "16%",
                 height: "22%",
-                background: `linear-gradient(180deg, ${hexToRgba("#ffffff", brandStyle.gloss_opacity)} 0%, rgba(255,255,255,0) 100%)`,
-                filter: "blur(0.8px)",
-              }}
-            />
-            <span
-              aria-hidden="true"
-              className={cn(
-                "pointer-events-none absolute blur-[0.8px]",
-                token.kind === "agent" ? "rounded-full" : "rounded-[999px]",
-              )}
-              style={{
-                left: "18%",
-                top: "18%",
-                height: "26%",
-                width: "42%",
-                background: "linear-gradient(180deg, rgba(255,255,255,0.42), rgba(255,255,255,0))",
-              }}
-            />
-            <span
-              aria-hidden="true"
-              className={cn(
-                "pointer-events-none absolute",
-                token.kind === "agent" ? "rounded-full" : "rounded-[10px]",
-              )}
-              style={{
-                inset: token.kind === "agent" ? "10%" : "12%",
-                background: `radial-gradient(circle at 50% 56%, transparent 0%, transparent 58%, ${hexToRgba(token.swatch.text, brandStyle.accent_opacity)} 100%)`,
-                opacity: 0.55,
+                background: `linear-gradient(180deg, ${hex_to_rgba("#ffffff", brandStyle.gloss_opacity)} 0%, rgba(255,255,255,0) 100%)`,
               }}
             />
             <span
@@ -559,9 +496,9 @@ export function AgentPile({
                   brandStyle.label_class_name,
                 )}
                 style={{
-                  color: hexToRgba(token.swatch.text, 0.98),
+                  color: hex_to_rgba(token.swatch.text, 0.98),
                   textTransform: brandStyle.label_transform as "none" | "uppercase" | "capitalize",
-                  textShadow: `0 1px 0 ${hexToRgba("#ffffff", 0.24)}, 0 2px 5px ${hexToRgba("#000000", 0.12)}`,
+                  textShadow: `0 1px 0 ${hex_to_rgba("#ffffff", 0.24)}, 0 2px 5px ${hex_to_rgba("#000000", 0.12)}`,
                 }}
               >
                 {token.label}
@@ -569,7 +506,7 @@ export function AgentPile({
               <span
                 className={cn("mt-0.5 font-semibold uppercase", brandStyle.tag_class_name)}
                 style={{
-                  color: hexToRgba(token.swatch.text, brandStyle.tag_opacity),
+                  color: hex_to_rgba(token.swatch.text, brandStyle.tag_opacity),
                 }}
               >
                 {brandStyle.tag}

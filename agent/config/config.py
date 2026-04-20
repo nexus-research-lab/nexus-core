@@ -9,8 +9,9 @@
 # =====================================================
 
 import os
-from typing import Optional
+from typing import Any, Optional
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from pydantic_settings import SettingsConfigDict
 
@@ -106,17 +107,12 @@ class Settings(BaseSettings):
     # 数据库配置
     DATABASE_URL: str = "sqlite+aiosqlite:///~/.nexus/data/nexus.db"
 
-    # Key
-    ANTHROPIC_AUTH_TOKEN: str = ""
-    ANTHROPIC_BASE_URL: str = ""
-    ANTHROPIC_MODEL: str = ""
-
     # =====================================================
     # 消息通道配置
     # =====================================================
     WEBSOCKET_ENABLED: bool = True
     DEFAULT_AGENT_ID: str = "nexus"
-    PERMISSION_REQUEST_TIMEOUT_SECONDS: int = 90
+    PERMISSION_REQUEST_TIMEOUT_SECONDS: int = 20
 
     DISCORD_ENABLED: bool = False
     DISCORD_BOT_TOKEN: str = ""
@@ -132,8 +128,18 @@ class Settings(BaseSettings):
     # =====================================================
     WORKSPACE_PATH: str = ""  # 为空时使用 ~/.nexus/workspace
     BASE_SYSTEM_PROMPT: str = ""
-    MAIN_AGENT_MODEL: str = ""
     MAIN_AGENT_SYSTEM_PROMPT: str = ""
+
+    # =====================================================
+    # NPM 配置
+    # =====================================================
+    NPM_REGISTRY: str = "https://registry.npmmirror.com"
+
+    # =====================================================
+    # skills.sh API 配置
+    # =====================================================
+    SKILLS_API_URL: str = "https://skills.sh"
+    SKILLS_API_SEARCH_LIMIT: int = 50
 
     # =====================================================
     # Connector OAuth 配置
@@ -160,6 +166,19 @@ class Settings(BaseSettings):
         ignored_types=(CyFunctionDetector,)
     )
 
+    @field_validator("DEBUG", mode="before")
+    @classmethod
+    def normalize_debug_value(cls, value: Any) -> bool:
+        """兼容 release/debug 等环境值，统一归一化成布尔。"""
+        if isinstance(value, bool):
+            return value
+        normalized = str(value or "").strip().lower()
+        if normalized in {"1", "true", "yes", "on", "debug", "dev"}:
+            return True
+        if normalized in {"0", "false", "no", "off", "release", "prod"}:
+            return False
+        raise ValueError("DEBUG must be a boolean-like value such as true/false/debug/release")
+
     @staticmethod
     def _mask_sensitive_value(attr: str, value):
         # 对敏感配置做脱敏，避免开发模式启动时把密钥直接打印到日志。
@@ -174,9 +193,6 @@ class Settings(BaseSettings):
         return f"{value_str[:4]}***{value_str[-4:]}"
 
     def update_dependent_settings(self):
-        os.environ["ANTHROPIC_AUTH_TOKEN"] = self.ANTHROPIC_AUTH_TOKEN
-        os.environ["ANTHROPIC_BASE_URL"] = self.ANTHROPIC_BASE_URL
-        os.environ["ANTHROPIC_MODEL"] = self.ANTHROPIC_MODEL
         if os.environ.get("CACHE_FILE_DIR"):
             self.CACHE_FILE_DIR = os.path.abspath(os.environ.get("CACHE_FILE_DIR"))
         else:

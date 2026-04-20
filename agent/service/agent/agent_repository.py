@@ -84,7 +84,15 @@ class AgentRepository:
         aggregate = await self._get_aggregate(agent_id)
         if aggregate is None or aggregate.agent.status != "active":
             return None
-        return AgentSqlMapper.to_model(aggregate)
+        agent = AgentSqlMapper.to_model(aggregate)
+
+        # 添加 skills_count
+        from agent.service.workspace.workspace_skill_deployer import WorkspaceSkillDeployer
+
+        deployer = WorkspaceSkillDeployer(agent_id, Path(agent.workspace_path))
+        agent.skills_count = len(deployer.list_deployed())
+
+        return agent
 
     async def get_all_agents(self) -> List[AAgent]:
         """获取所有活跃 Agent。"""
@@ -92,7 +100,16 @@ class AgentRepository:
         async with self._db.session() as session:
             repository = AgentSqlRepository(session)
             aggregates = await repository.list_active()
-        return [AgentSqlMapper.to_model(item) for item in aggregates]
+        agents = [AgentSqlMapper.to_model(item) for item in aggregates]
+
+        # 为每个 Agent 添加 skills_count
+        from agent.service.workspace.workspace_skill_deployer import WorkspaceSkillDeployer
+
+        for agent in agents:
+            deployer = WorkspaceSkillDeployer(agent.agent_id, Path(agent.workspace_path))
+            agent.skills_count = len(deployer.list_deployed())
+
+        return agents
 
     async def exists_active_agent_name(
             self,
@@ -124,6 +141,7 @@ class AgentRepository:
             return False
 
         merged_options = AgentSqlMapper.merge_options(aggregate, options)
+        runtime_fields = AgentSqlMapper.build_runtime_fields(merged_options)
 
         # 构造 Agent 主表更新字段（含身份标识）
         agent_fields: Dict = {}
@@ -152,22 +170,7 @@ class AgentRepository:
 
             updated = await repository.update_runtime_fields(
                 agent_id,
-                model=merged_options.get("model"),
-                permission_mode=merged_options.get("permission_mode"),
-                allowed_tools_json=AgentSqlMapper.to_json(
-                    merged_options.get("allowed_tools") or []
-                ),
-                disallowed_tools_json=AgentSqlMapper.to_json(
-                    merged_options.get("disallowed_tools") or []
-                ),
-                mcp_servers_json=AgentSqlMapper.to_json(
-                    merged_options.get("mcp_servers") or {}
-                ),
-                max_turns=merged_options.get("max_turns"),
-                max_thinking_tokens=merged_options.get("max_thinking_tokens"),
-                setting_sources_json=AgentSqlMapper.to_json(
-                    merged_options.get("setting_sources") or []
-                ),
+                **runtime_fields,
             )
             if updated is None:
                 return False
@@ -217,6 +220,7 @@ class AgentRepository:
         """确保 main agent 已存在于 SQLite。"""
         aggregate = await self._get_aggregate(MainAgentProfile.AGENT_ID)
         workspace_path = self._paths.workspace_base / MainAgentProfile.AGENT_ID
+        default_options = MainAgentProfile.build_default_options()
         WorkspaceTemplateInitializer(
             MainAgentProfile.AGENT_ID,
             workspace_path,
@@ -239,8 +243,18 @@ class AgentRepository:
                     await repository.update_runtime_fields(
                         MainAgentProfile.AGENT_ID,
                         **AgentSqlMapper.build_runtime_fields(
-                            MainAgentProfile.build_default_options()
+                            default_options
                         ),
+                    )
+                    await session.commit()
+            elif aggregate.runtime.provider is not None:
+                # 中文注释：主智能体默认跟随全局默认 Provider，
+                # 这里把历史上被写死的显式 provider 清空，避免继续钉死旧值。
+                async with self._db.session() as session:
+                    repository = AgentSqlRepository(session)
+                    await repository.update_runtime_fields(
+                        MainAgentProfile.AGENT_ID,
+                        **AgentSqlMapper.build_runtime_fields(default_options),
                     )
                     await session.commit()
             return
@@ -249,7 +263,7 @@ class AgentRepository:
             agent_id=MainAgentProfile.AGENT_ID,
             name=MainAgentProfile.AGENT_ID,
             workspace_path=str(workspace_path),
-            options=MainAgentProfile.build_default_options(),
+            options=default_options,
             status="active",
         )
         async with self._db.session() as session:
