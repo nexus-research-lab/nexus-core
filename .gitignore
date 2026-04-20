@@ -15,8 +15,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-!web/src/lib/*
 lib64/
 parts/
 sdist/
@@ -27,6 +25,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+.buildx-cache/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -177,6 +176,7 @@ uv.toml
 
 # tracked protocol specs / frontend protocol helpers
 !docs/
+docs/superpowers/
 docs/ui
 docs/system
 

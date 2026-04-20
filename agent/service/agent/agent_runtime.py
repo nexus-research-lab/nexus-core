@@ -52,7 +52,7 @@ class AgentRuntime:
         if force_fresh:
             await session_manager.close_session(session_key)
 
-        client = await session_manager.get_session(session_key)
+        client = await session_manager.get_reusable_session(session_key)
         if client:
             logger.debug(f"♻️ 复用现有 session: {session_key}")
             return client
@@ -68,9 +68,12 @@ class AgentRuntime:
         try:
             sdk_options = await agent_manager.build_sdk_options(real_agent_id)
             logger.info(f"📋 SDK options 从 Agent 构建: agent={real_agent_id}")
-        except Exception:
-            logger.warning(f"⚠️ Agent 不存在: {real_agent_id}，使用默认配置")
-            sdk_options = {"cwd": os.getcwd()}
+        except ValueError as exc:
+            if str(exc) == f"Agent not found: {real_agent_id}":
+                logger.warning(f"⚠️ Agent 不存在: {real_agent_id}，使用默认配置")
+                sdk_options = {"cwd": os.getcwd()}
+            else:
+                raise
 
         if session_id:
             sdk_options["resume"] = session_id
@@ -98,42 +101,42 @@ class AgentRuntime:
         ) -> PermissionResult:
             return await permission_strategy.request_permission(session_key, name, data, context)
 
-        client = await session_manager.create_session(
-            session_key=session_key,
-            can_use_tool=can_use_tool,
-            session_id=session_id,
-            session_options=sdk_options,
-        )
+        if session_manager.needs_reconnect(session_key):
+            client = await session_manager.prepare_session_reconnect(
+                session_key=session_key,
+                can_use_tool=can_use_tool,
+                session_id=session_id,
+                session_options=sdk_options,
+            )
+        else:
+            client = await session_manager.create_session(
+                session_key=session_key,
+                can_use_tool=can_use_tool,
+                session_id=session_id,
+                session_options=sdk_options,
+            )
         try:
             await client.connect()
         except Exception as exc:
             connect_error_message = self._build_connect_error_message(exc, stderr_lines)
             if session_id and not force_fresh:
                 logger.warning(
-                    "⚠️ 恢复 SDK 会话失败，清空失效 session_id 后重建新会话: "
+                    "⚠️ 恢复 SDK 会话失败，保留原 session_id 并终止本次连接: "
                     "key=%s, agent=%s, sdk_session=%s, error=%s",
                     session_key,
                     real_agent_id,
                     session_id,
                     connect_error_message,
                 )
-                await session_store.clear_session_id(session_key)
                 session_manager.invalidate_session(
                     session_key,
-                    reason=f"恢复 SDK 会话失败，准备降级重建: {connect_error_message}",
+                    reason=f"恢复 SDK 会话失败，已淘汰本次 client: {connect_error_message}",
                 )
-                return await self.get_or_create_client(
-                    session_key=session_key,
-                    agent_id=agent_id,
-                    permission_strategy=permission_strategy,
-                    resume_session_id=None,
-                    resolved_agent_id=real_agent_id,
-                    force_fresh=True,
+            else:
+                session_manager.invalidate_session(
+                    session_key,
+                    reason=f"SDK client 连接失败: {connect_error_message}",
                 )
-            session_manager.invalidate_session(
-                session_key,
-                reason=f"SDK client 连接失败: {connect_error_message}",
-            )
             raise RuntimeError(connect_error_message) from exc
 
         logger.info(f"✅ Client 就绪: key={session_key}, agent={real_agent_id}, session_id={session_id}")

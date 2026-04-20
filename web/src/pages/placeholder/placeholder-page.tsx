@@ -8,7 +8,7 @@
 import { Construction } from "lucide-react";
 
 import { useI18n } from "@/shared/i18n/i18n-context";
-import { WorkspaceEntryPage } from "@/shared/ui/workspace/workspace-entry-page";
+import { WorkspaceEntryPage } from "@/shared/ui/workspace/frame/workspace-entry-page";
 
 interface PlaceholderPageProps {
   title: string;
@@ -24,7 +24,7 @@ export function PlaceholderPage({
   return (
     <WorkspaceEntryPage
       description={description ?? t("common.coming_soon")}
-      icon={<Construction className="h-6 w-6 text-slate-900/78" />}
+      icon={<Construction className="h-6 w-6 text-(--text-strong)" />}
       title={title}
     />
   );

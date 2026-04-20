@@ -3,7 +3,7 @@
  *
  * 当有 DM 时自动重定向到最近 DM 的 RoomPage（复用 ConversationWorkspace）。
  * 当没有 DM 时显示空状态引导用户从侧边栏选择 Agent 开始私聊。
- * AppStage 已提升到路由布局层，此处只渲染内容区域。
+ * 应用外层布局已提升到路由层，此处只渲染内容区域。
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -11,10 +11,12 @@ import { MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { AppRouteBuilders } from "@/app/router/route-paths";
-import { listRooms, getRoomContexts, subscribe_room_list_updates } from "@/lib/room-api";
-import { sort_rooms_by_recency } from "@/lib/room-utils";
-import { WorkspacePageFrame } from "@/shared/ui/workspace/workspace-page-frame";
-import { RoomAggregate } from "@/types/room";
+import { list_rooms, get_room_contexts, subscribe_room_list_updates } from "@/lib/api/room-api";
+import { sort_rooms_by_recency } from "@/lib/conversation/room-utils";
+import { WorkspaceCatalogTextAction } from "@/shared/ui/workspace/catalog/workspace-catalog-card";
+import { WorkspaceEmptyState } from "@/shared/ui/workspace/frame/workspace-empty-state";
+import { WorkspacePageFrame } from "@/shared/ui/workspace/frame/workspace-page-frame";
+import { RoomAggregate } from "@/types/conversation/room";
 
 export function DmsPage() {
   const navigate = useNavigate();
@@ -27,7 +29,7 @@ export function DmsPage() {
 
     async function bootstrap() {
       try {
-        const next_rooms = await listRooms(200);
+        const next_rooms = await list_rooms(200);
         if (is_cancelled) return;
         set_rooms(next_rooms);
       } finally {
@@ -40,7 +42,7 @@ export function DmsPage() {
   }, []);
 
   useEffect(() => subscribe_room_list_updates(() => {
-    void listRooms(200).then(set_rooms);
+    void list_rooms(200).then(set_rooms);
   }), []);
 
   // 找到最近的 DM Room
@@ -56,7 +58,7 @@ export function DmsPage() {
     const target_room = latest_dm_room;
 
     async function open_latest_dm() {
-      const contexts = await getRoomContexts(target_room.room.id);
+      const contexts = await get_room_contexts(target_room.room.id);
       if (is_cancelled) return;
 
       if (contexts[0]?.conversation?.id) {
@@ -77,27 +79,19 @@ export function DmsPage() {
     return () => { is_cancelled = true; };
   }, [is_loading, latest_dm_room, navigate]);
 
-  // 只渲染内容区域 — AppStage 由路由布局层提供
+  // 只渲染内容区域 — 外层布局由路由层提供
   return (
     <WorkspacePageFrame>
-      <div className="relative flex min-h-0 flex-1 items-center justify-center px-4 py-6 sm:px-6">
-        <section className="max-w-md text-center">
-          {/* 图标 */}
-          <div className="glass-chip mx-auto flex h-16 w-16 items-center justify-center rounded-2xl">
-            <MessageCircle className="h-7 w-7 text-slate-500/80" />
-          </div>
-
-          {/* 标题 */}
-          <h2 className="mt-5 text-xl font-bold tracking-tight text-slate-900/90">
-            选择一个对话开始聊天
-          </h2>
-
-          {/* 描述 */}
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            从左侧面板选择一个 Agent 开始私聊
-          </p>
-        </section>
-      </div>
+      <WorkspaceEmptyState
+        actions={(
+          <WorkspaceCatalogTextAction onClick={() => navigate(AppRouteBuilders.contacts())} tone="primary">
+            打开 Contacts
+          </WorkspaceCatalogTextAction>
+        )}
+        description="从左侧侧边栏或 Contacts 选择一个 Agent，即可创建新的 DM。"
+        icon={<MessageCircle className="h-6 w-6 text-(--icon-default)" />}
+        title="还没有打开中的私聊"
+      />
     </WorkspacePageFrame>
   );
 }

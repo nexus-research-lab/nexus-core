@@ -17,7 +17,7 @@ interface AnimatedHeroTextProps {
   initial_delay_ms?: number;
 }
 
-function splitGraphemes(text: string, font: string): string[] {
+function split_graphemes(text: string, font: string): string[] {
   try {
     const prepared = prepareWithSegments(text, font);
     return prepared.segments;
@@ -45,7 +45,7 @@ export function AnimatedHeroText({
     const font = el
       ? window.getComputedStyle(el).font || "800 42px system-ui"
       : "800 42px system-ui";
-    setGraphemes(splitGraphemes(text, font));
+    setGraphemes(split_graphemes(text, font));
     const t = setTimeout(() => setVisible(true), 16);
     return () => clearTimeout(t);
   }, [text]);
@@ -66,8 +66,12 @@ export function AnimatedHeroText({
           aria-hidden
           className="inline-block"
           style={{
-            opacity: visible ? 1 : 0,
-            transform: visible ? "translateY(0) scale(1)" : "translateY(8px) scale(0.94)",
+            // 进入动画结束后移除最终态 transform，
+            // 避免标题里的每个字长期保留独立合成层。
+            ...(visible ? null : {
+              opacity: 0,
+              transform: "translateY(8px) scale(0.94)",
+            }),
             transition: "opacity 0.4s ease, transform 0.45s cubic-bezier(0.22,1,0.36,1)",
             transitionDelay: visible ? `${initial_delay_ms + i * stagger_ms}ms` : "0ms",
             whiteSpace: char === " " ? "pre" : undefined,
@@ -113,8 +117,12 @@ export function FadeSlideIn({
     <div
       className={class_name}
       style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : `translateY(${y_offset}px)`,
+        // 容器完成进入动画后不再保留 transform，
+        // 这样 launcher 推荐按钮和 Hero 分组不会持续挂在独立层上。
+        ...(visible ? null : {
+          opacity: 0,
+          transform: `translateY(${y_offset}px)`,
+        }),
         transition: `opacity ${duration_ms}ms ease, transform ${duration_ms}ms cubic-bezier(0.22,1,0.36,1)`,
         transitionDelay: `${delay_ms}ms`,
         ...style,

@@ -10,6 +10,10 @@ services:
     build:
       context: ..
       dockerfile: deploy/Dockerfile
+      cache_from:
+        - type=local,src=../.buildx-cache/nexus
+      cache_to:
+        - type=local,dest=../.buildx-cache/nexus,mode=max
       args:
         APT_MIRROR: ${APT_MIRROR:-https://mirrors.tuna.tsinghua.edu.cn}
         DEBIAN_SECURITY_MIRROR: ${DEBIAN_SECURITY_MIRROR:-https://mirrors.tuna.tsinghua.edu.cn/debian-security}
@@ -25,6 +29,8 @@ services:
       HOST: 0.0.0.0
       PORT: 8010
       WORKERS: ${WORKERS:-1}
+      NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com/}
+      NEXUS_APT_ALLOWLIST: ${NEXUS_APT_ALLOWLIST:-ca-certificates curl ffmpeg git imagemagick iputils-ping jq less procps ripgrep rsync unzip vim wget zip}
       DATABASE_URL: ${DATABASE_URL:-sqlite+aiosqlite:////home/agent/.nexus/data/nexus.db}
       CACHE_FILE_DIR: ${CACHE_FILE_DIR:-/home/agent/.nexus/cache}
       LOG_PATH: ${LOG_PATH:-/home/agent/.nexus/logs}
@@ -32,7 +38,6 @@ services:
     volumes:
       - ${HOST_DATA_DIR:-./data}/.nexus:/home/agent/.nexus
       - ${HOST_DATA_DIR:-./data}/.claude:/home/agent/.claude
-      - ${HOST_DATA_DIR:-./data}/.claude.json:/home/agent/.claude.json
     expose:
       - "8010"
     healthcheck:
@@ -47,12 +52,14 @@ services:
     build:
       context: ..
       dockerfile: web/Dockerfile
+      cache_from:
+        - type=local,src=../.buildx-cache/nginx
+      cache_to:
+        - type=local,dest=../.buildx-cache/nginx,mode=max
       args:
-        APK_MIRROR: ${APK_MIRROR:-https://mirrors.tuna.tsinghua.edu.cn/alpine}
         NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com/}
         VITE_WS_URL: ${VITE_WS_URL:-}
         VITE_API_URL: ${VITE_API_URL:-}
-        VITE_DEFAULT_MODEL: ${VITE_DEFAULT_MODEL:-glm-5}
     image: ${IMAGE:-nexus}:web-${TAG:-latest}
     restart: unless-stopped
     environment:

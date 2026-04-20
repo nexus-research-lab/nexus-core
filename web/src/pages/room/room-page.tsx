@@ -4,20 +4,24 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { AppRouteBuilders } from "@/app/router/route-paths";
 import { Loader2 } from "lucide-react";
 
-import { RoomWorkspaceShell } from "@/features/room-conversation/room-workspace-shell";
-import { RoomRouteEntry } from "@/features/room-conversation/room-route-entry";
-import { useRoomPageController } from "@/hooks/use-room-page-controller";
+import { GroupRouteEntry } from "@/features/conversation/room/group/group-route-entry";
+import { RoomSurfaceShell } from "@/features/conversation/room/surface/room-surface-shell";
+import { useRoomPageController } from "@/hooks/room-page-controller/use-room-page-controller";
 import { AgentOptions } from "@/shared/ui/dialog/agent-options";
 import { ConfirmDialog } from "@/shared/ui/dialog/confirm-dialog";
-import { WorkspacePageFrame } from "@/shared/ui/workspace/workspace-page-frame";
-import { RoomRouteParams } from "@/types/route";
-import { UpdateRoomParams } from "@/types/room";
+import { WorkspacePageFrame } from "@/shared/ui/workspace/frame/workspace-page-frame";
+import { RoomRouteParams } from "@/types/app/route";
+import { UpdateRoomParams } from "@/types/conversation/room";
 
 export function RoomPage() {
   const params = useParams<RoomRouteParams>();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [pending_initial_prompt, set_pending_initial_prompt] = useState<string | null>(null);
+  const [pending_deleted_room, set_pending_deleted_room] = useState<{
+    id: string;
+    room_type: "room" | "dm";
+  } | null>(null);
   const [pending_delete_agent, set_pending_delete_agent] = useState<{ id: string; name: string } | null>(null);
   const controller = useRoomPageController({
     room_id: params.room_id,
@@ -81,18 +85,19 @@ export function RoomPage() {
     return null;
   }, [controller, navigate, params.room_id]);
 
-  const handleDeleteRoom = useCallback(async () => {
-    await controller.handle_delete_room();
-    navigate(AppRouteBuilders.launcher());
-  }, [controller, navigate]);
-
   const handleUpdateConversationTitle = useCallback(async (conversation_id: string, title: string) => {
     await controller.handle_update_conversation_title(conversation_id, title);
   }, [controller]);
 
-  const handleRoomEvent = useCallback((event_type: string, _data: import("@/types/agent-conversation").RoomEventPayload) => {
+  const handleRoomEvent = useCallback((event_type: string, _data: import("@/types/agent/agent-conversation").RoomEventPayload) => {
     if (event_type === "room_deleted") {
-      navigate(AppRouteBuilders.launcher());
+      if (_data.room_id && _data.room_id === params.room_id) {
+        set_pending_deleted_room({
+          id: _data.room_id,
+          room_type: controller.current_room?.room_type === "dm" ? "dm" : "room",
+        });
+        void controller.handle_refresh_room_state();
+      }
       return;
     }
 
@@ -101,7 +106,41 @@ export function RoomPage() {
     }
     // room_member_added / room_member_removed are handled by the next server-rendered
     // room context fetch; no extra action needed here.
-  }, [controller, navigate]);
+  }, [controller, params.room_id]);
+
+  useEffect(() => {
+    if (!pending_deleted_room) {
+      return;
+    }
+
+    if (!controller.is_hydrated) {
+      return;
+    }
+
+    if (!params.room_id || params.room_id !== pending_deleted_room.id) {
+      set_pending_deleted_room(null);
+      return;
+    }
+
+    if (controller.current_room && !controller.room_error) {
+      // Room 仍可访问，继续留在当前路径。
+      set_pending_deleted_room(null);
+      return;
+    }
+
+    const fallback_route = pending_deleted_room.room_type === "dm"
+      ? AppRouteBuilders.dm_directory()
+      : AppRouteBuilders.home();
+    navigate(fallback_route, { replace: true });
+    set_pending_deleted_room(null);
+  }, [
+    controller.current_room,
+    controller.is_hydrated,
+    controller.room_error,
+    navigate,
+    params.room_id,
+    pending_deleted_room,
+  ]);
 
   const handle_request_delete_agent = useCallback((agent_id: string) => {
     const target_agent = controller.agents.find((agent) => agent.agent_id === agent_id);
@@ -150,14 +189,14 @@ export function RoomPage() {
     pending_initial_prompt,
   ]);
 
-  // 加载中 — 内联 loading，AppStage 由路由布局层提供
+  // 加载中 — 内联 loading，外层布局由路由层提供
   if (!controller.is_hydrated) {
     return (
-      <WorkspacePageFrame content_padding_class_name="p-0" use_default_panel_style={false}>
+      <WorkspacePageFrame content_padding_class_name="p-0">
         <div className="flex min-h-0 flex-1 items-center justify-center">
           <div className="flex flex-col items-center gap-3">
-            <Loader2 className="h-6 w-6 animate-spin text-slate-400/60" />
-            <span className="text-sm text-slate-400/60">加载对话...</span>
+            <Loader2 className="h-6 w-6 animate-spin text-(--text-soft)" />
+            <span className="text-sm text-(--text-soft)">加载对话...</span>
           </div>
         </div>
       </WorkspacePageFrame>
@@ -169,51 +208,52 @@ export function RoomPage() {
       <>
         <WorkspacePageFrame
           content_padding_class_name="p-0"
-          use_default_panel_style={false}
         >
-          <div className="relative flex min-h-0 flex-1">
-            <RoomWorkspaceShell
-              active_workspace_path={controller.active_workspace_path}
-              available_room_agents={controller.available_room_agents}
-              current_agent={controller.current_agent}
-              room_id={controller.route_room_id}
-              current_room_type={controller.current_room_type}
-              room_description={controller.current_room_description}
-              room_members={controller.room_members}
-              current_room_title={controller.current_room_title}
-              current_room_conversations={controller.current_room_conversations}
-              current_room_conversation={controller.current_room_conversation}
-              current_agent_session_identity={controller.current_agent_session_identity}
-              conversation_id={controller.conversation_id}
-              current_todos={controller.current_todos}
-              editor_width_percent={controller.editor_width_percent}
-              initial_draft={pending_initial_prompt}
-              is_editor_open={controller.is_editor_open}
-              is_resizing_editor={controller.is_resizing_editor}
-              is_conversation_busy={controller.is_conversation_busy}
-              on_add_room_member={controller.handle_add_room_member}
-              on_back_to_directory={handleBackToLauncher}
-              on_close_workspace_pane={controller.handle_close_workspace_pane}
-              on_delete_conversation={handleDeleteConversation}
-              on_loading_change={controller.set_is_conversation_busy}
-              on_create_conversation={handleCreateConversation}
-              on_open_workspace_file={controller.handle_open_workspace_file}
-              on_update_room={handleUpdateRoom}
-              on_delete_room={handleDeleteRoom}
-              on_update_conversation_title={handleUpdateConversationTitle}
-              on_select_conversation={handleSelectConversation}
-              on_conversation_snapshot_change={controller.handle_conversation_snapshot_change}
-              on_initial_draft_consumed={handle_consume_initial_prompt}
-              on_start_editor_resize={controller.handle_start_editor_resize}
-              on_todos_change={controller.set_current_todos}
-              workspace_split_ref={controller.workspace_split_ref}
-              on_room_event={handleRoomEvent}
-            />
-          </div>
+          <RoomSurfaceShell
+            active_workspace_path={controller.active_workspace_path}
+            available_room_agents={controller.available_room_agents}
+            current_agent={controller.current_agent}
+            room_id={controller.route_room_id}
+            current_room_type={controller.current_room_type}
+            room_avatar={controller.current_room.avatar ?? null}
+            room_members={controller.room_members}
+            current_room_title={controller.current_room_title}
+            current_room_conversations={controller.current_room_conversations}
+            current_room_conversation={controller.current_room_conversation}
+            current_agent_session_identity={controller.current_agent_session_identity}
+            conversation_id={controller.conversation_id}
+            current_todos={controller.current_todos}
+            editor_width_percent={controller.editor_width_percent}
+            initial_draft={pending_initial_prompt}
+            is_editor_open={controller.is_editor_open}
+            is_resizing_editor={controller.is_resizing_editor}
+            is_conversation_busy={controller.is_conversation_busy}
+            on_add_room_member={controller.handle_add_room_member}
+            on_remove_room_member={controller.handle_remove_room_member}
+            on_back_to_directory={handleBackToLauncher}
+            on_close_workspace_pane={controller.handle_close_workspace_pane}
+            on_delete_conversation={handleDeleteConversation}
+            on_loading_change={controller.set_is_conversation_busy}
+            on_create_conversation={handleCreateConversation}
+            on_open_workspace_file={controller.handle_open_workspace_file}
+            on_save_agent_options={controller.handle_save_existing_agent_options}
+            on_update_room={handleUpdateRoom}
+            on_update_conversation_title={handleUpdateConversationTitle}
+            on_select_conversation={handleSelectConversation}
+            on_conversation_snapshot_change={controller.handle_conversation_snapshot_change}
+            on_initial_draft_consumed={handle_consume_initial_prompt}
+            on_start_editor_resize={controller.handle_start_editor_resize}
+            on_todos_change={controller.set_current_todos}
+            on_validate_agent_name={controller.handle_validate_agent_name_for_agent}
+            workspace_split_ref={controller.workspace_split_ref}
+            on_room_event={handleRoomEvent}
+          />
         </WorkspacePageFrame>
 
         <AgentOptions
           agent_id={controller.editing_agent_id ?? undefined}
+          initial_avatar={controller.dialog_initial_avatar}
+          initial_description={controller.dialog_initial_description}
           mode={controller.dialog_mode}
           is_open={controller.is_dialog_open}
           on_close={() => controller.set_is_dialog_open(false)}
@@ -222,6 +262,7 @@ export function RoomPage() {
           on_validate_name={controller.handle_validate_agent_name}
           initial_title={controller.dialog_initial_title}
           initial_options={controller.dialog_initial_options}
+          initial_vibe_tags={controller.dialog_initial_vibe_tags}
         />
 
         <ConfirmDialog
@@ -241,7 +282,7 @@ export function RoomPage() {
 
   return (
     <WorkspacePageFrame>
-      <RoomRouteEntry
+      <GroupRouteEntry
         agents={controller.room_members}
         conversations={controller.conversations}
         conversation_id={params.conversation_id}

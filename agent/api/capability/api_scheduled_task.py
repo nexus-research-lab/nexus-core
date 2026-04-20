@@ -18,6 +18,7 @@ from agent.infra.server.common import resp
 from agent.schema.model_automation import (
     AutomationCronJobCreate,
     AutomationCronSchedule,
+    AutomationCronSource,
     AutomationDeliveryTarget,
     AutomationSessionTarget,
 )
@@ -32,11 +33,19 @@ class ScheduledTaskUpdateRequest(AModel):
     """任务更新请求。"""
 
     name: str | None = None
+    agent_id: str | None = None
     schedule: AutomationCronSchedule | None = None
     instruction: str | None = None
     session_target: AutomationSessionTarget | None = None
     delivery: AutomationDeliveryTarget | None = None
+    source: AutomationCronSource | None = None
     enabled: bool | None = None
+
+
+class ScheduledTaskCreateRequest(AutomationCronJobCreate):
+    """任务创建请求。"""
+
+    source: AutomationCronSource | None = None
 
 
 class ScheduledTaskStatusRequest(AModel):
@@ -52,8 +61,21 @@ async def list_scheduled_tasks(agent_id: str | None = None):
 
 
 @router.post("")
-async def create_scheduled_task(payload: AutomationCronJobCreate):
-    data = await scheduled_task_service.create_task(payload)
+async def create_scheduled_task(payload: ScheduledTaskCreateRequest):
+    source = payload.source or AutomationCronSource()
+    source.kind = "user_page"
+    data = await scheduled_task_service.create_task(
+        AutomationCronJobCreate(
+            name=payload.name,
+            agent_id=payload.agent_id,
+            schedule=payload.schedule,
+            instruction=payload.instruction,
+            session_target=payload.session_target,
+            delivery=payload.delivery,
+            source=source,
+            enabled=payload.enabled,
+        )
+    )
     return resp.ok(resp.Resp(data=data.model_dump(mode="json")))
 
 
@@ -62,10 +84,12 @@ async def update_scheduled_task(job_id: str, payload: ScheduledTaskUpdateRequest
     data = await scheduled_task_service.update_task(
         job_id,
         name=payload.name,
+        agent_id=payload.agent_id,
         schedule=payload.schedule,
         instruction=payload.instruction,
         session_target=payload.session_target,
         delivery=payload.delivery,
+        source=payload.source,
         enabled=payload.enabled,
     )
     return resp.ok(resp.Resp(data=data.model_dump(mode="json")))

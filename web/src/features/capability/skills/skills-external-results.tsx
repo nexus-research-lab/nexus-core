@@ -1,14 +1,20 @@
-import { Download, Loader2 } from "lucide-react";
+import { Download, Loader2, Puzzle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
 import {
-  WorkspaceCatalogBadge,
+  WorkspaceCatalogBody,
   WorkspaceCatalogCard,
-} from "@/shared/ui/workspace/workspace-catalog-card";
-import type { ExternalSkillSearchItem } from "@/types/skill";
+  WorkspaceCatalogDescription,
+  WorkspaceCatalogFooter,
+  WorkspaceCatalogHeader,
+  WorkspaceCatalogTextAction,
+  WorkspaceCatalogTitle,
+  WorkspaceIconFrame,
+} from "@/shared/ui/workspace/catalog/workspace-catalog-card";
+import type { ExternalSkillSearchItem } from "@/types/capability/skill";
 
-import { formatInstalls } from "@/hooks/use-skill-marketplace";
-import type { SkillMarketplaceController } from "@/hooks/use-skill-marketplace";
+import { format_installs } from "@/hooks/capability/use-skill-marketplace";
+import type { SkillMarketplaceController } from "@/hooks/capability/use-skill-marketplace";
 
 interface SkillsExternalResultsProps {
   ctrl: SkillMarketplaceController;
@@ -17,7 +23,7 @@ interface SkillsExternalResultsProps {
 export function SkillsExternalResults({ ctrl }: SkillsExternalResultsProps) {
   if (ctrl.external_loading) {
     return (
-      <div className="flex items-center gap-2 py-12 justify-center text-sm text-[color:var(--text-soft)]">
+      <div className="flex items-center gap-2 py-12 justify-center text-sm text-(--text-soft)">
         <Loader2 className="h-4 w-4 animate-spin" />
         正在搜索社区技能...
       </div>
@@ -26,7 +32,7 @@ export function SkillsExternalResults({ ctrl }: SkillsExternalResultsProps) {
 
   if (ctrl.external_query && !ctrl.external_results.length) {
     return (
-      <div className="surface-inset radius-shell-md px-5 py-8 text-center text-sm text-[color:var(--text-soft)]">
+      <div className="rounded-[18px] border border-dashed border-(--divider-subtle-color) px-5 py-8 text-center text-sm text-(--text-soft)">
         暂无匹配结果，试试更具体的关键词
       </div>
     );
@@ -36,9 +42,9 @@ export function SkillsExternalResults({ ctrl }: SkillsExternalResultsProps) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between text-[12px] text-[color:var(--text-soft)]">
+      <div className="flex items-center justify-between text-[12px] text-(--text-soft)">
         <span>
-          找到 <span className="font-bold text-[color:var(--text-strong)]">{ctrl.external_results.length}</span> 个结果
+          找到 <span className="font-bold text-(--text-strong)">{ctrl.external_results.length}</span> 个结果
         </span>
         <span>优先展示安装量更高的技能</span>
       </div>
@@ -46,11 +52,11 @@ export function SkillsExternalResults({ ctrl }: SkillsExternalResultsProps) {
         {ctrl.external_results.map((item: ExternalSkillSearchItem) => (
           <ExternalResultCard
             key={`${item.package_spec}@${item.skill_slug}`}
-            busy_skill_name={ctrl.busy_skill_name}
-            imported_skill_names={ctrl.imported_skill_names}
+            busy_external_key={ctrl.busy_external_key}
+            imported_external_sources={ctrl.imported_external_sources}
             item={item}
             on_import={() => void ctrl.handle_import_external(item)}
-            on_preview={() => ctrl.set_preview_external_item(item)}
+            on_preview={() => ctrl.handle_preview_external(item)}
           />
         ))}
       </div>
@@ -62,51 +68,98 @@ export function SkillsExternalResults({ ctrl }: SkillsExternalResultsProps) {
 
 interface ExternalResultCardProps {
   item: ExternalSkillSearchItem;
-  busy_skill_name: string | null;
-  imported_skill_names: Set<string>;
+  busy_external_key: string | null;
+  imported_external_sources: Map<string, Set<string>>;
   on_preview: () => void;
   on_import: () => void;
 }
 
+function ExternalSkillStatePill({
+  children,
+  tone = "neutral",
+}: {
+  children: string;
+  tone?: "neutral" | "success" | "warning";
+}) {
+  const tone_class_name =
+    tone === "warning"
+      ? "border-amber-200/80 bg-amber-50/88 text-amber-700"
+      : tone === "success"
+        ? "border-emerald-200/80 bg-emerald-50/90 text-emerald-700"
+        : "border-(--surface-panel-subtle-border) bg-(--surface-panel-subtle-background) text-(--text-soft)";
+
+  return (
+    <span
+      className={cn(
+        "inline-flex h-6 items-center rounded-full border px-2.5 text-[11px] font-medium leading-none tracking-[0.01em]",
+        tone_class_name,
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
 function ExternalResultCard({
   item,
-  busy_skill_name,
-  imported_skill_names,
+  busy_external_key,
+  imported_external_sources,
   on_preview,
   on_import,
 }: ExternalResultCardProps) {
-  const already_imported = imported_skill_names.has(item.skill_slug);
-  const is_busy = busy_skill_name === item.skill_slug;
+  const imported_sources = imported_external_sources.get(item.skill_slug);
+  const already_imported = imported_sources?.has(item.package_spec) ?? false;
+  const has_name_conflict = !!imported_sources && !already_imported;
+  const external_key = `${item.package_spec}@@${item.skill_slug}`;
+  const is_busy = busy_external_key === external_key;
+  const state_label = already_imported ? "已导入" : has_name_conflict ? "同名冲突" : "可导入";
+  const state_tone = already_imported ? "success" : has_name_conflict ? "warning" : "neutral";
 
   return (
     <WorkspaceCatalogCard
-      class_name="h-full min-h-[138px] cursor-pointer rounded-[20px] px-5 py-4"
+      class_name="h-full"
+      interactive
       onClick={on_preview}
+      size="compact"
     >
-      {/* 标题行 */}
-      <div className="flex items-start justify-between gap-3">
+      <WorkspaceCatalogHeader class_name="items-center gap-3.5">
+        <WorkspaceIconFrame
+          class_name="shrink-0 text-sky-600"
+          size="sm"
+          tone="primary"
+        >
+          <Puzzle className="h-4 w-4" />
+        </WorkspaceIconFrame>
+
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[14px] font-bold tracking-tight text-[color:var(--text-strong)]">
+          <WorkspaceCatalogTitle class_name="tracking-tight" size="sm" truncate>
             {item.title || item.skill_slug}
-          </p>
-          <p className="mt-0.5 flex items-center gap-2 truncate text-[11px] text-[color:var(--text-muted)]">
+          </WorkspaceCatalogTitle>
+          <p className="mt-1 flex items-center gap-2 truncate text-[11px] text-(--text-soft)">
             <span>{item.package_spec}</span>
             <span>·</span>
-            <span>{formatInstalls(item.installs)} installs</span>
+            <span>{format_installs(item.installs)} installs</span>
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-          {already_imported ? (
-            <WorkspaceCatalogBadge tone="success">
-              已导入
-            </WorkspaceCatalogBadge>
-          ) : (
-            <WorkspacePillButton
-              disabled={is_busy}
-              density="compact"
+      </WorkspaceCatalogHeader>
+
+      <WorkspaceCatalogBody grow>
+        <WorkspaceCatalogDescription class_name="text-[12px] leading-[1.6]" lines={2}>
+          {item.readme_markdown || item.description}
+        </WorkspaceCatalogDescription>
+      </WorkspaceCatalogBody>
+
+      <WorkspaceCatalogFooter justify="end" onClick={(e) => e.stopPropagation()}>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <ExternalSkillStatePill tone={state_tone}>
+            {state_label}
+          </ExternalSkillStatePill>
+          {!already_imported && !has_name_conflict ? (
+            <WorkspaceCatalogTextAction
+              disabled={is_busy || has_name_conflict}
               onClick={on_import}
-              size="sm"
-              variant="primary"
+              tone="primary"
+              class_name="px-1"
             >
               {is_busy ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -114,15 +167,10 @@ function ExternalResultCard({
                 <Download className="h-3 w-3" />
               )}
               导入
-            </WorkspacePillButton>
-          )}
+            </WorkspaceCatalogTextAction>
+          ) : null}
         </div>
-      </div>
-
-      {/* 描述 */}
-      <p className="mt-2.5 line-clamp-2 min-h-[38px] flex-1 text-[12px] leading-[1.6] text-[color:var(--text-default)]">
-        {item.readme_markdown || item.description}
-      </p>
+      </WorkspaceCatalogFooter>
     </WorkspaceCatalogCard>
   );
 }

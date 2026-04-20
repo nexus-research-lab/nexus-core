@@ -42,6 +42,7 @@ from agent.service.room.room_message_store import room_message_store
 from agent.service.room.room_session_keys import (
     build_room_agent_session_key,
 )
+from agent.service.settings.provider_config_service import normalize_provider
 from agent.service.session.session_store import session_store
 from agent.infra.database.repositories.conversation_sql_repository import ConversationSqlRepository
 from agent.infra.database.repositories.room_sql_repository import RoomSqlRepository
@@ -110,6 +111,7 @@ class RoomService:
         name: Optional[str] = None,
         description: Optional[str] = None,
         title: Optional[str] = None,
+        avatar: Optional[str] = None,
     ) -> ConversationContextAggregate:
         """更新房间与主对话信息。"""
         async with self._db.session() as session:
@@ -124,6 +126,7 @@ class RoomService:
                 room_id=room_id,
                 name=name,
                 description=description,
+                avatar=avatar,
             )
             if updated_room is None:
                 raise LookupError("Room not found")
@@ -146,6 +149,11 @@ class RoomService:
         if not contexts:
             raise LookupError("Room not found")
         context = self._pick_context_by_conversation(contexts, main_conversation.id)
+        await self._broadcast_room_list_updated(
+            reason="updated",
+            room_id=context.room.id,
+            room_type=context.room.room_type,
+        )
         return context
 
     async def create_room(
@@ -155,11 +163,15 @@ class RoomService:
         description: str = "",
         title: Optional[str] = None,
         room_type: str = "room",
+        avatar: Optional[str] = None,
     ) -> ConversationContextAggregate:
         """创建 Room，并为每个 Agent 初始化会话。"""
-        normalized_agent_ids = self._normalize_agent_ids(agent_ids)
-        agent_aggregates = await self._load_agent_aggregates(normalized_agent_ids)
         normalized_room_type = self._normalize_room_type(room_type)
+        normalized_agent_ids = self._normalize_agent_ids(
+            agent_ids,
+            room_type=normalized_room_type,
+        )
+        agent_aggregates = await self._load_agent_aggregates(normalized_agent_ids)
 
         room_id = random_uuid()
         conversation_id = random_uuid()
@@ -171,6 +183,7 @@ class RoomService:
             room_type=normalized_room_type,
             name=room_name,
             description=description,
+            avatar=avatar,
         )
         members = self._build_members(room_id, normalized_agent_ids)
         conversation_record = ConversationRecord(
@@ -204,6 +217,11 @@ class RoomService:
             members=room_aggregate.members,
             conversation=created_conversation,
             sessions=sessions,
+        )
+        await self._broadcast_room_list_updated(
+            reason="created",
+            room_id=context.room.id,
+            room_type=context.room.room_type,
         )
         return context
 
@@ -307,6 +325,11 @@ class RoomService:
             delivery_mode="ephemeral",
             data={"room_id": room_id, "agent_id": agent_id},
         ))
+        await self._broadcast_room_list_updated(
+            reason="member_added",
+            room_id=room_id,
+            room_type=context.room.room_type,
+        )
         return context
 
     async def remove_agent_member(
@@ -394,6 +417,11 @@ class RoomService:
             delivery_mode="ephemeral",
             data={"room_id": room_id, "agent_id": agent_id},
         ))
+        await self._broadcast_room_list_updated(
+            reason="member_removed",
+            room_id=room_id,
+            room_type=context.room.room_type,
+        )
         return context
 
     async def delete_room(self, room_id: str) -> None:
@@ -433,20 +461,36 @@ class RoomService:
             room_id=room_id,
             data={"room_id": room_id},
         ))
+        await self._broadcast_room_list_updated(
+            reason="deleted",
+            room_id=room_id,
+        )
 
-    def _normalize_agent_ids(self, agent_ids: list[str]) -> list[str]:
-        """去重并保持输入顺序。"""
+    def _normalize_agent_ids(self, agent_ids: list[str], room_type: str) -> list[str]:
+        """按房间类型筛选合法成员并保持输入顺序。"""
         normalized_ids: list[str] = []
         for agent_id in agent_ids:
             cleaned = agent_id.strip()
-            if not MainAgentProfile.is_regular_agent(cleaned):
+            if not cleaned:
+                continue
+            if room_type == "dm":
+                if not (
+                    MainAgentProfile.is_regular_agent(cleaned)
+                    or MainAgentProfile.is_main_agent(cleaned)
+                ):
+                    continue
+            elif not MainAgentProfile.is_regular_agent(cleaned):
                 continue
             if cleaned not in normalized_ids:
                 normalized_ids.append(cleaned)
         if not normalized_ids:
+            if room_type == "dm":
+                raise ValueError("dm 至少需要一个合法 agent")
             raise ValueError(
                 f"room 至少需要一个普通成员 agent，{MainAgentProfile.display_label()} 不能作为 room 成员"
             )
+        if room_type == "dm" and len(normalized_ids) != 1:
+            raise ValueError("dm 仅支持一个 agent")
         return normalized_ids
 
     async def _load_agent_aggregates(
@@ -491,7 +535,7 @@ class RoomService:
             runtime=RuntimeRecord(
                 id=_stable_id("runtime", agent.agent_id),
                 agent_id=agent.agent_id,
-                model=options.get("model"),
+                provider=normalize_provider(options.get("provider"), allow_empty=True) or None,
                 permission_mode=options.get("permission_mode"),
                 allowed_tools_json=json.dumps(options.get("allowed_tools") or [], ensure_ascii=False),
                 disallowed_tools_json=json.dumps(options.get("disallowed_tools") or [], ensure_ascii=False),
@@ -572,6 +616,27 @@ class RoomService:
             if context.conversation.id == conversation_id:
                 return context
         return contexts[0]
+
+    async def _broadcast_room_list_updated(
+        self,
+        reason: str,
+        room_id: str | None,
+        room_type: str | None = None,
+    ) -> None:
+        """向全局前端广播 room 列表变更。"""
+        from agent.service.channels.ws.ws_connection_registry import ws_connection_registry
+        from agent.schema.model_message import EventMessage
+
+        await ws_connection_registry.broadcast(EventMessage(
+            event_type="room_list_updated",
+            delivery_mode="ephemeral",
+            room_id=room_id,
+            data={
+                "reason": reason,
+                "room_id": room_id,
+                "room_type": room_type,
+            },
+        ))
 
 
 room_service = RoomService()

@@ -1,8 +1,9 @@
 "use client";
 
 import { PromptDialog } from "@/shared/ui/dialog/confirm-dialog";
+import { WorkspaceSurfaceScaffold } from "@/shared/ui/workspace/surface/workspace-surface-scaffold";
 
-import { useSkillMarketplace } from "@/hooks/use-skill-marketplace";
+import { useSkillMarketplace } from "@/hooks/capability/use-skill-marketplace";
 
 import { ExternalSkillPreviewDialog } from "./external-skill-preview-dialog";
 import { FeedbackBanner } from "./feedback-banner";
@@ -18,9 +19,7 @@ export function SkillsDirectory() {
   const ctrl = useSkillMarketplace();
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <SkillsHeader ctrl={ctrl} />
-
+    <>
       {/* 隐藏的文件选择器 */}
       <input
         accept=".zip,application/zip"
@@ -34,13 +33,17 @@ export function SkillsDirectory() {
         type="file"
       />
 
-      {/* 内容区 */}
-      <div className="soft-scrollbar min-h-0 flex-1 overflow-y-auto px-5 py-5 xl:px-6">
+      <WorkspaceSurfaceScaffold
+        body_class_name="px-5 py-5 xl:px-6"
+        body_scrollable
+        header={<SkillsHeader ctrl={ctrl} />}
+        stable_gutter
+      >
         <SkillsSearchBar ctrl={ctrl} />
 
         {ctrl.discovery_mode === "external" && <SkillsExternalResults ctrl={ctrl} />}
         {ctrl.discovery_mode === "catalog" && <SkillsCatalogGrid ctrl={ctrl} />}
-      </div>
+      </WorkspaceSurfaceScaffold>
 
       {(ctrl.status_message || ctrl.error_message) && (
         <div className="pointer-events-none fixed right-6 top-24 z-40 flex flex-col gap-2">
@@ -85,18 +88,30 @@ export function SkillsDirectory() {
 
       <ExternalSkillPreviewDialog
         already_imported={
-          ctrl.preview_external_item
-            ? ctrl.imported_skill_names.has(ctrl.preview_external_item.skill_slug)
-            : false
+          !!ctrl.preview_external_item &&
+          !!ctrl.imported_external_sources
+            .get(ctrl.preview_external_item.skill_slug)
+            ?.has(ctrl.preview_external_item.package_spec)
         }
-        busy={!!ctrl.preview_external_item && ctrl.busy_skill_name === ctrl.preview_external_item.skill_slug}
+        name_conflict={
+          !!ctrl.preview_external_item &&
+          !!ctrl.imported_external_sources.get(ctrl.preview_external_item.skill_slug) &&
+          !ctrl.imported_external_sources
+            .get(ctrl.preview_external_item.skill_slug)
+            ?.has(ctrl.preview_external_item.package_spec)
+        }
+        busy={
+          !!ctrl.preview_external_item &&
+          ctrl.busy_external_key === `${ctrl.preview_external_item.package_spec}@@${ctrl.preview_external_item.skill_slug}`
+        }
         is_open={!!ctrl.preview_external_item}
         item={ctrl.preview_external_item}
+        preview_loading={ctrl.external_preview_loading}
         on_close={() => ctrl.set_preview_external_item(null)}
         on_import_only={() => {
           if (ctrl.preview_external_item) void ctrl.handle_import_external(ctrl.preview_external_item);
         }}
       />
-    </div>
+    </>
   );
 }

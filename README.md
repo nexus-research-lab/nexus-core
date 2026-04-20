@@ -68,9 +68,11 @@ VITE_API_URL=/agent/v1
 后端至少需要：
 
 ```bash
-ANTHROPIC_AUTH_TOKEN=your_token
-ANTHROPIC_MODEL=your_model
+AUTH_LOGIN_PASSWORD=change-this-password
 ```
+
+Provider 现在只在 `Settings -> Providers` 里动态维护。
+服务启动后，至少需要在该页面配置一个启用的默认 Provider，Agent 对话才会真正可用。
 
 如果要把服务放到公网，建议同时开启浏览器登录：
 
@@ -91,14 +93,15 @@ BACKEND_CORS_ORIGINS=https://your-domain.com
 - 反向代理生产环境优先使用前后端同源部署
 - 如果仍然保留旧的 `ACCESS_TOKEN`，后端也会继续兼容 Bearer Token 调用
 
-数据库默认使用本地 SQLite，通常不需要额外配置：
+本地开发默认使用 SQLite，通常不需要额外配置：
 
 ```bash
 # .env
-DATABASE_URL=sqlite+aiosqlite:///./cache/data/data.db
+DATABASE_URL=sqlite+aiosqlite:///~/.nexus/data/nexus.db
 ```
 
-如果不在 `.env` 中显式填写 `DATABASE_URL`，后端也会使用上面的默认值。
+如果你直接复制 `env.example`，本地数据库文件默认就在 `cache/data/nexus.db`。
+生产 Docker 部署则默认落到 `${HOST_DATA_DIR}/.nexus/data/nexus.db`。
 
 ### 3. 安装
 
@@ -108,7 +111,7 @@ make install
 
 ### 4. 初始化数据库（首次启动）
 
-默认数据库文件为 `cache/data/data.db`。
+默认数据库文件为 `~/.nexus/data/nexus.db`。
 
 推荐首次启动顺序：
 
@@ -121,14 +124,14 @@ make dev
 
 - `make db-init` 会执行 Alembic 迁移
 - `make dev` / `make run-backend` 启动后端时也会尝试先执行迁移
-- Docker 部署会在容器启动时自动执行数据库初始化脚本
+- Docker 部署会在容器入口脚本中自动写入 Claude 配置并执行数据库迁移
 
 如果你看到类似 `table agents already exists` 的报错，通常说明当前 SQLite 文件里的表已经存在，但 `alembic_version` 还没有登记版本号。可以按下面两种方式处理：
 
 如果本地数据库可以直接重建：
 
 ```bash
-rm -f cache/data/data.db
+rm -f ~/.nexus/data/nexus.db
 make db-init
 ```
 
@@ -167,6 +170,7 @@ make dev
 make run-backend
 make run-web
 make build
+make prepare-host-data
 make start
 make logs
 make stop
@@ -174,25 +178,74 @@ make stop
 
 Docker 构建与启动命令默认使用当前用户执行。
 如果当前用户还没有 Docker 权限，请先完成服务器上的 Docker 用户权限配置，再重新登录终端。
+`Makefile` 会自动加载仓库根目录 `.env`，所以 `HOST_DATA_DIR`、`TAG` 等变量既可以手工 `export`，也可以直接写进 `.env`。
 
 生产部署默认使用单一宿主机根目录变量 `${HOST_DATA_DIR:-./data}`。
+由于 Compose 文件位于 `deploy/` 目录下，如果你不显式传入 `HOST_DATA_DIR`，默认实际路径会解析为 `deploy/data`。
 其中 `${HOST_DATA_DIR}/.nexus` 挂载到容器内 `/home/agent/.nexus`，`${HOST_DATA_DIR}/.claude` 挂载到容器内 `/home/agent/.claude`。
 如果要把数据统一放到宿主机目录 `/data`，启动前执行：
 
 ```bash
 export HOST_DATA_DIR=/data
-mkdir -p "$HOST_DATA_DIR/.nexus" "$HOST_DATA_DIR/.claude"
-chown -R 1001:1001 "$HOST_DATA_DIR/.nexus" "$HOST_DATA_DIR/.claude"
+make prepare-host-data
 ```
+
+`make prepare-host-data` 会直接在宿主机执行 `mkdir/chown/chmod`，把 `.nexus` 和 `.claude` 目录准备好，并修正为容器内 `agent` 使用的 `1001:1001`。这一步已经是 `make start` 的前置依赖，所以正常部署直接执行 `make start` 即可。
+如果当前用户没有修改属主的权限，`make prepare-host-data` 会通过 `sudo` 执行 `chown/chmod`；如果你已经是 root，或者不需要 `sudo`，可以覆盖：
+
+```bash
+HOST_SUDO= make prepare-host-data
+```
+
+如果需要覆盖容器运行用户映射，可以同时传入：
+
+```bash
+AGENT_UID=1001 AGENT_GID=1001 make prepare-host-data
+```
+
+生产 Compose 现在包含：
+
+- `nexus`：Gunicorn + FastAPI，容器启动时执行 `deploy/entrypoint.sh`
+- `nginx`：承载前端静态资源并反代 `/agent/` 与 WebSocket
+- `nexus` 健康检查：`GET /agent/v1/health`
+- `nginx` 健康检查：`GET /nginx-health`
+
+生产容器内主进程仍然以 `agent` 用户运行，不会直接给 Agent 任意 root 权限。
+如果确实需要在运行期安装 Debian 系统包，只允许通过受控入口：
+
+```bash
+sudo /usr/local/bin/nexus-apt-install --list-allowed
+sudo /usr/local/bin/nexus-apt-install ripgrep
+```
+
+这条 sudo 规则是免密码的，但只放行 `nexus-apt-install` 这一条命令，不允许任意 `sudo bash`、`sudo apt` 或其它 root shell。
+允许安装的包默认来自 `NEXUS_APT_ALLOWLIST`，并会写日志到 `${HOST_DATA_DIR}/.nexus/logs/system-package-install.log`。
+
+Docker 构建默认会把 BuildKit 缓存持久化到仓库根目录 `.buildx-cache/`，用于复用 `apt`、`pip`、`npm` 下载内容和镜像构建层。
+首次构建仍然会完整下载依赖，后续只要 `requirements.txt`、`package-lock.json` 和对应构建层没有失效，就不会重复拉取整套 Python / Node 依赖。
+
+如果你希望在容器内预写 Claude Code 的全局配置，可以在 `.env` 里额外提供这些可选变量，入口脚本会同步写入 `/home/agent/.claude/settings.json`：
+
+```bash
+ANTHROPIC_AUTH_TOKEN=
+ANTHROPIC_BASE_URL=
+ANTHROPIC_MODEL=
+ANTHROPIC_DEFAULT_SONNET_MODEL=
+ANTHROPIC_DEFAULT_OPUS_MODEL=
+ANTHROPIC_DEFAULT_HAIKU_MODEL=
+CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=
+ENABLE_TOOL_SEARCH=
+CLAUDE_DANGEROUSLY_SKIP_PERMISSIONS=true
+NEXUS_APT_ALLOWLIST=ca-certificates curl ffmpeg git imagemagick iputils-ping jq less procps ripgrep rsync unzip vim wget zip
+```
+
+但这只是全局回退配置。当前代码的主路径仍然是登录后在 `Settings -> Providers` 里维护 Provider，并由后端在运行时把 Provider 的 `auth_token/base_url/model` 注入 Claude SDK。
 
 ## 关键配置
 
 ### 后端
 
-- `ANTHROPIC_AUTH_TOKEN`
-- `ANTHROPIC_BASE_URL`
-- `ANTHROPIC_MODEL`
-- `DATABASE_URL`：默认值为 `sqlite+aiosqlite:///./cache/data/data.db`
+- `DATABASE_URL`：默认值为 `sqlite+aiosqlite:///~/.nexus/data/nexus.db`
 - `WORKSPACE_PATH`
 - `DEFAULT_AGENT_ID`
 - `WEBSOCKET_ENABLED`
@@ -208,7 +261,6 @@ chown -R 1001:1001 "$HOST_DATA_DIR/.nexus" "$HOST_DATA_DIR/.claude"
 
 - `VITE_API_URL`
 - `VITE_WS_URL`
-- `VITE_DEFAULT_MODEL`
 
 ## 存储
 

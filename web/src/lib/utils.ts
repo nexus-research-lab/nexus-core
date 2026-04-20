@@ -25,7 +25,7 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * 格式化相对时间
  */
-export function formatRelativeTime(timestamp: number): string {
+export function format_relative_time(timestamp: number): string {
   if (!Number.isFinite(timestamp) || timestamp <= 0) {
     return '刚刚';
   }
@@ -49,7 +49,7 @@ export function formatRelativeTime(timestamp: number): string {
 /**
  * 格式化Token数量
  */
-export function formatTokens(tokens: number): string {
+export function format_tokens(tokens: number): string {
   if (tokens < 1000) return tokens.toString();
   if (tokens < 1000000) return `${(tokens / 1000).toFixed(1)}K`;
   return `${(tokens / 1000000).toFixed(1)}M`;
@@ -58,7 +58,7 @@ export function formatTokens(tokens: number): string {
 /**
  * 格式化成本
  */
-export function formatCost(usd: number): string {
+export function format_cost(usd: number): string {
   if (usd < 0.01) return `$${usd.toFixed(4)}`;
   if (usd < 1) return `$${usd.toFixed(3)}`;
   return `$${usd.toFixed(2)}`;
@@ -86,4 +86,91 @@ export function truncate(text: string, maxLength: number): string {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '…';
   }
+}
+
+// ==================== 头像工具 ====================
+
+/**
+ * 获取名称缩写
+ */
+export function get_initials(
+  name: string | null | undefined,
+  fallback = 'AG',
+  maxLength = 2,
+): string {
+  if (!name) {
+    return fallback;
+  }
+
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) {
+    return fallback;
+  }
+
+  if (parts.length === 1) {
+    return parts[0].slice(0, maxLength).toUpperCase();
+  }
+
+  return parts
+    .slice(0, maxLength)
+    .map((part) => part[0] ?? '')
+    .join('')
+    .toUpperCase();
+}
+
+/**
+ * 将头像标识解析为可直接使用的图片地址。
+ *
+ * 兼容三种输入：
+ * 1. 纯数字 / 约定字符串：映射到本地 `/icon/*.png`
+ * 2. 绝对 URL / data URL / blob URL
+ * 3. 站内绝对路径
+ */
+export function get_icon_avatar_src(avatar: string | null | undefined): string | null {
+  const normalizedAvatar = avatar?.trim();
+  if (!normalizedAvatar) {
+    return null;
+  }
+
+  if (
+    normalizedAvatar.startsWith('http://')
+    || normalizedAvatar.startsWith('https://')
+    || normalizedAvatar.startsWith('data:')
+    || normalizedAvatar.startsWith('blob:')
+    || normalizedAvatar.startsWith('/')
+  ) {
+    return normalizedAvatar;
+  }
+
+  return `/icon/${normalizedAvatar}.png`;
+}
+
+/**
+ * 根据字符串稳定生成区间内的图标编号。
+ */
+export function get_stable_icon_id(
+  seed: string | null | undefined,
+  startInclusive: number,
+  endInclusive: number,
+): string {
+  const normalizedSeed = seed?.trim() || 'nexus';
+  const range = endInclusive - startInclusive + 1;
+  let hash = 0;
+
+  for (let index = 0; index < normalizedSeed.length; index += 1) {
+    hash = (hash * 31 + normalizedSeed.charCodeAt(index)) >>> 0;
+  }
+
+  return String(startInclusive + (hash % range));
+}
+
+/**
+ * 房间头像默认使用 13-24 号像素图标，保证未设置时也有稳定的视觉锚点。
+ */
+export function get_room_avatar_icon_id(
+  roomId: string | null | undefined,
+  roomName: string | null | undefined,
+  explicitAvatar?: string | null,
+): string {
+  return explicitAvatar?.trim() || get_stable_icon_id(roomId || roomName, 13, 24);
 }

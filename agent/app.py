@@ -15,11 +15,10 @@ from fastapi import FastAPI
 
 from agent.api.router import api_router
 from agent.config.config import settings
-from agent.service.channels.channel_register import ChannelRegister
-from agent.service.agent.agent_service import agent_service
+from agent.infra.server.register import register_exception, register_middleware
 from agent.service.automation.cron.cron_service import get_cron_service
 from agent.service.automation.heartbeat.heartbeat_service import heartbeat_service
-from agent.infra.server.register import register_exception, register_hook, register_middleware
+from agent.service.channels.channel_register import ChannelRegister
 from agent.utils.logger import logger
 
 # 全局通道管理器
@@ -37,7 +36,6 @@ async def lifespan(app: FastAPI):
         from agent.service.session.cost_repository import cost_repository
         session_repository.ensure_ready()
         cost_repository.ensure_ready()
-
         # 注册并启动消息通道
         await _register_channels()
         heartbeat_service.set_channel_register(channel_manager)
@@ -92,7 +90,6 @@ async def _register_channels() -> None:
             logger.warning("⚠️ python-telegram-bot 未安装，跳过 Telegram 通道。安装: pip install python-telegram-bot")
 
     await channel_manager.start_all()
-
 
 
 def create_app() -> FastAPI:

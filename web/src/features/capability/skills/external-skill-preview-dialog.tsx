@@ -4,12 +4,11 @@ import { ExternalLink, Loader2, PackagePlus, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
+  DIALOG_ICON_BUTTON_CLASS_NAME,
   DIALOG_TAG_CLASS_NAME,
-  getDialogNoteClassName,
-  getDialogNoteStyle,
+  get_dialog_action_class_name,
 } from "@/shared/ui/dialog/dialog-styles";
-import { WorkspacePillButton } from "@/shared/ui/workspace/workspace-pill-button";
-import { ExternalSkillSearchItem } from "@/types/skill";
+import { ExternalSkillSearchItem } from "@/types/capability/skill";
 
 import { SkillMarkdown } from "./skill-markdown";
 
@@ -17,12 +16,14 @@ interface ExternalSkillPreviewDialogProps {
   item: ExternalSkillSearchItem | null;
   is_open: boolean;
   busy: boolean;
+  preview_loading: boolean;
+  name_conflict?: boolean;
   already_imported: boolean;
   on_close: () => void;
   on_import_only: () => void;
 }
 
-function formatInstalls(installs: number): string {
+function format_installs(installs: number): string {
   if (installs >= 1000) {
     return `${(installs / 1000).toFixed(installs >= 100000 ? 0 : 1)}K`;
   }
@@ -33,11 +34,16 @@ export function ExternalSkillPreviewDialog({
   item,
   is_open,
   busy,
+  preview_loading,
+  name_conflict = false,
   already_imported,
   on_close,
   on_import_only,
 }: ExternalSkillPreviewDialogProps) {
   if (!is_open || !item) return null;
+  const preview_markdown = preview_loading && !item.readme_markdown
+    ? "正在加载预览内容..."
+    : (item.readme_markdown || item.description || "暂无预览内容");
 
   return (
     <div
@@ -54,38 +60,39 @@ export function ExternalSkillPreviewDialog({
               {item.title || item.skill_slug}
             </h2>
             <p className="dialog-subtitle">
-              {item.package_spec} · {formatInstalls(item.installs)} installs
+              {item.package_spec} · {format_installs(item.installs)} installs
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <span className={DIALOG_TAG_CLASS_NAME}>
+              <span className={cn(DIALOG_TAG_CLASS_NAME, "gap-0 px-3 py-1 text-[10px] font-semibold tracking-[0.16em] uppercase")}>
                 社区技能
               </span>
-              <span className={DIALOG_TAG_CLASS_NAME}>
-                {item.source}
-              </span>
               {already_imported ? (
-                <span className={cn(DIALOG_TAG_CLASS_NAME, "text-emerald-700")}>
+                <span className={cn(DIALOG_TAG_CLASS_NAME, "gap-0 px-3 py-1 text-[10px] font-semibold tracking-[0.16em] uppercase text-emerald-700")}>
                   已导入
+                </span>
+              ) : name_conflict ? (
+                <span className={cn(DIALOG_TAG_CLASS_NAME, "gap-0 px-3 py-1 text-[10px] font-semibold tracking-[0.16em] uppercase text-amber-700")}>
+                  同名冲突
                 </span>
               ) : null}
             </div>
           </div>
-          <WorkspacePillButton
+          <button
+            className={DIALOG_ICON_BUTTON_CLASS_NAME}
             aria-label="关闭"
-            density="compact"
             onClick={on_close}
-            size="icon"
-            variant="icon"
+            type="button"
           >
             <X className="h-5 w-5" />
-          </WorkspacePillButton>
+          </button>
         </div>
 
         <div className="dialog-body dialog-body--scroll soft-scrollbar flex-1">
-          <div className={getDialogNoteClassName("default", "mb-5")} style={getDialogNoteStyle("default")}>
-            这是来自社区的外部技能预览。导入后会进入 Nexus 的技能目录，再在 Agent 设置里为具体智能体安装。
-          </div>
-          <SkillMarkdown markdown={item.readme_markdown || item.description || "暂无预览内容"} />
+          <SkillMarkdown
+            description={item.description}
+            markdown={preview_markdown}
+            title={item.title || item.skill_slug}
+          />
         </div>
 
         <div className="dialog-footer flex-wrap justify-between gap-3">
@@ -99,10 +106,15 @@ export function ExternalSkillPreviewDialog({
             打开原始页面
           </a>
           <div className="flex flex-wrap items-center gap-2">
-            <WorkspacePillButton disabled={busy || already_imported} onClick={on_import_only} variant="primary">
+            <button
+              className={get_dialog_action_class_name("primary")}
+              disabled={busy || already_imported || name_conflict}
+              onClick={on_import_only}
+              type="button"
+            >
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackagePlus className="h-4 w-4" />}
               导入到技能库
-            </WorkspacePillButton>
+            </button>
           </div>
         </div>
       </div>
