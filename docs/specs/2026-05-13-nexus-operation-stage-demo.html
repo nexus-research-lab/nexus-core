@@ -1,0 +1,1529 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nexus Operation Stage Demo</title>
+    <style>
+      :root {
+        --page: #f3f6f8;
+        --paper: #fbfcfd;
+        --ink: #17212c;
+        --text: rgba(35, 49, 63, 0.9);
+        --muted: rgba(66, 81, 98, 0.76);
+        --soft: rgba(96, 108, 123, 0.62);
+        --line: rgba(117, 131, 149, 0.2);
+        --line-strong: rgba(117, 131, 149, 0.32);
+        --panel: rgba(255, 255, 255, 0.78);
+        --card: rgba(255, 255, 255, 0.72);
+        --stage: #0c131b;
+        --stage-2: #111b25;
+        --stage-3: #172331;
+        --stage-text: #e9f1f4;
+        --stage-muted: rgba(233, 241, 244, 0.62);
+        --primary: #5b72ff;
+        --primary-soft: rgba(91, 114, 255, 0.16);
+        --accent: #4fa29f;
+        --accent-soft: rgba(79, 162, 159, 0.16);
+        --warning: #df9d2e;
+        --warning-soft: rgba(223, 157, 46, 0.18);
+        --danger: #df5d62;
+        --success: #2fb884;
+        --success-soft: rgba(47, 184, 132, 0.16);
+        --shadow: 0 26px 70px rgba(94, 108, 127, 0.18), 0 2px 10px rgba(94, 108, 127, 0.06);
+        --deep-shadow: 0 34px 90px rgba(0, 8, 16, 0.38);
+        --radius-lg: 28px;
+        --radius-md: 18px;
+        --radius-sm: 12px;
+        --mono: "Berkeley Mono", "SFMono-Regular", Consolas, monospace;
+        color: var(--ink);
+        background: var(--page);
+        font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-width: 320px;
+        min-height: 100vh;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(236, 241, 245, 0.92)),
+          radial-gradient(44% 34% at 12% 8%, rgba(91, 114, 255, 0.09), transparent 70%),
+          radial-gradient(36% 34% at 88% 88%, rgba(79, 162, 159, 0.1), transparent 72%),
+          var(--page);
+      }
+
+      button,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .page {
+        min-height: 100vh;
+        padding: 18px;
+      }
+
+      .brief {
+        max-width: 1680px;
+        margin: 0 auto 14px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 18px;
+      }
+
+      .brief h1 {
+        margin: 0;
+        font-size: clamp(24px, 3vw, 34px);
+        line-height: 1.08;
+        letter-spacing: 0;
+      }
+
+      .brief p {
+        max-width: 940px;
+        margin: 7px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.58;
+        overflow-wrap: anywhere;
+      }
+
+      .brief-actions,
+      .status-row,
+      .chat-meta,
+      .stage-actions,
+      .tool-meta,
+      .evidence-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .button,
+      .pill {
+        min-height: 34px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.72);
+        color: var(--muted);
+        padding: 0 12px;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .button.active {
+        border-color: rgba(23, 33, 44, 0.18);
+        background: var(--ink);
+        color: #fff;
+      }
+
+      .pill.primary {
+        border-color: rgba(91, 114, 255, 0.26);
+        background: var(--primary-soft);
+        color: #4058d6;
+      }
+
+      .pill.accent {
+        border-color: rgba(79, 162, 159, 0.3);
+        background: var(--accent-soft);
+        color: #247f7b;
+      }
+
+      .pill.warning {
+        border-color: rgba(223, 157, 46, 0.34);
+        background: var(--warning-soft);
+        color: #9b641b;
+      }
+
+      .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--success);
+        box-shadow: 0 0 0 4px rgba(47, 184, 132, 0.13);
+      }
+
+      .product {
+        max-width: 1680px;
+        min-height: min(940px, calc(100vh - 112px));
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: minmax(380px, 0.72fr) minmax(760px, 1.38fr);
+        border: 1px solid rgba(255, 255, 255, 0.52);
+        border-radius: var(--radius-lg);
+        background: rgba(255, 255, 255, 0.58);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .chat {
+        min-width: 0;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        border-right: 1px solid var(--line);
+        background:
+          linear-gradient(90deg, rgba(91, 114, 255, 0.04), transparent 42%),
+          rgba(251, 252, 253, 0.84);
+      }
+
+      .chat-head,
+      .stage-head {
+        min-height: 62px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        border-bottom: 1px solid var(--line);
+        padding: 13px 16px;
+        background: rgba(255, 255, 255, 0.78);
+      }
+
+      .brand,
+      .stage-title {
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .mark {
+        width: 32px;
+        height: 32px;
+        display: grid;
+        place-items: center;
+        flex: 0 0 auto;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.82);
+        color: var(--primary);
+        font: 900 12px/1 var(--mono);
+        box-shadow: 0 8px 18px rgba(94, 108, 127, 0.08);
+      }
+
+      .brand strong,
+      .stage-title strong {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--ink);
+        font-size: 15px;
+      }
+
+      .brand span,
+      .stage-title span {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--soft);
+        font-size: 12px;
+      }
+
+      .chat-scroll {
+        min-height: 0;
+        padding: 24px;
+        overflow: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .chat-meta {
+        justify-content: space-between;
+        color: var(--soft);
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .message {
+        width: min(100%, 760px);
+        max-width: min(760px, calc(100vw - 54px));
+        min-width: 0;
+        display: grid;
+        gap: 6px;
+      }
+
+      .message.user {
+        margin-left: auto;
+      }
+
+      .message-author {
+        color: var(--soft);
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .bubble {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.72);
+        color: var(--text);
+        padding: 13px 15px;
+        font-size: 13px;
+        line-height: 1.6;
+        overflow-wrap: anywhere;
+        box-shadow: 0 10px 24px rgba(94, 108, 127, 0.07);
+      }
+
+      .message.user .bubble {
+        border-color: rgba(23, 33, 44, 0.18);
+        background: var(--ink);
+        color: #f9fbff;
+      }
+
+      .bubble.intent {
+        border-color: rgba(91, 114, 255, 0.24);
+        background: linear-gradient(180deg, rgba(91, 114, 255, 0.12), rgba(255, 255, 255, 0.72));
+      }
+
+      .approval {
+        display: grid;
+        gap: 10px;
+        border-color: rgba(223, 157, 46, 0.35);
+        background: linear-gradient(180deg, rgba(223, 157, 46, 0.13), rgba(255, 255, 255, 0.76));
+      }
+
+      .approval-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 9px;
+      }
+
+      .approval-actions button {
+        min-height: 36px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.76);
+        color: var(--ink);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .approval-actions button:first-child {
+        border-color: rgba(23, 33, 44, 0.18);
+        background: var(--ink);
+        color: #fff;
+      }
+
+      .composer {
+        padding: 14px;
+        border-top: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .composer-box {
+        min-height: 70px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 44px;
+        gap: 10px;
+        border: 1px solid var(--line-strong);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.8);
+        padding: 10px;
+      }
+
+      textarea {
+        min-height: 48px;
+        border: 0;
+        outline: 0;
+        resize: none;
+        background: transparent;
+        color: var(--text);
+        line-height: 1.5;
+      }
+
+      .send {
+        width: 44px;
+        height: 44px;
+        align-self: end;
+        display: grid;
+        place-items: center;
+        border: 0;
+        border-radius: 14px;
+        background: var(--ink);
+        color: #fff;
+      }
+
+      .stage-shell {
+        min-width: 0;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        background: #edf2f5;
+      }
+
+      .operation-stage {
+        position: relative;
+        min-height: 0;
+        overflow: hidden;
+        color: var(--stage-text);
+        background:
+          linear-gradient(180deg, rgba(17, 27, 37, 0.96), rgba(8, 13, 19, 0.99)),
+          var(--stage);
+        isolation: isolate;
+      }
+
+      .operation-stage::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        pointer-events: none;
+        opacity: 0.52;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent 22%, transparent 76%, rgba(255, 255, 255, 0.04)),
+          radial-gradient(42% 36% at 44% 20%, rgba(91, 114, 255, 0.18), transparent 74%),
+          radial-gradient(36% 32% at 82% 80%, rgba(79, 162, 159, 0.14), transparent 72%);
+      }
+
+      .stage-top {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        z-index: 20;
+        min-height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.11);
+        background: rgba(14, 22, 31, 0.9);
+        backdrop-filter: blur(16px);
+        padding: 10px 16px;
+      }
+
+      .stage-now {
+        min-width: 0;
+        display: grid;
+        gap: 2px;
+      }
+
+      .stage-now strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--stage-text);
+        font-size: 14px;
+      }
+
+      .stage-now span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--stage-muted);
+        font-size: 12px;
+      }
+
+      .stage-pills {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .stage-pills .pill {
+        border-color: rgba(255, 255, 255, 0.13);
+        background: rgba(255, 255, 255, 0.08);
+        color: rgba(233, 241, 244, 0.78);
+      }
+
+      .stage-canvas {
+        position: absolute;
+        inset: 56px 0 0;
+        overflow: hidden;
+      }
+
+      .grid-floor {
+        position: absolute;
+        inset: -1px;
+        z-index: 0;
+        background:
+          linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+          linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+        background-size: 34px 34px;
+        mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.34));
+      }
+
+      .stage-light {
+        position: absolute;
+        left: 50%;
+        top: -120px;
+        z-index: 0;
+        width: 520px;
+        height: 440px;
+        border-radius: 50%;
+        transform: translateX(-50%);
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.14), rgba(91, 114, 255, 0.08) 38%, transparent 70%);
+        filter: blur(10px);
+      }
+
+      .desktop-shadow {
+        position: absolute;
+        left: 7%;
+        right: 7%;
+        bottom: 98px;
+        height: 38px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.38);
+        filter: blur(22px);
+      }
+
+      .scene {
+        position: absolute;
+        inset: 0;
+        z-index: 4;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(18px) scale(0.992);
+        transition: opacity 240ms ease, transform 240ms ease;
+      }
+
+      .operation-stage[data-scene="workspace"] .scene-workspace,
+      .operation-stage[data-scene="edit"] .scene-edit,
+      .operation-stage[data-scene="web"] .scene-web,
+      .operation-stage[data-scene="knowledge"] .scene-knowledge,
+      .operation-stage[data-scene="terminal"] .scene-terminal,
+      .operation-stage[data-scene="task"] .scene-task,
+      .operation-stage[data-scene="done"] .scene-done {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0) scale(1);
+      }
+
+      .window {
+        position: absolute;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 16px;
+        background: rgba(250, 252, 253, 0.97);
+        color: var(--ink);
+        box-shadow: var(--deep-shadow);
+      }
+
+      .window-title {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.9);
+        padding: 0 13px;
+      }
+
+      .window-title strong {
+        display: block;
+        font-size: 13px;
+      }
+
+      .window-title span {
+        display: block;
+        margin-top: 2px;
+        color: var(--soft);
+        font-size: 11px;
+      }
+
+      .window-controls {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .window-controls i {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: rgba(117, 131, 149, 0.28);
+      }
+
+      .workspace-browser {
+        left: clamp(16px, 4.5vw, 58px);
+        top: 54px;
+        width: min(360px, 34%);
+        height: 500px;
+      }
+
+      .workspace-editor {
+        right: clamp(18px, 4vw, 54px);
+        top: 86px;
+        width: min(680px, 58%);
+        height: 540px;
+      }
+
+      .finder-body {
+        height: calc(100% - 44px);
+        display: grid;
+        grid-template-columns: 112px 1fr;
+        min-height: 0;
+      }
+
+      .finder-side {
+        display: grid;
+        align-content: start;
+        gap: 7px;
+        border-right: 1px solid var(--line);
+        background: #f2f5f7;
+        padding: 12px;
+        color: var(--soft);
+        font-size: 11px;
+      }
+
+      .file-list {
+        display: grid;
+        align-content: start;
+        gap: 8px;
+        overflow: auto;
+        padding: 13px;
+      }
+
+      .file-row {
+        min-height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        border: 1px solid transparent;
+        border-radius: 10px;
+        padding: 0 9px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .file-row.active {
+        border-color: rgba(79, 162, 159, 0.32);
+        background: var(--accent-soft);
+        color: var(--ink);
+      }
+
+      .file-row small {
+        color: var(--soft);
+        font-family: var(--mono);
+        font-size: 10px;
+      }
+
+      .code {
+        height: calc(100% - 44px);
+        margin: 0;
+        overflow: auto;
+        padding: 15px;
+        background: #101820;
+        color: #dce8ee;
+        font: 11.5px/1.65 var(--mono);
+        white-space: pre-wrap;
+      }
+
+      .num {
+        display: inline-block;
+        min-width: 30px;
+        color: rgba(220, 232, 238, 0.35);
+      }
+
+      .code-add,
+      .code-focus {
+        display: block;
+        border-radius: 6px;
+      }
+
+      .code-add {
+        color: #d8faef;
+        background: rgba(47, 184, 132, 0.2);
+      }
+
+      .code-focus {
+        background: rgba(91, 114, 255, 0.16);
+      }
+
+      .edit-diff {
+        left: 50%;
+        top: 54px;
+        width: min(860px, calc(100% - 140px));
+        height: 575px;
+        transform: translateX(-50%);
+      }
+
+      .browser {
+        left: 50%;
+        top: 48px;
+        width: min(920px, calc(100% - 150px));
+        height: 580px;
+        transform: translateX(-50%);
+      }
+
+      .browser-bar {
+        min-height: 54px;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 10px;
+        border-bottom: 1px solid var(--line);
+        background: #f6f8fa;
+        padding: 10px 12px;
+      }
+
+      .address {
+        min-height: 32px;
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: #fff;
+        color: var(--muted);
+        padding: 0 13px;
+        font: 11px/1 var(--mono);
+      }
+
+      .browser-body {
+        height: calc(100% - 54px);
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 300px;
+        gap: 1px;
+        background: var(--line);
+      }
+
+      .results,
+      .source-preview {
+        overflow: auto;
+        background: #fff;
+        padding: 15px;
+      }
+
+      .source-card,
+      .note-card,
+      .task-card {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.84);
+        padding: 12px;
+      }
+
+      .source-card {
+        margin-bottom: 10px;
+      }
+
+      .source-card.active {
+        border-color: rgba(91, 114, 255, 0.3);
+        background: var(--primary-soft);
+      }
+
+      .source-card strong,
+      .source-preview strong,
+      .note-card strong,
+      .task-card strong {
+        display: block;
+        color: var(--ink);
+        font-size: 12px;
+      }
+
+      .source-card p,
+      .source-preview p,
+      .note-card p,
+      .task-card p {
+        margin: 7px 0 0;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.48;
+      }
+
+      .knowledge-reader {
+        left: 50%;
+        top: 50px;
+        width: min(840px, calc(100% - 150px));
+        height: 570px;
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        transform: translateX(-50%);
+      }
+
+      .knowledge-index {
+        border-right: 1px solid var(--line);
+        background: #f7f8fb;
+        padding: 16px;
+      }
+
+      .knowledge-index h3 {
+        margin: 0 0 12px;
+        font-size: 13px;
+      }
+
+      .knowledge-index div {
+        min-height: 30px;
+        display: flex;
+        align-items: center;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .knowledge-index .active {
+        color: #4058d6;
+        font-weight: 900;
+      }
+
+      .knowledge-doc {
+        overflow: auto;
+        background: #fff;
+        padding: 22px;
+      }
+
+      .knowledge-doc h2 {
+        margin: 0 0 10px;
+        font-size: 22px;
+      }
+
+      .knowledge-doc p,
+      .knowledge-doc li {
+        color: var(--text);
+        line-height: 1.58;
+      }
+
+      .terminal {
+        left: 50%;
+        top: 60px;
+        width: min(860px, calc(100% - 150px));
+        height: 550px;
+        transform: translateX(-50%);
+        background: #0d151e;
+        color: #d8e8e2;
+      }
+
+      .terminal .window-title {
+        border-color: rgba(255, 255, 255, 0.12);
+        background: #131e2a;
+        color: var(--stage-text);
+      }
+
+      .terminal-body {
+        height: calc(100% - 44px);
+        overflow: auto;
+        padding: 16px;
+        font: 11.5px/1.65 var(--mono);
+      }
+
+      .prompt {
+        color: #76d7c8;
+      }
+
+      .ok {
+        color: #75d99f;
+      }
+
+      .dim {
+        color: rgba(216, 232, 226, 0.52);
+      }
+
+      .task-board {
+        left: 50%;
+        top: 54px;
+        width: min(850px, calc(100% - 150px));
+        min-height: 540px;
+        transform: translateX(-50%);
+      }
+
+      .task-body {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        padding: 16px;
+      }
+
+      .task-card {
+        min-height: 210px;
+      }
+
+      .task-card .status {
+        display: inline-flex;
+        margin-top: 12px;
+      }
+
+      .done-board {
+        left: 50%;
+        top: 50%;
+        width: min(840px, calc(100% - 130px));
+        min-height: 480px;
+        transform: translate(-50%, -50%);
+      }
+
+      .done-body {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        padding: 16px;
+      }
+
+      .note-card {
+        min-height: 155px;
+      }
+
+      .debug-panel {
+        position: absolute;
+        right: 16px;
+        top: 72px;
+        z-index: 22;
+        display: none;
+        width: min(430px, calc(100% - 32px));
+        max-height: calc(100% - 120px);
+        overflow: auto;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 18px;
+        background: rgba(8, 13, 19, 0.9);
+        color: #dce8ee;
+        box-shadow: var(--deep-shadow);
+        padding: 14px;
+      }
+
+      .operation-stage[data-debug="true"] .debug-panel {
+        display: block;
+      }
+
+      .debug-panel pre {
+        margin: 0;
+        font: 11px/1.55 var(--mono);
+        white-space: pre-wrap;
+      }
+
+      @media (max-width: 1180px) {
+        .product {
+          grid-template-columns: 1fr;
+        }
+
+        .chat {
+          min-height: 560px;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .operation-stage {
+          min-height: 820px;
+        }
+      }
+
+      @media (max-width: 760px) {
+        html,
+        body,
+        .page,
+        .product,
+        .chat,
+        .stage-shell {
+          max-width: 100%;
+          overflow-x: hidden;
+        }
+
+        .page {
+          padding: 10px;
+        }
+
+        .brief,
+        .chat-head,
+        .stage-head,
+        .stage-top {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .brief-actions,
+        .stage-pills {
+          justify-content: flex-start;
+        }
+
+        .chat-scroll {
+          padding: 16px;
+        }
+
+        .message,
+        .bubble {
+          width: auto;
+          max-width: calc(100vw - 54px);
+          word-break: break-word;
+        }
+
+        .message.user {
+          margin-left: 0;
+        }
+
+        .operation-stage {
+          min-height: 900px;
+        }
+
+        .stage-canvas {
+          inset-top: 102px;
+        }
+
+        .workspace-browser,
+        .workspace-editor,
+        .edit-diff,
+        .browser,
+        .knowledge-reader,
+        .terminal,
+        .task-board,
+        .done-board {
+          left: 14px;
+          right: 14px;
+          width: auto;
+          transform: none;
+        }
+
+        .workspace-browser {
+          top: 24px;
+          height: 250px;
+        }
+
+        .workspace-editor {
+          top: 292px;
+          height: 350px;
+        }
+
+        .edit-diff,
+        .browser,
+        .knowledge-reader,
+        .terminal,
+        .task-board {
+          top: 24px;
+          height: 620px;
+        }
+
+        .done-board {
+          top: 24px;
+          min-height: 610px;
+        }
+
+        .finder-body,
+        .browser-body,
+        .knowledge-reader,
+        .task-body,
+        .done-body {
+          grid-template-columns: 1fr;
+        }
+
+        .finder-side,
+        .knowledge-index,
+        .source-preview {
+          display: none;
+        }
+
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation: none !important;
+          transition: none !important;
+          scroll-behavior: auto !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="brief">
+        <div>
+          <h1>Nexus Operation Stage</h1>
+          <p>保留原方案的舞台核心：右侧不是 raw 工具日志，也不是普通工作台面板，而是智能体操作电脑的可视化舞台。Nexus 适配只调整色彩、密度、状态语言和工具抽象，不改变开窗、聚焦、执行、收口的体验本质。</p>
+        </div>
+        <div class="brief-actions">
+          <button class="button active" id="play-toggle" type="button">暂停轮播</button>
+          <button class="button" id="debug-toggle" type="button">Debug 映射</button>
+          <button class="button" id="next-scene" type="button">下一个场景</button>
+        </div>
+      </header>
+
+      <section class="product">
+        <section class="chat" aria-label="conversation">
+          <header class="chat-head">
+            <div class="brand">
+              <div class="mark">NX</div>
+              <div>
+                <strong>Agent workspace review</strong>
+                <span>chat keeps intent, approvals, final answer</span>
+              </div>
+            </div>
+            <div class="status-row">
+              <span class="pill accent"><span class="dot"></span>running</span>
+              <span class="pill">operation stage active</span>
+            </div>
+          </header>
+
+          <div class="chat-scroll">
+            <div class="chat-meta">
+              <span>Thread: operation stage concept</span>
+              <span id="chat-phase">读取工作区</span>
+            </div>
+
+            <article class="message user">
+              <span class="message-author">You</span>
+              <div class="bubble">看一下两个方案和 demo，先做一个适配 Nexus 风格的可视化智能体操作流 demo。</div>
+            </article>
+
+            <article class="message">
+              <span class="message-author">Nexus Agent</span>
+              <div class="bubble intent">我会保留舞台式 replay：工具调用在右侧变成可理解的电脑操作，聊天区只保留阶段摘要、审批和最终回答。</div>
+            </article>
+
+            <article class="message">
+              <span class="message-author">Nexus Agent</span>
+              <div class="bubble">现在先读取方案、打开 demo、检查 Nexus 前端 surface 语言。右侧舞台会展示当前场景、目标、证据、工具抽象和性能预算。</div>
+            </article>
+
+            <article class="message">
+              <span class="message-author">Nexus Agent</span>
+              <div class="bubble approval">
+                <div>
+                  <strong>权限仍留在聊天里</strong>
+                  <div>例如运行 <code>make check</code> 时，舞台只显示“等待用户确认”和风险摘要；Allow / Deny 不进入操作舞台。</div>
+                </div>
+                <div class="approval-actions">
+                  <button type="button">允许一次</button>
+                  <button type="button">拒绝</button>
+                </div>
+              </div>
+            </article>
+
+            <article class="message">
+              <span class="message-author">Nexus Agent</span>
+              <div class="bubble">工具不会一个名字一个组件。先投影成 OperationKind，再映射到 workspace、editor、web、knowledge、terminal、task、summary 或 fallback surface。</div>
+            </article>
+          </div>
+
+          <footer class="composer">
+            <div class="composer-box">
+              <textarea aria-label="Message" placeholder="继续讨论工具覆盖、舞台交互或实施边界..."></textarea>
+              <button class="send" aria-label="Send" type="button">↗</button>
+            </div>
+          </footer>
+        </section>
+
+        <section class="stage-shell" aria-label="operation stage">
+          <header class="stage-head">
+            <div class="stage-title">
+              <div class="mark">ST</div>
+              <div>
+                <strong>Operation Stage</strong>
+                <span>tool calls rendered as computer operation scenes</span>
+              </div>
+            </div>
+            <div class="status-row">
+              <span class="pill primary" id="tool-label">Read</span>
+              <span class="pill accent">Nexus styled stage</span>
+            </div>
+          </header>
+
+          <section class="operation-stage" id="stage" data-scene="workspace" data-debug="false">
+            <div class="stage-top">
+              <div class="stage-now">
+                <strong id="scene-title">打开工作区文件</strong>
+                <span id="scene-caption">文件窗口打开，目标文档被选中，编辑器预览滑到前景。</span>
+              </div>
+              <div class="stage-pills">
+                <span class="pill" id="scene-target">docs/specs</span>
+                <span class="pill" id="scene-phase">running</span>
+              </div>
+            </div>
+
+            <div class="stage-canvas">
+              <div class="grid-floor"></div>
+              <div class="stage-light"></div>
+
+              <article class="scene scene-workspace">
+                <div class="desktop-shadow"></div>
+                <section class="window workspace-browser">
+                  <div class="window-title">
+                    <div>
+                      <strong>Workspace Files</strong>
+                      <span>docs/specs</span>
+                    </div>
+                    <div class="window-controls"><i></i><i></i><i></i></div>
+                  </div>
+                  <div class="finder-body">
+                    <aside class="finder-side">
+                      <span>Nexus</span>
+                      <span>docs</span>
+                      <span>specs</span>
+                      <span>web/src</span>
+                    </aside>
+                    <div class="file-list">
+                      <div class="file-row active"><span>2026-05-13-agent-operation-stage-ui.md</span><small>md</small></div>
+                      <div class="file-row active"><span>2026-05-13-nexus-operation-stage-ui-plan.md</span><small>md</small></div>
+                      <div class="file-row"><span>agent-chat-ui-concepts.html</span><small>html</small></div>
+                      <div class="file-row"><span>frontend-design-spec.md</span><small>md</small></div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="window workspace-editor">
+                  <div class="window-title">
+                    <div>
+                      <strong>Editor Preview</strong>
+                      <span>operation-stage-ui.md</span>
+                    </div>
+                    <div class="window-controls"><i></i><i></i><i></i></div>
+                  </div>
+                  <pre class="code"><span class="num">01</span># Agent Operation Stage UI Design
+<span class="num">02</span>
+<span class="code-focus"><span class="num">03</span>The goal is not to show a tool log.</span>
+<span class="code-focus"><span class="num">04</span>The goal is to make invisible agent work legible.</span>
+<span class="num">05</span>
+<span class="num">06</span>Each tool call becomes a short scene:
+<span class="num">07</span>open target, focus object, perform action,
+<span class="num">08</span>show result, then close or summarize.</pre>
+                </section>
+              </article>
+
+              <article class="scene scene-edit">
+                <div class="desktop-shadow"></div>
+                <section class="window edit-diff">
+                  <div class="window-title">
+                    <div>
+                      <strong>Editor Diff</strong>
+                      <span>operation-projector.ts</span>
+                    </div>
+                    <div class="window-controls"><i></i><i></i><i></i></div>
+                  </div>
+                  <pre class="code"><span class="num">01</span>type OperationKind =
+<span class="code-add"><span class="num">02</span>+ | "workspace_read"</span>
+<span class="code-add"><span class="num">03</span>+ | "workspace_edit"</span>
+<span class="code-add"><span class="num">04</span>+ | "command_run"</span>
+<span class="code-add"><span class="num">05</span>+ | "web_research"</span>
+<span class="code-add"><span class="num">06</span>+ | "context_read"</span>
+<span class="code-add"><span class="num">07</span>+ | "task_delegate"</span>
+<span class="num">08</span>  | "unknown";
+<span class="num">09</span>
+<span class="code-add"><span class="num">10</span>+export function projectToolUse(block: ToolUseContent) {</span>
+<span class="code-add"><span class="num">11</span>+  return mapToolFamily(block.name, redact(block.input));</span>
+<span class="code-add"><span class="num">12</span>+}</span></pre>
+                </section>
+              </article>
+
+              <article class="scene scene-web">
+                <div class="desktop-shadow"></div>
+                <section class="window browser">
+                  <div class="browser-bar">
+                    <div class="window-controls"><i></i><i></i><i></i></div>
+                    <div class="address">search://agent operation stage visual replay</div>
+                    <span class="pill primary">WebSearch</span>
+                  </div>
+                  <div class="browser-body">
+                    <main class="results">
+                      <div class="source-card active">
+                        <strong>Operation replay for agent tools</strong>
+                        <p>工具调用应被投影成短场景：打开、聚焦、执行、展示结果、收口。</p>
+                      </div>
+                      <div class="source-card">
+                        <strong>Transparent agent workspaces</strong>
+                        <p>聊天负责决策和最终答案，执行可见性进入独立舞台。</p>
+                      </div>
+                      <div class="source-card">
+                        <strong>Runtime trace performance</strong>
+                        <p>高频事件需要合并，大输出需要预算和脱敏。</p>
+                      </div>
+                    </main>
+                    <aside class="source-preview">
+                      <strong>Source preview</strong>
+                      <p>网页工具不是在聊天里贴 raw dump，而是在浏览器窗口里显示 query、来源和摘录。引用进入最终回答，过程留在舞台。</p>
+                    </aside>
+                  </div>
+                </section>
+              </article>
+
+              <article class="scene scene-knowledge">
+                <div class="desktop-shadow"></div>
+                <section class="window knowledge-reader">
+                  <aside class="knowledge-index">
+                    <h3>Context Reader</h3>
+                    <div class="active">frontend-design</div>
+                    <div>frontend-design-spec.md</div>
+                    <div>skills / MCP</div>
+                    <div>redaction rules</div>
+                  </aside>
+                  <main class="knowledge-doc">
+                    <h2>Knowledge Surface</h2>
+                    <p>Skill、MCP resource、prompt context 都是上下文读取，不应该伪装成文件编辑。舞台展示来源、关键约束和被采纳的片段。</p>
+                    <ul>
+                      <li>Nexus 适配保留舞台，但使用更克制的材料和状态语言。</li>
+                      <li>普通模式不展示 raw payload。</li>
+                      <li>Debug 模式展示 projector 映射、截断和性能计数。</li>
+                    </ul>
+                  </main>
+                </section>
+              </article>
+
+              <article class="scene scene-terminal">
+                <div class="desktop-shadow"></div>
+                <section class="window terminal">
+                  <div class="window-title">
+                    <div>
+                      <strong>Terminal</strong>
+                      <span>verification command</span>
+                    </div>
+                    <div class="window-controls"><i></i><i></i><i></i></div>
+                  </div>
+                  <div class="terminal-body">
+                    <div><span class="prompt">$</span> make check</div>
+                    <div class="dim">go test ./...</div>
+                    <div class="ok">ok   internal/message      1.18s</div>
+                    <div class="ok">ok   internal/runtime      2.31s</div>
+                    <div class="dim">pnpm lint && pnpm typecheck</div>
+                    <div class="ok">completed without errors</div>
+                    <div class="dim">普通模式只保留尾部输出；失败时窗口保持展开。</div>
+                  </div>
+                </section>
+              </article>
+
+              <article class="scene scene-task">
+                <div class="desktop-shadow"></div>
+                <section class="window task-board">
+                  <div class="window-title">
+                    <div>
+                      <strong>Task Delegation</strong>
+                      <span>multi-agent operation queue</span>
+                    </div>
+                    <div class="window-controls"><i></i><i></i><i></i></div>
+                  </div>
+                  <div class="task-body">
+                    <div class="task-card">
+                      <strong>Explorer</strong>
+                      <p>读取当前 room surface、workspace live store 和 message block 类型。</p>
+                      <span class="pill accent status">done</span>
+                    </div>
+                    <div class="task-card">
+                      <strong>UI Worker</strong>
+                      <p>生成舞台式 demo，保留文件、网页、知识、终端和总结场景。</p>
+                      <span class="pill primary status">running</span>
+                    </div>
+                    <div class="task-card">
+                      <strong>Verifier</strong>
+                      <p>检查桌面与移动端截图，确认文字不溢出、场景可切换。</p>
+                      <span class="pill warning status">queued</span>
+                    </div>
+                  </div>
+                </section>
+              </article>
+
+              <article class="scene scene-done">
+                <div class="desktop-shadow"></div>
+                <section class="window done-board">
+                  <div class="window-title">
+                    <div>
+                      <strong>Run Summary</strong>
+                      <span>windows closed, artifacts retained</span>
+                    </div>
+                    <div class="window-controls"><i></i><i></i><i></i></div>
+                  </div>
+                  <div class="done-body">
+                    <div class="note-card">
+                      <strong>Opened</strong>
+                      <p>方案文档、HTML demo、Nexus 前端 surface 组件、theme tokens。</p>
+                    </div>
+                    <div class="note-card">
+                      <strong>Changed</strong>
+                      <p>demo 保留舞台核心，只把配色、密度和状态语言调成 Nexus 风格。</p>
+                    </div>
+                    <div class="note-card">
+                      <strong>Covered</strong>
+                      <p>Read/LS/Grep/Edit/Write/Bash/Web/Skill/Task/Todo/permission/unknown。</p>
+                    </div>
+                  </div>
+                </section>
+              </article>
+
+              <aside class="debug-panel">
+                <pre id="debug-code"></pre>
+              </aside>
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const stage = document.querySelector("#stage");
+      const playToggle = document.querySelector("#play-toggle");
+      const debugToggle = document.querySelector("#debug-toggle");
+      const nextButton = document.querySelector("#next-scene");
+      const toolLabel = document.querySelector("#tool-label");
+      const sceneTitle = document.querySelector("#scene-title");
+      const sceneCaption = document.querySelector("#scene-caption");
+      const sceneTarget = document.querySelector("#scene-target");
+      const scenePhase = document.querySelector("#scene-phase");
+      const chatPhase = document.querySelector("#chat-phase");
+      const debugCode = document.querySelector("#debug-code");
+
+      const scenes = [
+        {
+          id: "workspace",
+          tool: "Read / LS / Grep",
+          title: "打开工作区文件",
+          caption: "文件窗口打开，目标文档被选中，编辑器预览滑到前景。",
+          target: "docs/specs",
+          phase: "running",
+          chat: "读取工作区",
+          kind: "workspace_read",
+          surface: "workspace",
+          budget: "200 lines / 50KB",
+          evidence: ["file", "stage-ui.md", "preview", "active editor", "perf", "active scene only"]
+        },
+        {
+          id: "edit",
+          tool: "Edit / Write",
+          title: "编辑 Operation Projector",
+          caption: "编辑器窗口聚焦 diff，新增 OperationKind 与安全投影规则。",
+          target: "operation-projector.ts",
+          phase: "running",
+          chat: "投影工具事件",
+          kind: "workspace_edit",
+          surface: "editor",
+          budget: "80 hunks / 30KB",
+          evidence: ["diff", "+84 -6", "live", "workspace_event", "perf", "coalesce 120ms"]
+        },
+        {
+          id: "web",
+          tool: "WebSearch / WebFetch",
+          title: "搜索网页来源",
+          caption: "浏览器窗口打开，输入 query，聚焦来源并提取安全摘录。",
+          target: "operation stage replay",
+          phase: "running",
+          chat: "网页调研",
+          kind: "web_research",
+          surface: "web",
+          budget: "5 sources / 300 chars",
+          evidence: ["url", "source list", "excerpt", "selected result", "security", "no raw dump"]
+        },
+        {
+          id: "knowledge",
+          tool: "Skill / MCP",
+          title: "读取知识上下文",
+          caption: "技能和 MCP 资源作为文档阅读器呈现，提取约束后关闭。",
+          target: "frontend-design",
+          phase: "running",
+          chat: "读取技能约束",
+          kind: "context_read",
+          surface: "knowledge",
+          budget: "redacted preview",
+          evidence: ["skill", "frontend-design", "doc", "style constraints", "security", "redacted"]
+        },
+        {
+          id: "terminal",
+          tool: "Bash",
+          title: "运行验证命令",
+          caption: "终端打开、命令执行、输出流式更新，成功后收起，失败保留。",
+          target: "make check",
+          phase: "running",
+          chat: "运行验证",
+          kind: "command_run",
+          surface: "terminal",
+          budget: "500 line ring buffer",
+          evidence: ["cmd", "make check", "tail", "last 80 lines", "exit", "0"]
+        },
+        {
+          id: "task",
+          tool: "Task / TodoWrite",
+          title: "展示子任务进度",
+          caption: "多智能体或子任务不并排开多个舞台，只在任务板里选择聚焦。",
+          target: "worker queue",
+          phase: "waiting",
+          chat: "等待子任务",
+          kind: "task_delegate",
+          surface: "task",
+          budget: "recent 5 tasks",
+          evidence: ["task", "explorer done", "task", "worker running", "plan", "summary only"]
+        },
+        {
+          id: "done",
+          tool: "round_summary",
+          title: "关闭窗口并总结",
+          caption: "活跃窗口关闭成摘要卡片，聊天区返回最终回答。",
+          target: "round r_240513",
+          phase: "done",
+          chat: "收口总结",
+          kind: "round_summary",
+          surface: "summary",
+          budget: "8 evidence items",
+          evidence: ["opened", "docs + web", "changed", "demo html", "verified", "screenshots"]
+        }
+      ];
+
+      let index = 0;
+      let playing = true;
+      let timer = window.setInterval(nextScene, 5200);
+
+      function renderScene() {
+        const scene = scenes[index];
+        stage.dataset.scene = scene.id;
+        toolLabel.textContent = scene.tool;
+        sceneTitle.textContent = scene.title;
+        sceneCaption.textContent = scene.caption;
+        sceneTarget.textContent = scene.target;
+        scenePhase.textContent = scene.phase;
+        chatPhase.textContent = scene.chat;
+        debugCode.textContent = JSON.stringify({
+          raw_event: {
+            event_type: "message",
+            content_block: {
+              type: "tool_use",
+              name: scene.tool,
+              input_preview: {
+                target: scene.target,
+                authorization: "[REDACTED]"
+              }
+            }
+          },
+          projected_event: {
+            kind: scene.kind,
+            surface: scene.surface,
+            phase: scene.phase,
+            title: scene.title,
+            target: scene.target,
+            preview_budget: scene.budget
+          },
+          render_policy: {
+            mounted_scene: "current + transition",
+            coalescing_ms: "50-150",
+            terminal_buffer: "500 lines",
+            reduced_motion: "supported"
+          },
+          evidence_summary: {
+            [scene.evidence[0]]: scene.evidence[1],
+            [scene.evidence[2]]: scene.evidence[3],
+            [scene.evidence[4]]: scene.evidence[5]
+          }
+        }, null, 2);
+      }
+
+      function nextScene() {
+        index = (index + 1) % scenes.length;
+        renderScene();
+      }
+
+      nextButton.addEventListener("click", nextScene);
+
+      playToggle.addEventListener("click", () => {
+        playing = !playing;
+        playToggle.textContent = playing ? "暂停轮播" : "继续轮播";
+        playToggle.classList.toggle("active", playing);
+        window.clearInterval(timer);
+        if (playing) {
+          timer = window.setInterval(nextScene, 5200);
+        }
+      });
+
+      debugToggle.addEventListener("click", () => {
+        const nextDebug = stage.dataset.debug !== "true";
+        stage.dataset.debug = nextDebug ? "true" : "false";
+        debugToggle.classList.toggle("active", nextDebug);
+      });
+
+      renderScene();
+    </script>
+  </body>
+</html>

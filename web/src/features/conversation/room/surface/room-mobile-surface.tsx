@@ -1,14 +1,16 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowLeft, Check, ChevronDown, MessageSquare, X } from "lucide-react";
+import { Activity, ArrowLeft, Check, ChevronDown, MessageSquare, X } from "lucide-react";
 
+import { build_room_shared_session_key } from "@/lib/conversation/session-key";
 import { format_relative_time, get_icon_avatar_src, get_initials } from "@/lib/utils";
 import { Agent } from "@/types/agent/agent";
 import { AgentConversationIdentity } from "@/types/agent/agent-conversation";
 import { ConversationSnapshotPayload, RoomConversationView } from "@/types/conversation/conversation";
 
 import { DmChatPanel } from "@/features/conversation/room/dm/dm-chat-panel";
+import { OperationStagePanel } from "@/features/conversation/operation/operation-stage-panel";
 import { GroupChatPanel } from "../group/chat/group-chat-panel";
 import { GroupThreadContextProvider } from "../group/thread/group-thread-context";
 import { GroupThreadDetailPanel } from "../group/thread/group-thread-detail-panel";
@@ -54,8 +56,30 @@ export function RoomMobileSurface({
   on_room_event,
 }: RoomMobileSurfaceProps) {
   const [is_conversation_sheet_open, setIsConversationSheetOpen] = useState(false);
+  const [is_operation_stage_open, set_is_operation_stage_open] = useState(false);
   const is_dm = current_room_type === "dm";
   const current_agent_avatar_src = get_icon_avatar_src(current_agent.avatar);
+  const operation_stage_identity = useMemo<AgentConversationIdentity | null>(() => {
+    if (current_agent_session_identity) {
+      return current_agent_session_identity;
+    }
+    if (!is_dm && conversation_id) {
+      return {
+        session_key: build_room_shared_session_key(conversation_id),
+        agent_id: current_agent.agent_id,
+        room_id,
+        conversation_id,
+        chat_type: "group",
+      };
+    }
+    return null;
+  }, [
+    conversation_id,
+    current_agent.agent_id,
+    current_agent_session_identity,
+    is_dm,
+    room_id,
+  ]);
 
   const current_room_conversation_title = useMemo(() => {
     if (current_room_conversation?.title?.trim()) {
@@ -103,9 +127,14 @@ export function RoomMobileSurface({
             <ChevronDown className="h-4 w-4 shrink-0 text-(--text-muted)" />
           </button>
 
-          <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-(--divider-subtle-color) text-(--text-muted)">
-            <MessageSquare className="h-4 w-4" />
-          </div>
+          <button
+            aria-label="打开操作舞台"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-(--divider-subtle-color) text-(--text-muted) transition hover:bg-(--interaction-hover-background) hover:text-(--text-strong)"
+            onClick={() => set_is_operation_stage_open(true)}
+            type="button"
+          >
+            <Activity className="h-4 w-4" />
+          </button>
         </div>
       </div>
 
@@ -143,6 +172,26 @@ export function RoomMobileSurface({
           </GroupThreadContextProvider>
         )}
       </div>
+
+      {is_operation_stage_open ? (
+        <div className="fixed inset-0 z-[60] bg-(--surface-panel-background)">
+          <OperationStagePanel
+            agent_name={current_agent.name}
+            header_action={(
+              <button
+                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-(--text-default) transition hover:text-(--text-strong)"
+                onClick={() => set_is_operation_stage_open(false)}
+                type="button"
+              >
+                <X className="h-3.5 w-3.5" />
+                关闭
+              </button>
+            )}
+            identity={operation_stage_identity}
+            presentation="stage"
+          />
+        </div>
+      ) : null}
 
       {is_conversation_sheet_open ? (
         <>

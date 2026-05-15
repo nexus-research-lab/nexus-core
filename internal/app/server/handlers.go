@@ -9,6 +9,7 @@ import (
 	connectorhandler "github.com/nexus-research-lab/nexus/internal/handler/connector"
 	corehandler "github.com/nexus-research-lab/nexus/internal/handler/core"
 	launcherhandler "github.com/nexus-research-lab/nexus/internal/handler/launcher"
+	operationhandler "github.com/nexus-research-lab/nexus/internal/handler/operation"
 	roomhandler "github.com/nexus-research-lab/nexus/internal/handler/room"
 	handlershared "github.com/nexus-research-lab/nexus/internal/handler/shared"
 	skillhandler "github.com/nexus-research-lab/nexus/internal/handler/skill"
@@ -27,6 +28,7 @@ type handlerSet struct {
 	channel    *channelhandler.Handlers
 	automation *automationhandler.Handlers
 	launcher   *launcherhandler.Handlers
+	operation  *operationhandler.Handlers
 	workspace  *workspacehandler.Handlers
 	websocket  *handlerwebsocket.Handler
 }
@@ -67,6 +69,7 @@ func newHandlerSet(
 		channel:    channelhandler.New(api, services.Ingress, services.ChannelControl),
 		automation: automationhandler.New(api, services.Automation),
 		launcher:   launcherhandler.New(api, services.Launcher),
+		operation:  operationhandler.New(api, services.Operation),
 		workspace:  workspacehandler.New(api, services.Workspace),
 		websocket:  websocketHandler,
 	}

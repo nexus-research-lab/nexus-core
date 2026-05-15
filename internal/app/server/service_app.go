@@ -16,6 +16,7 @@ import (
 	"github.com/nexus-research-lab/nexus/internal/service/conversation/titlegen"
 	dmsvc "github.com/nexus-research-lab/nexus/internal/service/dm"
 	"github.com/nexus-research-lab/nexus/internal/service/launcher"
+	operationsvc "github.com/nexus-research-lab/nexus/internal/service/operation"
 	preferencessvc "github.com/nexus-research-lab/nexus/internal/service/preferences"
 	providercfg "github.com/nexus-research-lab/nexus/internal/service/provider"
 	roomsvc "github.com/nexus-research-lab/nexus/internal/service/room"
@@ -37,6 +38,7 @@ type AppServices struct {
 	Title          *titlegen.Service
 	Usage          *usagesvc.Service
 	Preferences    *preferencessvc.Service
+	Operation      *operationsvc.Service
 	Permission     *permissionctx.Context
 	Runtime        *runtimectx.Manager
 	Channels       *channels.Router
@@ -66,6 +68,7 @@ func NewAppServicesWithDB(cfg config.Config, db *sql.DB, logger *slog.Logger) *A
 	usageService := usagesvc.NewServiceWithDB(cfg, db)
 	providerService := providercfg.NewServiceWithDB(cfg, db)
 	preferencesService := preferencessvc.NewService(cfg)
+	operationService := operationsvc.NewService(cfg)
 	workspaceService := workspacepkg.NewService(cfg, core.Agent)
 	skillService := skillsvc.NewService(cfg, core.Agent, workspaceService)
 	connectorService := connectorsvc.NewService(cfg, db)
@@ -120,6 +123,7 @@ func NewAppServicesWithDB(cfg config.Config, db *sql.DB, logger *slog.Logger) *A
 		Auth:           authService,
 		Provider:       providerService,
 		Preferences:    preferencesService,
+		Operation:      operationService,
 		Workspace:      workspaceService,
 		Skills:         skillService,
 		Connectors:     connectorService,

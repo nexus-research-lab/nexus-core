@@ -24,6 +24,7 @@ import { is_provider_error } from "@/features/conversation/shared/conversation-e
 import { ConversationFeed } from "@/features/conversation/shared/conversation-feed";
 import { ProviderUnavailableBanner } from "@/features/conversation/shared/provider-unavailable-banner";
 import { ScrollToLatestButton } from "@/features/conversation/shared/scroll-to-latest-button";
+import { useOperationProjectionSync } from "@/features/conversation/operation/use-operation-projection-sync";
 import {
   group_messages_by_round,
   get_latest_reply_timestamp,
@@ -96,6 +97,13 @@ export function DmChatPanel({
       console.error("DM conversation error:", err);
     },
     on_room_event,
+  });
+
+  useOperationProjectionSync({
+    identity: session_identity,
+    messages,
+    pending_permissions,
+    live_round_ids,
   });
 
   const todos = useExtractTodos(messages, session_key);

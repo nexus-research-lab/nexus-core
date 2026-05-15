@@ -3,7 +3,9 @@ package workspace
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
+	"mime"
 	"os"
 	"path/filepath"
 	"sort"
@@ -20,9 +22,12 @@ import (
 var (
 	// ErrFileNotFound 表示 workspace 文件不存在。
 	ErrFileNotFound = errors.New("workspace file not found")
+	// ErrFileTooLarge 表示文件超出舞台内联预览限制。
+	ErrFileTooLarge = errors.New("workspace file too large")
 )
 
 const maxUploadSize = 20 * 1024 * 1024
+const maxRawPreviewSize = 5 * 1024 * 1024
 
 var textExtensions = map[string]struct{}{
 	"txt": {}, "md": {}, "markdown": {}, "json": {}, "jsonl": {}, "yaml": {}, "yml": {}, "toml": {}, "xml": {},
@@ -46,6 +51,28 @@ type FileEntry struct {
 type FileContent struct {
 	Path    string `json:"path"`
 	Content string `json:"content"`
+}
+
+// RawFile 表示可被舞台内联预览的真实工作区文件。
+type RawFile struct {
+	Path        string
+	FilePath    string
+	Name        string
+	Size        int64
+	ModifiedAt  time.Time
+	ContentType string
+	ETag        string
+}
+
+// FileMeta 表示工作区文件的预览元信息。
+type FileMeta struct {
+	Path         string `json:"path"`
+	Name         string `json:"name"`
+	Size         int64  `json:"size"`
+	ModifiedAt   string `json:"modified_at"`
+	ContentType  string `json:"content_type"`
+	ETag         string `json:"etag"`
+	RawAvailable bool   `json:"raw_available"`
 }
 
 // EntryMutationResponse 表示创建/删除返回。
@@ -177,6 +204,35 @@ func (s *Service) GetFile(ctx context.Context, agentID string, relativePath stri
 	return &FileContent{
 		Path:    normalizedPath,
 		Content: string(content),
+	}, nil
+}
+
+// GetRawFile 返回舞台内联预览所需的真实文件信息。
+func (s *Service) GetRawFile(ctx context.Context, agentID string, relativePath string) (*RawFile, error) {
+	rawFile, err := s.resolveRawFile(ctx, agentID, relativePath)
+	if err != nil {
+		return nil, err
+	}
+	if rawFile.Size > maxRawPreviewSize {
+		return nil, ErrFileTooLarge
+	}
+	return rawFile, nil
+}
+
+// GetFileMeta 返回工作区文件预览元信息。
+func (s *Service) GetFileMeta(ctx context.Context, agentID string, relativePath string) (*FileMeta, error) {
+	rawFile, err := s.resolveRawFile(ctx, agentID, relativePath)
+	if err != nil {
+		return nil, err
+	}
+	return &FileMeta{
+		Path:         rawFile.Path,
+		Name:         rawFile.Name,
+		Size:         rawFile.Size,
+		ModifiedAt:   rawFile.ModifiedAt.Format(time.RFC3339Nano),
+		ContentType:  rawFile.ContentType,
+		ETag:         rawFile.ETag,
+		RawAvailable: rawFile.Size <= maxRawPreviewSize,
 	}, nil
 }
 
@@ -403,6 +459,60 @@ func (s *Service) GetFileForDownload(ctx context.Context, agentID string, relati
 		return "", "", errors.New("不能下载目录")
 	}
 	return targetPath, filepath.Base(normalizedPath), nil
+}
+
+func (s *Service) resolveRawFile(ctx context.Context, agentID string, relativePath string) (*RawFile, error) {
+	agentValue, err := s.ensureAgentWorkspace(ctx, agentID)
+	if err != nil {
+		return nil, err
+	}
+	targetPath, normalizedPath, err := resolveWorkspacePath(agentValue.WorkspacePath, relativePath)
+	if err != nil {
+		return nil, err
+	}
+	info, err := os.Stat(targetPath)
+	if os.IsNotExist(err) {
+		return nil, ErrFileNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	if info.IsDir() {
+		return nil, errors.New("不能预览目录")
+	}
+	return &RawFile{
+		Path:        normalizedPath,
+		FilePath:    targetPath,
+		Name:        filepath.Base(normalizedPath),
+		Size:        info.Size(),
+		ModifiedAt:  info.ModTime(),
+		ContentType: detectWorkspaceContentType(normalizedPath),
+		ETag:        buildWorkspaceFileETag(info),
+	}, nil
+}
+
+func buildWorkspaceFileETag(info os.FileInfo) string {
+	return fmt.Sprintf(`W/"%x-%x"`, info.Size(), info.ModTime().UnixNano())
+}
+
+func detectWorkspaceContentType(relativePath string) string {
+	extension := strings.ToLower(filepath.Ext(relativePath))
+	switch extension {
+	case ".html", ".htm", ".xhtml":
+		return "text/html; charset=utf-8"
+	case ".css":
+		return "text/css; charset=utf-8"
+	case ".js", ".mjs", ".cjs":
+		return "text/javascript; charset=utf-8"
+	case ".json", ".jsonl", ".map":
+		return "application/json; charset=utf-8"
+	case ".md", ".markdown", ".txt", ".log", ".csv":
+		return "text/plain; charset=utf-8"
+	}
+	if detected := mime.TypeByExtension(extension); detected != "" {
+		return detected
+	}
+	return "application/octet-stream"
 }
 
 func (s *Service) ensureAgentWorkspace(ctx context.Context, agentID string) (*protocol.Agent, error) {

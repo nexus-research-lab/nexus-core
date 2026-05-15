@@ -2,6 +2,7 @@
 
 import { memo, useState } from "react";
 import {
+  Activity,
   Compass,
   FolderTree,
   Hash,
@@ -130,6 +131,7 @@ const GroupConversationHeaderView = memo(({
     { key: "chat", label: t("room.chat"), icon: MessageSquare, anchor: CONVERSATION_TOUR_ANCHORS.tab_chat },
     { key: "history", label: t("room.history"), icon: History, anchor: CONVERSATION_TOUR_ANCHORS.tab_history },
     { key: "workspace", label: t("room.workspace"), icon: FolderTree, anchor: CONVERSATION_TOUR_ANCHORS.tab_workspace },
+    { key: "operation", label: "舞台", icon: Activity },
     { key: "about", label: t("room.about"), icon: Info, anchor: CONVERSATION_TOUR_ANCHORS.tab_about },
   ];
 

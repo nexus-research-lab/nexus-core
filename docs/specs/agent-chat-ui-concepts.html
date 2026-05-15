@@ -1,0 +1,1263 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Agents Operation Stage Prototype</title>
+    <style>
+      :root {
+        --page: #f2f3ef;
+        --paper: #fbfbf7;
+        --panel: #ffffff;
+        --ink: #171b20;
+        --muted: #68717d;
+        --faint: #9ca5ae;
+        --line: #d8dee3;
+        --line-strong: #b9c3cc;
+        --charcoal: #192129;
+        --charcoal-2: #222c36;
+        --stage: #0d141b;
+        --stage-2: #121b24;
+        --mist: #eaf0ed;
+        --green: #1d7462;
+        --green-soft: #e0eee9;
+        --blue: #2a628f;
+        --blue-soft: #e4edf5;
+        --amber: #a66b28;
+        --amber-soft: #f4ead9;
+        --red: #b44d52;
+        --shadow: 0 26px 90px rgba(24, 31, 39, 0.16);
+        --deep-shadow: 0 32px 90px rgba(0, 0, 0, 0.34);
+        --mono: "Berkeley Mono", "SFMono-Regular", Consolas, monospace;
+        color: var(--ink);
+        background: var(--page);
+        font-family: Aptos, "IBM Plex Sans", "Segoe UI", sans-serif;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-width: 320px;
+        min-height: 100vh;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(235, 238, 237, 0.9)),
+          linear-gradient(90deg, rgba(42, 98, 143, 0.06), transparent 34%, rgba(29, 116, 98, 0.055)),
+          var(--page);
+      }
+
+      button,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .page {
+        min-height: 100vh;
+        padding: 22px;
+      }
+
+      .brief {
+        max-width: 1560px;
+        margin: 0 auto 16px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 18px;
+      }
+
+      .brief h1 {
+        margin: 0;
+        font-size: 25px;
+        line-height: 1.1;
+        letter-spacing: 0;
+      }
+
+      .brief p {
+        max-width: 920px;
+        margin: 7px 0 0;
+        color: var(--muted);
+        line-height: 1.48;
+      }
+
+      .brief-actions,
+      .chat-meta,
+      .status-row,
+      .window-controls,
+      .scene-control,
+      .stage-top-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .button,
+      .pill,
+      .scene-button {
+        min-height: 34px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.86);
+        color: var(--ink);
+        padding: 0 11px;
+      }
+
+      .button.active,
+      .scene-button.active {
+        color: #fff;
+        border-color: var(--charcoal);
+        background: var(--charcoal);
+      }
+
+      .product {
+        max-width: 1560px;
+        min-height: min(900px, calc(100vh - 118px));
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: minmax(390px, 0.78fr) minmax(740px, 1.42fr);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--paper);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .chat {
+        min-width: 0;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        border-right: 1px solid var(--line);
+        background:
+          linear-gradient(90deg, rgba(29, 116, 98, 0.045), transparent 40%),
+          #fbfcfa;
+      }
+
+      .chat-head,
+      .stage-head {
+        min-height: 58px;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.86);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .mark {
+        width: 30px;
+        height: 30px;
+        display: grid;
+        place-items: center;
+        border-radius: 8px;
+        background: var(--charcoal);
+        color: #fff;
+        font: 700 13px/1 var(--mono);
+      }
+
+      .brand span,
+      .stage-title span,
+      .message-author,
+      .scene-detail,
+      .caption,
+      .window-subtitle,
+      .note-card p,
+      .file-row small,
+      .source-card p {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .brand strong,
+      .stage-title strong,
+      .message-author,
+      .scene-button strong,
+      .window-title strong,
+      .note-card strong {
+        letter-spacing: 0;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        border-radius: 999px;
+        color: var(--muted);
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      .pill.green {
+        color: var(--green);
+        border-color: rgba(29, 116, 98, 0.24);
+        background: var(--green-soft);
+      }
+
+      .pill.blue {
+        color: var(--blue);
+        border-color: rgba(42, 98, 143, 0.24);
+        background: var(--blue-soft);
+      }
+
+      .pill.amber {
+        color: var(--amber);
+        border-color: rgba(166, 107, 40, 0.28);
+        background: var(--amber-soft);
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 0 4px rgba(29, 116, 98, 0.13);
+      }
+
+      .chat-scroll {
+        padding: 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        overflow: auto;
+      }
+
+      .chat-meta {
+        color: var(--muted);
+        font-size: 12px;
+        justify-content: space-between;
+      }
+
+      .message {
+        max-width: 820px;
+        display: grid;
+        gap: 6px;
+      }
+
+      .message.user {
+        margin-left: auto;
+      }
+
+      .bubble {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px 16px;
+        background: #fff;
+        color: var(--ink);
+        line-height: 1.58;
+        box-shadow: 0 12px 34px rgba(24, 31, 39, 0.055);
+      }
+
+      .message.user .bubble {
+        color: #fff;
+        border-color: var(--charcoal);
+        background: var(--charcoal);
+      }
+
+      .bubble.intent {
+        border-color: rgba(42, 98, 143, 0.24);
+        background: var(--blue-soft);
+      }
+
+      .bubble code {
+        font-family: var(--mono);
+        font-size: 0.92em;
+      }
+
+      .approval {
+        display: grid;
+        gap: 10px;
+        border-color: rgba(166, 107, 40, 0.32);
+        background: #fff8ed;
+      }
+
+      .approval-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .approval-actions button {
+        min-height: 36px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      .approval-actions button:first-child {
+        color: #fff;
+        border-color: var(--charcoal);
+        background: var(--charcoal);
+      }
+
+      .composer {
+        padding: 14px;
+        border-top: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.94);
+      }
+
+      .composer-box {
+        min-height: 74px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 46px;
+        gap: 10px;
+        border: 1px solid var(--line-strong);
+        border-radius: 8px;
+        background: #fff;
+        padding: 10px;
+      }
+
+      textarea {
+        border: 0;
+        outline: 0;
+        resize: none;
+        min-height: 50px;
+        line-height: 1.5;
+        color: var(--ink);
+      }
+
+      .send {
+        width: 46px;
+        height: 46px;
+        align-self: end;
+        border: 0;
+        border-radius: 8px;
+        background: var(--charcoal);
+        color: #fff;
+        font: 700 18px/1 var(--mono);
+      }
+
+      .stage-shell {
+        min-width: 0;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        background: #edf0ef;
+      }
+
+      .stage-title {
+        display: grid;
+        gap: 3px;
+      }
+
+      .operation-stage {
+        position: relative;
+        min-height: 0;
+        overflow: hidden;
+        background:
+          linear-gradient(180deg, rgba(13, 20, 27, 0.98), rgba(9, 14, 20, 0.99)),
+          var(--stage);
+      }
+
+      .operation-stage::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: 30;
+        pointer-events: none;
+        opacity: 0.44;
+        mix-blend-mode: screen;
+        background:
+          linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.04), transparent),
+          repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.024) 0, rgba(255, 255, 255, 0.024) 1px, transparent 1px, transparent 5px);
+      }
+
+      .stage-top {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        z-index: 12;
+        height: 52px;
+        padding: 0 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        color: var(--mist);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.11);
+        background: rgba(18, 27, 36, 0.9);
+        backdrop-filter: blur(16px);
+      }
+
+      .stage-now {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .stage-now strong {
+        white-space: nowrap;
+      }
+
+      .stage-now span {
+        color: rgba(234, 240, 237, 0.62);
+        font-size: 12px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .stage-canvas {
+        position: absolute;
+        inset: 52px 0 0;
+        overflow: hidden;
+      }
+
+      .grid-floor {
+        position: absolute;
+        inset: -1px;
+        background:
+          linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+          linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+          radial-gradient(ellipse at 54% 26%, rgba(42, 98, 143, 0.18), transparent 48%);
+        background-size: 36px 36px, 36px 36px, auto;
+      }
+
+      .scene {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(18px) scale(0.99);
+        transition: opacity 220ms ease, transform 220ms ease;
+      }
+
+      .operation-stage[data-scene="files"] .scene-files,
+      .operation-stage[data-scene="web"] .scene-web,
+      .operation-stage[data-scene="skill"] .scene-skill,
+      .operation-stage[data-scene="terminal"] .scene-terminal,
+      .operation-stage[data-scene="done"] .scene-done {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0) scale(1);
+      }
+
+      .desktop-shadow {
+        position: absolute;
+        left: 5%;
+        right: 5%;
+        bottom: 34px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.34);
+        filter: blur(20px);
+      }
+
+      .window {
+        position: absolute;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 8px;
+        background: rgba(250, 252, 251, 0.98);
+        color: var(--ink);
+        box-shadow: var(--deep-shadow);
+        overflow: hidden;
+      }
+
+      .window-title {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 0 13px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.92);
+      }
+
+      .window-subtitle {
+        display: block;
+        margin-top: 2px;
+      }
+
+      .window-controls span {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #d5dce2;
+      }
+
+      .window-controls span:nth-child(1) { background: #df6b6f; }
+      .window-controls span:nth-child(2) { background: #e6bd57; }
+      .window-controls span:nth-child(3) { background: #66bd7c; }
+
+      .files-finder {
+        left: clamp(18px, 5vw, 66px);
+        top: 50px;
+        width: min(420px, 42%);
+        height: 470px;
+        animation: finder-arrive 4.8s ease both;
+      }
+
+      .files-editor {
+        right: clamp(18px, 4vw, 58px);
+        top: 88px;
+        width: min(680px, 58%);
+        height: 510px;
+        animation: editor-arrive 4.8s ease both;
+      }
+
+      .finder-body {
+        height: calc(100% - 44px);
+        display: grid;
+        grid-template-columns: 122px 1fr;
+        min-height: 0;
+      }
+
+      .finder-side {
+        border-right: 1px solid var(--line);
+        padding: 12px;
+        background: #f2f4f3;
+        display: grid;
+        align-content: start;
+        gap: 7px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .file-list {
+        padding: 14px;
+        display: grid;
+        align-content: start;
+        gap: 8px;
+        overflow: auto;
+      }
+
+      .file-row {
+        min-height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 0 10px;
+        font-size: 13px;
+      }
+
+      .file-row.active {
+        border-color: rgba(29, 116, 98, 0.28);
+        background: var(--green-soft);
+        animation: select-row 1.8s ease-in-out infinite;
+      }
+
+      .code {
+        height: calc(100% - 44px);
+        margin: 0;
+        padding: 16px;
+        overflow: auto;
+        color: #d9e8e2;
+        background: #0c1218;
+        font: 12px/1.62 var(--mono);
+      }
+
+      .num {
+        display: inline-block;
+        min-width: 30px;
+        color: rgba(217, 232, 226, 0.34);
+      }
+
+      .code-add {
+        display: block;
+        margin: 1px 0;
+        border-radius: 4px;
+        color: #ccefe2;
+        background:
+          linear-gradient(90deg, transparent 0%, rgba(118, 205, 178, 0.28) 42%, transparent 74%),
+          rgba(29, 116, 98, 0.22);
+        background-size: 250px 100%, auto;
+        animation: write-sweep 2.8s ease-in-out infinite;
+      }
+
+      .browser {
+        left: clamp(22px, 7vw, 92px);
+        top: 42px;
+        width: min(850px, calc(100% - 150px));
+        height: 565px;
+        animation: browser-sequence 5.4s ease both;
+      }
+
+      .browser-bar {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 10px;
+        min-height: 54px;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        background: #f7f8f7;
+      }
+
+      .address {
+        min-height: 32px;
+        display: flex;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 0 13px;
+        overflow: hidden;
+        background: #fff;
+        color: var(--muted);
+        font: 12px/1 var(--mono);
+      }
+
+      .typed-search {
+        display: inline-block;
+        overflow: hidden;
+        white-space: nowrap;
+        color: var(--ink);
+        animation: type-search 5.4s steps(40, end) infinite;
+      }
+
+      .browser-body {
+        height: calc(100% - 54px);
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 290px;
+        gap: 1px;
+        background: var(--line);
+      }
+
+      .results,
+      .source-panel {
+        padding: 16px;
+        overflow: auto;
+        background: #fff;
+      }
+
+      .source-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 10px;
+        background: #fff;
+      }
+
+      .source-card.active {
+        border-color: rgba(42, 98, 143, 0.3);
+        background: var(--blue-soft);
+        animation: source-focus 2.4s ease-in-out infinite;
+      }
+
+      .source-card strong {
+        color: var(--blue);
+      }
+
+      .source-card p,
+      .source-panel p {
+        margin: 6px 0 0;
+        line-height: 1.45;
+      }
+
+      .skill-reader {
+        left: clamp(28px, 8vw, 112px);
+        top: 46px;
+        width: min(760px, calc(100% - 170px));
+        height: 560px;
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        animation: reader-open 5.2s ease both;
+      }
+
+      .skill-index {
+        border-right: 1px solid var(--line);
+        padding: 16px;
+        background: #f6f4ee;
+      }
+
+      .skill-index h3 {
+        margin: 0 0 12px;
+        font-size: 14px;
+      }
+
+      .skill-index div {
+        min-height: 30px;
+        display: flex;
+        align-items: center;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .skill-index div.active {
+        color: var(--amber);
+      }
+
+      .skill-doc {
+        padding: 22px;
+        overflow: auto;
+        background: #fffdf8;
+      }
+
+      .skill-doc h2 {
+        margin: 0 0 10px;
+        font-size: 22px;
+      }
+
+      .skill-doc p,
+      .skill-doc li {
+        color: #4c535d;
+        line-height: 1.55;
+      }
+
+      .terminal {
+        left: clamp(24px, 7vw, 90px);
+        top: 56px;
+        width: min(820px, calc(100% - 150px));
+        height: 520px;
+        color: #d8e7e1;
+        background: #0a1016;
+        animation: terminal-open 5.2s ease both;
+      }
+
+      .terminal .window-title {
+        color: var(--mist);
+        border-color: rgba(255, 255, 255, 0.1);
+        background: #131c25;
+      }
+
+      .terminal-body {
+        height: calc(100% - 44px);
+        padding: 16px;
+        overflow: auto;
+        font: 12px/1.58 var(--mono);
+      }
+
+      .prompt { color: #76cdb2; }
+      .dim { color: rgba(216, 231, 225, 0.52); }
+      .ok { color: #76cdb2; }
+      .typed-command {
+        display: inline-block;
+        overflow: hidden;
+        white-space: nowrap;
+        animation: type-command 5.2s steps(44, end) infinite;
+      }
+
+      .done-board {
+        left: 50%;
+        top: 50%;
+        width: min(780px, calc(100% - 120px));
+        min-height: 420px;
+        transform: translate(-50%, -50%);
+        animation: board-open 4.8s ease both;
+      }
+
+      .done-body {
+        padding: 18px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .note-card {
+        min-height: 145px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 13px;
+        background: #fff;
+      }
+
+      .note-card p {
+        margin: 8px 0 0;
+        line-height: 1.45;
+      }
+
+      @keyframes finder-arrive {
+        0% { opacity: 0; transform: translate(-34px, 26px) scale(0.96); }
+        14%, 76% { opacity: 1; transform: translate(0, 0) scale(1); }
+        100% { opacity: 0.7; transform: translate(-14px, 10px) scale(0.99); }
+      }
+
+      @keyframes editor-arrive {
+        0%, 18% { opacity: 0; transform: translate(38px, 30px) scale(0.96); }
+        34%, 88% { opacity: 1; transform: translate(0, 0) scale(1); }
+        100% { opacity: 0.9; transform: translate(0, -4px) scale(0.998); }
+      }
+
+      @keyframes browser-sequence {
+        0% { opacity: 0; transform: translateY(34px) scale(0.965); }
+        14%, 82% { opacity: 1; transform: translateY(0) scale(1); }
+        100% { opacity: 0.78; transform: translateY(-10px) scale(0.992); }
+      }
+
+      @keyframes reader-open {
+        0% { opacity: 0; transform: translateX(34px) scale(0.965); }
+        15%, 84% { opacity: 1; transform: translateX(0) scale(1); }
+        100% { opacity: 0.78; transform: translateX(-10px) scale(0.992); }
+      }
+
+      @keyframes terminal-open {
+        0% { opacity: 0; transform: translateY(42px) scale(0.965); }
+        14%, 84% { opacity: 1; transform: translateY(0) scale(1); }
+        100% { opacity: 0.82; transform: translateY(-8px) scale(0.992); }
+      }
+
+      @keyframes board-open {
+        0% { opacity: 0; transform: translate(-50%, -42%) scale(0.96); }
+        18%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      }
+
+      @keyframes select-row {
+        0%, 100% { box-shadow: 0 0 0 rgba(29, 116, 98, 0); }
+        50% { box-shadow: 0 0 0 3px rgba(29, 116, 98, 0.13), 0 12px 26px rgba(29, 116, 98, 0.16); }
+      }
+
+      @keyframes write-sweep {
+        0% { background-position: -250px 0, 0 0; }
+        48%, 100% { background-position: 250px 0, 0 0; }
+      }
+
+      @keyframes type-search {
+        0%, 12% { width: 0; }
+        58%, 100% { width: 40ch; }
+      }
+
+      @keyframes type-command {
+        0%, 14% { width: 0; }
+        62%, 100% { width: 44ch; }
+      }
+
+      @keyframes source-focus {
+        0%, 100% { transform: translateX(0); }
+        50% { transform: translateX(6px); }
+      }
+
+      @media (max-width: 1120px) {
+        .page {
+          padding: 12px;
+        }
+
+        .brief {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .product {
+          grid-template-columns: 1fr;
+        }
+
+        .chat {
+          min-height: 540px;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .operation-stage {
+          min-height: 780px;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .chat-head,
+        .stage-head,
+        .stage-top {
+          height: auto;
+          min-height: 62px;
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .stage-canvas {
+          inset-top: 92px;
+        }
+
+        .files-finder,
+        .files-editor,
+        .browser,
+        .skill-reader,
+        .terminal,
+        .done-board {
+          left: 14px;
+          right: 14px;
+          top: 24px;
+          width: auto;
+        }
+
+        .files-editor,
+        .terminal {
+          top: 190px;
+        }
+
+        .finder-body,
+        .browser-body,
+        .skill-reader,
+        .done-body {
+          grid-template-columns: 1fr;
+        }
+
+        .finder-side,
+        .skill-index {
+          display: none;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="brief">
+        <div>
+          <h1>Agent operation stage</h1>
+          <p>A more polished prototype: the right side is a staged simulation of tool calls, not a debug panel. Each operation has a cinematic open, inspect, act, and close rhythm.</p>
+        </div>
+        <div class="brief-actions">
+          <button class="button active" id="play-toggle">Pause</button>
+          <button class="button" id="next-scene">Next scene</button>
+        </div>
+      </header>
+
+      <section class="product">
+        <section class="chat">
+          <header class="chat-head">
+            <div class="brand">
+              <div class="mark">A</div>
+              <div>
+                <strong>Agents</strong>
+                <span>conversation stays simple</span>
+              </div>
+            </div>
+            <div class="chat-meta">
+              <span class="pill green"><span class="status-dot"></span>running</span>
+              <span class="pill">approvals in chat</span>
+            </div>
+          </header>
+
+          <div class="chat-scroll">
+            <div class="chat-meta">
+              <span>Thread: workspace operation UX</span>
+              <span id="chat-phase">Opening files</span>
+            </div>
+
+            <article class="message user">
+              <span class="message-author">You</span>
+              <div class="bubble">I want the right side to feel like the agent is actually operating a computer.</div>
+            </article>
+
+            <article class="message">
+              <span class="message-author">Agent</span>
+              <div class="bubble intent">I will keep decisions, approval prompts, and final reasoning here. The operation stage will replay each tool call as a real sequence: open, inspect, modify, verify, close.</div>
+            </article>
+
+            <article class="message">
+              <span class="message-author">Agent</span>
+              <div class="bubble">I am opening the workspace files first, then I will search the web, open the relevant skill, run verification, and close the active windows.</div>
+            </article>
+
+            <article class="message">
+              <span class="message-author">Agent</span>
+              <div class="bubble approval">
+                <div>
+                  <strong>Permission request</strong>
+                  <div>Run <code>npm run build</code> after the UI patch is ready.</div>
+                </div>
+                <div class="approval-actions">
+                  <button>Allow once</button>
+                  <button>Deny</button>
+                </div>
+              </div>
+            </article>
+
+            <article class="message">
+              <span class="message-author">Agent</span>
+              <div class="bubble">The right stage is a visualization layer. It does not replace chat; it makes invisible tool work legible.</div>
+            </article>
+          </div>
+
+          <footer class="composer">
+            <div class="composer-box">
+              <textarea aria-label="Message" placeholder="Message the agent..."></textarea>
+              <button class="send" aria-label="Send">></button>
+            </div>
+          </footer>
+        </section>
+
+        <section class="stage-shell">
+          <header class="stage-head">
+            <div class="stage-title">
+              <strong>Operation Stage</strong>
+              <span>tool calls rendered as real workspace behavior</span>
+            </div>
+            <div class="status-row">
+              <span class="pill blue" id="tool-label">read_file</span>
+              <span class="pill amber">cinematic replay</span>
+            </div>
+          </header>
+
+          <section class="operation-stage" id="stage" data-scene="files">
+            <div class="stage-top">
+              <div class="stage-now">
+                <span class="status-dot"></span>
+                <strong id="scene-title">Open workspace files</strong>
+                <span id="scene-caption">Finder opens, file is selected, editor slides forward.</span>
+              </div>
+              <div class="stage-top-actions">
+                <span class="pill">~/program/Agents</span>
+                <span class="pill green">agent active</span>
+              </div>
+            </div>
+
+            <div class="stage-canvas">
+              <div class="grid-floor"></div>
+
+              <article class="scene scene-files">
+                <div class="desktop-shadow"></div>
+                <section class="window files-finder">
+                  <div class="window-title">
+                    <div>
+                      <strong>Workspace Files</strong>
+                      <span class="window-subtitle">apps/web/src</span>
+                    </div>
+                    <div class="window-controls"><span></span><span></span><span></span></div>
+                  </div>
+                  <div class="finder-body">
+                    <aside class="finder-side">
+                      <span>Agents</span>
+                      <span>apps</span>
+                      <span>web</span>
+                      <span>src</span>
+                    </aside>
+                    <div class="file-list">
+                      <div class="file-row"><span>components</span><small>dir</small></div>
+                      <div class="file-row"><span>runtime</span><small>dir</small></div>
+                      <div class="file-row active"><span>App.tsx</span><small>tsx</small></div>
+                      <div class="file-row active"><span>ChatThread.tsx</span><small>tsx</small></div>
+                      <div class="file-row"><span>types.ts</span><small>ts</small></div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="window files-editor">
+                  <div class="window-title">
+                    <div>
+                      <strong>Editor</strong>
+                      <span class="window-subtitle">WorkspaceCanvas.tsx</span>
+                    </div>
+                    <div class="window-controls"><span></span><span></span><span></span></div>
+                  </div>
+                  <pre class="code"><span class="num">01</span>export function WorkspaceCanvas(props: Props) {
+<span class="num">02</span>  return (
+<span class="num">03</span>    &lt;OperationStage&gt;
+<span class="code-add"><span class="num">04</span>+     &lt;FileOpenScene files={props.openedFiles} /&gt;</span>
+<span class="code-add"><span class="num">05</span>+     &lt;WebSearchScene query={props.query} /&gt;</span>
+<span class="code-add"><span class="num">06</span>+     &lt;TerminalScene command={props.command} /&gt;</span>
+<span class="num">07</span>    &lt;/OperationStage&gt;
+<span class="num">08</span>  );
+<span class="num">09</span>}</pre>
+                </section>
+              </article>
+
+              <article class="scene scene-web">
+                <div class="desktop-shadow"></div>
+                <section class="window browser">
+                  <div class="browser-bar">
+                    <div class="window-controls"><span></span><span></span><span></span></div>
+                    <div class="address">search://<span class="typed-search">agent workspace operation visualization</span></div>
+                    <span class="pill blue">web.search</span>
+                  </div>
+                  <div class="browser-body">
+                    <main class="results">
+                      <div class="source-card active">
+                        <strong>Operation replay for agent tools</strong>
+                        <p>Map every tool call to a visible operation on files, browsers, documents, or terminals.</p>
+                      </div>
+                      <div class="source-card">
+                        <strong>Designing transparent agent workspaces</strong>
+                        <p>Keep chat for decisions and make the execution environment legible.</p>
+                      </div>
+                      <div class="source-card">
+                        <strong>Computer-use traces</strong>
+                        <p>Represent action as scene transitions instead of raw event lists.</p>
+                      </div>
+                    </main>
+                    <aside class="source-panel">
+                      <strong>Source preview</strong>
+                      <p>The browser opens, a query is typed, sources load, the relevant result is selected, and the browser can close after the note is extracted.</p>
+                    </aside>
+                  </div>
+                </section>
+              </article>
+
+              <article class="scene scene-skill">
+                <div class="desktop-shadow"></div>
+                <section class="window skill-reader">
+                  <aside class="skill-index">
+                    <h3>Skill Context</h3>
+                    <div class="active">frontend-design</div>
+                    <div>design thinking</div>
+                    <div>tool surfaces</div>
+                    <div>verification</div>
+                  </aside>
+                  <main class="skill-doc">
+                    <h2>frontend-design</h2>
+                    <p>Use this skill when building or improving a web UI. The stage presents it as a local reference document, because reading skill context is workspace behavior too.</p>
+                    <ul>
+                      <li>Pick one clear product metaphor.</li>
+                      <li>Show the primary experience immediately.</li>
+                      <li>Use motion to explain state, not decorate it.</li>
+                    </ul>
+                    <p>The document closes once the agent returns to implementation.</p>
+                  </main>
+                </section>
+              </article>
+
+              <article class="scene scene-terminal">
+                <div class="desktop-shadow"></div>
+                <section class="window terminal">
+                  <div class="window-title">
+                    <div>
+                      <strong>Terminal</strong>
+                      <span class="window-subtitle">verification command</span>
+                    </div>
+                    <div class="window-controls"><span></span><span></span><span></span></div>
+                  </div>
+                  <div class="terminal-body">
+                    <div><span class="prompt">$</span> <span class="typed-command">npm run build --workspace apps/web</span></div>
+                    <div class="dim">vite build</div>
+                    <div class="dim">transforming modules...</div>
+                    <div class="ok">build completed</div>
+                    <div class="dim">closing terminal window after verification</div>
+                  </div>
+                </section>
+              </article>
+
+              <article class="scene scene-done">
+                <div class="desktop-shadow"></div>
+                <section class="window done-board">
+                  <div class="window-title">
+                    <div>
+                      <strong>Run Summary</strong>
+                      <span class="window-subtitle">windows closed, artifacts retained</span>
+                    </div>
+                    <div class="window-controls"><span></span><span></span><span></span></div>
+                  </div>
+                  <div class="done-body">
+                    <div class="note-card">
+                      <strong>Opened</strong>
+                      <p>Workspace files, web search, skill context, terminal verification.</p>
+                    </div>
+                    <div class="note-card">
+                      <strong>Changed</strong>
+                      <p>Prototype design updated into a staged operation replay.</p>
+                    </div>
+                    <div class="note-card">
+                      <strong>Returned</strong>
+                      <p>The final explanation appears in the chat stream.</p>
+                    </div>
+                  </div>
+                </section>
+              </article>
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <script>
+      const stage = document.querySelector("#stage");
+      const sceneButtons = Array.from(document.querySelectorAll(".scene-button"));
+      const label = document.querySelector("#tool-label");
+      const title = document.querySelector("#scene-title");
+      const caption = document.querySelector("#scene-caption");
+      const chatPhase = document.querySelector("#chat-phase");
+      const playToggle = document.querySelector("#play-toggle");
+      const nextButton = document.querySelector("#next-scene");
+
+      const scenes = [
+        {
+          id: "files",
+          label: "read_file",
+          title: "Open workspace files",
+          caption: "Finder opens, file is selected, editor slides forward.",
+          chat: "Opening files"
+        },
+        {
+          id: "web",
+          label: "web.search",
+          title: "Search the web",
+          caption: "Browser opens, query is typed, sources are inspected.",
+          chat: "Searching web"
+        },
+        {
+          id: "skill",
+          label: "open_skill",
+          title: "Read skill context",
+          caption: "A local reference document opens beside the workspace.",
+          chat: "Reading skill"
+        },
+        {
+          id: "terminal",
+          label: "exec_command",
+          title: "Run verification",
+          caption: "Terminal opens, command is typed, output streams.",
+          chat: "Running verification"
+        },
+        {
+          id: "done",
+          label: "close_windows",
+          title: "Close and summarize",
+          caption: "Active windows close into a compact operation summary.",
+          chat: "Summarizing result"
+        }
+      ];
+
+      let index = 0;
+      let playing = true;
+      let timer = window.setInterval(nextScene, 5200);
+
+      function renderScene() {
+        const scene = scenes[index];
+        stage.dataset.scene = scene.id;
+        label.textContent = scene.label;
+        title.textContent = scene.title;
+        caption.textContent = scene.caption;
+        chatPhase.textContent = scene.chat;
+        sceneButtons.forEach((button) => button.classList.toggle("active", button.dataset.scene === scene.id));
+      }
+
+      function nextScene() {
+        index = (index + 1) % scenes.length;
+        renderScene();
+      }
+
+      sceneButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          index = scenes.findIndex((scene) => scene.id === button.dataset.scene);
+          if (index < 0) index = 0;
+          renderScene();
+        });
+      });
+
+      nextButton.addEventListener("click", nextScene);
+
+      playToggle.addEventListener("click", () => {
+        playing = !playing;
+        playToggle.textContent = playing ? "Pause" : "Play";
+        playToggle.classList.toggle("active", playing);
+        window.clearInterval(timer);
+        if (playing) timer = window.setInterval(nextScene, 5200);
+      });
+
+      renderScene();
+    </script>
+  </body>
+</html>

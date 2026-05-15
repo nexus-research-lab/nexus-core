@@ -89,6 +89,18 @@ const IME_COMPOSITION_KEY_CODE = 229;
 const COMPOSITION_END_ENTER_GUARD_MS = 80;
 const PENDING_QUEUE_AUTO_SCROLL_ZONE_PX = 28;
 const PENDING_QUEUE_AUTO_SCROLL_MAX_DELTA_PX = 10;
+const COMPOSER_HINT_CLASS_NAME = "inline-flex shrink-0 items-center gap-1 whitespace-nowrap";
+const COMPOSER_STATUS_CLASS_NAME = "min-w-0 truncate whitespace-nowrap text-(--text-default)";
+
+function get_compact_control_status_text(status?: string) {
+  if (!status) {
+    return null;
+  }
+  if (status === "当前窗口是主理人") {
+    return "主理人";
+  }
+  return status.replace(/^当前窗口是/, "");
+}
 
 function is_caret_on_first_line(target: HTMLTextAreaElement) {
   const selection_start = target.selectionStart ?? 0;
@@ -573,6 +585,9 @@ const ComposerPanelView = memo(({
   const should_show_stop_button =
     can_stop_generation && (!allow_send_while_loading || is_input_empty);
   const has_pending_queue = input_queue_items.length > 0;
+  const footer_control_status_text = compact
+    ? get_compact_control_status_text(control_status_text)
+    : control_status_text;
   let composer_input_row_padding_class = compact ? "px-2 py-2" : "px-3 py-3";
   if (has_pending_queue) {
     composer_input_row_padding_class = compact ? "px-2 pb-2 pt-1" : "px-3 pb-3 pt-1.5";
@@ -827,51 +842,71 @@ const ComposerPanelView = memo(({
           )}
         </div>
 
-        <div className={COMPOSER_FOOTER_CLASS_NAME}>
-          <div className="flex items-center gap-3 text-[10px] text-(--text-soft)">
-            {disabled && control_status_text ? (
-              <span className="text-(--text-default)">{control_status_text}</span>
+        <div
+          className={cn(
+            COMPOSER_FOOTER_CLASS_NAME,
+            compact && "gap-2 px-2 py-1.5",
+          )}
+        >
+          <div className={cn(
+            "flex min-w-0 flex-1 items-center gap-3 overflow-hidden text-[10px] text-(--text-soft)",
+            compact && "gap-2",
+          )}>
+            {disabled && footer_control_status_text ? (
+              <span className={COMPOSER_STATUS_CLASS_NAME} title={control_status_text}>
+                {footer_control_status_text}
+              </span>
             ) : is_dispatching ? (
-              <span className="flex items-center gap-2 text-emerald-900/90">
+              <span className="inline-flex min-w-0 items-center gap-2 text-emerald-900/90">
                 <LoadingOrb frames={["✽", "✻", "✶", "✢", "·"]} />
-                <span className="animate-pulse">{t("status.sending")}</span>
+                <span className="truncate whitespace-nowrap animate-pulse">{t("status.sending")}</span>
               </span>
             ) : can_stop_generation ? (
-              <span className="flex items-center gap-2 text-emerald-900/90">
+              <span className="inline-flex min-w-0 items-center gap-2 text-emerald-900/90">
                 <LoadingOrb frames={["✽", "✻", "✶", "✢", "·"]} />
-                <span className="animate-pulse">{t("status.replying")}…</span>
-                <span className="text-(--text-soft)">[ESC 停止]</span>
+                <span className="truncate whitespace-nowrap animate-pulse">{t("status.replying")}…</span>
+                <span className={cn("shrink-0 whitespace-nowrap text-(--text-soft)", compact && "hidden")}>
+                  [ESC 停止]
+                </span>
               </span>
             ) : is_preparing_attachments ? (
-              <span className="flex items-center gap-2 text-(--text-default)">
+              <span className="inline-flex min-w-0 items-center gap-2 text-(--text-default)">
                 <LoadingOrb frames={["·", "◦", "•", "◦"]} />
-                <span>正在整理附件并同步到工作区…</span>
+                <span className="truncate whitespace-nowrap">正在整理附件并同步到工作区…</span>
               </span>
             ) : attachment_error ? (
-              <span className="text-(--destructive)">{attachment_error}</span>
+              <span className="truncate whitespace-nowrap text-(--destructive)">{attachment_error}</span>
             ) : (
               <>
-                <span className="flex items-center gap-1">
+                <span className={COMPOSER_HINT_CLASS_NAME}>
                   <kbd>Enter</kbd>
-                  <span>{queue_when_session_busy && (is_loading || input_queue_items.length > 0) ? "入队" : "发送"}</span>
+                  <span className="whitespace-nowrap">
+                    {queue_when_session_busy && (is_loading || input_queue_items.length > 0) ? "入队" : "发送"}
+                  </span>
                 </span>
-                <span className="flex items-center gap-1">
-                  <kbd>Shift</kbd>
-                  <span>+</span>
-                  <kbd>Enter</kbd>
-                  <span>换行</span>
-                </span>
-                <span className="hidden sm:inline text-(--text-soft)">
-                  附件仅支持文本文件
-                </span>
+                {!compact ? (
+                  <>
+                    <span className={COMPOSER_HINT_CLASS_NAME}>
+                      <kbd>Shift</kbd>
+                      <span>+</span>
+                      <kbd>Enter</kbd>
+                      <span className="whitespace-nowrap">换行</span>
+                    </span>
+                    <span className="hidden whitespace-nowrap text-(--text-soft) lg:inline">
+                      附件仅支持文本文件
+                    </span>
+                  </>
+                ) : null}
               </>
             )}
-            {!disabled && control_status_text ? (
-              <span className="text-(--text-default)">{control_status_text}</span>
+            {!disabled && footer_control_status_text ? (
+              <span className={COMPOSER_STATUS_CLASS_NAME} title={control_status_text}>
+                {footer_control_status_text}
+              </span>
             ) : null}
           </div>
 
-          <div className="flex items-center gap-3 text-[10px] tabular-nums">
+          <div className="flex shrink-0 items-center gap-3 whitespace-nowrap text-[10px] tabular-nums">
             {char_count > 0 ? (
               <div>
                 <span
@@ -887,7 +922,7 @@ const ComposerPanelView = memo(({
               </div>
             ) : null}
             {history_index >= 0 ? (
-              <div className="text-[10px] text-(--text-default)">
+              <div className="text-[10px] whitespace-nowrap text-(--text-default)">
                 历史 {history_index + 1}/{input_history.length}
               </div>
             ) : null}

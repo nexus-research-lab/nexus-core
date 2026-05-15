@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { useMediaQuery } from "@/hooks/ui/use-media-query";
+import { useSidebarStore } from "@/store/sidebar";
 import { Agent, AgentIdentityDraft, AgentNameValidationResult, AgentOptions } from "@/types/agent/agent";
 import { AgentConversationIdentity } from "@/types/agent/agent-conversation";
 import { ConversationSnapshotPayload, RoomConversationView } from "@/types/conversation/conversation";
@@ -98,6 +99,17 @@ export function RoomSurfaceShell({
 }: RoomSurfaceShellProps) {
   const is_mobile = useMediaQuery("(max-width: 767px)");
   const [active_surface_tab, set_active_surface_tab] = useState<RoomSurfaceTabKey>("chat");
+  const set_wide_panel_suppressed = useSidebarStore((state) => state.set_wide_panel_suppressed);
+
+  useEffect(() => {
+    set_wide_panel_suppressed(!is_mobile && active_surface_tab === "operation");
+  }, [active_surface_tab, is_mobile, set_wide_panel_suppressed]);
+
+  useEffect(() => {
+    return () => {
+      set_wide_panel_suppressed(false);
+    };
+  }, [set_wide_panel_suppressed]);
 
   const handle_select_conversation_in_shell = useCallback((conversation_id: string) => {
     set_active_surface_tab("chat");

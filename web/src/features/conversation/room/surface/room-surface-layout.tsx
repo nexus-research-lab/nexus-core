@@ -1,10 +1,12 @@
 "use client";
 
-import { Fragment, RefObject, useCallback } from "react";
+import { Fragment, RefObject, useCallback, useMemo } from "react";
 import { X } from "lucide-react";
 
 import { DmChatPanel } from "@/features/conversation/room/dm/dm-chat-panel";
 import { DmConversationHeader } from "@/features/conversation/room/dm/dm-conversation-header";
+import { OperationStagePanel } from "@/features/conversation/operation/operation-stage-panel";
+import { build_room_shared_session_key } from "@/lib/conversation/session-key";
 import { cn } from "@/lib/utils";
 import { WorkspaceSurfaceScaffold } from "@/shared/ui/workspace/surface/workspace-surface-scaffold";
 import { WorkspaceSurfaceToolbarAction } from "@/shared/ui/workspace/surface/workspace-surface-header";
@@ -132,6 +134,29 @@ function RoomSurfaceLayoutInner({
                                   }: RoomSurfaceLayoutProps) {
   const is_dm = current_room_type === "dm";
   const is_auxiliary_panel_open = active_surface_tab !== "chat";
+  const is_operation_stage_open = active_surface_tab === "operation";
+  const is_wide_auxiliary_panel = active_surface_tab === "workspace" || active_surface_tab === "operation";
+  const operation_stage_identity = useMemo<AgentConversationIdentity | null>(() => {
+    if (current_agent_session_identity) {
+      return current_agent_session_identity;
+    }
+    if (!is_dm && conversation_id) {
+      return {
+        session_key: build_room_shared_session_key(conversation_id),
+        agent_id: current_agent.agent_id,
+        room_id,
+        conversation_id,
+        chat_type: "group",
+      };
+    }
+    return null;
+  }, [
+    conversation_id,
+    current_agent.agent_id,
+    current_agent_session_identity,
+    is_dm,
+    room_id,
+  ]);
 
   const handle_open_workspace_file = useCallback((path: string | null) => {
     on_open_workspace_file(path);
@@ -198,8 +223,18 @@ function RoomSurfaceLayoutInner({
             </div>
           )}
         >
-          <div className="flex h-full min-h-0 min-w-0">
-            <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
+          <div className={cn(
+            "flex h-full min-h-0 min-w-0",
+            is_operation_stage_open && "gap-2 overflow-hidden",
+          )}>
+            <div
+              className={cn(
+                "min-h-0 min-w-0 overflow-hidden transition-[width,opacity,transform,border-color,background] duration-300 ease-out",
+                is_operation_stage_open
+                  ? "hidden xl:block xl:w-[clamp(460px,28vw,560px)] xl:flex-none xl:rounded-[24px] xl:border xl:border-white/70 xl:bg-[color:color-mix(in_srgb,var(--surface-panel-background)_86%,transparent)] xl:shadow-[0_24px_70px_rgba(18,28,42,0.10)] xl:backdrop-blur-xl"
+                  : "flex-1",
+              )}
+            >
               {/* 中文注释：聊天面板必须常驻挂载，避免切换 surface tab 时卸载组件，
                     进而触发 useWebSocket 清理并关闭连接。 */}
               {is_dm ? (
@@ -208,6 +243,7 @@ function RoomSurfaceLayoutInner({
                     current_agent_name={current_agent.name}
                     current_agent_avatar={current_agent.avatar ?? null}
                     initial_draft={initial_draft}
+                    layout={is_operation_stage_open ? "mobile" : "desktop"}
                     on_initial_draft_consumed={on_initial_draft_consumed}
                     on_conversation_snapshot_change={on_conversation_snapshot_change}
                     on_loading_change={on_loading_change}
@@ -225,6 +261,7 @@ function RoomSurfaceLayoutInner({
                     current_agent_name={current_agent.name}
                     current_agent_avatar={current_agent.avatar ?? null}
                     initial_draft={initial_draft}
+                    layout={is_operation_stage_open ? "mobile" : "desktop"}
                     on_initial_draft_consumed={on_initial_draft_consumed}
                     on_conversation_snapshot_change={on_conversation_snapshot_change}
                     on_create_conversation={on_create_conversation}
@@ -241,17 +278,30 @@ function RoomSurfaceLayoutInner({
 
             {is_auxiliary_panel_open ? (
               <section
-                className="relative ml-2 flex min-h-0 min-w-0 shrink-0 flex-col overflow-hidden border-l divider-subtle bg-transparent shadow-none"
-                style={{
-                  width: `${editor_width_percent}%`,
-                  minWidth: active_surface_tab === "workspace" ? "660px" : "460px",
-                  maxWidth: active_surface_tab === "workspace" ? "960px" : "660px",
-                }}
+                className={cn(
+                  "relative flex min-h-0 min-w-0 flex-col overflow-hidden bg-transparent shadow-none transition-[width,border-color,margin] duration-300 ease-out",
+                  is_operation_stage_open
+                    ? "ml-0 flex-1 border-l-0"
+                    : "ml-2 shrink-0 border-l divider-subtle",
+                )}
+                style={is_operation_stage_open
+                  ? {
+                      width: "auto",
+                      minWidth: "0",
+                      maxWidth: "none",
+                    }
+                  : {
+                      width: `${editor_width_percent}%`,
+                      minWidth: is_wide_auxiliary_panel ? "660px" : "460px",
+                      maxWidth: is_wide_auxiliary_panel ? "960px" : "660px",
+                    }}
               >
-                <ConversationResizeHandle
-                  aria_label="调整右侧面板宽度"
-                  on_mouse_down={on_start_editor_resize}
-                />
+                {is_operation_stage_open ? null : (
+                  <ConversationResizeHandle
+                    aria_label="调整右侧面板宽度"
+                    on_mouse_down={on_start_editor_resize}
+                  />
+                )}
 
                 <div
                   className={cn("flex h-full min-h-0 min-w-0 flex-1 flex-col", active_surface_tab !== "history" && "hidden")}>
@@ -278,6 +328,16 @@ function RoomSurfaceLayoutInner({
                     room_members={room_members}
                     on_close_workspace_pane={on_close_workspace_pane}
                     on_open_workspace_file={on_open_workspace_file}
+                  />
+                </div>
+
+                <div
+                  className={cn("flex h-full min-h-0 min-w-0 flex-1 flex-col", active_surface_tab !== "operation" && "hidden")}>
+                  <OperationStagePanel
+                    agent_name={current_agent.name}
+                    header_action={auxiliary_close_action}
+                    identity={operation_stage_identity}
+                    presentation="stage"
                   />
                 </div>
 

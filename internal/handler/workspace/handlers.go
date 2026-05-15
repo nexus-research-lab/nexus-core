@@ -3,6 +3,7 @@ package workspace
 import (
 	"errors"
 	"net/http"
+	"os"
 	"strings"
 
 	handlershared "github.com/nexus-research-lab/nexus/internal/handler/shared"
@@ -212,6 +213,76 @@ func (h *Handlers) HandleDownloadWorkspaceFile(writer http.ResponseWriter, reque
 		buildWorkspaceFileDispositionHeader(fileName, request.URL.Query().Get("disposition")),
 	)
 	http.ServeFile(writer, request, filePath)
+}
+
+// HandleRawWorkspaceFile 以内联方式输出工作区文件，供舞台 iframe 和预览窗口使用。
+func (h *Handlers) HandleRawWorkspaceFile(writer http.ResponseWriter, request *http.Request) {
+	rawFile, err := h.workspace.GetRawFile(
+		request.Context(),
+		chi.URLParam(request, "agent_id"),
+		request.URL.Query().Get("path"),
+	)
+	if errors.Is(err, agentpkg.ErrAgentNotFound) || errors.Is(err, workspacepkg.ErrFileNotFound) {
+		h.api.WriteFailure(writer, http.StatusNotFound, "资源不存在")
+		return
+	}
+	if errors.Is(err, workspacepkg.ErrFileTooLarge) {
+		h.api.WriteFailure(writer, http.StatusRequestEntityTooLarge, "文件过大，无法在舞台内联预览")
+		return
+	}
+	if err != nil {
+		if strings.Contains(err.Error(), "路径") || strings.Contains(err.Error(), "目录") {
+			h.api.WriteFailure(writer, http.StatusBadRequest, err.Error())
+			return
+		}
+		h.api.WriteFailure(writer, http.StatusInternalServerError, err.Error())
+		return
+	}
+	file, err := os.Open(rawFile.FilePath)
+	if err != nil {
+		h.api.WriteFailure(writer, http.StatusInternalServerError, err.Error())
+		return
+	}
+	defer func() { _ = file.Close() }()
+
+	writer.Header().Set("Content-Type", rawFile.ContentType)
+	writer.Header().Set("ETag", rawFile.ETag)
+	writer.Header().Set("Cache-Control", "private, max-age=0, must-revalidate")
+	writer.Header().Set("X-Content-Type-Options", "nosniff")
+	writer.Header().Set("Content-Disposition", buildWorkspaceFileDispositionHeader(rawFile.Name, workspaceFileDispositionInline))
+	if strings.HasPrefix(rawFile.ContentType, "text/html") {
+		writer.Header().Set(
+			"Content-Security-Policy",
+			"default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' http: https: ws: wss:; frame-ancestors 'self'",
+		)
+	}
+	if request.Header.Get("If-None-Match") == rawFile.ETag {
+		writer.WriteHeader(http.StatusNotModified)
+		return
+	}
+	http.ServeContent(writer, request, rawFile.Name, rawFile.ModifiedAt, file)
+}
+
+// HandleWorkspaceFileMeta 返回工作区文件预览元信息。
+func (h *Handlers) HandleWorkspaceFileMeta(writer http.ResponseWriter, request *http.Request) {
+	meta, err := h.workspace.GetFileMeta(
+		request.Context(),
+		chi.URLParam(request, "agent_id"),
+		request.URL.Query().Get("path"),
+	)
+	if errors.Is(err, agentpkg.ErrAgentNotFound) || errors.Is(err, workspacepkg.ErrFileNotFound) {
+		h.api.WriteFailure(writer, http.StatusNotFound, "资源不存在")
+		return
+	}
+	if err != nil {
+		if strings.Contains(err.Error(), "路径") || strings.Contains(err.Error(), "目录") {
+			h.api.WriteFailure(writer, http.StatusBadRequest, err.Error())
+			return
+		}
+		h.api.WriteFailure(writer, http.StatusInternalServerError, err.Error())
+		return
+	}
+	h.api.WriteSuccess(writer, meta)
 }
 
 // 中文注释：预览与下载共用同一路由，但内容处置必须显式分流，避免 PDF/图片预览复用下载语义。

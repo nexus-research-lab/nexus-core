@@ -231,7 +231,7 @@ func summarizeStreamMessage(message sdkprotocol.ReceivedMessage) string {
 		delta := rawMap(event["delta"])
 		deltaType := strings.TrimSpace(rawString(delta["type"]))
 		if deltaType != "" {
-			return fmt.Sprintf("stream")
+			return fmt.Sprintf("stream %s(%s)", eventType, deltaType)
 		}
 	case "content_block_start":
 		block := rawMap(event["content_block"])
@@ -239,8 +239,9 @@ func summarizeStreamMessage(message sdkprotocol.ReceivedMessage) string {
 		if blockType != "" {
 			if blockType == "tool_use" {
 				preview = safeToolName(rawString(block["name"]))
+				return appendSummaryPreview("stream tool_use", preview)
 			}
-			return appendSummaryPreview(fmt.Sprintf("stream"), preview)
+			return fmt.Sprintf("stream %s(%s)", eventType, blockType)
 		}
 	}
 	return appendSummaryPreview("stream "+eventType, preview)

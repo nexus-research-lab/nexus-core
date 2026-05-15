@@ -3,6 +3,7 @@ package workspace
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -71,6 +72,39 @@ func TestServiceManagesWorkspaceFiles(t *testing.T) {
 	}
 	if readBack.Content != "hello workspace" {
 		t.Fatalf("文件内容不匹配: %+v", readBack)
+	}
+
+	if _, err = workspaceService.UpdateFile(ctx, agentValue.AgentID, "public/gomoku.html", "<!doctype html><button>play</button>"); err != nil {
+		t.Fatalf("写入 HTML 预览文件失败: %v", err)
+	}
+	rawFile, err := workspaceService.GetRawFile(ctx, agentValue.AgentID, "public/gomoku.html")
+	if err != nil {
+		t.Fatalf("读取 raw 文件失败: %v", err)
+	}
+	if rawFile.Path != "public/gomoku.html" || rawFile.ContentType != "text/html; charset=utf-8" || rawFile.ETag == "" {
+		t.Fatalf("raw 文件元信息不正确: %+v", rawFile)
+	}
+	meta, err := workspaceService.GetFileMeta(ctx, agentValue.AgentID, "public/gomoku.html")
+	if err != nil {
+		t.Fatalf("读取文件 meta 失败: %v", err)
+	}
+	if meta.Path != rawFile.Path || meta.ETag != rawFile.ETag || !meta.RawAvailable {
+		t.Fatalf("文件 meta 不正确: %+v", meta)
+	}
+
+	largeFilePath := filepath.Join(agentValue.WorkspacePath, "public", "large.bin")
+	if err = os.WriteFile(largeFilePath, make([]byte, maxRawPreviewSize+1), 0o644); err != nil {
+		t.Fatalf("写入大文件失败: %v", err)
+	}
+	if _, err = workspaceService.GetRawFile(ctx, agentValue.AgentID, "public/large.bin"); !errors.Is(err, ErrFileTooLarge) {
+		t.Fatalf("大文件应被 raw 预览限制拒绝，实际错误: %v", err)
+	}
+	largeMeta, err := workspaceService.GetFileMeta(ctx, agentValue.AgentID, "public/large.bin")
+	if err != nil {
+		t.Fatalf("读取大文件 meta 失败: %v", err)
+	}
+	if largeMeta.RawAvailable {
+		t.Fatalf("大文件 meta 应标记为不可 raw 预览: %+v", largeMeta)
 	}
 
 	if _, err = workspaceService.CreateEntry(ctx, agentValue.AgentID, "docs", "directory", ""); err != nil {

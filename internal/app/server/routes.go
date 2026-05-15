@@ -8,6 +8,7 @@ func (s *Server) mountRoutes() {
 	s.mountAgentRoutes()
 	s.mountRoomRoutes()
 	s.mountCapabilityRoutes()
+	s.mountOperationRoutes()
 	s.mountPlaceholderRoutes()
 }
 
@@ -47,6 +48,8 @@ func (s *Server) mountAgentRoutes() {
 	s.router.Delete(s.prefixPath("/agents/{agent_id}"), s.handlers.agent.HandleDeleteAgent)
 	s.router.Get(s.prefixPath("/agents/{agent_id}/sessions"), s.handlers.agent.HandleListAgentSessions)
 	s.router.Get(s.prefixPath("/agents/{agent_id}/workspace/files"), s.handlers.workspace.HandleWorkspaceFiles)
+	s.router.Get(s.prefixPath("/agents/{agent_id}/workspace/file/raw"), s.handlers.workspace.HandleRawWorkspaceFile)
+	s.router.Get(s.prefixPath("/agents/{agent_id}/workspace/file/meta"), s.handlers.workspace.HandleWorkspaceFileMeta)
 	s.router.Get(s.prefixPath("/agents/{agent_id}/workspace/file"), s.handlers.workspace.HandleWorkspaceFile)
 	s.router.Put(s.prefixPath("/agents/{agent_id}/workspace/file"), s.handlers.workspace.HandleUpdateWorkspaceFile)
 	s.router.Post(s.prefixPath("/agents/{agent_id}/workspace/upload"), s.handlers.workspace.HandleUploadWorkspaceFile)
@@ -144,6 +147,12 @@ func (s *Server) mountCapabilityRoutes() {
 	s.router.Get(s.prefixPath("/automation/heartbeat/{agent_id}"), s.handlers.automation.HandleGetHeartbeat)
 	s.router.Put(s.prefixPath("/automation/heartbeat/{agent_id}"), s.handlers.automation.HandleUpdateHeartbeat)
 	s.router.Post(s.prefixPath("/automation/heartbeat/{agent_id}/wake"), s.handlers.automation.HandleWakeHeartbeat)
+}
+
+// mountOperationRoutes 挂载操作舞台相关路由。
+func (s *Server) mountOperationRoutes() {
+	s.router.Get(s.prefixPath("/operation/stage/snapshot"), s.handlers.operation.HandleGetStageSnapshot)
+	s.router.Put(s.prefixPath("/operation/stage/snapshot"), s.handlers.operation.HandleSaveStageSnapshot)
 }
 
 // mountPlaceholderRoutes 挂载保留占位路由。

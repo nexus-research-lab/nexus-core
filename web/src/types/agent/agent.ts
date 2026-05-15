@@ -152,6 +152,16 @@ export interface WorkspaceFileContent {
     content: string;
 }
 
+export interface WorkspaceFileMeta {
+    path: string;
+    name: string;
+    size: number;
+    modified_at: string;
+    content_type: string;
+    etag: string;
+    raw_available: boolean;
+}
+
 export interface WorkspaceEntryMutationResponse {
     path: string;
 }

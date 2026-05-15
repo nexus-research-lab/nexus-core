@@ -8,6 +8,7 @@ endif
 TAG ?= 0.0.1
 BACKEND_PORT ?= 8010
 WEB_PORT ?= 3000
+DEV_BACKEND_WAIT_SECONDS ?= 90
 AGENT_UID ?= 1001
 AGENT_GID ?= 1001
 HOST_SUDO ?= sudo
@@ -18,7 +19,7 @@ PRIVATE_SDK_MODULE ?= github.com/nexus-research-lab/nexus-agent-sdk-go
 .DEFAULT_GOAL := help
 
 .PHONY: help build build-backend build-web start stop restart logs logs-all logs-nginx clean status \
-	dev install db-init gen-protocol-types lint-web typecheck-web prepare-host-data \
+	dev wait-backend run-web-after-backend install db-init gen-protocol-types lint-web typecheck-web prepare-host-data \
 	check-private-sdk-access check-backend check-go check test run-web run-backend run-backend-go \
 	up down log reboot
 
@@ -31,6 +32,21 @@ help: ## Show this help message
 # Development commands
 run-web: ## Run frontend in development mode
 	cd web && pnpm exec vite -- --host 0.0.0.0 --port $(WEB_PORT)
+
+wait-backend:
+	@echo "Waiting for backend on http://localhost:$(BACKEND_PORT) ..."
+	@deadline=$$(( $$(date +%s) + $(DEV_BACKEND_WAIT_SECONDS) )); \
+	while ! lsof -nP -iTCP:$(BACKEND_PORT) -sTCP:LISTEN >/dev/null 2>&1; do \
+		if [ $$(date +%s) -ge $$deadline ]; then \
+			echo "Error: backend did not start listening on port $(BACKEND_PORT) within $(DEV_BACKEND_WAIT_SECONDS)s."; \
+			exit 1; \
+		fi; \
+		sleep 1; \
+	done; \
+	echo "Backend is ready on http://localhost:$(BACKEND_PORT)"
+
+run-web-after-backend: wait-backend
+	$(MAKE) run-web WEB_PORT=$(WEB_PORT)
 
 check-private-sdk-access: ## Check private Go SDK access
 	@if command -v go >/dev/null 2>&1; then \
@@ -98,7 +114,7 @@ dev: ## Run both frontend and backend in development mode
 	@if lsof -nP -iTCP:$(WEB_PORT) -sTCP:LISTEN >/dev/null 2>&1; then \
 		echo "Warning: frontend port $(WEB_PORT) is already in use, Vite will choose another available port."; \
 	fi
-	@make -j2 run-web run-backend BACKEND_PORT=$(BACKEND_PORT) WEB_PORT=$(WEB_PORT)
+	@make -j2 run-backend run-web-after-backend BACKEND_PORT=$(BACKEND_PORT) WEB_PORT=$(WEB_PORT)
 
 install: check-private-sdk-access ## Install all dependencies
 	@echo "Installing Go dependencies..."

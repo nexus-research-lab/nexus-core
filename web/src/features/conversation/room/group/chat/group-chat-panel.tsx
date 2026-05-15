@@ -26,6 +26,7 @@ import { prepare_workspace_text_attachments } from "@/features/conversation/shar
 import { ConversationErrorBubble } from "@/features/conversation/shared/conversation-error-bubble";
 import { is_provider_error } from "@/features/conversation/shared/conversation-error-utils";
 import { ProviderUnavailableBanner } from "@/features/conversation/shared/provider-unavailable-banner";
+import { useOperationProjectionSync } from "@/features/conversation/operation/use-operation-projection-sync";
 import {
   get_room_agent_round_entry,
   get_room_base_round_id,
@@ -192,6 +193,13 @@ export function GroupChatPanel({
       console.error("Room conversation error:", err);
     },
     on_room_event,
+  });
+
+  useOperationProjectionSync({
+    identity: session_identity,
+    messages,
+    pending_permissions,
+    live_round_ids,
   });
 
   const todos = useExtractTodos(messages, session_key);

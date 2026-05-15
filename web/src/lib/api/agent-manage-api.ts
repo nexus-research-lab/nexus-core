@@ -16,6 +16,7 @@ import {
   UpdateAgentParams,
   WorkspaceFileContent,
   WorkspaceFileEntry,
+  WorkspaceFileMeta,
   WorkspaceEntryMutationResponse,
   WorkspaceEntryRenameResponse,
 } from "@/types/agent/agent";
@@ -127,6 +128,19 @@ export const get_workspace_file_content_api = async (
   );
 };
 
+export const get_workspace_file_meta_api = async (
+  agent_id: string,
+  path: string,
+): Promise<WorkspaceFileMeta> => {
+  const query = new URLSearchParams({ path });
+  return request_api<WorkspaceFileMeta>(
+    `${AGENT_API_BASE_URL}/agents/${agent_id}/workspace/file/meta?${query.toString()}`,
+    {
+      method: "GET",
+    },
+  );
+};
+
 export const update_workspace_file_content_api = async (
   agent_id: string,
   path: string,
@@ -230,4 +244,13 @@ export const get_workspace_file_preview_url = (
   path: string,
 ): string => {
   return build_workspace_file_transfer_url(agent_id, path, "inline");
+};
+
+/** 获取 workspace 文件舞台 raw URL */
+export const get_workspace_file_raw_url = (
+  agent_id: string,
+  path: string,
+): string => {
+  const params = new URLSearchParams({ path });
+  return `${AGENT_API_BASE_URL}/agents/${agent_id}/workspace/file/raw?${params.toString()}`;
 };
