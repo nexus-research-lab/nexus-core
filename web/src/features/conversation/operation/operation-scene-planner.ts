@@ -67,7 +67,7 @@ function build_windows(
   const windows: StageWindowState[] = [];
 
   if (workspace_items.length > 0 || file_events.length > 0 || latest_file_target) {
-    windows.push(window_state(event, snapshot, {
+    windows.push(window_state(latest_file_event ?? event, snapshot, {
       id: "finder",
       kind: "finder",
       title: "Workspace",
@@ -88,7 +88,7 @@ function build_windows(
       latest_file_target,
       latest_file_event?.surface === "workspace" ? "generic_tool" : "code_editor",
     );
-    windows.push(window_state(event, snapshot, {
+    windows.push(window_state(latest_file_event ?? event, snapshot, {
       id: `document:${normalize_window_id(latest_file_target)}`,
       kind: document_kind,
       title: latest_file_target,
@@ -130,7 +130,7 @@ function build_windows(
       ? basename(html_artifact.path)
       : read_input_string(web_event.input_preview, ["url", "query", "prompt"]) ?? web_event.target ?? "web";
     const lines = preview_lines(web_event.result_preview ?? web_event.summary, 8);
-    windows.push(window_state(event, snapshot, {
+    windows.push(window_state(web_event, snapshot, {
       id: html_artifact ? `browser:${normalize_window_id(html_artifact.path)}` : "browser",
       kind: "browser",
       title: html_artifact ? basename(html_artifact.path) : query,
@@ -145,6 +145,23 @@ function build_windows(
         srcdoc: html_artifact?.live_content ?? null,
         target: html_artifact?.path ?? web_event.target,
         url: looks_like_url(query) ? query : null,
+      },
+    }));
+  }
+
+  if (event.surface === "knowledge") {
+    windows.push(window_state(event, snapshot, {
+      id: `knowledge:${normalize_window_id(event.target ?? event.tool_name ?? event.title)}`,
+      kind: "markdown_reader",
+      title: event.target ?? event.tool_name ?? event.title,
+      layout: "primary",
+      phase: focus_target === "document" ? "focused" : "background",
+      z: focus_target === "document" ? 36 : 20,
+      payload: {
+        preview: event.result_preview ?? event.input_preview ?? event.summary,
+        related_events: round_events,
+        summary: event.summary,
+        target: event.target ?? event.tool_name,
       },
     }));
   }
@@ -349,6 +366,9 @@ function resolve_focus_target(
   if (event.surface === "task" && context.has_task) {
     return "task";
   }
+  if (event.surface === "knowledge") {
+    return "document";
+  }
   if (event.surface === "web" || (context.has_html_artifact && (event.surface === "summary" || event.surface === "terminal"))) {
     return "browser";
   }
@@ -370,12 +390,63 @@ function resolve_focus_target(
 function build_terminal_lines(events: NexusOperationEvent[]): string[] {
   return events.flatMap((event) => {
     const command = read_input_string(event.input_preview, ["command", "description"]) ?? event.target ?? event.tool_name ?? "command";
-    const result_lines = preview_lines(event.result_preview ?? event.summary, 5);
+    const result_lines = terminal_result_lines(event).filter((line) => !terminal_line_matches_command(line, command));
     return [
       `$ ${command}`,
       ...result_lines,
     ];
-  }).slice(-24);
+  }).slice(-80);
+}
+
+function terminal_result_lines(event: NexusOperationEvent): string[] {
+  const result_lines = extract_terminal_lines(event.result_preview).slice(0, 24);
+  if (result_lines.length > 0) {
+    return result_lines;
+  }
+  if (event.summary) {
+    return split_terminal_text(event.summary).slice(0, 8);
+  }
+  if (event.phase === "running") {
+    return ["waiting for output..."];
+  }
+  return [];
+}
+
+function extract_terminal_lines(value: unknown): string[] {
+  if (value == null) {
+    return [];
+  }
+  if (typeof value === "string") {
+    return split_terminal_text(value);
+  }
+  if (typeof value === "number" || typeof value === "boolean") {
+    return [String(value)];
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => extract_terminal_lines(item));
+  }
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    const preferred_keys = ["stdout", "stderr", "output", "text", "content", "result", "message", "error"] as const;
+    const lines = preferred_keys.flatMap((key) => extract_terminal_lines(record[key]));
+    if (lines.length > 0) {
+      return lines;
+    }
+    return split_terminal_text(safe_json_stringify(value));
+  }
+  return [String(value)];
+}
+
+function split_terminal_text(value: string): string[] {
+  const normalized = value.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  if (!normalized.trim()) {
+    return [];
+  }
+  return normalized.split("\n").map((line) => line.trimEnd());
+}
+
+function terminal_line_matches_command(line: string, command: string): boolean {
+  return line.replace(/^\s*[$>]\s?/, "").trim() === command.trim();
 }
 
 function normalize_window_id(value: string): string {

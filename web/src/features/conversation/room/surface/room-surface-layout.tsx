@@ -271,6 +271,7 @@ function RoomSurfaceLayoutInner({
                     on_todos_change={on_todos_change}
                     room_id={room_id}
                     room_members={room_members}
+                    session_identity={current_agent_session_identity}
                   />
                 </ChatBoundary>
               )}

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- 操作舞台新增待机桌面空态，使用粒子化 `nexus` 标识与时钟展示新 session 的初始状态。
+
+### Changed
+- 操作舞台按工具类型区分读、写、运行、浏览器、知识与任务窗口，并重做 Dock、窗口聚焦、终端输出与文件预览呈现。
+
+### Fixed
+- 修复新 Room session 复用旧操作舞台快照的问题，并隔离 workspace live 事件避免旧会话内容污染新舞台。
+
 ## [0.1.2] - 2026-05-12
 
 ### Added

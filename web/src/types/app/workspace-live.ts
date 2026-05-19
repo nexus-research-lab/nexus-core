@@ -35,6 +35,8 @@ export interface WorkspaceLiveFileState {
   status: 'idle' | 'writing' | 'updated' | 'deleted';
   version: number;
   source: WorkspaceLiveEvent['source'];
+  session_key?: string | null;
+  tool_use_id?: string | null;
   live_content?: string | null;
   diff_stats?: WorkspaceDiffStats | null;
   updated_at: number;

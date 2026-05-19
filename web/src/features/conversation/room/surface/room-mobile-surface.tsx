@@ -167,6 +167,7 @@ export function RoomMobileSurface({
               on_room_event={on_room_event}
               room_id={room_id}
               room_members={room_members}
+              session_identity={current_agent_session_identity}
             />
             <MobileThreadOverlay />
           </GroupThreadContextProvider>

@@ -53,6 +53,7 @@ export interface GroupChatPanelProps {
   current_agent_avatar?: string | null;
   /** Room conversation id — used to derive the shared session_key */
   conversation_id: string | null;
+  session_identity?: AgentConversationIdentity | null;
   room_id?: string | null;
   room_members: Agent[];
   layout?: "desktop" | "mobile";
@@ -109,6 +110,7 @@ export function GroupChatPanel({
   current_agent_name,
   current_agent_avatar,
   conversation_id,
+  session_identity: external_session_identity = null,
   room_id = null,
   room_members,
   layout = "desktop",
@@ -132,7 +134,7 @@ export function GroupChatPanel({
     ? build_room_shared_session_key(conversation_id)
     : null;
   const default_delivery_policy = useDefaultChatDeliveryPolicy();
-  const session_identity = useMemo<AgentConversationIdentity | null>(() => {
+  const fallback_session_identity = useMemo<AgentConversationIdentity | null>(() => {
     if (!conversation_id) {
       return null;
     }
@@ -145,6 +147,9 @@ export function GroupChatPanel({
       chat_type: "group",
     };
   }, [agent_id, conversation_id, room_id, session_key]);
+  const session_identity = external_session_identity?.session_key
+    ? external_session_identity
+    : fallback_session_identity;
 
   const agent_name_map = useMemo(() => {
     if (room_members.length === 0) return undefined;

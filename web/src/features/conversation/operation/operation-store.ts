@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+import { get_session_key_identity } from "@/lib/conversation/session-key";
 import { create_browser_json_storage } from "@/lib/storage/browser-storage";
 import type { AgentConversationIdentity } from "@/types/agent/agent-conversation";
 
@@ -24,12 +25,19 @@ export function build_operation_stage_key(
     return null;
   }
 
-  if (identity.chat_type === "group" && identity.conversation_id) {
-    return `room-conversation:${identity.conversation_id}`;
+  const room_session_id = identity.room_session_id?.trim();
+  if (room_session_id) {
+    return `room-session:${room_session_id}`;
   }
 
-  if (identity.session_key) {
-    return `session:${identity.session_key}`;
+  const session_identity = get_session_key_identity(identity.session_key);
+  if (session_identity) {
+    return `session:${session_identity}`;
+  }
+
+  const conversation_id = identity.conversation_id?.trim();
+  if (identity.chat_type === "group" && conversation_id) {
+    return `room-conversation:${conversation_id}`;
   }
 
   return null;

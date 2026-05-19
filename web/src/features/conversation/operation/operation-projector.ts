@@ -6,10 +6,13 @@ import type {
   NexusOperationEvent,
   NexusOperationSnapshot,
   OperationEvidence,
-  OperationKind,
   OperationPhase,
-  OperationSurface,
 } from "./operation-types";
+import {
+  DEFAULT_TARGET_KEYS,
+  extract_operation_input_value,
+  resolve_operation_tool_profile,
+} from "./operation-tool-catalog";
 
 const MAX_EVENTS = 24;
 const MAX_EVIDENCE = 8;
@@ -18,12 +21,6 @@ const MAX_TEXT_PREVIEW = 1200;
 const MAX_RUNNABLE_ARTIFACT_PREVIEW = 32000;
 const SECRET_KEY_PATTERN = /(api[_-]?key|token|password|secret|authorization|cookie|credential|private[_-]?key)/i;
 const SECRET_VALUE_PATTERN = /(sk-[A-Za-z0-9_-]{16,}|ghp_[A-Za-z0-9_]{16,}|Bearer\s+[A-Za-z0-9._-]{16,})/g;
-
-interface ToolProjection {
-  kind: OperationKind;
-  surface: OperationSurface;
-  title: string;
-}
 
 interface ProjectOperationSnapshotParams {
   key: string;
@@ -34,42 +31,6 @@ interface ProjectOperationSnapshotParams {
   live_round_ids: string[];
   workspace_events: WorkspaceActivityItem[];
 }
-
-const TOOL_PROJECTIONS: Record<string, ToolProjection> = {
-  Task: { kind: "task_delegate", surface: "task", title: "委派子任务" },
-  TaskOutput: { kind: "task_progress", surface: "task", title: "读取子任务输出" },
-  Bash: { kind: "command_run", surface: "terminal", title: "运行命令" },
-  KillShell: { kind: "command_stop", surface: "terminal", title: "终止命令" },
-  Glob: { kind: "workspace_inspect", surface: "workspace", title: "匹配文件" },
-  Grep: { kind: "workspace_search", surface: "workspace", title: "搜索内容" },
-  LS: { kind: "workspace_inspect", surface: "workspace", title: "查看目录" },
-  Read: { kind: "workspace_read", surface: "workspace", title: "读取文件" },
-  Edit: { kind: "workspace_edit", surface: "editor", title: "编辑文件" },
-  MultiEdit: { kind: "workspace_edit", surface: "editor", title: "批量编辑" },
-  Write: { kind: "workspace_edit", surface: "editor", title: "写入文件" },
-  NotebookEdit: { kind: "workspace_edit", surface: "editor", title: "编辑 Notebook" },
-  WebFetch: { kind: "web_research", surface: "web", title: "抓取网页" },
-  WebSearch: { kind: "web_research", surface: "web", title: "搜索网页" },
-  Skill: { kind: "context_read", surface: "knowledge", title: "读取技能上下文" },
-  TodoWrite: { kind: "plan_update", surface: "summary", title: "更新计划" },
-  EnterPlanMode: { kind: "plan_update", surface: "conversation", title: "进入规划模式" },
-  ExitPlanMode: { kind: "plan_update", surface: "conversation", title: "退出规划模式" },
-  AskUserQuestion: { kind: "human_gate", surface: "conversation", title: "等待用户输入" },
-};
-
-const PRIMARY_INPUT_KEYS = [
-  "command",
-  "query",
-  "url",
-  "path",
-  "file_path",
-  "notebook_path",
-  "pattern",
-  "description",
-  "prompt",
-  "task",
-  "mode",
-] as const;
 
 export function project_operation_snapshot({
   key,
@@ -223,13 +184,9 @@ function project_tool_use({
   pending_permission?: PendingPermission | null;
   is_live_round: boolean;
 }): NexusOperationEvent {
-  const projection = TOOL_PROJECTIONS[block.name] ?? {
-    kind: "unknown" as const,
-    surface: "fallback" as const,
-    title: block.name || "未知工具",
-  };
+  const projection = resolve_operation_tool_profile(block.name);
   const input_preview = redact_value(as_record(block.input)) as Record<string, unknown>;
-  const target = extract_target(input_preview) ?? block.name;
+  const target = extract_target(input_preview, projection.target_keys) ?? block.name;
   const phase = resolve_tool_phase(result, pending_permission, is_live_round, message.is_complete);
   const evidence = build_tool_evidence(block.name, target, result, pending_permission);
 
@@ -294,9 +251,10 @@ function build_tool_evidence(
   result: ToolResultContent | undefined,
   pending_permission: PendingPermission | null | undefined,
 ): OperationEvidence[] {
+  const profile = resolve_operation_tool_profile(tool_name);
   const evidence: OperationEvidence[] = [];
   if (target) {
-    evidence.push({ type: evidence_type_for_tool(tool_name), label: "target", value: target });
+    evidence.push({ type: profile.evidence_type, label: profile.action_label, value: target });
   }
   if (pending_permission) {
     evidence.push({
@@ -318,7 +276,11 @@ function project_unmatched_permission(
   session_key: string | null,
   agent_id?: string | null,
 ): NexusOperationEvent {
-  const target = extract_target(redact_value(permission.tool_input) as Record<string, unknown>) ?? permission.tool_name;
+  const profile = resolve_operation_tool_profile(permission.tool_name);
+  const target = extract_target(
+    redact_value(permission.tool_input) as Record<string, unknown>,
+    profile.target_keys,
+  ) ?? permission.tool_name;
   return {
     id: `permission:${permission.request_id}`,
     session_key: session_key ?? permission.session_key ?? "",
@@ -392,39 +354,13 @@ function collect_recent_evidence(events: NexusOperationEvent[]): OperationEviden
     .slice(-MAX_EVIDENCE);
 }
 
-function evidence_type_for_tool(tool_name: string): OperationEvidence["type"] {
-  if (["Read", "LS", "Glob", "Grep"].includes(tool_name)) {
-    return "file";
+function extract_target(input: Record<string, unknown>, keys: readonly string[]): string | null {
+  const primary = extract_operation_input_value(input, keys);
+  if (primary?.value) {
+    return truncate_text(primary.value, 96);
   }
-  if (["Edit", "MultiEdit", "Write", "NotebookEdit"].includes(tool_name)) {
-    return "diff";
-  }
-  if (["Bash", "KillShell"].includes(tool_name)) {
-    return "terminal";
-  }
-  if (["WebSearch", "WebFetch"].includes(tool_name)) {
-    return "url";
-  }
-  if (tool_name === "Skill") {
-    return "skill";
-  }
-  if (["Task", "TaskOutput"].includes(tool_name)) {
-    return "task";
-  }
-  return "status";
-}
-
-function extract_target(input: Record<string, unknown>): string | null {
-  for (const key of PRIMARY_INPUT_KEYS) {
-    const value = input[key];
-    if (typeof value === "string" && value.trim()) {
-      return truncate_text(value.trim(), 96);
-    }
-    if (Array.isArray(value) && value.length > 0) {
-      return truncate_text(value.map((item) => String(item)).join(", "), 96);
-    }
-  }
-  return null;
+  const fallback = extract_operation_input_value(input, DEFAULT_TARGET_KEYS);
+  return fallback?.value ? truncate_text(fallback.value, 96) : null;
 }
 
 function summarize_result(result?: ToolResultContent): string | null {

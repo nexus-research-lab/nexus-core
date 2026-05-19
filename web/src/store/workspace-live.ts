@@ -34,6 +34,10 @@ export const useWorkspaceLiveStore = create<WorkspaceLiveStoreState>()((set) => 
     const nextUpdatedAt = Date.parse(event.timestamp) || Date.now();
 
     set((state) => {
+      const previous_file_state = state.file_states[key];
+      const next_session_key = event.session_key ?? previous_file_state?.session_key ?? null;
+      const next_tool_use_id = event.tool_use_id ?? previous_file_state?.tool_use_id ?? null;
+
       if (event.type === 'file_deleted') {
         const { [key]: _, ...restFileStates } = state.file_states;
         return {
@@ -46,6 +50,8 @@ export const useWorkspaceLiveStore = create<WorkspaceLiveStoreState>()((set) => 
               status: 'deleted' as const,
               version: event.version,
               source: event.source,
+              session_key: next_session_key,
+              tool_use_id: next_tool_use_id,
               live_content: null,
               diff_stats: null,
               updated_at: nextUpdatedAt,
@@ -68,6 +74,8 @@ export const useWorkspaceLiveStore = create<WorkspaceLiveStoreState>()((set) => 
             status: nextStatus,
             version: event.version,
             source: event.source,
+            session_key: next_session_key,
+            tool_use_id: next_tool_use_id,
             live_content: nextLiveContent,
             diff_stats: event.diff_stats,
             updated_at: nextUpdatedAt,
@@ -82,6 +90,8 @@ export const useWorkspaceLiveStore = create<WorkspaceLiveStoreState>()((set) => 
             status: nextStatus,
             version: event.version,
             source: event.source,
+            session_key: next_session_key,
+            tool_use_id: next_tool_use_id,
             live_content: nextLiveContent,
             diff_stats: event.diff_stats,
             updated_at: nextUpdatedAt,

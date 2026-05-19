@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 
+import { are_equivalent_session_keys } from "@/lib/conversation/session-key";
 import { useWorkspaceLiveStore } from "@/store/workspace-live";
 import type { AgentConversationIdentity } from "@/types/agent/agent-conversation";
 import type { Message } from "@/types/conversation/message";
@@ -33,10 +34,33 @@ export function useOperationProjectionSync({
   const recent_workspace_events = useWorkspaceLiveStore((state) => state.recent_events);
   const set_snapshot = useOperationStageStore((state) => state.set_snapshot);
   const last_saved_signature_ref = useRef<string | null>(null);
+  const active_stage_key_ref = useRef<string | null>(key);
+  const workspace_event_floor_ref = useRef(Date.now());
+
+  if (active_stage_key_ref.current !== key) {
+    active_stage_key_ref.current = key;
+    workspace_event_floor_ref.current = Date.now();
+  }
+  const workspace_event_floor = workspace_event_floor_ref.current;
 
   useEffect(() => {
     last_saved_signature_ref.current = null;
   }, [key]);
+
+  const scoped_workspace_events = useMemo(() => {
+    const session_key = identity?.session_key ?? null;
+
+    return recent_workspace_events.filter((event) => {
+      if (event.session_key) {
+        return are_equivalent_session_keys(event.session_key, session_key);
+      }
+      return event.updated_at >= workspace_event_floor;
+    });
+  }, [
+    identity?.session_key,
+    recent_workspace_events,
+    workspace_event_floor,
+  ]);
 
   const snapshot = useMemo(() => {
     if (!key) {
@@ -50,7 +74,7 @@ export function useOperationProjectionSync({
       messages,
       pending_permissions,
       live_round_ids,
-      workspace_events: recent_workspace_events,
+      workspace_events: scoped_workspace_events,
     });
   }, [
     identity?.agent_id,
@@ -59,7 +83,7 @@ export function useOperationProjectionSync({
     live_round_ids,
     messages,
     pending_permissions,
-    recent_workspace_events,
+    scoped_workspace_events,
   ]);
 
   useEffect(() => {

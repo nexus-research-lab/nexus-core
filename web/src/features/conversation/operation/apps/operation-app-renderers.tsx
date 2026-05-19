@@ -1,9 +1,22 @@
 import {
+  BookOpen,
+  CircleHelp,
+  ClipboardList,
+  FilePenLine,
+  FilePlus2,
   FileSpreadsheet,
+  FileSearch,
   FileText,
+  FolderOpen,
   Globe2,
   ImageIcon,
+  ListTree,
+  Play,
+  Search,
+  Sparkles,
+  Square,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { get_workspace_file_raw_url } from "@/lib/api/agent-manage-api";
 import { cn } from "@/lib/utils";
@@ -14,6 +27,13 @@ import type {
   NexusOperationSnapshot,
   OperationPhase,
 } from "../operation-types";
+import type { OperationActionKind, OperationToolProfile } from "../operation-tool-catalog";
+import {
+  build_operation_input_rows,
+  extract_operation_input_value,
+  PHASE_LABELS,
+  resolve_operation_tool_profile,
+} from "../operation-tool-catalog";
 import {
   basename,
   build_editor_preview_lines,
@@ -33,23 +53,27 @@ const PHASE_LABEL: Record<OperationPhase, string> = {
 
 export function StageWindowContent({ window }: { window: StageWindowState }) {
   const { event, snapshot } = window.payload;
+  const profile = resolve_operation_tool_profile(event.tool_name, event.kind, event.surface);
 
   if (window.kind === "finder") {
     const workspace_items = window.payload.workspace_items ?? [];
     return (
-      <div className="space-y-2.5">
-        <FileRow active label={window.payload.target ?? event.target ?? event.tool_name ?? "target"} />
-        {workspace_items.map((item) => (
-          <FileRow
-            active={item.path === event.target}
-            key={item.id}
-            label={item.path}
-            meta={item.status}
-          />
-        ))}
-        {!workspace_items.length ? (
-          <FileRow label="No workspace activity yet" meta="idle" />
-        ) : null}
+      <div className="space-y-3">
+        <ToolActionHeader event={event} profile={profile} target={window.payload.target ?? event.target} />
+        <div className="space-y-2.5">
+          <FileRow active label={window.payload.target ?? event.target ?? event.tool_name ?? "target"} />
+          {workspace_items.map((item) => (
+            <FileRow
+              active={item.path === event.target}
+              key={item.id}
+              label={item.path}
+              meta={item.status}
+            />
+          ))}
+          {!workspace_items.length ? (
+            <FileRow label="No workspace activity yet" meta="idle" />
+          ) : null}
+        </div>
       </div>
     );
   }
@@ -62,13 +86,11 @@ export function StageWindowContent({ window }: { window: StageWindowState }) {
         ...get_preview_lines(event.result_preview ?? event.summary, 10),
       ];
     return (
-      <>
-        <div className="mb-3 flex justify-end text-[10px] text-[#6fae83]">{format_operation_time(event.updated_at)}</div>
-        <pre className="soft-scrollbar max-h-[calc(100%-24px)] overflow-auto font-mono text-[11px] leading-5 text-[#d9ffe5]">
-          {lines.join("\n")}
-        </pre>
-        <span className="operation-terminal-caret" />
-      </>
+      <TerminalSession
+        command={window.payload.command ?? event.target ?? ""}
+        event={event}
+        lines={lines}
+      />
     );
   }
 
@@ -85,6 +107,7 @@ export function StageWindowContent({ window }: { window: StageWindowState }) {
     const iframe_url = raw_url ?? url;
     return (
       <div className="flex h-full min-h-[280px] flex-col gap-3">
+        <ToolActionHeader event={event} profile={profile} target={query} />
         <div className="flex min-w-0 items-center gap-2 rounded-[10px] border border-(--divider-subtle-color) bg-white/70 px-3 py-2 text-[11px] text-(--text-default)">
           <Globe2 className="h-3.5 w-3.5 shrink-0 text-(--icon-muted)" />
           <span className="truncate font-medium">{query}</span>
@@ -117,6 +140,7 @@ export function StageWindowContent({ window }: { window: StageWindowState }) {
   if (window.kind === "task_board") {
     return (
       <div className="space-y-4">
+        <ToolActionHeader event={event} profile={profile} target={event.target ?? event.tool_name} />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <TaskCard label="task" value={event.target ?? event.tool_name ?? "subtask"} />
           <TaskCard label="phase" value={PHASE_LABEL[event.phase]} />
@@ -137,22 +161,211 @@ export function StageWindowContent({ window }: { window: StageWindowState }) {
 
   if (window.kind === "summary") {
     return (
-      <DocumentPreview
-        summary={event.summary ?? event.target ?? "暂无摘要"}
-        target="run-summary.md"
-        value={window.payload.preview ?? event.result_preview ?? event.summary ?? event.target}
-      />
+      <div className="flex h-full min-h-0 flex-col gap-3">
+        <ToolActionHeader event={event} profile={profile} target={event.target} />
+        <div className="min-h-0 flex-1">
+          <DocumentPreview
+            summary={event.summary ?? event.target ?? "暂无摘要"}
+            target="run-summary.md"
+            value={window.payload.preview ?? event.result_preview ?? event.summary ?? event.target}
+          />
+        </div>
+      </div>
     );
   }
 
   return (
-    <DocumentPreview
-      diff_stats={window.payload.diff_stats}
-      fallback_lines={build_editor_preview_lines(event, get_preview_lines(window.payload.preview, 12))}
-      summary={window.payload.summary ?? event.summary ?? event.title}
-      target={window.payload.target ?? window.target ?? event.target}
-      value={window.payload.preview ?? event.result_preview ?? event.input_preview ?? event.summary}
-    />
+    <div className="flex h-full min-h-0 flex-col gap-3">
+      <ToolActionHeader
+        event={event}
+        profile={profile}
+        target={window.payload.target ?? window.target ?? event.target}
+      />
+      <div className="min-h-0 flex-1">
+        <DocumentPreview
+          diff_stats={window.payload.diff_stats}
+          fallback_lines={build_editor_preview_lines(event, get_preview_lines(window.payload.preview, 12))}
+          summary={window.payload.summary ?? event.summary ?? event.title}
+          target={window.payload.target ?? window.target ?? event.target}
+          value={window.payload.preview ?? event.result_preview ?? event.input_preview ?? event.summary}
+        />
+      </div>
+    </div>
+  );
+}
+
+const ACTION_ICON: Record<OperationActionKind, LucideIcon> = {
+  read: BookOpen,
+  list: ListTree,
+  search: FileSearch,
+  create: FilePlus2,
+  edit: FilePenLine,
+  run: Play,
+  stop: Square,
+  web_search: Search,
+  web_fetch: Globe2,
+  skill: Sparkles,
+  task: ClipboardList,
+  task_progress: ClipboardList,
+  plan: ClipboardList,
+  question: CircleHelp,
+  summary: FileText,
+  generic: FolderOpen,
+};
+
+const ACTION_TONE_CLASS: Record<OperationActionKind, string> = {
+  read: "border-[rgba(91,114,255,0.22)] bg-[rgba(91,114,255,0.09)] text-[color:var(--primary)]",
+  list: "border-[rgba(79,162,159,0.22)] bg-[rgba(79,162,159,0.10)] text-[rgb(42,128,125)]",
+  search: "border-[rgba(79,162,159,0.22)] bg-[rgba(79,162,159,0.10)] text-[rgb(42,128,125)]",
+  create: "border-[rgba(47,184,132,0.22)] bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]",
+  edit: "border-[rgba(223,157,46,0.26)] bg-[rgba(223,157,46,0.11)] text-[color:var(--warning)]",
+  run: "border-[rgba(47,184,132,0.22)] bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]",
+  stop: "border-[rgba(223,93,98,0.24)] bg-[rgba(223,93,98,0.10)] text-[color:var(--destructive)]",
+  web_search: "border-[rgba(223,157,46,0.24)] bg-[rgba(223,157,46,0.10)] text-[color:var(--warning)]",
+  web_fetch: "border-[rgba(223,157,46,0.24)] bg-[rgba(223,157,46,0.10)] text-[color:var(--warning)]",
+  skill: "border-[rgba(91,114,255,0.22)] bg-[rgba(91,114,255,0.09)] text-[color:var(--primary)]",
+  task: "border-[rgba(91,114,255,0.22)] bg-[rgba(91,114,255,0.09)] text-[color:var(--primary)]",
+  task_progress: "border-[rgba(91,114,255,0.22)] bg-[rgba(91,114,255,0.09)] text-[color:var(--primary)]",
+  plan: "border-[rgba(117,131,149,0.22)] bg-white/70 text-(--text-muted)",
+  question: "border-[rgba(223,157,46,0.26)] bg-[rgba(223,157,46,0.11)] text-[color:var(--warning)]",
+  summary: "border-[rgba(47,184,132,0.22)] bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]",
+  generic: "border-(--divider-subtle-color) bg-white/70 text-(--text-muted)",
+};
+
+function TerminalSession({
+  command,
+  event,
+  lines,
+}: {
+  command: string;
+  event: NexusOperationEvent;
+  lines: string[];
+}) {
+  const resolved_command = command.trim() || strip_terminal_prompt(lines[0] ?? "") || event.title;
+  const session_lines = lines.length > 0 ? lines : [`$ ${resolved_command}`];
+
+  return (
+    <div className="soft-scrollbar h-full min-h-[240px] min-w-0 overflow-auto bg-[#090e14] px-4 py-3 font-mono text-[11px] leading-5 text-[#d9ffe5]">
+      <div>
+        {session_lines.length ? session_lines.map((line, index) => (
+          <TerminalOutputLine key={`${index}:${line}`} line={line} />
+        )) : (
+          <div className="text-[#6f827d]">waiting for output...</div>
+        )}
+        {event.phase === "running" ? (
+          <div className="mt-1 flex min-w-0 items-start">
+            <span className="operation-terminal-caret mt-[3px] shrink-0" />
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function TerminalOutputLine({ line }: { line: string }) {
+  if (line === "") {
+    return <div className="h-5" />;
+  }
+
+  const prompt_match = line.match(/^(\s*[$>]\s?)(.*)$/);
+  if (prompt_match) {
+    return (
+      <div className="flex min-w-0 items-start">
+        <span className="select-none text-[#526875]">{prompt_match[1].trim()}</span>
+        <span className="ml-2 min-w-0 break-words text-[#d9ffe5]">{prompt_match[2]}</span>
+      </div>
+    );
+  }
+
+  const is_error = /\b(error|failed|panic|exception|denied)\b/i.test(line);
+  const is_success = /^(✓|done|success|passed)\b/i.test(line);
+
+  return (
+    <div className={cn(
+      "break-words whitespace-pre-wrap",
+      is_error ? "text-[#ff8f8f]" : is_success ? "text-[#8de0ad]" : "text-[#b7cbc5]",
+    )}>
+      {line}
+    </div>
+  );
+}
+
+function strip_terminal_prompt(line: string): string {
+  return line.replace(/^\s*[$>]\s?/, "").trim();
+}
+
+function ToolActionHeader({
+  event,
+  profile,
+  target,
+  tone = "default",
+}: {
+  event: NexusOperationEvent;
+  profile: OperationToolProfile;
+  target?: string | null;
+  tone?: "default" | "terminal";
+}) {
+  const Icon = ACTION_ICON[profile.action];
+  const primary = extract_operation_input_value(event.input_preview, profile.target_keys);
+  const rows = build_operation_input_rows(event.input_preview, profile.target_keys, 3);
+  const display_target = primary?.value ?? target ?? event.target ?? event.summary ?? event.title;
+  const is_terminal = tone === "terminal";
+
+  return (
+    <div className={cn(
+      "rounded-[13px] border p-3",
+      is_terminal
+        ? "border-white/10 bg-white/[0.035] text-[#d8e8e2]"
+        : "border-(--divider-subtle-color) bg-white/72 text-(--text-default)",
+    )}>
+      <div className="flex min-w-0 items-center justify-between gap-3 max-md:flex-col max-md:items-start">
+        <div className="flex min-w-0 max-w-full items-center gap-2">
+          <span className={cn(
+            "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-2 text-[10px] font-black",
+            is_terminal ? "border-white/12 bg-white/[0.04] text-[#8de0ad]" : ACTION_TONE_CLASS[profile.action],
+          )}>
+            <Icon className="h-3.5 w-3.5" />
+            {profile.action_label}
+          </span>
+          <div className="min-w-0">
+            <p className={cn(
+              "truncate text-[12px] font-black tracking-[-0.02em]",
+              is_terminal ? "text-[#e8f6f0]" : "text-(--text-strong)",
+            )}>
+              {profile.title}
+            </p>
+            <p className={cn(
+              "mt-0.5 truncate text-[11px]",
+              is_terminal ? "text-[#8aa09b]" : "text-(--text-soft)",
+            )}>
+              {display_target}
+            </p>
+          </div>
+        </div>
+        <span className={cn(
+          "shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold max-md:ml-[34px]",
+          is_terminal ? "bg-white/[0.05] text-[#8de0ad]" : "bg-white/70 text-(--text-muted)",
+        )}>
+          {PHASE_LABELS[event.phase]}
+        </span>
+      </div>
+      {rows.length > 1 ? (
+        <div className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+          {rows.slice(0, 2).map((row) => (
+            <div
+              className={cn(
+                "min-w-0 overflow-hidden rounded-[9px] px-2 py-1.5 text-[10px]",
+                is_terminal ? "bg-black/12 text-[#99b0aa]" : "bg-white/62 text-(--text-soft)",
+              )}
+              key={row.key}
+            >
+              <span className="font-semibold">{row.label}</span>
+              <span className="ml-1 break-words">{row.value}</span>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
