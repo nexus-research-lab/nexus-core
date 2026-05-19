@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -65,6 +65,23 @@ interface IdleParticle {
   glyph: string;
   phase: number;
   size: number;
+}
+
+type StageTransitionIntent =
+  | "browser"
+  | "editor"
+  | "permission"
+  | "summary"
+  | "task"
+  | "terminal"
+  | "workspace";
+
+type StageTransitionPhase = "idle" | "priming" | "materializing" | "live";
+
+interface StageTransitionState {
+  intent: StageTransitionIntent;
+  phase: StageTransitionPhase;
+  sequence: number;
 }
 
 const IDLE_PARTICLE_GLYPHS = ["{", "}", "<", ">", "/", "\\", "0", "1", "n", "x", "+", "·", ";", ":"];
@@ -160,8 +177,16 @@ function OperationStageMotionStyles() {
         }
 
         @keyframes nexus-operation-window-float {
-          0%, 100% { translate: 0 0; }
-          50% { translate: 0 -3px; }
+          0%, 100% {
+            translate:
+              var(--operation-window-drag-x, 0px)
+              var(--operation-window-drag-y, 0px);
+          }
+          50% {
+            translate:
+              var(--operation-window-drag-x, 0px)
+              calc(var(--operation-window-drag-y, 0px) - 3px);
+          }
         }
 
         @keyframes nexus-operation-preview-line {
@@ -196,13 +221,34 @@ function OperationStageMotionStyles() {
         }
 
         @keyframes nexus-operation-scene-enter {
-          0% { opacity: 0; transform: scale(.982); filter: blur(10px); }
+          0% {
+            opacity: 0;
+            transform:
+              translate3d(
+                var(--operation-scene-enter-x, 0),
+                var(--operation-scene-enter-y, 14px),
+                0
+              )
+              scale(.982);
+            filter: blur(10px);
+          }
           100% { opacity: 1; transform: scale(1); filter: blur(0); }
         }
 
         @keyframes nexus-operation-idle-exit {
           0% { opacity: 1; transform: scale(1); filter: blur(0); }
-          100% { opacity: 0; transform: scale(1.035); filter: blur(10px); }
+          42% { opacity: .92; filter: blur(1px); }
+          100% {
+            opacity: 0;
+            transform:
+              translate3d(
+                var(--operation-idle-exit-x, 0),
+                var(--operation-idle-exit-y, 0),
+                0
+              )
+              scale(var(--operation-idle-exit-scale, 1.035));
+            filter: blur(var(--operation-idle-exit-blur, 10px));
+          }
         }
 
         @keyframes nexus-operation-idle-pulse {
@@ -223,6 +269,14 @@ function OperationStageMotionStyles() {
             0 32px 82px rgba(34,48,72,.18),
             0 0 0 1px rgba(255,255,255,.72),
             0 0 24px rgba(91,114,255,.12);
+        }
+
+        .operation-stage-window-dragging {
+          animation-play-state: paused;
+          box-shadow:
+            0 36px 90px rgba(34,48,72,.22),
+            0 0 0 1px rgba(255,255,255,.78),
+            0 0 28px rgba(91,114,255,.14);
         }
 
         .operation-preview-line {
@@ -318,6 +372,12 @@ function OperationStageMotionStyles() {
 
         .operation-idle-stage-exit {
           animation: nexus-operation-idle-exit 680ms cubic-bezier(.16,.84,.24,1) both;
+        }
+
+        .operation-idle-stage-exit .operation-idle-agent-pill,
+        .operation-idle-stage-exit .operation-idle-clock {
+          opacity: 0;
+          transition: opacity 220ms ease-out;
         }
 
         .operation-idle-particle-canvas {
@@ -432,25 +492,9 @@ function StageSurface({
   on_toggle_debug: () => void;
 }) {
   const is_stage = presentation === "stage";
-  const [is_scene_entering, set_is_scene_entering] = useState(false);
-  const was_idle_ref = useRef(!active_event);
-
-  useEffect(() => {
-    if (!active_event) {
-      was_idle_ref.current = true;
-      set_is_scene_entering(false);
-      return;
-    }
-
-    if (!was_idle_ref.current) {
-      return;
-    }
-
-    was_idle_ref.current = false;
-    set_is_scene_entering(true);
-    const timer = window.setTimeout(() => set_is_scene_entering(false), 720);
-    return () => window.clearTimeout(timer);
-  }, [active_event]);
+  const stage_transition = useStageTransition(active_event);
+  const is_scene_entering = stage_transition.phase === "priming" || stage_transition.phase === "materializing";
+  const transition_style = build_stage_transition_style(stage_transition.intent);
 
   return (
     <section className={cn(
@@ -471,9 +515,18 @@ function StageSurface({
             {active_event ? (
               <>
                 {is_scene_entering ? (
-                  <EmptyStage exiting subtitle={subtitle} />
+                  <EmptyStage
+                    exiting
+                    key={`idle-exit-${stage_transition.sequence}`}
+                    subtitle={subtitle}
+                    transition_intent={stage_transition.intent}
+                  />
                 ) : null}
-                <div className={cn("h-full min-h-0", is_scene_entering && "operation-stage-scene-enter")}>
+                <div
+                  className={cn("h-full min-h-0", is_scene_entering && "operation-stage-scene-enter")}
+                  key={is_scene_entering ? `scene-enter-${stage_transition.sequence}` : "scene-live"}
+                  style={is_scene_entering ? transition_style : undefined}
+                >
                   <StageScene
                     event={active_event}
                     snapshot={snapshot}
@@ -547,29 +600,184 @@ function StageScene({
   return <OperationStageDesktop event={event} snapshot={snapshot} />;
 }
 
+function useStageTransition(active_event: NexusOperationEvent | null): StageTransitionState {
+  const [transition, set_transition] = useState<StageTransitionState>(() => ({
+    intent: active_event ? resolve_stage_transition_intent(active_event) : "summary",
+    phase: active_event ? "live" : "idle",
+    sequence: 0,
+  }));
+  const previous_event_key_ref = useRef<string | null>(active_event ? build_stage_event_key(active_event) : null);
+
+  useEffect(() => {
+    if (!active_event) {
+      previous_event_key_ref.current = null;
+      set_transition((current) => ({
+        intent: current.intent,
+        phase: "idle",
+        sequence: current.sequence,
+      }));
+      return;
+    }
+
+    const next_event_key = build_stage_event_key(active_event);
+    const next_intent = resolve_stage_transition_intent(active_event);
+    const is_idle_entry = previous_event_key_ref.current === null;
+    previous_event_key_ref.current = next_event_key;
+
+    if (!is_idle_entry) {
+      set_transition((current) => ({
+        intent: next_intent,
+        phase: "live",
+        sequence: current.sequence,
+      }));
+      return;
+    }
+
+    let cancelled = false;
+    set_transition((current) => ({
+      intent: next_intent,
+      phase: "priming",
+      sequence: current.sequence + 1,
+    }));
+
+    const materialize_timer = window.setTimeout(() => {
+      if (!cancelled) {
+        set_transition((current) => ({
+          ...current,
+          phase: "materializing",
+        }));
+      }
+    }, 120);
+    const live_timer = window.setTimeout(() => {
+      if (!cancelled) {
+        set_transition((current) => ({
+          ...current,
+          phase: "live",
+        }));
+      }
+    }, 760);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(materialize_timer);
+      window.clearTimeout(live_timer);
+    };
+  }, [active_event]);
+
+  return transition;
+}
+
+function build_stage_event_key(event: NexusOperationEvent): string {
+  return `${event.id}:${event.phase}`;
+}
+
+function resolve_stage_transition_intent(event: NexusOperationEvent): StageTransitionIntent {
+  if (event.phase === "waiting" || event.surface === "conversation" || event.kind === "human_gate") {
+    return "permission";
+  }
+  if (event.surface === "terminal") {
+    return "terminal";
+  }
+  if (event.surface === "web") {
+    return "browser";
+  }
+  if (event.surface === "task") {
+    return "task";
+  }
+  if (event.surface === "workspace") {
+    return "workspace";
+  }
+  if (event.surface === "editor" || event.surface === "knowledge") {
+    return "editor";
+  }
+  return "summary";
+}
+
+function build_stage_transition_style(intent: StageTransitionIntent): CSSProperties {
+  const map: Record<StageTransitionIntent, Record<string, string>> = {
+    browser: {
+      "--operation-idle-exit-x": "16%",
+      "--operation-idle-exit-y": "-2%",
+      "--operation-idle-exit-scale": "1.06",
+      "--operation-scene-enter-x": "28px",
+      "--operation-scene-enter-y": "4px",
+    },
+    editor: {
+      "--operation-idle-exit-x": "0",
+      "--operation-idle-exit-y": "-5%",
+      "--operation-idle-exit-scale": "1.05",
+      "--operation-scene-enter-x": "0",
+      "--operation-scene-enter-y": "18px",
+    },
+    permission: {
+      "--operation-idle-exit-x": "0",
+      "--operation-idle-exit-y": "0",
+      "--operation-idle-exit-scale": "1.015",
+      "--operation-idle-exit-blur": "4px",
+      "--operation-scene-enter-x": "0",
+      "--operation-scene-enter-y": "0",
+    },
+    summary: {
+      "--operation-idle-exit-x": "0",
+      "--operation-idle-exit-y": "-2%",
+      "--operation-idle-exit-scale": "1.03",
+      "--operation-scene-enter-x": "0",
+      "--operation-scene-enter-y": "12px",
+    },
+    task: {
+      "--operation-idle-exit-x": "2%",
+      "--operation-idle-exit-y": "-8%",
+      "--operation-idle-exit-scale": "1.05",
+      "--operation-scene-enter-x": "10px",
+      "--operation-scene-enter-y": "8px",
+    },
+    terminal: {
+      "--operation-idle-exit-x": "0",
+      "--operation-idle-exit-y": "14%",
+      "--operation-idle-exit-scale": ".96",
+      "--operation-scene-enter-x": "0",
+      "--operation-scene-enter-y": "34px",
+    },
+    workspace: {
+      "--operation-idle-exit-x": "-14%",
+      "--operation-idle-exit-y": "-1%",
+      "--operation-idle-exit-scale": "1.05",
+      "--operation-scene-enter-x": "-24px",
+      "--operation-scene-enter-y": "8px",
+    },
+  };
+
+  return map[intent] as CSSProperties;
+}
+
 function EmptyStage({
   exiting = false,
   subtitle,
+  transition_intent = "summary",
 }: {
   exiting?: boolean;
   subtitle: string;
+  transition_intent?: StageTransitionIntent;
 }) {
   const now = useStageClock();
   const time_label = format_stage_clock(now);
   const second_label = format_stage_seconds(now);
+  const transition_style = build_stage_transition_style(transition_intent);
 
   return (
     <div className={cn(
       "relative h-full min-h-[300px] overflow-hidden bg-[linear-gradient(180deg,rgba(250,252,255,0.98),rgba(239,244,251,0.86))]",
       exiting && "pointer-events-none absolute inset-0 z-20 operation-idle-stage-exit",
-    )}>
+    )}
+    style={exiting ? transition_style : undefined}
+    >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_48%_at_50%_43%,rgba(255,255,255,0.96),transparent_72%),radial-gradient(44%_30%_at_50%_62%,rgba(91,114,255,0.13),transparent_75%)]" />
       <div className="operation-stage-gridlines pointer-events-none absolute inset-0 opacity-[0.18]" />
       <div className="pointer-events-none absolute inset-0 opacity-[0.32] [background-image:radial-gradient(rgba(91,114,255,0.16)_1px,transparent_1px)] [background-size:34px_34px] [mask-image:linear-gradient(to_bottom,transparent,black_20%,black_78%,transparent)]" />
 
       <StageIdleParticles />
 
-      <div className="pointer-events-none absolute bottom-8 left-8 z-10 flex items-end gap-2 max-sm:bottom-5 max-sm:left-5">
+      <div className="operation-idle-clock pointer-events-none absolute bottom-8 left-8 z-10 flex items-end gap-2 max-sm:bottom-5 max-sm:left-5">
         <div className="font-mono text-[54px] font-semibold leading-none tracking-normal text-[rgba(32,43,58,0.88)] max-sm:text-[42px]">
           {time_label}
         </div>
@@ -578,7 +786,7 @@ function EmptyStage({
         </div>
       </div>
 
-      <div className="pointer-events-none absolute right-8 top-7 z-10 flex max-w-[220px] justify-end max-sm:right-5 max-sm:top-5">
+      <div className="operation-idle-agent-pill pointer-events-none absolute right-8 top-7 z-10 flex max-w-[220px] justify-end max-sm:right-5 max-sm:top-5">
         <div className="min-w-0 rounded-full border border-white/72 bg-white/54 px-3 py-1.5 text-right text-[11px] font-semibold text-(--text-soft) shadow-[0_14px_34px_rgba(18,28,42,0.08)] backdrop-blur-xl">
           <span className="block truncate">{subtitle}</span>
         </div>

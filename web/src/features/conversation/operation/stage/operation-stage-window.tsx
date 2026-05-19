@@ -1,4 +1,5 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, MouseEvent, PointerEvent, ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Minus, Square, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -13,9 +14,11 @@ interface OperationStageWindowProps {
   focus?: boolean;
   minimized?: boolean;
   dimmed?: boolean;
+  drag_offset?: { x: number; y: number };
   mobile_hidden?: boolean;
   tone?: "default" | "terminal";
   on_close?: () => void;
+  on_drag?: (offset: { x: number; y: number }) => void;
   on_focus?: () => void;
   on_minimize?: () => void;
 }
@@ -29,12 +32,123 @@ export function OperationStageWindow({
   focus = false,
   minimized = false,
   dimmed = false,
+  drag_offset = { x: 0, y: 0 },
   mobile_hidden = false,
   tone = "default",
   on_close,
+  on_drag,
   on_focus,
   on_minimize,
 }: OperationStageWindowProps) {
+  const drag_state_ref = useRef<{
+    pointer_id: number;
+    start_x: number;
+    start_y: number;
+    origin_x: number;
+    origin_y: number;
+  } | null>(null);
+  const cleanup_mouse_drag_ref = useRef<(() => void) | null>(null);
+  const [is_dragging, set_is_dragging] = useState(false);
+
+  const start_drag = (
+    event: PointerEvent<HTMLDivElement> | MouseEvent<HTMLDivElement>,
+    pointer_id: number,
+  ) => {
+    if (event.button !== 0 || minimized || drag_state_ref.current) {
+      return;
+    }
+    if (typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches) {
+      on_focus?.();
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    on_focus?.();
+    drag_state_ref.current = {
+      pointer_id,
+      start_x: event.clientX,
+      start_y: event.clientY,
+      origin_x: drag_offset.x,
+      origin_y: drag_offset.y,
+    };
+    set_is_dragging(true);
+  };
+
+  const start_pointer_drag = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === "mouse") {
+      return;
+    }
+    start_drag(event, event.pointerId);
+    if (drag_state_ref.current?.pointer_id === event.pointerId) {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
+  };
+
+  const start_mouse_drag = (event: MouseEvent<HTMLDivElement>) => {
+    start_drag(event, -1);
+    if (drag_state_ref.current?.pointer_id !== -1) {
+      return;
+    }
+    const move_mouse_drag = (mouse_event: globalThis.MouseEvent) => {
+      const drag_state = drag_state_ref.current;
+      if (!drag_state || drag_state.pointer_id !== -1) {
+        return;
+      }
+      mouse_event.preventDefault();
+      on_drag?.({
+        x: drag_state.origin_x + mouse_event.clientX - drag_state.start_x,
+        y: drag_state.origin_y + mouse_event.clientY - drag_state.start_y,
+      });
+    };
+    const end_mouse_drag = () => {
+      const drag_state = drag_state_ref.current;
+      if (!drag_state || drag_state.pointer_id !== -1) {
+        return;
+      }
+      cleanup_mouse_drag_ref.current?.();
+      cleanup_mouse_drag_ref.current = null;
+      drag_state_ref.current = null;
+      set_is_dragging(false);
+    };
+    cleanup_mouse_drag_ref.current?.();
+    document.addEventListener("mousemove", move_mouse_drag);
+    document.addEventListener("mouseup", end_mouse_drag);
+    cleanup_mouse_drag_ref.current = () => {
+      document.removeEventListener("mousemove", move_mouse_drag);
+      document.removeEventListener("mouseup", end_mouse_drag);
+    };
+  };
+
+  useEffect(() => {
+    return () => {
+      cleanup_mouse_drag_ref.current?.();
+    };
+  }, []);
+
+  const move_drag = (event: PointerEvent<HTMLDivElement>) => {
+    const drag_state = drag_state_ref.current;
+    if (!drag_state || drag_state.pointer_id !== event.pointerId) {
+      return;
+    }
+    event.preventDefault();
+    on_drag?.({
+      x: drag_state.origin_x + event.clientX - drag_state.start_x,
+      y: drag_state.origin_y + event.clientY - drag_state.start_y,
+    });
+  };
+
+  const end_drag = (event: PointerEvent<HTMLDivElement>) => {
+    const drag_state = drag_state_ref.current;
+    if (!drag_state || drag_state.pointer_id !== event.pointerId) {
+      return;
+    }
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    drag_state_ref.current = null;
+    set_is_dragging(false);
+  };
+
   return (
     <div
       aria-label={title}
@@ -45,6 +159,7 @@ export function OperationStageWindow({
           : "border-white/60 bg-[rgba(250,252,253,0.96)] text-(--text-strong) shadow-[0_28px_72px_rgba(18,28,42,0.24)]",
         focus && "operation-stage-window-focus",
         dimmed && "opacity-[0.62] saturate-[0.82]",
+        is_dragging && "operation-stage-window-dragging select-none",
         minimized && "min-h-0",
         mobile_hidden && "max-md:hidden",
         position_class_name,
@@ -64,16 +179,26 @@ export function OperationStageWindow({
       }}
       onMouseDown={on_focus}
       role="group"
-      style={{ "--operation-delay": `${delay_ms}ms` } as CSSProperties}
+      style={{
+        "--operation-delay": `${delay_ms}ms`,
+        "--operation-window-drag-x": `${drag_offset.x}px`,
+        "--operation-window-drag-y": `${drag_offset.y}px`,
+        translate: `${drag_offset.x}px ${drag_offset.y}px`,
+      } as CSSProperties}
       tabIndex={0}
     >
       <div
         className={cn(
-          "flex h-8 shrink-0 items-center justify-between gap-2 border-b px-3",
+          "flex h-8 shrink-0 cursor-grab touch-none items-center justify-between gap-2 border-b px-3 active:cursor-grabbing max-md:cursor-default",
           tone === "terminal"
             ? "border-white/10 bg-white/[0.035] text-[rgba(233,241,244,0.56)]"
             : "border-(--divider-subtle-color) bg-white/62 text-(--text-soft)",
         )}
+        onPointerCancel={end_drag}
+        onMouseDown={start_mouse_drag}
+        onPointerDown={start_pointer_drag}
+        onPointerMove={move_drag}
+        onPointerUp={end_drag}
       >
         <div className="flex items-center gap-1.5">
           <button

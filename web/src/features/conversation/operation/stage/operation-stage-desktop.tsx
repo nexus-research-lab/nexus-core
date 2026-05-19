@@ -105,6 +105,8 @@ const PHASE_STATUS_META: Record<OperationPhase, {
 interface StageWindowOverride {
   closed?: boolean;
   minimized?: boolean;
+  offset_x?: number;
+  offset_y?: number;
 }
 
 export function OperationStageDesktop({
@@ -201,6 +203,19 @@ export function OperationStageDesktop({
     }));
   };
 
+  const move_window = (window_id: string, offset: { x: number; y: number }) => {
+    set_focused_window_id(window_id);
+    set_window_overrides((current) => ({
+      ...current,
+      [window_id]: {
+        ...current[window_id],
+        minimized: false,
+        offset_x: Math.round(offset.x),
+        offset_y: Math.round(offset.y),
+      },
+    }));
+  };
+
   const restore_window = (window_id: string) => {
     set_focused_window_id(window_id);
     set_window_overrides((current) => ({
@@ -235,12 +250,17 @@ export function OperationStageDesktop({
           <OperationStageWindow
             delay_ms={Math.min(index * 70, 280)}
             dimmed={!is_active && window.phase !== "minimized"}
+            drag_offset={{
+              x: window_overrides[window.id]?.offset_x ?? 0,
+              y: window_overrides[window.id]?.offset_y ?? 0,
+            }}
             focus={is_active}
             icon={icon_for_window_kind(window.kind)}
             key={window.id}
             mobile_hidden={!is_active}
             minimized={window.phase === "minimized"}
             on_close={() => close_window(window.id)}
+            on_drag={(offset) => move_window(window.id, offset)}
             on_focus={() => focus_window(window.id)}
             on_minimize={() => minimize_window(window.id)}
             position_class_name={position_for_window(window)}

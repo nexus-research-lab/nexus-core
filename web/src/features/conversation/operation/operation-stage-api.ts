@@ -7,7 +7,7 @@ const OPERATION_STAGE_API_BASE_URL = `${get_agent_api_base_url()}/operation/stag
 
 interface OperationStageSnapshotEnvelope {
   key: string;
-  snapshot: NexusOperationSnapshot;
+  snapshot: NexusOperationSnapshot | null;
   updated_at: string;
 }
 

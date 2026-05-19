@@ -369,11 +369,11 @@ function resolve_focus_target(
   if (event.surface === "knowledge") {
     return "document";
   }
-  if (event.surface === "web" || (context.has_html_artifact && (event.surface === "summary" || event.surface === "terminal"))) {
-    return "browser";
-  }
   if (event.surface === "terminal" && context.has_terminal) {
     return "terminal";
+  }
+  if (event.surface === "web" || (context.has_html_artifact && event.surface === "summary")) {
+    return "browser";
   }
   if ((event.surface === "workspace" || event.surface === "editor") && context.has_file) {
     return event.surface === "workspace" ? "finder" : "document";

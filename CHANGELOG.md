@@ -12,9 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - 操作舞台按工具类型区分读、写、运行、浏览器、知识与任务窗口，并重做 Dock、窗口聚焦、终端输出与文件预览呈现。
+- 操作舞台窗口支持通过标题栏拖动位置，并在拖动时保持窗口置顶与内部内容滚动独立。
 
 ### Fixed
 - 修复新 Room session 复用旧操作舞台快照的问题，并隔离 workspace live 事件避免旧会话内容污染新舞台。
+- 缺失操作舞台快照时返回空结果，避免新 session 打开时产生预期内的 404 告警。
 
 ## [0.1.2] - 2026-05-12
 

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 
 	handlershared "github.com/nexus-research-lab/nexus/internal/handler/shared"
 	operationpkg "github.com/nexus-research-lab/nexus/internal/service/operation"
@@ -30,9 +31,14 @@ type saveStageSnapshotRequest struct {
 
 // HandleGetStageSnapshot 读取会话舞台快照。
 func (h *Handlers) HandleGetStageSnapshot(writer http.ResponseWriter, request *http.Request) {
-	item, err := h.operation.GetStageSnapshot(request.Context(), request.URL.Query().Get("key"))
+	key := request.URL.Query().Get("key")
+	item, err := h.operation.GetStageSnapshot(request.Context(), key)
 	if errors.Is(err, operationpkg.ErrStageSnapshotNotFound) {
-		h.api.WriteFailure(writer, http.StatusNotFound, "舞台快照不存在")
+		h.api.WriteSuccess(writer, &operationpkg.StageSnapshot{
+			Key:       strings.TrimSpace(key),
+			Snapshot:  nil,
+			UpdatedAt: "",
+		})
 		return
 	}
 	if errors.Is(err, operationpkg.ErrInvalidStageSnapshot) {
