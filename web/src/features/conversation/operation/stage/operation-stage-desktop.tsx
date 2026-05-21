@@ -512,9 +512,18 @@ function StageStatusBar({
   const PhaseIcon = phase_meta.Icon;
   const round_event_count = snapshot?.events.filter((item) => item.round_id === event.round_id).length ?? 1;
   const elapsed = format_elapsed(event.started_at, event.ended_at, event.updated_at);
+  const director_cues = build_stage_director_cues({
+    active_window,
+    event,
+    is_replay: Boolean(is_replay),
+    narrative,
+    round_event_count,
+    snapshot,
+    visible_window_count,
+  });
 
   return (
-    <div className="operation-stage-mobile-panel absolute left-4 top-4 z-30 flex max-w-[min(420px,calc(100%-2rem))] items-start gap-3 max-md:relative max-md:left-auto max-md:top-auto max-md:mb-3 max-md:!w-full max-md:min-w-0 max-md:!max-w-full max-md:overflow-hidden">
+    <div className="operation-stage-mobile-panel absolute left-4 top-4 z-30 flex max-w-[min(470px,calc(100%-2rem))] items-start gap-3 max-md:relative max-md:left-auto max-md:top-auto max-md:mb-3 max-md:!w-full max-md:min-w-0 max-md:!max-w-full max-md:overflow-hidden">
       <div className="min-w-0 rounded-[16px] border border-white/72 bg-white/72 px-3.5 py-3 shadow-[0_18px_46px_rgba(18,28,42,0.12)] backdrop-blur-xl max-md:w-full">
         <div className="flex min-w-0 items-center gap-2">
           <span className={cn(
@@ -541,9 +550,113 @@ function StageStatusBar({
             {event.target ?? active_window?.title ?? narrative.detail}
           </p>
         ) : null}
+        <div className="mt-3 grid grid-cols-3 gap-1.5 max-sm:grid-cols-1">
+          {director_cues.map((cue) => {
+            const CueIcon = cue.Icon;
+            return (
+              <div
+                className={cn(
+                  "min-w-0 rounded-[11px] border px-2.5 py-2",
+                  cue.tone === "warning"
+                    ? "border-[rgba(223,157,46,0.20)] bg-[rgba(223,157,46,0.09)]"
+                    : cue.tone === "success"
+                      ? "border-[rgba(47,184,132,0.20)] bg-[rgba(47,184,132,0.08)]"
+                      : "border-white/50 bg-white/38",
+                )}
+                key={cue.label}
+              >
+                <div className="flex items-center gap-1.5 text-[9.5px] font-bold uppercase tracking-[0.12em] text-(--text-soft)">
+                  <CueIcon className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{cue.label}</span>
+                </div>
+                <p className="mt-1 line-clamp-2 text-[10.5px] font-semibold leading-snug text-(--text-strong)">
+                  {cue.value}
+                </p>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
+}
+
+function build_stage_director_cues({
+  active_window,
+  event,
+  is_replay,
+  narrative,
+  round_event_count,
+  snapshot,
+  visible_window_count,
+}: {
+  active_window: StageWindowState | null;
+  event: NexusOperationEvent;
+  is_replay: boolean;
+  narrative: StageNarrativeState;
+  round_event_count: number;
+  snapshot: NexusOperationSnapshot | null;
+  visible_window_count: number;
+}): Array<{
+  label: string;
+  value: string;
+  tone: "neutral" | "success" | "warning";
+  Icon: LucideIcon;
+}> {
+  const round_events = snapshot?.events.filter((item) => item.round_id === event.round_id) ?? [event];
+  const error_count = round_events.filter((item) => item.phase === "error" || item.phase === "cancelled").length;
+  const done_count = round_events.filter((item) => item.phase === "done").length;
+  const evidence_count = round_events.reduce((total, item) => total + (item.evidence?.length ?? 0), 0);
+  const workspace_count = collect_completion_workspace_artifacts(event, snapshot).length;
+  const primary_target_candidate = event.target
+    ?? active_window?.target
+    ?? active_window?.title
+    ?? narrative.detail
+    ?? event.title
+    ?? event.summary;
+  const primary_target = is_low_signal_director_value(primary_target_candidate)
+    ? event.title
+    : primary_target_candidate;
+  const next_step = error_count
+    ? "先回看异常窗口、输入参数和证据，再决定重试或改写任务。"
+    : narrative.phase === "completed" || narrative.phase === "settling"
+      ? "从交接清单继续，打开关键产物或回放任一步骤。"
+      : event.phase === "waiting"
+        ? "确认权限后，舞台会回到当前工具窗口继续执行。"
+        : event.surface === "terminal"
+          ? "观察 stdout、stderr 和退出码，确认命令是否收束。"
+          : "等待下一个真实工具事件进入工作台。";
+
+  return [
+    {
+      label: is_replay ? "Replay" : "Mission",
+      value: primary_target,
+      tone: error_count ? "warning" : "neutral",
+      Icon: Route,
+    },
+    {
+      label: "Scene",
+      value: `${round_event_count} 步 · ${visible_window_count} 窗口 · ${workspace_count + evidence_count} 证据`,
+      tone: done_count > 0 && !error_count ? "success" : error_count ? "warning" : "neutral",
+      Icon: ListChecks,
+    },
+    {
+      label: "Next",
+      value: next_step,
+      tone: error_count || event.phase === "waiting" ? "warning" : "neutral",
+      Icon: ArrowRight,
+    },
+  ];
+}
+
+function is_low_signal_director_value(value: string | null | undefined): value is string {
+  if (!value) {
+    return true;
+  }
+  const normalized = value.trim().toLowerCase();
+  return !normalized
+    || /^\d+\s+turns?$/.test(normalized)
+    || /^\d+\s+actions?$/.test(normalized);
 }
 
 function StageActGuide({
