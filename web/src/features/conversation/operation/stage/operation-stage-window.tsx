@@ -10,6 +10,7 @@ interface OperationStageWindowProps {
   icon: LucideIcon;
   children: ReactNode;
   position_class_name: string;
+  footer?: ReactNode;
   delay_ms?: number;
   focus?: boolean;
   minimized?: boolean;
@@ -28,6 +29,7 @@ export function OperationStageWindow({
   icon: Icon,
   children,
   position_class_name,
+  footer,
   delay_ms = 0,
   focus = false,
   minimized = false,
@@ -270,6 +272,16 @@ export function OperationStageWindow({
         ) : null}
         {children}
       </div>
+      {footer && !minimized ? (
+        <div className={cn(
+          "shrink-0 border-t",
+          tone === "terminal"
+            ? "border-white/10 bg-[#0f171f]"
+            : "border-(--divider-subtle-color) bg-white/68",
+        )}>
+          {footer}
+        </div>
+      ) : null}
     </div>
   );
 }

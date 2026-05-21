@@ -430,6 +430,7 @@ export function OperationStageDesktop({
               y: window_overrides[window.id]?.offset_y ?? 0,
             }}
             focus={is_active}
+            footer={<WindowSettlementBar active={is_active} event={window.payload.event} tone={window.kind === "terminal" ? "terminal" : "default"} />}
             icon={icon_for_window_kind(window.kind)}
             key={window.id}
             mobile_hidden={!is_active}
@@ -1910,6 +1911,56 @@ function StageFocusBeam() {
   return (
     <div className="pointer-events-none absolute inset-x-[14%] top-[50%] hidden h-px bg-gradient-to-r from-transparent via-[rgba(91,114,255,0.24)] to-transparent md:block">
       <span className="operation-focus-dot absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[color:var(--primary)]" />
+    </div>
+  );
+}
+
+function WindowSettlementBar({
+  active,
+  event,
+  tone,
+}: {
+  active: boolean;
+  event: NexusOperationEvent;
+  tone: "default" | "terminal";
+}) {
+  const phase_meta = PHASE_STATUS_META[event.phase];
+  const PhaseIcon = phase_meta.Icon;
+  const evidence_count = event.evidence?.length ?? 0;
+  const target = event.target ?? event.summary ?? event.title;
+  const settled = event.phase === "done" || event.phase === "cancelled" || event.phase === "error";
+
+  return (
+    <div className={cn(
+      "grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2 text-[9.5px]",
+      tone === "terminal" ? "text-[#88a19a]" : "text-(--text-soft)",
+    )}>
+      <span className={cn(
+        "inline-flex h-5 items-center gap-1 rounded-full border px-1.5 font-bold",
+        tone === "terminal"
+          ? settled
+            ? "border-[#24463a] bg-[#14241d] text-[#8de0ad]"
+            : "border-[#243545] bg-[#111b24] text-[#8bb7ff]"
+          : phase_meta.class_name,
+      )}>
+        <PhaseIcon className={cn("h-3 w-3", event.phase === "running" && "animate-spin")} />
+        {settled ? "已沉淀" : phase_meta.label}
+      </span>
+      <span className="min-w-0 truncate font-semibold">
+        {target}
+      </span>
+      <span className={cn(
+        "shrink-0 rounded-full px-1.5 py-px font-bold",
+        active
+          ? tone === "terminal"
+            ? "bg-[#17232c] text-[#b7cbc5]"
+            : "bg-[rgba(91,114,255,0.10)] text-[color:var(--primary)]"
+          : tone === "terminal"
+            ? "bg-[#111b24] text-[#60757f]"
+            : "bg-white/56 text-(--text-soft)",
+      )}>
+        {evidence_count ? `${evidence_count} 证据` : SURFACE_LABEL[event.surface]}
+      </span>
     </div>
   );
 }
