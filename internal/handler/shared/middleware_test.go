@@ -76,6 +76,35 @@ func TestRecoverMiddlewareReturnsInternalError(t *testing.T) {
 	}
 }
 
+func TestAccessLogMiddlewareRedactsSensitiveQueryValues(t *testing.T) {
+	var buffer bytes.Buffer
+	logger := slog.New(slog.NewJSONHandler(&buffer, &slog.HandlerOptions{Level: slog.LevelDebug}))
+
+	handler := RequestContextMiddleware(logger)(
+		AccessLogMiddleware()(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			writer.WriteHeader(http.StatusOK)
+		})),
+	)
+
+	request := httptest.NewRequest(http.MethodGet, "/nexus/v1/agents?access_token=super-secret&token=another-secret&limit=10", nil)
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, request)
+
+	output := buffer.String()
+	if strings.Contains(output, "super-secret") || strings.Contains(output, "another-secret") {
+		t.Fatalf("access log 不应泄露敏感 query 参数: %s", output)
+	}
+	if !strings.Contains(output, "access_token=REDACTED") {
+		t.Fatalf("access log 未脱敏 access_token: %s", output)
+	}
+	if !strings.Contains(output, "token=REDACTED") {
+		t.Fatalf("access log 未脱敏 token: %s", output)
+	}
+	if !strings.Contains(output, "limit=10") {
+		t.Fatalf("access log 不应移除非敏感 query 参数: %s", output)
+	}
+}
+
 func TestDesktopSessionTokenMiddlewareProtectsAPI(t *testing.T) {
 	api := NewAPI(slog.New(slog.NewTextHandler(io.Discard, nil)))
 	handler := DesktopSessionTokenMiddleware(api, "desktop-token", "/nexus/v1")(

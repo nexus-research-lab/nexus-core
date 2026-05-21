@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/url"
 	"runtime/debug"
 	"strings"
 	"time"
@@ -140,7 +141,7 @@ func AccessLogMiddleware() func(http.Handler) http.Handler {
 				"remote_ip", ClientIP(request),
 				"path", request.URL.Path,
 			}
-			if rawQuery := strings.TrimSpace(request.URL.RawQuery); rawQuery != "" {
+			if rawQuery := sanitizeAccessLogQuery(request.URL.RawQuery); rawQuery != "" {
 				fields = append(fields, "query", rawQuery)
 			}
 
@@ -229,6 +230,23 @@ func AuthMiddleware(api *API, auth *authsvc.Service) func(http.Handler) http.Han
 			next.ServeHTTP(writer, request.WithContext(ctx))
 		})
 	}
+}
+
+func sanitizeAccessLogQuery(rawQuery string) string {
+	trimmed := strings.TrimSpace(rawQuery)
+	if trimmed == "" {
+		return ""
+	}
+	values, err := url.ParseQuery(trimmed)
+	if err != nil {
+		return trimmed
+	}
+	for _, key := range []string{"access_token", "token"} {
+		if _, exists := values[key]; exists {
+			values.Set(key, "REDACTED")
+		}
+	}
+	return values.Encode()
 }
 
 func normalizeAPIPrefix(prefix string) string {
