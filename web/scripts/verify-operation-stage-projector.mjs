@@ -50,11 +50,13 @@ const {
 } = await import(pathToFileURL(join(operation_dir, "operation-scene-planner.js")));
 const {
   build_operation_continuation_brief,
+  build_operation_live_episode,
   derive_operation_stage_experience_phase,
 } = await import(pathToFileURL(join(operation_dir, "operation-stage-experience.js")));
 const now = Date.now();
 
 verify_stage_experience_state_machine(now);
+verify_live_episode_narrates_running_round(now);
 verify_workspace_live_stays_in_tool_round(now);
 verify_multi_file_windows_keep_event_identity(now);
 verify_terminal_result_envelope(now);
@@ -133,6 +135,71 @@ function verify_stage_experience_state_machine(now) {
     }) === "completed",
     "multi-step completed round should enter completed phase",
   );
+}
+
+function verify_live_episode_narrates_running_round(now) {
+  const base = {
+    session_key: "session:stage-live",
+    round_id: "round-live",
+    agent_id: "agent-stage",
+    updated_at: now,
+  };
+  const read_event = {
+    ...base,
+    id: "live-read",
+    tool_use_id: "tool-read",
+    tool_name: "Read",
+    kind: "workspace_read",
+    surface: "editor",
+    phase: "done",
+    title: "Read index",
+    target: "index.html",
+    updated_at: now - 300,
+  };
+  const write_event = {
+    ...base,
+    id: "live-write",
+    tool_use_id: "tool-write",
+    tool_name: "Write",
+    kind: "workspace_edit",
+    surface: "editor",
+    phase: "done",
+    title: "Write gomoku",
+    target: "gomoku.html",
+    updated_at: now - 200,
+  };
+  const terminal_event = {
+    ...base,
+    id: "live-bash",
+    tool_use_id: "tool-bash",
+    tool_name: "Bash",
+    kind: "command_run",
+    surface: "terminal",
+    phase: "running",
+    title: "Run open",
+    target: "open gomoku.html",
+    updated_at: now - 100,
+  };
+  const episode = build_operation_live_episode(
+    terminal_event,
+    [read_event, write_event, terminal_event],
+    {
+      key: "session:stage-live",
+      session_key: "session:stage-live",
+      active_event: terminal_event,
+      events: [read_event, write_event, terminal_event],
+      recent_evidence: [],
+      workspace_events: [],
+      updated_at: now,
+    },
+  );
+
+  assert(episode.status_label === "LIVE_OPERATION", `running tool should be narrated as live operation, got ${episode.status_label}`);
+  assert(episode.progress_label === "3/3", `live episode should expose current event position, got ${episode.progress_label}`);
+  assert(episode.settled_count === 2, `live episode should count settled predecessors, got ${episode.settled_count}`);
+  assert(episode.previous_label.includes("Write"), `live episode should point to previous settled tool, got ${episode.previous_label}`);
+  assert(episode.next_label.includes("命令退出"), `terminal live episode should wait for command exit, got ${episode.next_label}`);
+  assert(episode.checkpoints.some((item) => item.label === "当前" && item.value === "执行"), "live episode should mark current step as executing");
 }
 
 function verify_workspace_live_stays_in_tool_round(now) {

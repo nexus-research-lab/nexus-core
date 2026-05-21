@@ -41,6 +41,7 @@ import {
 } from "../operation-scene-planner";
 import {
   build_operation_continuation_brief,
+  build_operation_live_episode,
   derive_operation_stage_experience_phase,
 } from "../operation-stage-experience";
 import type {
@@ -353,6 +354,7 @@ export function OperationStageDesktop({
         event={event}
         events={narrative_events}
         narrative={narrative}
+        snapshot={snapshot}
       />
       {narrative.phase === "completed" || narrative.phase === "settling" ? (
         <StageCompletionLedger
@@ -369,10 +371,11 @@ export function OperationStageDesktop({
           active_window={active_window}
           events={narrative_events}
           narrative={narrative}
-          on_focus_event={focus_event_window}
-          revealed_window_count={revealed_window_count}
-          total_window_count={windows_for_reveal.length}
-        />
+        on_focus_event={focus_event_window}
+        revealed_window_count={revealed_window_count}
+        snapshot={snapshot}
+        total_window_count={windows_for_reveal.length}
+      />
       )}
       {visible_windows.length ? visible_windows.map((window, index) => {
         const is_active = active_window_id === window.id && window.phase !== "minimized";
@@ -530,18 +533,20 @@ function StageActGuide({
   event,
   events,
   narrative,
+  snapshot,
 }: {
   active_window: StageWindowState | null;
   event: NexusOperationEvent;
   events: NexusOperationEvent[];
   narrative: StageNarrativeState;
+  snapshot: NexusOperationSnapshot | null;
 }) {
   if (narrative.phase === "completed" || narrative.phase === "settling") {
     return null;
   }
 
   const profile = resolve_operation_tool_profile(event.tool_name, event.kind, event.surface);
-  const active_index = Math.max(0, events.findIndex((item) => item.id === event.id));
+  const episode = build_operation_live_episode(event, events, snapshot);
   const is_waiting = event.phase === "waiting";
   const is_runtime_handoff = event.surface === "conversation";
   const act_steps = is_waiting
@@ -584,7 +589,7 @@ function StageActGuide({
             </div>
           </div>
           <span className="shrink-0 rounded-full border border-white/56 bg-white/48 px-2 py-1 text-[9.5px] font-bold text-(--text-soft)">
-            {active_index + 1}/{events.length}
+            {episode.progress_label}
           </span>
         </div>
 
@@ -636,6 +641,55 @@ function StageActGuide({
             {target}
           </p>
         </div>
+
+        <div className="mt-2 overflow-hidden rounded-[12px] border border-[rgba(91,114,255,0.16)] bg-[rgba(91,114,255,0.06)] p-2">
+          <div className="flex min-w-0 items-start gap-2">
+            <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-[9px] border border-[rgba(91,114,255,0.18)] bg-white/46 text-[color:var(--primary)]">
+              <Route className="h-3.5 w-3.5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 items-center justify-between gap-2">
+                <p className="truncate text-[9.5px] font-black uppercase tracking-[0.08em] text-(--text-strong)">
+                  {episode.status_label}
+                </p>
+                <span className="shrink-0 rounded-full bg-white/54 px-1.5 py-px text-[8.5px] font-bold text-(--text-soft)">
+                  live
+                </span>
+              </div>
+              <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-(--text-muted)">
+                {episode.status_detail}
+              </p>
+              <div className="mt-2 grid gap-1 text-[9.5px]">
+                <div className="grid grid-cols-[42px_minmax(0,1fr)] gap-2 rounded-[8px] bg-white/34 px-2 py-1.5">
+                  <span className="font-bold text-(--text-soft)">刚才</span>
+                  <span className="truncate font-semibold text-(--text-strong)">{episode.previous_label}</span>
+                </div>
+                <div className="grid grid-cols-[42px_minmax(0,1fr)] gap-2 rounded-[8px] bg-white/34 px-2 py-1.5">
+                  <span className="font-bold text-(--text-soft)">等待</span>
+                  <span className="truncate font-semibold text-(--text-strong)">{episode.next_label}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="mt-2 grid grid-cols-4 gap-1.5">
+            {episode.checkpoints.map((checkpoint) => (
+              <div
+                className={cn(
+                  "min-w-0 rounded-[8px] border px-1.5 py-1.5",
+                  checkpoint.tone === "warning"
+                    ? "border-[rgba(223,157,46,0.18)] bg-[rgba(223,157,46,0.08)]"
+                    : checkpoint.tone === "success"
+                      ? "border-[rgba(47,184,132,0.17)] bg-[rgba(47,184,132,0.08)]"
+                      : "border-white/42 bg-white/28",
+                )}
+                key={checkpoint.label}
+              >
+                <p className="truncate text-[8px] font-bold text-(--text-soft)">{checkpoint.label}</p>
+                <p className="mt-0.5 truncate text-[9.5px] font-black text-(--text-strong)">{checkpoint.value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -666,6 +720,7 @@ function StageNarrativeRail({
   narrative,
   on_focus_event,
   revealed_window_count,
+  snapshot,
   total_window_count,
 }: {
   events: NexusOperationEvent[];
@@ -674,6 +729,7 @@ function StageNarrativeRail({
   narrative: StageNarrativeState;
   on_focus_event?: (event: NexusOperationEvent) => void;
   revealed_window_count: number;
+  snapshot: NexusOperationSnapshot | null;
   total_window_count: number;
 }) {
   if (!events.length) {
@@ -687,6 +743,9 @@ function StageNarrativeRail({
     item.phase === "done" || item.phase === "cancelled" || item.phase === "error"
   )).length;
   const active_target = active_event?.target ?? active_event?.summary ?? active_window?.title ?? active_event?.title;
+  const episode = active_event
+    ? build_operation_live_episode(active_event, events, snapshot)
+    : null;
 
   return (
     <div className="operation-stage-mobile-panel absolute bottom-[76px] left-4 z-30 w-[min(390px,calc(100%-2rem))] max-md:relative max-md:bottom-auto max-md:left-auto max-md:mb-3 max-md:!w-full max-md:min-w-0 max-md:!max-w-full max-md:overflow-hidden">
@@ -728,6 +787,33 @@ function StageNarrativeRail({
                   {Math.min(revealed_window_count, total_window_count)}/{total_window_count}
                 </div>
                 <div>现场窗口</div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+        {episode ? (
+          <div className="mb-2.5 rounded-[12px] border border-[rgba(91,114,255,0.15)] bg-[rgba(91,114,255,0.06)] p-2.5">
+            <div className="flex min-w-0 items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="truncate text-[9.5px] font-black uppercase tracking-[0.08em] text-(--text-strong)">
+                  {episode.status_label}
+                </p>
+                <p className="mt-0.5 truncate text-[10px] text-(--text-soft)">
+                  {episode.active_tool_label} · {episode.active_target}
+                </p>
+              </div>
+              <span className="shrink-0 rounded-full bg-white/58 px-2 py-1 text-[9px] font-bold text-(--text-soft)">
+                {episode.progress_label}
+              </span>
+            </div>
+            <div className="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-1.5 text-[9.5px] max-sm:grid-cols-1">
+              <div className="min-w-0 rounded-[9px] bg-white/34 px-2 py-1.5">
+                <p className="font-bold text-(--text-soft)">刚刚沉淀</p>
+                <p className="mt-0.5 truncate font-semibold text-(--text-strong)">{episode.previous_label}</p>
+              </div>
+              <div className="min-w-0 rounded-[9px] bg-white/34 px-2 py-1.5">
+                <p className="font-bold text-(--text-soft)">下一拍</p>
+                <p className="mt-0.5 truncate font-semibold text-(--text-strong)">{episode.next_label}</p>
               </div>
             </div>
           </div>

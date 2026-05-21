@@ -49,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 操作舞台 pending permission 改为按当前 session/agent 与精确工具输入匹配，避免旧会话权限或同名工具权限误入当前工作台。
 - 操作舞台执行清单新增交接摘要，沉淀完成状态、继续上下文、关键产物与检查点，让完成态更像真实可续作的工作档案。
 - 操作舞台完成态侧栏新增续作提示，将下一步可继续的产物、状态解释和检查点提升为舞台级信息，不再只藏在执行清单窗口里。
+- 操作舞台运行态新增 live episode 叙事，明确刚刚沉淀的工具、当前焦点工具、下一步等待条件与执行检查点，让工具流更像真实逐步发生。
 - 新增 `pnpm --dir web verify:operation-stage` 校验脚本，覆盖完成态 summary 焦点、workspace live round 归属和命令结果 envelope 不变量。
 
 ### Fixed
