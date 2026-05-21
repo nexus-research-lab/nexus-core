@@ -2393,8 +2393,10 @@ function build_stage_narrative(
   if (phase === "awakening") {
     return {
       phase: "awakening",
-      label: "唤醒工作台",
-      detail: "nexus 字符场正在展开为执行现场",
+      label: event.surface === "conversation" ? "运行接入" : "唤醒工作台",
+      detail: event.surface === "conversation"
+        ? "nexus 字符场正在接入运行时，等待第一个工具窗口显影"
+        : "nexus 字符场正在展开为执行现场",
     };
   }
   if (event.phase === "waiting") {

@@ -51,7 +51,14 @@ export function derive_operation_stage_experience_phase(
   if (!event) {
     return "idle";
   }
-  if (event.phase === "queued") {
+  if (
+    event.phase === "queued" ||
+    (
+      event.surface === "conversation" &&
+      (event.phase === "running" || event.phase === "waiting") &&
+      count_round_events(event, snapshot) <= 1
+    )
+  ) {
     return "awakening";
   }
   if (event.phase === "running" || event.phase === "waiting") {
@@ -87,10 +94,7 @@ export function build_operation_continuation_brief(
   const workspace_items = collect_continuation_workspace_items(event, round_events, snapshot);
   const evidence_count = round_events.reduce((total, item) => total + (item.evidence?.length ?? 0), 0)
     + (snapshot?.recent_evidence.length ?? 0);
-  const primary_artifact = workspace_items[0]?.path
-    ?? round_events.find((item) => item.target && item.surface !== "terminal" && item.surface !== "conversation")?.target
-    ?? event.target
-    ?? event.title;
+  const primary_artifact = select_continuation_primary_artifact(event, round_events, workspace_items);
 
   return {
     status_label: failed_count
@@ -167,17 +171,19 @@ export function build_operation_live_episode(
         ? "等待确认"
         : is_api_retry
           ? "API 重试中"
-          : "现场执行",
+          : is_handoff
+            ? "运行接入"
+            : "现场执行",
     status_detail: is_queued
       ? "字符场正在展开为第一层工作现场。"
       : is_waiting
         ? "当前工具停在权限检查点，确认后会继续回到执行现场。"
         : is_api_retry
           ? "模型 API 暂未返回可执行事件，运行时正在重试并保留现场。"
-        : is_terminal
-          ? "命令窗口正在接收真实 stdout、stderr 和退出状态。"
           : is_handoff
-            ? "运行时正在接入上下文，等待首个工具事件形成窗口。"
+            ? "nexus 初始场正在让位给运行时接入，等待第一个工具调用形成窗口。"
+          : is_terminal
+            ? "命令窗口正在接收真实 stdout、stderr 和退出状态。"
             : "当前工具窗口已成为焦点，前序步骤沉淀在工作台轨迹里。",
     active_index,
     total_count: ordered_events.length,
@@ -318,6 +324,64 @@ function collect_continuation_workspace_items(
     ? workspace_items.find((item) => item.path === event.target)
     : null;
   return event_target_item ? [event_target_item] : [];
+}
+
+function select_continuation_primary_artifact(
+  event: NexusOperationEvent,
+  events: NexusOperationEvent[],
+  workspace_items: NexusOperationSnapshot["workspace_events"],
+): string {
+  const workspace_path = workspace_items.find((item) => !is_low_signal_continuation_value(item.path))?.path;
+  if (workspace_path) {
+    return workspace_path;
+  }
+
+  const file_target = events.find((item) => (
+    item.kind !== "round_summary" &&
+    item.target &&
+    !is_low_signal_continuation_value(item.target) &&
+    (
+      item.surface === "workspace" ||
+      item.surface === "editor" ||
+      looks_like_continuation_file_artifact(item.target)
+    )
+  ))?.target;
+  if (file_target) {
+    return file_target;
+  }
+
+  const semantic_target = events.find((item) => (
+    item.kind !== "round_summary" &&
+    item.surface !== "terminal" &&
+    item.surface !== "conversation" &&
+    item.target &&
+    !is_low_signal_continuation_value(item.target)
+  ))?.target;
+  if (semantic_target) {
+    return semantic_target;
+  }
+
+  if (event.target && !is_low_signal_continuation_value(event.target)) {
+    return event.target;
+  }
+  return event.summary ?? event.title;
+}
+
+function is_low_signal_continuation_value(value: string | null | undefined): value is string {
+  if (!value) {
+    return true;
+  }
+  const normalized = value.trim().toLowerCase();
+  return !normalized || /^\d+\s+turns?$/.test(normalized) || normalized === "0";
+}
+
+function looks_like_continuation_file_artifact(value: string): boolean {
+  const normalized = value.trim();
+  if (!normalized || normalized.endsWith("/")) {
+    return false;
+  }
+  const basename = normalized.split(/[\\/]/).filter(Boolean).at(-1) ?? normalized;
+  return /\.[a-z0-9]{1,12}$/i.test(basename);
 }
 
 function settle_stale_live_event_for_round_summary(

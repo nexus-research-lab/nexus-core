@@ -14,6 +14,7 @@ import {
   Globe2,
   Loader2,
   MessageSquare,
+  RadioTower,
   ShieldQuestion,
   Sparkles,
   Terminal,
@@ -30,7 +31,10 @@ import {
   build_operation_stage_key,
   useOperationStageStore,
 } from "./operation-store";
-import { derive_operation_stage_experience_phase } from "./operation-stage-experience";
+import {
+  derive_operation_stage_experience_phase,
+} from "./operation-stage-experience";
+import type { OperationStageExperiencePhase } from "./operation-stage-experience";
 import { OperationStageDesktop } from "./stage/operation-stage-desktop";
 import type {
   NexusOperationEvent,
@@ -86,6 +90,19 @@ interface StageTransitionState {
 }
 
 const IDLE_PARTICLE_GLYPHS = ["{", "}", "<", ">", "/", "\\", "0", "1", "n", "x", "+", "·", ";", ":"];
+
+const STAGE_STORY_ITEMS: Array<{
+  id: OperationStageExperiencePhase;
+  label: string;
+  value: string;
+  Icon: LucideIcon;
+}> = [
+  { id: "idle", label: "入口", value: "字符场", Icon: Sparkles },
+  { id: "awakening", label: "唤醒", value: "运行接入", Icon: RadioTower },
+  { id: "running", label: "执行", value: "工具窗口", Icon: Activity },
+  { id: "settling", label: "落盘", value: "现场沉淀", Icon: FolderTree },
+  { id: "completed", label: "交接", value: "可回看", Icon: CheckCircle2 },
+];
 
 const SURFACE_META: Record<OperationSurface, SurfaceMeta> = {
   workspace: {
@@ -925,7 +942,7 @@ function EmptyStage({
       </div>
 
       <IdleWorkstationStatus snapshot={snapshot} subtitle={subtitle} />
-      <IdleNarrativeDock snapshot={snapshot} />
+      <IdleNarrativeDock phase={exiting ? "awakening" : "idle"} snapshot={snapshot} />
 
       {exiting && active_event ? (
         <StageBootSignal
@@ -975,52 +992,72 @@ function IdleWorkstationStatus({
   );
 }
 
-function IdleNarrativeDock({ snapshot }: { snapshot: NexusOperationSnapshot | null }) {
+function IdleNarrativeDock({
+  phase,
+  snapshot,
+}: {
+  phase: OperationStageExperiencePhase;
+  snapshot: NexusOperationSnapshot | null;
+}) {
   const has_resume_context = Boolean(
     snapshot &&
     (snapshot.events.length > 0 || snapshot.workspace_events.length > 0 || snapshot.recent_evidence.length > 0),
   );
-  const items = has_resume_context
-    ? [
-        { label: "最近现场", value: `${snapshot?.events.length ?? 0} 步`, Icon: Activity },
-        { label: "产物", value: `${snapshot?.workspace_events.length ?? 0} 项`, Icon: FolderTree },
-        { label: "证据", value: `${snapshot?.recent_evidence.length ?? 0} 条`, Icon: FileText },
-      ]
-    : [
-        { label: "入口", value: "nexus", Icon: Sparkles },
-        { label: "接入", value: "工具事件", Icon: Activity },
-        { label: "沉淀", value: "交接记录", Icon: CheckCircle2 },
-      ];
 
   return (
-    <div className="pointer-events-none absolute bottom-8 right-8 z-10 w-[min(340px,calc(100%-4rem))] max-sm:bottom-24 max-sm:right-5 max-sm:w-[min(280px,calc(100%-2.5rem))]">
+    <div className="pointer-events-none absolute bottom-8 right-8 z-10 w-[min(520px,calc(100%-4rem))] max-sm:bottom-24 max-sm:right-5 max-sm:w-[min(320px,calc(100%-2.5rem))]">
       <div className="rounded-[18px] border border-white/62 bg-white/40 p-2.5 shadow-[0_18px_46px_rgba(18,28,42,0.08)] backdrop-blur-xl">
         <div className="flex items-center justify-between gap-3 px-1 pb-2">
           <span className="text-[10px] font-black text-(--text-strong)">
-            {has_resume_context ? "可恢复工作台" : "待命轨道"}
+            {has_resume_context ? "可恢复工作台" : "工作台叙事轨"}
           </span>
           <span className="text-[9px] font-semibold text-(--text-soft)">
-            {has_resume_context ? "本地快照" : "待机"}
+            {has_resume_context ? `${snapshot?.events.length ?? 0} 步快照` : "idle"}
           </span>
         </div>
-        <div className="grid grid-cols-3 gap-1.5">
-          {items.map((item) => {
-            const Icon = item.Icon;
-            return (
-              <div
-                className="min-w-0 rounded-[12px] border border-white/46 bg-white/28 px-2 py-2 text-center"
-                key={item.label}
-              >
-                <Icon className="mx-auto h-3.5 w-3.5 text-[color:var(--primary)] opacity-80" />
-                <p className="mt-1 truncate text-[9.5px] font-black text-(--text-strong)">{item.value}</p>
-                <p className="mt-0.5 truncate text-[8px] font-semibold text-(--text-soft)">{item.label}</p>
-              </div>
-            );
-          })}
-        </div>
+        <StageStoryTrack phase={phase} />
       </div>
     </div>
   );
+}
+
+function StageStoryTrack({ phase }: { phase: OperationStageExperiencePhase }) {
+  const active_index = stage_story_active_index(phase);
+
+  return (
+    <div className="grid grid-cols-5 gap-1.5 max-sm:grid-cols-1">
+      {STAGE_STORY_ITEMS.map((item, index) => {
+        const Icon = item.Icon;
+        const is_active = index === active_index;
+        const is_done = index < active_index || phase === "completed";
+        return (
+          <div
+            className={cn(
+              "min-w-0 rounded-[12px] border px-2 py-2 text-center transition",
+              is_active
+                ? "border-[rgba(91,114,255,0.28)] bg-[rgba(91,114,255,0.12)] text-(--text-strong)"
+                : is_done
+                  ? "border-[rgba(47,184,132,0.20)] bg-[rgba(47,184,132,0.08)] text-(--text-strong)"
+                  : "border-white/46 bg-white/28 text-(--text-soft)",
+            )}
+            key={item.id}
+          >
+            <Icon className={cn(
+              "mx-auto h-3.5 w-3.5",
+              is_active ? "text-[color:var(--primary)]" : is_done ? "text-[color:var(--success)]" : "text-(--icon-muted)",
+              item.id === "running" && is_active && "animate-spin",
+            )} />
+            <p className="mt-1 truncate text-[9.5px] font-black">{item.value}</p>
+            <p className="mt-0.5 truncate text-[8px] font-semibold">{item.label}</p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function stage_story_active_index(phase: OperationStageExperiencePhase): number {
+  return Math.max(0, STAGE_STORY_ITEMS.findIndex((item) => item.id === phase));
 }
 
 function IdleStatusMetric({ label, value }: { label: string; value: string }) {
