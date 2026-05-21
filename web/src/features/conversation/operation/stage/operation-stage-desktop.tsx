@@ -174,9 +174,15 @@ export function OperationStageDesktop({
     plan_operation_desktop({ event, snapshot })
   ), [event, snapshot]);
   const [focused_window_id, set_focused_window_id] = useState<string | null>(null);
+  const [replay_event_id, set_replay_event_id] = useState<string | null>(null);
   const [window_overrides, set_window_overrides] = useState<Record<string, StageWindowOverride>>({});
   const narrative = useMemo(() => build_stage_narrative(event, snapshot), [event, snapshot]);
   const narrative_events = useMemo(() => collect_narrative_events(event, snapshot), [event, snapshot]);
+  const active_narrative_event_id = useMemo(() => (
+    replay_event_id && narrative_events.some((item) => item.id === replay_event_id)
+      ? replay_event_id
+      : event.id
+  ), [event.id, narrative_events, replay_event_id]);
   const windows_for_reveal = useMemo(() => (
     order_windows_for_reveal(desktop.windows, desktop.active_window_id)
   ), [desktop.active_window_id, desktop.windows]);
@@ -193,8 +199,13 @@ export function OperationStageDesktop({
 
   useEffect(() => {
     set_focused_window_id(null);
+    set_replay_event_id(null);
     set_window_overrides({});
   }, [event.round_id]);
+
+  useEffect(() => {
+    set_replay_event_id(null);
+  }, [event.id]);
 
   useEffect(() => {
     const next_active_window_id = desktop.active_window_id;
@@ -330,6 +341,7 @@ export function OperationStageDesktop({
     if (!target_window_id) {
       return;
     }
+    set_replay_event_id(target_event.id);
     restore_window(target_window_id);
   };
 
@@ -344,7 +356,7 @@ export function OperationStageDesktop({
         window_count={desktop.windows.length}
       />
       <StageOperationRunway
-        active_event_id={event.id}
+        active_event_id={active_narrative_event_id}
         events={narrative_events}
         narrative={narrative}
         on_focus_event={focus_event_window}
@@ -358,7 +370,7 @@ export function OperationStageDesktop({
       />
       {narrative.phase === "completed" || narrative.phase === "settling" ? (
         <StageCompletionLedger
-          active_event_id={event.id}
+          active_event_id={active_narrative_event_id}
           event={event}
           events={narrative_events}
           narrative={narrative}
@@ -367,7 +379,7 @@ export function OperationStageDesktop({
         />
       ) : (
         <StageNarrativeRail
-          active_event_id={event.id}
+          active_event_id={active_narrative_event_id}
           active_window={active_window}
           events={narrative_events}
           narrative={narrative}
@@ -967,6 +979,8 @@ function StageCompletionLedger({
   const completed_count = events.filter((item) => item.phase === "done").length;
   const interrupted_count = events.filter((item) => item.phase === "error" || item.phase === "cancelled").length;
   const visible_events = events.slice(-5);
+  const active_index = events.findIndex((item) => item.id === active_event_id);
+  const active_replay_event = active_index >= 0 ? events[active_index] : event;
 
   return (
     <div className="operation-stage-mobile-panel absolute bottom-[76px] left-4 z-30 w-[min(360px,calc(100%-2rem))] max-md:relative max-md:bottom-auto max-md:left-auto max-md:mb-3 max-md:!w-full max-md:min-w-0 max-md:!max-w-full max-md:overflow-hidden">
@@ -994,7 +1008,7 @@ function StageCompletionLedger({
               ? "border-[rgba(223,157,46,0.24)] bg-[rgba(223,157,46,0.10)] text-[color:var(--warning)]"
               : "border-[rgba(47,184,132,0.22)] bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]",
           )}>
-            {has_error ? "review" : "ready"}
+            {active_index >= 0 ? `${active_index + 1}/${events.length}` : has_error ? "review" : "ready"}
           </span>
         </div>
 
@@ -1018,8 +1032,8 @@ function StageCompletionLedger({
 
         <div className="mt-3 rounded-[13px] border border-white/52 bg-white/36 p-2">
           <div className="mb-2 flex items-center justify-between gap-2 text-[10px] font-bold text-(--text-soft)">
-            <span>最后工作轨迹</span>
-            <span>{format_operation_time(event.updated_at)}</span>
+            <span>执行回放轨迹</span>
+            <span>{format_operation_time(active_replay_event.updated_at)}</span>
           </div>
           <div className="space-y-1">
             {visible_events.map((item, index) => {
