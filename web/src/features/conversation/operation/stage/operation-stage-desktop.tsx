@@ -183,6 +183,9 @@ export function OperationStageDesktop({
       ? replay_event_id
       : event.id
   ), [event.id, narrative_events, replay_event_id]);
+  const active_narrative_event = useMemo(() => (
+    narrative_events.find((item) => item.id === active_narrative_event_id) ?? event
+  ), [active_narrative_event_id, event, narrative_events]);
   const windows_for_reveal = useMemo(() => (
     order_windows_for_reveal(desktop.windows, desktop.active_window_id)
   ), [desktop.active_window_id, desktop.windows]);
@@ -349,7 +352,8 @@ export function OperationStageDesktop({
     <DynamicStageFrame event={event} narrative={narrative}>
       <StageStatusBar
         active_window={active_window}
-        event={event}
+        event={active_narrative_event}
+        is_replay={active_narrative_event.id !== event.id}
         narrative={narrative}
         snapshot={snapshot}
         visible_window_count={visible_windows.length}
@@ -489,6 +493,7 @@ function DynamicStageFrame({
 
 function StageStatusBar({
   event,
+  is_replay,
   snapshot,
   active_window,
   narrative,
@@ -496,6 +501,7 @@ function StageStatusBar({
   window_count,
 }: {
   event: NexusOperationEvent;
+  is_replay?: boolean;
   snapshot: NexusOperationSnapshot | null;
   active_window: StageWindowState | null;
   narrative: StageNarrativeState;
@@ -523,7 +529,7 @@ function StageStatusBar({
           </span>
         </div>
         <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-[10.5px] font-semibold text-(--text-soft)">
-          <span>{narrative.label}</span>
+          <span>{is_replay ? "回放中" : narrative.label}</span>
           <span>{SURFACE_LABEL[event.surface]}</span>
           <span>{round_event_count} actions</span>
           <span>{visible_window_count}/{window_count} windows</span>
