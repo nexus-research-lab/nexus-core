@@ -19,6 +19,8 @@ export type StageWindowKind =
   | "browser"
   | "terminal"
   | "task_board"
+  | "runtime_handoff"
+  | "run_manifest"
   | "evidence"
   | "summary"
   | "permission_wait"
@@ -41,6 +43,17 @@ export type StageWindowLayout =
   | "compact"
   | "artifact";
 
+export interface StageHandoffSummary {
+  status_label: string;
+  status_detail: string;
+  resume_prompt: string;
+  checkpoints: Array<{
+    label: string;
+    value: string;
+    tone: "neutral" | "success" | "warning";
+  }>;
+}
+
 export interface StageWindowPayload {
   event: NexusOperationEvent;
   snapshot: NexusOperationSnapshot | null;
@@ -59,6 +72,7 @@ export interface StageWindowPayload {
     additions: number;
     deletions: number;
   } | null;
+  handoff_summary?: StageHandoffSummary;
 }
 
 export interface StageWindowState {

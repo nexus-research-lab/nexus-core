@@ -36,15 +36,22 @@ export interface OperationToolProfile {
 
 export const DEFAULT_TARGET_KEYS = [
   "command",
+  "cmd",
   "query",
+  "q",
   "url",
   "path",
+  "target",
+  "file",
   "file_path",
+  "filename",
   "notebook_path",
   "pattern",
+  "search_query",
   "description",
   "prompt",
   "task",
+  "input",
   "mode",
 ] as const;
 
@@ -226,16 +233,21 @@ export const FIELD_LABELS: Record<string, string> = {
   command: "命令",
   cmd: "命令",
   query: "搜索",
+  q: "查询",
   url: "网址",
   path: "路径",
+  target: "目标",
   file: "文件",
   file_path: "文件",
+  filename: "文件",
   notebook_path: "Notebook",
   pattern: "模式",
+  search_query: "搜索",
   glob: "范围",
   description: "说明",
   prompt: "提示",
   task: "任务",
+  input: "输入",
   task_id: "任务",
   skill_name: "技能",
   name: "名称",
@@ -263,6 +275,10 @@ export function resolve_operation_tool_profile(
   const normalized_tool_name = tool_name?.trim();
   if (normalized_tool_name && OPERATION_TOOL_PROFILES[normalized_tool_name]) {
     return OPERATION_TOOL_PROFILES[normalized_tool_name];
+  }
+  const inferred_profile = normalized_tool_name ? infer_operation_tool_profile(normalized_tool_name) : null;
+  if (inferred_profile) {
+    return inferred_profile;
   }
 
   if (kind === "workspace_read") {
@@ -312,6 +328,17 @@ export function resolve_operation_tool_profile(
       evidence_type: "status",
     };
   }
+  if (kind === "unknown" && surface === "conversation") {
+    return {
+      action: "generic",
+      action_label: "运行时",
+      title: "运行接入",
+      kind: "unknown",
+      surface: "conversation",
+      target_keys: DEFAULT_TARGET_KEYS,
+      evidence_type: "status",
+    };
+  }
 
   return {
     action: "generic",
@@ -322,6 +349,103 @@ export function resolve_operation_tool_profile(
     target_keys: DEFAULT_TARGET_KEYS,
     evidence_type: "status",
   };
+}
+
+function infer_operation_tool_profile(tool_name: string): OperationToolProfile | null {
+  const normalized = normalize_tool_name_for_match(tool_name);
+  const tokens = tokenize_tool_name_for_match(normalized);
+
+  if (matches_any(normalized, ["askuserquestion", "requestuserinput", "request_user_input", "question"]) || tokens.has("permission")) {
+    return OPERATION_TOOL_PROFILES.AskUserQuestion;
+  }
+  if (matches_any(normalized, ["todowrite", "updateplan", "update_plan", "plan"])) {
+    return OPERATION_TOOL_PROFILES.TodoWrite;
+  }
+  if (matches_any(normalized, ["spawnagent", "spawn_agent", "waitagent", "wait_agent", "taskoutput"])) {
+    return OPERATION_TOOL_PROFILES.TaskOutput;
+  }
+  if (tokens.has("task") || tokens.has("agent")) {
+    return OPERATION_TOOL_PROFILES.Task;
+  }
+  if (matches_any(normalized, ["killshell", "kill_shell", "stopcommand", "stop_command", "cancel"])) {
+    return OPERATION_TOOL_PROFILES.KillShell;
+  }
+  if (matches_any(normalized, [
+    "bash",
+    "shell",
+    "terminal",
+    "execcommand",
+    "exec_command",
+    "runcommand",
+    "run_command",
+    "writestdin",
+    "write_stdin",
+  ])) {
+    return OPERATION_TOOL_PROFILES.Bash;
+  }
+  if (matches_any(normalized, ["websearch", "web_search", "searchquery", "search_query", "bravesearch"])) {
+    return OPERATION_TOOL_PROFILES.WebSearch;
+  }
+  if (matches_any(normalized, [
+    "webfetch",
+    "web_fetch",
+    "fetch",
+    "openurl",
+    "open_url",
+    "browser",
+    "chrome",
+    "screenshot",
+    "computeruse",
+    "computer_use",
+  ])) {
+    return OPERATION_TOOL_PROFILES.WebFetch;
+  }
+  if (matches_any(normalized, ["applypatch", "apply_patch", "multiedit", "multi_edit", "replace", "patch"])) {
+    return OPERATION_TOOL_PROFILES.MultiEdit;
+  }
+  if (matches_any(normalized, ["writefile", "write_file", "createfile", "create_file", "create"])) {
+    return OPERATION_TOOL_PROFILES.Write;
+  }
+  if (matches_any(normalized, ["editfile", "edit_file", "edit", "updatefile", "update_file"])) {
+    return OPERATION_TOOL_PROFILES.Edit;
+  }
+  if (matches_any(normalized, ["grep", "searchfile", "search_file", "searchtext", "search_text", "rg"])) {
+    return OPERATION_TOOL_PROFILES.Grep;
+  }
+  if (matches_any(normalized, ["glob", "listfile", "list_file", "listfiles", "list_files", "ls", "directory"])) {
+    return OPERATION_TOOL_PROFILES.LS;
+  }
+  if (matches_any(normalized, ["readfile", "read_file", "read", "cat", "viewfile", "view_file"])) {
+    return OPERATION_TOOL_PROFILES.Read;
+  }
+  if (matches_any(normalized, ["skill", "context", "docs", "documentation"])) {
+    return OPERATION_TOOL_PROFILES.Skill;
+  }
+  if (matches_any(normalized, ["summary", "final", "respond"])) {
+    return {
+      action: "summary",
+      action_label: "收口",
+      title: "本轮执行收口",
+      kind: "round_summary",
+      surface: "summary",
+      target_keys: DEFAULT_TARGET_KEYS,
+      evidence_type: "status",
+    };
+  }
+
+  return null;
+}
+
+function normalize_tool_name_for_match(tool_name: string): string {
+  return tool_name.trim().toLowerCase().replace(/^mcp__/, "").replace(/^functions\./, "");
+}
+
+function matches_any(value: string, patterns: string[]): boolean {
+  return patterns.some((pattern) => value === pattern || value.includes(pattern));
+}
+
+function tokenize_tool_name_for_match(tool_name: string): Set<string> {
+  return new Set(tool_name.split(/[^a-z0-9]+/).filter(Boolean));
 }
 
 export function extract_operation_input_value(

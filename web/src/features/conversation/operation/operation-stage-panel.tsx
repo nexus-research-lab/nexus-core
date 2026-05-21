@@ -30,6 +30,7 @@ import {
   build_operation_stage_key,
   useOperationStageStore,
 } from "./operation-store";
+import { derive_operation_stage_experience_phase } from "./operation-stage-experience";
 import { OperationStageDesktop } from "./stage/operation-stage-desktop";
 import type {
   NexusOperationEvent,
@@ -76,7 +77,7 @@ type StageTransitionIntent =
   | "terminal"
   | "workspace";
 
-type StageTransitionPhase = "idle" | "priming" | "materializing" | "live";
+type StageTransitionPhase = "idle" | "priming" | "materializing" | "handoff" | "live";
 
 interface StageTransitionState {
   intent: StageTransitionIntent;
@@ -222,22 +223,22 @@ function OperationStageMotionStyles() {
 
         @keyframes nexus-operation-scene-enter {
           0% {
-            opacity: 0;
+            opacity: 0.12;
             transform:
               translate3d(
                 var(--operation-scene-enter-x, 0),
                 var(--operation-scene-enter-y, 14px),
                 0
               )
-              scale(.982);
-            filter: blur(10px);
+              scale(.992);
+            filter: blur(5px);
           }
           100% { opacity: 1; transform: scale(1); filter: blur(0); }
         }
 
         @keyframes nexus-operation-idle-exit {
           0% { opacity: 1; transform: scale(1); filter: blur(0); }
-          42% { opacity: .92; filter: blur(1px); }
+          46% { opacity: .68; filter: blur(.5px); }
           100% {
             opacity: 0;
             transform:
@@ -247,13 +248,48 @@ function OperationStageMotionStyles() {
                 0
               )
               scale(var(--operation-idle-exit-scale, 1.035));
-            filter: blur(var(--operation-idle-exit-blur, 10px));
+            filter: blur(var(--operation-idle-exit-blur, 4px));
+          }
+        }
+
+        @keyframes nexus-operation-idle-particles-yield {
+          0% { opacity: .94; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
+          38% { opacity: .82; transform: translate3d(0, -2px, 0) scale(.99); filter: blur(.2px); }
+          100% {
+            opacity: 0;
+            transform:
+              translate3d(
+                calc(var(--operation-idle-exit-x, 0) * .42),
+                calc(var(--operation-idle-exit-y, 0) * .42),
+                0
+              )
+              scale(.86);
+            filter: blur(2.5px);
           }
         }
 
         @keyframes nexus-operation-idle-pulse {
           0%, 100% { opacity: .9; transform: translate3d(0, 0, 0) scale(1); }
           50% { opacity: 1; transform: translate3d(0, -2px, 0) scale(1.006); }
+        }
+
+        @keyframes nexus-operation-boot-signal {
+          0% { opacity: 0; transform: translate3d(0, 12px, 0) scale(.985); filter: blur(4px); }
+          42% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
+          100% { opacity: .88; transform: translate3d(0, -4px, 0) scale(1.006); filter: blur(.2px); }
+        }
+
+        @keyframes nexus-operation-boot-line {
+          0% { transform: scaleX(.12); opacity: .3; }
+          48% { transform: scaleX(.76); opacity: .88; }
+          100% { transform: scaleX(1); opacity: .72; }
+        }
+
+        @keyframes nexus-operation-event-signal {
+          0% { opacity: 0; transform: translate3d(-50%, -10px, 0) scale(.985); filter: blur(3px); }
+          20% { opacity: 1; transform: translate3d(-50%, 0, 0) scale(1); filter: blur(0); }
+          78% { opacity: 1; transform: translate3d(-50%, 0, 0) scale(1); filter: blur(0); }
+          100% { opacity: 0; transform: translate3d(-50%, -4px, 0) scale(1.006); filter: blur(.8px); }
         }
 
         .operation-stage-window {
@@ -277,6 +313,20 @@ function OperationStageMotionStyles() {
             0 36px 90px rgba(34,48,72,.22),
             0 0 0 1px rgba(255,255,255,.78),
             0 0 28px rgba(91,114,255,.14);
+        }
+
+        .operation-stage-narrative-awakening .operation-stage-aura {
+          opacity: .36;
+          transform: translate(-50%, -50%) scale(.82);
+        }
+
+        .operation-stage-narrative-running .operation-stage-light {
+          opacity: .88;
+        }
+
+        .operation-stage-narrative-settling .operation-stage-window,
+        .operation-stage-narrative-completed .operation-stage-window {
+          animation-duration: 420ms, 11s;
         }
 
         .operation-preview-line {
@@ -367,14 +417,27 @@ function OperationStageMotionStyles() {
         }
 
         .operation-stage-scene-enter {
-          animation: nexus-operation-scene-enter 680ms cubic-bezier(.16,.84,.24,1) both;
+          animation: nexus-operation-scene-enter 920ms cubic-bezier(.16,.84,.24,1) both;
         }
 
         .operation-idle-stage-exit {
-          animation: nexus-operation-idle-exit 680ms cubic-bezier(.16,.84,.24,1) both;
+          animation: nexus-operation-idle-exit 920ms cubic-bezier(.16,.84,.24,1) both;
+          background: transparent !important;
+        }
+
+        .operation-idle-stage-exit .operation-idle-sky,
+        .operation-idle-stage-exit .operation-idle-grid,
+        .operation-idle-stage-exit .operation-idle-dotfield {
+          opacity: 0;
+          transition: opacity 180ms ease-out;
+        }
+
+        .operation-idle-stage-exit .operation-idle-particle-canvas {
+          animation: nexus-operation-idle-particles-yield 920ms cubic-bezier(.16,.84,.24,1) both;
         }
 
         .operation-idle-stage-exit .operation-idle-agent-pill,
+        .operation-idle-stage-exit .operation-idle-status-card,
         .operation-idle-stage-exit .operation-idle-clock {
           opacity: 0;
           transition: opacity 220ms ease-out;
@@ -382,6 +445,30 @@ function OperationStageMotionStyles() {
 
         .operation-idle-particle-canvas {
           animation: nexus-operation-idle-pulse 8.5s ease-in-out infinite;
+        }
+
+        .operation-boot-signal {
+          animation: nexus-operation-boot-signal 1040ms cubic-bezier(.2,.8,.2,1) both;
+        }
+
+        .operation-boot-line {
+          animation: nexus-operation-boot-line 1040ms cubic-bezier(.2,.8,.2,1) both;
+          transform-origin: left center;
+        }
+
+        .operation-event-signal {
+          animation: nexus-operation-event-signal 1400ms cubic-bezier(.16,.84,.24,1) both;
+        }
+
+        @media (max-width: 767px) {
+          .operation-stage-mobile-panel {
+            left: auto !important;
+            right: auto !important;
+            width: 100% !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
+            transform: none !important;
+          }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -396,7 +483,11 @@ function OperationStageMotionStyles() {
           .operation-focus-dot,
           .operation-stage-scene-enter,
           .operation-idle-stage-exit,
-          .operation-idle-particle-canvas {
+          .operation-idle-stage-exit .operation-idle-particle-canvas,
+          .operation-idle-particle-canvas,
+          .operation-boot-signal,
+          .operation-boot-line,
+          .operation-event-signal {
             animation: none !important;
           }
         }
@@ -494,7 +585,12 @@ function StageSurface({
   const is_stage = presentation === "stage";
   const stage_transition = useStageTransition(active_event);
   const is_scene_entering = stage_transition.phase === "priming" || stage_transition.phase === "materializing";
+  const is_event_handoff = stage_transition.phase === "handoff";
+  const experience_phase = derive_operation_stage_experience_phase(active_event, snapshot);
   const transition_style = build_stage_transition_style(stage_transition.intent);
+  const round_event_count = active_event && snapshot
+    ? snapshot.events.filter((item) => item.round_id === active_event.round_id).length
+    : active_event ? 1 : 0;
 
   return (
     <section className={cn(
@@ -502,7 +598,9 @@ function StageSurface({
       is_stage
         ? "rounded-[24px] border border-[color:color-mix(in_srgb,var(--divider-subtle-color)_72%,transparent)] bg-[color:color-mix(in_srgb,var(--surface-panel-background)_78%,transparent)] p-2 shadow-[0_24px_80px_rgba(18,28,42,0.12)]"
         : "surface-panel rounded-[22px] border border-(--surface-panel-border) bg-(--surface-panel-background) shadow-(--surface-panel-shadow)",
-    )}>
+    )}
+    data-stage-experience-phase={experience_phase}
+    >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(42%_30%_at_10%_8%,rgba(91,114,255,0.065),transparent_70%),radial-gradient(36%_34%_at_90%_92%,rgba(79,162,159,0.075),transparent_72%)]" />
       <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/65 to-transparent" />
 
@@ -516,6 +614,7 @@ function StageSurface({
               <>
                 {is_scene_entering ? (
                   <EmptyStage
+                    active_event={active_event}
                     exiting
                     key={`idle-exit-${stage_transition.sequence}`}
                     subtitle={subtitle}
@@ -532,6 +631,14 @@ function StageSurface({
                     snapshot={snapshot}
                   />
                 </div>
+                {is_event_handoff ? (
+                  <StageEventSignal
+                    event={active_event}
+                    intent={stage_transition.intent}
+                    round_event_count={round_event_count}
+                    sequence={stage_transition.sequence}
+                  />
+                ) : null}
               </>
             ) : (
               <EmptyStage subtitle={subtitle} />
@@ -622,15 +729,34 @@ function useStageTransition(active_event: NexusOperationEvent | null): StageTran
     const next_event_key = build_stage_event_key(active_event);
     const next_intent = resolve_stage_transition_intent(active_event);
     const is_idle_entry = previous_event_key_ref.current === null;
+    const is_same_event_state = previous_event_key_ref.current === next_event_key;
     previous_event_key_ref.current = next_event_key;
 
+    if (is_same_event_state) {
+      return;
+    }
+
     if (!is_idle_entry) {
+      let cancelled = false;
       set_transition((current) => ({
         intent: next_intent,
-        phase: "live",
-        sequence: current.sequence,
+        phase: "handoff",
+        sequence: current.sequence + 1,
       }));
-      return;
+
+      const live_timer = window.setTimeout(() => {
+        if (!cancelled) {
+          set_transition((current) => ({
+            ...current,
+            phase: "live",
+          }));
+        }
+      }, 1400);
+
+      return () => {
+        cancelled = true;
+        window.clearTimeout(live_timer);
+      };
     }
 
     let cancelled = false;
@@ -655,7 +781,7 @@ function useStageTransition(active_event: NexusOperationEvent | null): StageTran
           phase: "live",
         }));
       }
-    }, 760);
+    }, 1120);
 
     return () => {
       cancelled = true;
@@ -751,10 +877,12 @@ function build_stage_transition_style(intent: StageTransitionIntent): CSSPropert
 }
 
 function EmptyStage({
+  active_event = null,
   exiting = false,
   subtitle,
   transition_intent = "summary",
 }: {
+  active_event?: NexusOperationEvent | null;
   exiting?: boolean;
   subtitle: string;
   transition_intent?: StageTransitionIntent;
@@ -769,11 +897,12 @@ function EmptyStage({
       "relative h-full min-h-[300px] overflow-hidden bg-[linear-gradient(180deg,rgba(250,252,255,0.98),rgba(239,244,251,0.86))]",
       exiting && "pointer-events-none absolute inset-0 z-20 operation-idle-stage-exit",
     )}
+    data-stage-experience-phase={exiting ? "awakening" : "idle"}
     style={exiting ? transition_style : undefined}
     >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_48%_at_50%_43%,rgba(255,255,255,0.96),transparent_72%),radial-gradient(44%_30%_at_50%_62%,rgba(91,114,255,0.13),transparent_75%)]" />
-      <div className="operation-stage-gridlines pointer-events-none absolute inset-0 opacity-[0.18]" />
-      <div className="pointer-events-none absolute inset-0 opacity-[0.32] [background-image:radial-gradient(rgba(91,114,255,0.16)_1px,transparent_1px)] [background-size:34px_34px] [mask-image:linear-gradient(to_bottom,transparent,black_20%,black_78%,transparent)]" />
+      <div className="operation-idle-sky pointer-events-none absolute inset-0 bg-[radial-gradient(60%_48%_at_50%_43%,rgba(255,255,255,0.96),transparent_72%),radial-gradient(44%_30%_at_50%_62%,rgba(91,114,255,0.13),transparent_75%)]" />
+      <div className="operation-idle-grid operation-stage-gridlines pointer-events-none absolute inset-0 opacity-[0.18]" />
+      <div className="operation-idle-dotfield pointer-events-none absolute inset-0 opacity-[0.32] [background-image:radial-gradient(rgba(91,114,255,0.16)_1px,transparent_1px)] [background-size:34px_34px] [mask-image:linear-gradient(to_bottom,transparent,black_20%,black_78%,transparent)]" />
 
       <StageIdleParticles />
 
@@ -791,8 +920,182 @@ function EmptyStage({
           <span className="block truncate">{subtitle}</span>
         </div>
       </div>
+
+      <IdleWorkstationStatus subtitle={subtitle} />
+
+      {exiting && active_event ? (
+        <StageBootSignal
+          event={active_event}
+          intent={transition_intent}
+        />
+      ) : null}
     </div>
   );
+}
+
+function IdleWorkstationStatus({ subtitle }: { subtitle: string }) {
+  return (
+    <div className="operation-idle-status-card pointer-events-none absolute left-8 top-7 z-10 w-[min(320px,calc(100%-4rem))] max-sm:left-5 max-sm:top-5 max-sm:w-[min(280px,calc(100%-2.5rem))]">
+      <div className="rounded-[18px] border border-white/66 bg-white/46 p-3 shadow-[0_18px_46px_rgba(18,28,42,0.09)] backdrop-blur-xl">
+        <div className="flex min-w-0 items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[11px] border border-[rgba(91,114,255,0.18)] bg-[rgba(91,114,255,0.09)] text-[color:var(--primary)]">
+              <Sparkles className="h-4 w-4" />
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-[12px] font-black text-(--text-strong)">nexus 字符场</p>
+              <p className="truncate text-[10px] font-semibold text-(--text-soft)">{subtitle}</p>
+            </div>
+          </div>
+          <span className="shrink-0 rounded-full border border-[rgba(47,184,132,0.20)] bg-[rgba(47,184,132,0.10)] px-2 py-1 text-[9.5px] font-bold text-[color:var(--success)]">
+            待机
+          </span>
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-1.5 text-center">
+          <IdleStatusMetric label="状态" value="就绪" />
+          <IdleStatusMetric label="现场" value="空" />
+          <IdleStatusMetric label="轨迹" value="0" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IdleStatusMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-[10px] border border-white/42 bg-white/32 px-2 py-1.5">
+      <p className="truncate text-[10.5px] font-black text-(--text-strong)">{value}</p>
+      <p className="mt-0.5 truncate text-[8.5px] font-semibold text-(--text-soft)">{label}</p>
+    </div>
+  );
+}
+
+function StageBootSignal({
+  event,
+  intent,
+}: {
+  event: NexusOperationEvent;
+  intent: StageTransitionIntent;
+}) {
+  const meta = surface_meta_for_transition(event, intent);
+  const Icon = meta.Icon;
+  const phase_meta = PHASE_META[event.phase];
+  const PhaseIcon = phase_meta.Icon;
+
+  return (
+    <div className="operation-boot-signal pointer-events-none absolute left-1/2 top-1/2 z-20 w-[min(420px,calc(100%-2.5rem))] -translate-x-1/2 -translate-y-1/2 rounded-[18px] border border-white/72 bg-white/66 p-3 shadow-[0_28px_70px_rgba(18,28,42,0.16)] backdrop-blur-2xl">
+      <div className="flex min-w-0 items-center gap-3">
+        <span className={cn(
+          "grid h-10 w-10 shrink-0 place-items-center rounded-[14px] border bg-gradient-to-br text-[color:var(--primary)]",
+          meta.accent_class_name,
+        )}>
+          <Icon className="h-5 w-5" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-[13px] font-black tracking-[-0.025em] text-(--text-strong)">
+              唤醒 {meta.label}
+            </span>
+            <span className={cn(
+              "inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold",
+              phase_meta.class_name,
+            )}>
+              <PhaseIcon className={cn("h-3 w-3", event.phase === "running" && "animate-spin")} />
+              {phase_meta.label}
+            </span>
+          </div>
+          <p className="mt-1 truncate text-[11px] font-semibold text-(--text-muted)">
+            {event.tool_name ?? event.title} · {event.target ?? event.summary ?? event.title}
+          </p>
+        </div>
+      </div>
+      <div className="mt-3 overflow-hidden rounded-full bg-[rgba(91,114,255,0.10)]">
+        <div className="operation-boot-line h-1.5 rounded-full bg-[linear-gradient(90deg,rgba(91,114,255,0.68),rgba(79,162,159,0.62),rgba(47,184,132,0.58))]" />
+      </div>
+      <div className="mt-2 flex items-center justify-between text-[9.5px] font-semibold text-(--text-soft)">
+        <span>nexus 字符场</span>
+        <span>执行现场</span>
+      </div>
+    </div>
+  );
+}
+
+function StageEventSignal({
+  event,
+  intent,
+  round_event_count,
+  sequence,
+}: {
+  event: NexusOperationEvent;
+  intent: StageTransitionIntent;
+  round_event_count: number;
+  sequence: number;
+}) {
+  const meta = surface_meta_for_transition(event, intent);
+  const Icon = meta.Icon;
+  const phase_meta = PHASE_META[event.phase];
+  const PhaseIcon = phase_meta.Icon;
+
+  return (
+    <div
+      className="operation-event-signal pointer-events-none absolute left-1/2 top-5 z-30 w-[min(360px,calc(100%-2rem))] rounded-[16px] border border-white/72 bg-white/68 p-2.5 shadow-[0_22px_54px_rgba(18,28,42,0.14)] backdrop-blur-2xl"
+      key={`event-signal-${sequence}`}
+    >
+      <div className="flex min-w-0 items-center gap-2.5">
+        <span className={cn(
+          "grid h-8 w-8 shrink-0 place-items-center rounded-[11px] border bg-gradient-to-br text-[color:var(--primary)]",
+          meta.accent_class_name,
+        )}>
+          <Icon className="h-4 w-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-[12px] font-black text-(--text-strong)">
+              工具接入 · {meta.label}
+            </span>
+            <span className={cn(
+              "inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold",
+              phase_meta.class_name,
+            )}>
+              <PhaseIcon className={cn("h-3 w-3", event.phase === "running" && "animate-spin")} />
+              {phase_meta.label}
+            </span>
+          </div>
+          <p className="mt-0.5 truncate text-[10.5px] font-semibold text-(--text-muted)">
+            {round_event_count} · {event.tool_name ?? event.title} · {event.target ?? event.summary ?? event.title}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function surface_meta_for_transition(
+  event: NexusOperationEvent,
+  intent: StageTransitionIntent,
+): SurfaceMeta {
+  if (event.surface !== "fallback") {
+    return SURFACE_META[event.surface];
+  }
+  if (intent === "browser") {
+    return SURFACE_META.web;
+  }
+  if (intent === "terminal") {
+    return SURFACE_META.terminal;
+  }
+  if (intent === "workspace") {
+    return SURFACE_META.workspace;
+  }
+  if (intent === "editor") {
+    return SURFACE_META.editor;
+  }
+  if (intent === "task") {
+    return SURFACE_META.task;
+  }
+  if (intent === "permission") {
+    return SURFACE_META.conversation;
+  }
+  return SURFACE_META.summary;
 }
 
 function StageIdleParticles() {

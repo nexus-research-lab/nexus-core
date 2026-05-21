@@ -1,5 +1,11 @@
 import type { WorkspaceActivityItem } from "@/types/app/workspace-live";
-import type { Message, ToolResultContent, ToolUseContent } from "@/types/conversation/message";
+import type {
+  Message,
+  ResultSummary,
+  SystemEventContent,
+  ToolResultContent,
+  ToolUseContent,
+} from "@/types/conversation/message";
 import type { PendingPermission } from "@/types/conversation/permission";
 
 import type {
@@ -44,7 +50,17 @@ export function project_operation_snapshot({
   const projected_messages = messages.slice(-MAX_PROJECTED_MESSAGES);
   const tool_results = collect_tool_results(projected_messages);
   const live_round_id_set = new Set(live_round_ids);
-  const filtered_workspace_events = agent_id
+  const relevant_pending_permissions = filter_pending_permissions_for_stage(
+    pending_permissions,
+    session_key,
+    agent_id,
+    projected_messages,
+  );
+  const pending_permission_matches = match_pending_permissions_to_tool_uses(
+    relevant_pending_permissions,
+    collect_unresolved_tool_use_candidates(projected_messages),
+  );
+  const agent_workspace_events = agent_id
     ? workspace_events.filter((event) => event.agent_id === agent_id)
     : workspace_events;
   const events: NexusOperationEvent[] = [];
@@ -61,7 +77,7 @@ export function project_operation_snapshot({
           message,
           session_key,
           result: tool_results.get(block.id),
-          pending_permission: find_pending_permission(message.message_id, block, pending_permissions),
+          pending_permission: pending_permission_matches.matched_permissions_by_tool_use_id.get(block.id) ?? null,
           is_live_round: live_round_id_set.has(message.round_id),
         }));
         continue;
@@ -91,10 +107,35 @@ export function project_operation_snapshot({
           ],
           updated_at: message.timestamp,
         });
+        continue;
+      }
+
+      if (block.type === "system_event") {
+        const system_event = project_system_event({
+          block,
+          message,
+          session_key,
+          is_live_round: live_round_id_set.has(message.round_id),
+        });
+        if (system_event) {
+          events.push(system_event);
+        }
       }
     }
 
     if (message.result_summary) {
+      const is_summary_error = is_result_summary_error(message);
+      const summary_text = message.result_summary.result ?? extract_assistant_text_preview(message) ?? null;
+      const result_preview = build_summary_result_preview(
+        message.result_summary,
+        is_summary_error,
+        summary_text,
+      );
+      const round_started_at = find_round_start_timestamp(
+        projected_messages,
+        message.round_id,
+        message.timestamp,
+      );
       events.push({
         id: `${message.message_id}:summary`,
         session_key: message.session_key,
@@ -103,27 +144,28 @@ export function project_operation_snapshot({
         message_id: message.message_id,
         kind: "round_summary",
         surface: "summary",
-        phase: message.result_summary.is_error
+        phase: is_summary_error
           ? "error"
           : message.result_summary.subtype === "interrupted"
             ? "cancelled"
             : "done",
-        title: "本轮执行收口",
+        title: is_summary_error ? "本轮执行异常" : "本轮执行收口",
         target: `${message.result_summary.num_turns} turns`,
-        summary: message.result_summary.result ?? null,
-        result_preview: redact_value(message.result_summary),
+        summary: summary_text,
+        result_preview,
         evidence: [
+          ...(is_summary_error ? [{ type: "error" as const, label: "error", value: summary_text }] : []),
           { type: "status", label: "duration", value: `${Math.round(message.result_summary.duration_ms / 1000)}s` },
           { type: "status", label: "turns", value: String(message.result_summary.num_turns) },
         ],
-        started_at: message.timestamp,
+        started_at: round_started_at,
         updated_at: message.result_summary.timestamp ?? message.timestamp,
         ended_at: message.result_summary.timestamp ?? message.timestamp,
       });
     }
   }
 
-  for (const permission of pending_permissions) {
+  for (const permission of pending_permission_matches.unmatched_permissions) {
     if (events.some((event) => event.phase === "waiting" && event.tool_name === permission.tool_name)) {
       continue;
     }
@@ -131,8 +173,34 @@ export function project_operation_snapshot({
     events.push(project_unmatched_permission(permission, session_key, agent_id));
   }
 
-  for (const workspace_event of filtered_workspace_events) {
-    events.push(project_workspace_event(workspace_event, session_key));
+  for (const live_round_id of live_round_ids) {
+    if (events.some((event) => event.round_id === live_round_id)) {
+      continue;
+    }
+
+    const placeholder = project_live_round_placeholder({
+      live_round_id,
+      session_key,
+      agent_id,
+      messages: projected_messages,
+    });
+    if (placeholder) {
+      events.push(placeholder);
+    }
+  }
+
+  const relevant_workspace_events = filter_workspace_events_for_stage(
+    agent_workspace_events,
+    session_key,
+    events,
+  );
+
+  for (const workspace_event of relevant_workspace_events) {
+    events.push(project_workspace_event(
+      workspace_event,
+      session_key,
+      resolve_workspace_event_round_id(workspace_event, events),
+    ));
   }
 
   const sorted_events = events
@@ -147,9 +215,353 @@ export function project_operation_snapshot({
     active_event,
     events: sorted_events,
     recent_evidence,
-    workspace_events: filtered_workspace_events.slice(0, 8),
+    workspace_events: relevant_workspace_events.slice(0, 8),
     updated_at: Date.now(),
   };
+}
+
+interface PendingPermissionToolUseCandidate {
+  tool_use_id: string;
+  tool_name: string;
+  tool_input: Record<string, unknown>;
+  message_id: string;
+}
+
+function collect_unresolved_tool_use_candidates(messages: Message[]): PendingPermissionToolUseCandidate[] {
+  const ordered_candidates: PendingPermissionToolUseCandidate[] = [];
+  const candidate_index_by_tool_use_id = new Map<string, number>();
+  const resolved_tool_use_ids = new Set<string>();
+
+  for (const message of messages) {
+    if (message.role !== "assistant") {
+      continue;
+    }
+
+    for (const block of message.content) {
+      if (block.type === "tool_use") {
+        const next_candidate = {
+          tool_use_id: block.id,
+          tool_name: block.name,
+          tool_input: (block.input ?? {}) as Record<string, unknown>,
+          message_id: message.message_id,
+        };
+        const existing_index = candidate_index_by_tool_use_id.get(block.id);
+        if (existing_index == null) {
+          candidate_index_by_tool_use_id.set(block.id, ordered_candidates.length);
+          ordered_candidates.push(next_candidate);
+        } else {
+          ordered_candidates[existing_index] = next_candidate;
+        }
+        continue;
+      }
+
+      if (block.type === "tool_result") {
+        resolved_tool_use_ids.add(block.tool_use_id);
+      }
+    }
+  }
+
+  return ordered_candidates.filter((candidate) => !resolved_tool_use_ids.has(candidate.tool_use_id));
+}
+
+function match_pending_permissions_to_tool_uses(
+  pending_permissions: PendingPermission[],
+  candidates: PendingPermissionToolUseCandidate[],
+): {
+  matched_permissions_by_tool_use_id: Map<string, PendingPermission>;
+  unmatched_permissions: PendingPermission[];
+} {
+  const matched_permissions_by_tool_use_id = new Map<string, PendingPermission>();
+  const matched_request_ids = new Set<string>();
+  const candidate_queue_by_message_id = new Map<string, PendingPermissionToolUseCandidate[]>();
+
+  for (const candidate of candidates) {
+    const queue = candidate_queue_by_message_id.get(candidate.message_id) ?? [];
+    queue.push(candidate);
+    candidate_queue_by_message_id.set(candidate.message_id, queue);
+  }
+
+  for (const permission of pending_permissions) {
+    const message_id = permission.message_id?.trim();
+    if (!message_id) {
+      continue;
+    }
+
+    const queue = candidate_queue_by_message_id.get(message_id);
+    if (!queue?.length) {
+      continue;
+    }
+
+    const matched_index = queue.findIndex((candidate) => (
+      permission.tool_name === candidate.tool_name &&
+      stable_stringify(permission.tool_input) === stable_stringify(candidate.tool_input)
+    ));
+    if (matched_index < 0) {
+      continue;
+    }
+
+    const [candidate] = queue.splice(matched_index, 1);
+    if (!candidate) {
+      continue;
+    }
+
+    matched_permissions_by_tool_use_id.set(candidate.tool_use_id, permission);
+    matched_request_ids.add(permission.request_id);
+  }
+
+  return {
+    matched_permissions_by_tool_use_id,
+    unmatched_permissions: pending_permissions.filter((permission) => !matched_request_ids.has(permission.request_id)),
+  };
+}
+
+function filter_pending_permissions_for_stage(
+  permissions: PendingPermission[],
+  session_key: string | null,
+  agent_id: string | null | undefined,
+  projected_messages: Message[],
+): PendingPermission[] {
+  const projected_message_ids = new Set(projected_messages.map((message) => message.message_id));
+
+  return permissions.filter((permission) => {
+    if (agent_id && permission.agent_id && permission.agent_id !== agent_id) {
+      return false;
+    }
+
+    if (!session_key) {
+      return true;
+    }
+
+    if (permission.session_key) {
+      return are_equivalent_stage_session_keys(permission.session_key, session_key);
+    }
+
+    if (permission.message_id) {
+      return projected_message_ids.has(permission.message_id);
+    }
+
+    return false;
+  });
+}
+
+function are_equivalent_stage_session_keys(
+  left: string | null | undefined,
+  right: string | null | undefined,
+): boolean {
+  const left_identity = get_stage_session_identity(left);
+  const right_identity = get_stage_session_identity(right);
+  return Boolean(left_identity && right_identity && left_identity === right_identity);
+}
+
+function get_stage_session_identity(session_key: string | null | undefined): string | null {
+  const normalized_key = (session_key ?? "").trim();
+  if (!normalized_key) {
+    return null;
+  }
+  if (normalized_key.startsWith("room:group:")) {
+    return `room:${normalized_key.slice("room:group:".length)}`;
+  }
+  return normalized_key;
+}
+
+function stable_stringify(value: unknown): string {
+  if (value == null) {
+    return "null";
+  }
+  if (typeof value === "string") {
+    return JSON.stringify(value);
+  }
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stable_stringify(item)).join(",")}]`;
+  }
+  if (typeof value === "object") {
+    return `{${Object.keys(value as Record<string, unknown>)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stable_stringify((value as Record<string, unknown>)[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(String(value));
+}
+
+function filter_workspace_events_for_stage(
+  workspace_events: WorkspaceActivityItem[],
+  session_key: string | null,
+  projected_events: NexusOperationEvent[],
+): WorkspaceActivityItem[] {
+  if (!session_key) {
+    return workspace_events;
+  }
+
+  const tool_use_ids = new Set(
+    projected_events
+      .map((event) => event.tool_use_id)
+      .filter((tool_use_id): tool_use_id is string => Boolean(tool_use_id)),
+  );
+
+  return workspace_events.filter((event) => {
+    if (event.session_key === session_key) {
+      return true;
+    }
+    return Boolean(event.tool_use_id && tool_use_ids.has(event.tool_use_id));
+  });
+}
+
+function build_summary_result_preview(
+  summary: ResultSummary,
+  is_error: boolean,
+  summary_text: string | null,
+): unknown {
+  const redacted = redact_value(summary) as Record<string, unknown>;
+  if (!is_error) {
+    return redacted;
+  }
+
+  return {
+    ...redacted,
+    is_error: true,
+    result: summary_text,
+    subtype: summary.subtype === "interrupted" ? "interrupted" : "error",
+  };
+}
+
+function is_result_summary_error(message: Extract<Message, { role: "assistant" }>): boolean {
+  if (!message.result_summary) {
+    return false;
+  }
+  if (message.result_summary.is_error || message.result_summary.subtype === "error") {
+    return true;
+  }
+  if (message.stream_status === "error") {
+    return true;
+  }
+  if (message.model === "<synthetic>") {
+    const text = extract_assistant_text_preview(message) ?? "";
+    return /\b(error|failed|unauthorized|authenticate|invalid|expired)\b/i.test(text);
+  }
+  return false;
+}
+
+function extract_assistant_text_preview(message: Extract<Message, { role: "assistant" }>): string | null {
+  const text = message.content
+    .filter((block) => block.type === "text")
+    .map((block) => block.text)
+    .join("\n")
+    .trim();
+  if (!text) {
+    return null;
+  }
+  return text.length > MAX_TEXT_PREVIEW ? `${text.slice(0, MAX_TEXT_PREVIEW)}...` : text;
+}
+
+function project_system_event({
+  block,
+  message,
+  session_key,
+  is_live_round,
+}: {
+  block: SystemEventContent;
+  message: Extract<Message, { role: "assistant" }>;
+  session_key: string | null;
+  is_live_round: boolean;
+}): NexusOperationEvent | null {
+  if (!is_live_round) {
+    return null;
+  }
+
+  const subtype = block.subtype ?? "status";
+  if (
+    subtype !== "api_retry" &&
+    subtype !== "status" &&
+    subtype !== "progress" &&
+    subtype !== "requesting"
+  ) {
+    return null;
+  }
+
+  return {
+    id: `${message.message_id}:system:${subtype}:${block.timestamp}`,
+    session_key: session_key ?? message.session_key,
+    round_id: message.round_id,
+    agent_id: message.agent_id,
+    message_id: message.message_id,
+    kind: "unknown",
+    surface: "conversation",
+    phase: "running",
+    title: block.label || "运行接入中",
+    target: block.content || "等待第一个工具事件",
+    summary: block.content || null,
+    evidence: [
+      { type: "status", label: subtype, value: block.label || block.content },
+    ],
+    started_at: message.timestamp,
+    updated_at: block.timestamp || message.timestamp,
+  };
+}
+
+function project_live_round_placeholder({
+  live_round_id,
+  session_key,
+  agent_id,
+  messages,
+}: {
+  live_round_id: string;
+  session_key: string | null;
+  agent_id?: string | null;
+  messages: Message[];
+}): NexusOperationEvent | null {
+  const related_message = [...messages].reverse().find((message) => message.round_id === live_round_id);
+  if (!related_message) {
+    return null;
+  }
+
+  const user_prompt = related_message.role === "user"
+    ? related_message.content
+    : find_round_user_prompt(messages, live_round_id);
+  const resolved_agent_id = agent_id
+    ?? ("agent_id" in related_message ? related_message.agent_id : null);
+  if (!resolved_agent_id) {
+    return null;
+  }
+
+  return {
+    id: `live-round:${live_round_id}`,
+    session_key: session_key ?? related_message.session_key,
+    round_id: live_round_id,
+    agent_id: resolved_agent_id,
+    message_id: related_message.message_id,
+    kind: "unknown",
+    surface: "conversation",
+    phase: "running",
+    title: "运行接入中",
+    target: "等待第一个工具事件",
+    summary: user_prompt || "模型正在建立上下文，还没有进入具体工具。",
+    input_preview: user_prompt ? { prompt: user_prompt } : null,
+    evidence: [
+      { type: "status", label: "round", value: "running" },
+    ],
+    started_at: related_message.timestamp,
+    updated_at: Date.now(),
+  };
+}
+
+function find_round_user_prompt(messages: Message[], round_id: string): string | null {
+  const user_message = [...messages].reverse().find((message) => (
+    message.round_id === round_id &&
+    message.role === "user"
+  ));
+  return user_message?.role === "user" ? user_message.content : null;
+}
+
+function find_round_start_timestamp(
+  messages: Message[],
+  round_id: string,
+  fallback_timestamp: number,
+): number {
+  const first_round_message = messages.find((message) => message.round_id === round_id);
+  return first_round_message?.timestamp ?? fallback_timestamp;
 }
 
 function collect_tool_results(messages: Message[]): Map<string, ToolResultContent> {
@@ -205,23 +617,12 @@ function project_tool_use({
     target,
     summary: pending_permission?.summary ?? summarize_result(result),
     input_preview,
-    result_preview: result ? redact_value(result.content) : null,
+    result_preview: build_tool_result_preview(result, projection.kind),
     evidence,
     started_at: message.timestamp,
     updated_at: message.timestamp,
     ended_at: result ? message.timestamp : null,
   };
-}
-
-function find_pending_permission(
-  message_id: string,
-  block: ToolUseContent,
-  permissions: PendingPermission[],
-): PendingPermission | null {
-  return permissions.find((permission) => (
-    permission.message_id === message_id &&
-    permission.tool_name === block.name
-  )) ?? null;
 }
 
 function resolve_tool_phase(
@@ -271,6 +672,25 @@ function build_tool_evidence(
   return evidence;
 }
 
+function build_tool_result_preview(
+  result: ToolResultContent | undefined,
+  kind: NexusOperationEvent["kind"],
+): unknown {
+  if (!result) {
+    return null;
+  }
+
+  const redacted_content = redact_value(result.content);
+  if (kind === "command_run" || kind === "command_stop") {
+    return {
+      content: redacted_content,
+      error_code: result.error_code ?? null,
+      is_error: Boolean(result.is_error),
+    };
+  }
+  return redacted_content;
+}
+
 function project_unmatched_permission(
   permission: PendingPermission,
   session_key: string | null,
@@ -305,6 +725,7 @@ function project_unmatched_permission(
 function project_workspace_event(
   event: WorkspaceActivityItem,
   session_key: string | null,
+  round_id: string,
 ): NexusOperationEvent {
   const is_deleted = event.status === "deleted";
   const is_done = event.status === "updated" || is_deleted;
@@ -312,7 +733,7 @@ function project_workspace_event(
   return {
     id: `workspace:${event.id}`,
     session_key: session_key ?? "",
-    round_id: event.id,
+    round_id,
     agent_id: event.agent_id,
     tool_use_id: null,
     tool_name: "workspace_event",
@@ -345,7 +766,28 @@ function pick_active_event(events: NexusOperationEvent[]): NexusOperationEvent |
       return event;
     }
   }
+  const summary_event = [...events].reverse().find((item) => item.kind === "round_summary");
+  if (summary_event) {
+    return summary_event;
+  }
   return events.at(-1) ?? null;
+}
+
+function resolve_workspace_event_round_id(
+  event: WorkspaceActivityItem,
+  projected_events: NexusOperationEvent[],
+): string {
+  if (event.tool_use_id) {
+    const matched_tool_event = [...projected_events].reverse().find((item) => (
+      item.tool_use_id === event.tool_use_id &&
+      item.agent_id === event.agent_id
+    ));
+    if (matched_tool_event) {
+      return matched_tool_event.round_id;
+    }
+    return event.tool_use_id;
+  }
+  return event.session_key ?? event.id;
 }
 
 function collect_recent_evidence(events: NexusOperationEvent[]): OperationEvidence[] {
