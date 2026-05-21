@@ -15,8 +15,10 @@ import {
   ListChecks,
   ListTree,
   Loader2,
+  Maximize2,
   PauseCircle,
   RadioTower,
+  RotateCcw,
   Route,
   Search,
   ShieldQuestion,
@@ -270,6 +272,17 @@ export function OperationStageDesktop({
   const active_window = useMemo(() => (
     visible_windows.find((window) => window.id === active_window_id) ?? null
   ), [active_window_id, visible_windows]);
+  const has_window_layout_changes = useMemo(() => (
+    Object.values(window_overrides).some((override) => (
+      override.closed ||
+      override.minimized ||
+      Boolean(override.offset_x) ||
+      Boolean(override.offset_y)
+    ))
+  ), [window_overrides]);
+  const has_window_position_changes = useMemo(() => (
+    Object.values(window_overrides).some((override) => Boolean(override.offset_x) || Boolean(override.offset_y))
+  ), [window_overrides]);
 
   const close_window = (window_id: string) => {
     set_focused_window_id((current) => current === window_id ? null : current);
@@ -333,6 +346,19 @@ export function OperationStageDesktop({
     set_focused_window_id(desktop.active_window_id ?? desktop.windows[0]?.id ?? null);
     set_window_overrides(Object.fromEntries(
       desktop.windows.map((window) => [window.id, { closed: false, minimized: false }]),
+    ));
+  };
+
+  const reset_window_positions = () => {
+    set_window_overrides((current) => Object.fromEntries(
+      Object.entries(current).map(([window_id, override]) => [
+        window_id,
+        {
+          ...override,
+          offset_x: 0,
+          offset_y: 0,
+        },
+      ]),
     ));
   };
 
@@ -433,6 +459,15 @@ export function OperationStageDesktop({
         active_window_id={active_window_id}
         windows={window_states}
         on_restore={restore_window}
+      />
+      <StageWindowControls
+        active_window={active_window}
+        has_layout_changes={has_window_layout_changes}
+        has_position_changes={has_window_position_changes}
+        on_reset_positions={reset_window_positions}
+        on_restore_all={restore_all_windows}
+        visible_window_count={visible_windows.length}
+        window_count={desktop.windows.length}
       />
       {narrative.phase === "completed" || narrative.phase === "settling" ? (
         <>
@@ -1634,6 +1669,62 @@ function StageWindowsHiddenState({
           恢复全部
         </button>
       </div>
+    </div>
+  );
+}
+
+function StageWindowControls({
+  active_window,
+  has_layout_changes,
+  has_position_changes,
+  on_reset_positions,
+  on_restore_all,
+  visible_window_count,
+  window_count,
+}: {
+  active_window: StageWindowState | null;
+  has_layout_changes: boolean;
+  has_position_changes: boolean;
+  on_reset_positions: () => void;
+  on_restore_all: () => void;
+  visible_window_count: number;
+  window_count: number;
+}) {
+  if (!window_count) {
+    return null;
+  }
+
+  return (
+    <div
+      aria-label={`${active_window ? stage_app_label_for_window_kind(active_window.kind) : "工作台"}，${visible_window_count}/${window_count} 个窗口`}
+      className="absolute right-5 top-20 z-30 flex items-center gap-1 rounded-full border border-white/70 bg-white/58 p-1 shadow-[0_18px_44px_rgba(18,28,42,0.10)] backdrop-blur-2xl max-md:hidden"
+    >
+      <button
+        aria-label="恢复窗口布局"
+        className={cn(
+          "grid h-7 w-7 place-items-center rounded-full text-(--icon-default) transition hover:bg-(--surface-interactive-hover-background) hover:text-(--text-strong) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.38)]",
+          !has_position_changes && "pointer-events-none opacity-35",
+        )}
+        disabled={!has_position_changes}
+        onClick={on_reset_positions}
+        title="恢复窗口布局"
+        type="button"
+      >
+        <RotateCcw className="h-3.5 w-3.5" />
+      </button>
+      <button
+        aria-label="展开全部窗口"
+        className={cn(
+          "grid h-7 w-7 place-items-center rounded-full text-(--icon-default) transition hover:bg-(--surface-interactive-hover-background) hover:text-(--text-strong) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.38)]",
+          !has_layout_changes && "pointer-events-none opacity-35",
+        )}
+        disabled={!has_layout_changes}
+        onClick={on_restore_all}
+        title="展开全部窗口"
+        type="button"
+      >
+        <Maximize2 className="h-3.5 w-3.5" />
+      </button>
     </div>
   );
 }

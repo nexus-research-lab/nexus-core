@@ -1,6 +1,6 @@
 import type { CSSProperties, MouseEvent, PointerEvent, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import { Minus, Square, X } from "lucide-react";
+import { GripHorizontal, Minus, Square, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -245,6 +245,18 @@ export function OperationStageWindow({
           <Icon className="h-3 w-3 shrink-0" />
           <span className="truncate">{title}</span>
         </div>
+        <span
+          aria-hidden="true"
+          className={cn(
+            "grid h-5 w-8 shrink-0 place-items-center rounded-full border transition",
+            tone === "terminal"
+              ? "border-white/10 bg-white/[0.035] text-white/32"
+              : "border-white/58 bg-white/44 text-(--icon-muted)",
+          )}
+          title="移动窗口"
+        >
+          <GripHorizontal className="h-3.5 w-3.5" />
+        </span>
       </div>
       <div className={cn(
         "soft-scrollbar relative min-h-0 flex-1",
