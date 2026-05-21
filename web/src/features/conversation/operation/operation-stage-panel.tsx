@@ -617,6 +617,7 @@ function StageSurface({
                     active_event={active_event}
                     exiting
                     key={`idle-exit-${stage_transition.sequence}`}
+                    snapshot={snapshot}
                     subtitle={subtitle}
                     transition_intent={stage_transition.intent}
                   />
@@ -641,7 +642,7 @@ function StageSurface({
                 ) : null}
               </>
             ) : (
-              <EmptyStage subtitle={subtitle} />
+              <EmptyStage snapshot={snapshot} subtitle={subtitle} />
             )}
           </div>
         </div>
@@ -879,11 +880,13 @@ function build_stage_transition_style(intent: StageTransitionIntent): CSSPropert
 function EmptyStage({
   active_event = null,
   exiting = false,
+  snapshot,
   subtitle,
   transition_intent = "summary",
 }: {
   active_event?: NexusOperationEvent | null;
   exiting?: boolean;
+  snapshot: NexusOperationSnapshot | null;
   subtitle: string;
   transition_intent?: StageTransitionIntent;
 }) {
@@ -921,7 +924,8 @@ function EmptyStage({
         </div>
       </div>
 
-      <IdleWorkstationStatus subtitle={subtitle} />
+      <IdleWorkstationStatus snapshot={snapshot} subtitle={subtitle} />
+      <IdleNarrativeDock snapshot={snapshot} />
 
       {exiting && active_event ? (
         <StageBootSignal
@@ -933,7 +937,17 @@ function EmptyStage({
   );
 }
 
-function IdleWorkstationStatus({ subtitle }: { subtitle: string }) {
+function IdleWorkstationStatus({
+  snapshot,
+  subtitle,
+}: {
+  snapshot: NexusOperationSnapshot | null;
+  subtitle: string;
+}) {
+  const event_count = snapshot?.events.length ?? 0;
+  const artifact_count = snapshot?.workspace_events.length ?? 0;
+  const evidence_count = snapshot?.recent_evidence.length ?? 0;
+
   return (
     <div className="operation-idle-status-card pointer-events-none absolute left-8 top-7 z-10 w-[min(320px,calc(100%-4rem))] max-sm:left-5 max-sm:top-5 max-sm:w-[min(280px,calc(100%-2.5rem))]">
       <div className="rounded-[18px] border border-white/66 bg-white/46 p-3 shadow-[0_18px_46px_rgba(18,28,42,0.09)] backdrop-blur-xl">
@@ -953,8 +967,56 @@ function IdleWorkstationStatus({ subtitle }: { subtitle: string }) {
         </div>
         <div className="mt-3 grid grid-cols-3 gap-1.5 text-center">
           <IdleStatusMetric label="状态" value="就绪" />
-          <IdleStatusMetric label="现场" value="空" />
-          <IdleStatusMetric label="轨迹" value="0" />
+          <IdleStatusMetric label="现场" value={event_count ? `${event_count}` : "空"} />
+          <IdleStatusMetric label="证据" value={artifact_count + evidence_count ? `${artifact_count + evidence_count}` : "0"} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IdleNarrativeDock({ snapshot }: { snapshot: NexusOperationSnapshot | null }) {
+  const has_resume_context = Boolean(
+    snapshot &&
+    (snapshot.events.length > 0 || snapshot.workspace_events.length > 0 || snapshot.recent_evidence.length > 0),
+  );
+  const items = has_resume_context
+    ? [
+        { label: "最近现场", value: `${snapshot?.events.length ?? 0} 步`, Icon: Activity },
+        { label: "产物", value: `${snapshot?.workspace_events.length ?? 0} 项`, Icon: FolderTree },
+        { label: "证据", value: `${snapshot?.recent_evidence.length ?? 0} 条`, Icon: FileText },
+      ]
+    : [
+        { label: "入口", value: "nexus", Icon: Sparkles },
+        { label: "接入", value: "工具事件", Icon: Activity },
+        { label: "沉淀", value: "交接记录", Icon: CheckCircle2 },
+      ];
+
+  return (
+    <div className="pointer-events-none absolute bottom-8 right-8 z-10 w-[min(340px,calc(100%-4rem))] max-sm:bottom-24 max-sm:right-5 max-sm:w-[min(280px,calc(100%-2.5rem))]">
+      <div className="rounded-[18px] border border-white/62 bg-white/40 p-2.5 shadow-[0_18px_46px_rgba(18,28,42,0.08)] backdrop-blur-xl">
+        <div className="flex items-center justify-between gap-3 px-1 pb-2">
+          <span className="text-[10px] font-black text-(--text-strong)">
+            {has_resume_context ? "可恢复工作台" : "待命轨道"}
+          </span>
+          <span className="text-[9px] font-semibold text-(--text-soft)">
+            {has_resume_context ? "本地快照" : "待机"}
+          </span>
+        </div>
+        <div className="grid grid-cols-3 gap-1.5">
+          {items.map((item) => {
+            const Icon = item.Icon;
+            return (
+              <div
+                className="min-w-0 rounded-[12px] border border-white/46 bg-white/28 px-2 py-2 text-center"
+                key={item.label}
+              >
+                <Icon className="mx-auto h-3.5 w-3.5 text-[color:var(--primary)] opacity-80" />
+                <p className="mt-1 truncate text-[9.5px] font-black text-(--text-strong)">{item.value}</p>
+                <p className="mt-0.5 truncate text-[8px] font-semibold text-(--text-soft)">{item.label}</p>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
