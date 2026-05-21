@@ -10,6 +10,10 @@ export type OperationStageExperiencePhase =
   | "settling"
   | "completed";
 
+const MAX_MERGED_EVENTS = 24;
+const MAX_MERGED_WORKSPACE_EVENTS = 8;
+const MAX_MERGED_EVIDENCE = 8;
+
 export interface OperationContinuationBrief {
   status_label: string;
   status_detail: string;
@@ -211,6 +215,49 @@ export function build_operation_live_episode(
   };
 }
 
+export function merge_operation_stage_snapshots_for_restore(
+  current: NexusOperationSnapshot | null | undefined,
+  next: NexusOperationSnapshot,
+): NexusOperationSnapshot {
+  if (!current || current.key !== next.key) {
+    return next;
+  }
+  if (current.session_key && next.session_key && current.session_key !== next.session_key) {
+    return next;
+  }
+
+  const active_round_id = next.active_event?.round_id ?? next.events.at(-1)?.round_id ?? null;
+  if (!active_round_id) {
+    return next;
+  }
+
+  const current_round_events = current.events.filter((event) => event.round_id === active_round_id);
+  if (!current_round_events.length) {
+    return next;
+  }
+
+  const next_event_ids = new Set(next.events.map((event) => event.id));
+  const merged_events = [
+    ...current_round_events.filter((event) => !next_event_ids.has(event.id)),
+    ...next.events,
+  ]
+    .sort((left, right) => left.updated_at - right.updated_at)
+    .slice(-MAX_MERGED_EVENTS);
+
+  return {
+    ...next,
+    active_event: next.active_event ?? current.active_event,
+    events: merged_events,
+    recent_evidence: merge_operation_evidence(current.recent_evidence, next.recent_evidence),
+    workspace_events: merge_workspace_events_for_round(
+      current.workspace_events,
+      next.workspace_events,
+      merged_events,
+    ),
+    updated_at: Math.max(current.updated_at, next.updated_at),
+  };
+}
+
 function collect_continuation_workspace_items(
   event: NexusOperationEvent,
   events: NexusOperationEvent[],
@@ -244,4 +291,49 @@ function collect_continuation_workspace_items(
     ? workspace_items.find((item) => item.path === event.target)
     : null;
   return event_target_item ? [event_target_item] : [];
+}
+
+function merge_workspace_events_for_round(
+  current: NexusOperationSnapshot["workspace_events"],
+  next: NexusOperationSnapshot["workspace_events"],
+  events: NexusOperationSnapshot["events"],
+): NexusOperationSnapshot["workspace_events"] {
+  const round_tool_use_ids = new Set(
+    events
+      .map((event) => event.tool_use_id)
+      .filter((tool_use_id): tool_use_id is string => Boolean(tool_use_id)),
+  );
+  const round_targets = new Set(
+    events
+      .map((event) => event.target)
+      .filter((target): target is string => Boolean(target)),
+  );
+  const merged_by_id = new Map<string, NexusOperationSnapshot["workspace_events"][number]>();
+
+  for (const item of current) {
+    if (
+      (item.tool_use_id && round_tool_use_ids.has(item.tool_use_id)) ||
+      round_targets.has(item.path)
+    ) {
+      merged_by_id.set(item.id, item);
+    }
+  }
+  for (const item of next) {
+    merged_by_id.set(item.id, item);
+  }
+
+  return Array.from(merged_by_id.values())
+    .sort((left, right) => right.updated_at - left.updated_at)
+    .slice(0, MAX_MERGED_WORKSPACE_EVENTS);
+}
+
+function merge_operation_evidence(
+  current: NexusOperationSnapshot["recent_evidence"],
+  next: NexusOperationSnapshot["recent_evidence"],
+): NexusOperationSnapshot["recent_evidence"] {
+  const merged = new Map<string, NexusOperationSnapshot["recent_evidence"][number]>();
+  for (const item of [...current, ...next]) {
+    merged.set(`${item.type}:${item.label}:${item.value ?? ""}`, item);
+  }
+  return Array.from(merged.values()).slice(-MAX_MERGED_EVIDENCE);
 }

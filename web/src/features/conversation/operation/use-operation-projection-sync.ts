@@ -11,6 +11,7 @@ import {
   save_operation_stage_snapshot_api,
 } from "./operation-stage-api";
 import { project_operation_snapshot } from "./operation-projector";
+import { merge_operation_stage_snapshots_for_restore } from "./operation-stage-experience";
 import {
   build_operation_stage_key,
   compact_operation_snapshot_for_persistence,
@@ -94,7 +95,11 @@ export function useOperationProjectionSync({
     let cancelled = false;
     void get_operation_stage_snapshot_api(key).then((remote_snapshot) => {
       if (!cancelled && remote_snapshot) {
-        set_snapshot(key, remote_snapshot);
+        const current_snapshot = useOperationStageStore.getState().snapshots[key];
+        set_snapshot(
+          key,
+          merge_operation_stage_snapshots_for_restore(current_snapshot, remote_snapshot),
+        );
       }
     });
     return () => {
@@ -107,8 +112,11 @@ export function useOperationProjectionSync({
       return;
     }
 
-    set_snapshot(key, snapshot);
-    const compact_snapshot = compact_operation_snapshot_for_persistence(snapshot);
+    const current_snapshot = useOperationStageStore.getState().snapshots[key];
+    const merged_snapshot = merge_operation_stage_snapshots_for_restore(current_snapshot, snapshot);
+
+    set_snapshot(key, merged_snapshot);
+    const compact_snapshot = compact_operation_snapshot_for_persistence(merged_snapshot);
     const signature = build_snapshot_signature(compact_snapshot);
     if (!signature || last_saved_signature_ref.current === signature) {
       return;

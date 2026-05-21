@@ -52,12 +52,14 @@ const {
   build_operation_continuation_brief,
   build_operation_live_episode,
   derive_operation_stage_experience_phase,
+  merge_operation_stage_snapshots_for_restore,
 } = await import(pathToFileURL(join(operation_dir, "operation-stage-experience.js")));
 const now = Date.now();
 
 verify_stage_experience_state_machine(now);
 verify_live_episode_narrates_running_round(now);
 verify_active_event_stays_with_latest_round(now);
+verify_stage_restore_merge_preserves_round_context(now);
 verify_workspace_live_stays_in_tool_round(now);
 verify_multi_file_windows_keep_event_identity(now);
 verify_terminal_result_envelope(now);
@@ -256,6 +258,88 @@ function verify_active_event_stays_with_latest_round(now) {
   assert(snapshot.events.some((event) => event.round_id === "round-old" && event.phase === "running"), "fixture should include an older running event");
   assert(snapshot.active_event?.round_id === "round-new", `active event should follow latest round, got ${snapshot.active_event?.round_id}`);
   assert(snapshot.active_event?.kind === "round_summary", `latest completed round should focus summary, got ${snapshot.active_event?.kind}`);
+}
+
+function verify_stage_restore_merge_preserves_round_context(now) {
+  const restored_read = {
+    id: "restored-read",
+    session_key: "session:restore",
+    round_id: "round-restore",
+    agent_id: "agent-stage",
+    tool_use_id: "tool-read",
+    tool_name: "Read",
+    kind: "workspace_read",
+    surface: "editor",
+    phase: "done",
+    title: "Read",
+    target: "index.html",
+    updated_at: now - 400,
+  };
+  const restored_write = {
+    id: "restored-write",
+    session_key: "session:restore",
+    round_id: "round-restore",
+    agent_id: "agent-stage",
+    tool_use_id: "tool-write",
+    tool_name: "Write",
+    kind: "workspace_edit",
+    surface: "editor",
+    phase: "done",
+    title: "Write",
+    target: "gomoku.html",
+    updated_at: now - 300,
+  };
+  const projected_summary = {
+    id: "projected-summary",
+    session_key: "session:restore",
+    round_id: "round-restore",
+    agent_id: "agent-stage",
+    kind: "round_summary",
+    surface: "summary",
+    phase: "done",
+    title: "本轮执行收口",
+    target: "1 turns",
+    updated_at: now - 100,
+  };
+  const current = {
+    key: "session:restore",
+    session_key: "session:restore",
+    active_event: restored_write,
+    events: [restored_read, restored_write],
+    recent_evidence: [{ type: "artifact", label: "gomoku", value: "gomoku.html" }],
+    workspace_events: [{
+      id: "workspace-gomoku",
+      agent_id: "agent-stage",
+      path: "gomoku.html",
+      status: "updated",
+      version: 1,
+      source: "agent",
+      session_key: "session:restore",
+      tool_use_id: "tool-write",
+      live_content: "<html />",
+      updated_at: now - 250,
+      event_type: "file_write_end",
+    }],
+    updated_at: now - 200,
+  };
+  const next = {
+    key: "session:restore",
+    session_key: "session:restore",
+    active_event: projected_summary,
+    events: [projected_summary],
+    recent_evidence: [{ type: "status", label: "duration", value: "1s" }],
+    workspace_events: [],
+    updated_at: now,
+  };
+
+  const merged = merge_operation_stage_snapshots_for_restore(current, next);
+  assert(merged.active_event?.id === "projected-summary", "restore merge should keep projected active event");
+  assert(merged.events.some((event) => event.id === "restored-read"), "restore merge should preserve earlier read event from restored stage snapshot");
+  assert(merged.events.some((event) => event.id === "restored-write"), "restore merge should preserve earlier write event from restored stage snapshot");
+  assert(merged.events.at(-1)?.id === "projected-summary", "restore merge should keep projected summary at the end of the round");
+  assert(merged.workspace_events.some((item) => item.path === "gomoku.html"), "restore merge should preserve workspace artifact for restored round");
+  assert(merged.recent_evidence.some((item) => item.label === "duration"), "restore merge should include fresh projected evidence");
+  assert(merged.recent_evidence.some((item) => item.label === "gomoku"), "restore merge should include restored artifact evidence");
 }
 
 function verify_workspace_live_stays_in_tool_round(now) {
