@@ -759,18 +759,30 @@ function project_workspace_event(
 }
 
 function pick_active_event(events: NexusOperationEvent[]): NexusOperationEvent | null {
+  if (!events.length) {
+    return null;
+  }
+
+  const latest_event = events.reduce((latest, item) => (
+    (item.updated_at || 0) >= (latest.updated_at || 0) ? item : latest
+  ), events[0]);
+  const active_round_id = latest_event.round_id;
+  const round_events = events.filter((item) => item.round_id === active_round_id);
   const priority = ["waiting", "running", "error"] satisfies OperationPhase[];
+
   for (const phase of priority) {
-    const event = [...events].reverse().find((item) => item.phase === phase);
+    const event = [...round_events].reverse().find((item) => item.phase === phase);
     if (event) {
       return event;
     }
   }
-  const summary_event = [...events].reverse().find((item) => item.kind === "round_summary");
+
+  const summary_event = [...round_events].reverse().find((item) => item.kind === "round_summary");
   if (summary_event) {
     return summary_event;
   }
-  return events.at(-1) ?? null;
+
+  return round_events.at(-1) ?? latest_event;
 }
 
 function resolve_workspace_event_round_id(

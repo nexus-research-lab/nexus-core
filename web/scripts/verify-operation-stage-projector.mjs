@@ -57,6 +57,7 @@ const now = Date.now();
 
 verify_stage_experience_state_machine(now);
 verify_live_episode_narrates_running_round(now);
+verify_active_event_stays_with_latest_round(now);
 verify_workspace_live_stays_in_tool_round(now);
 verify_multi_file_windows_keep_event_identity(now);
 verify_terminal_result_envelope(now);
@@ -200,6 +201,61 @@ function verify_live_episode_narrates_running_round(now) {
   assert(episode.previous_label.includes("Write"), `live episode should point to previous settled tool, got ${episode.previous_label}`);
   assert(episode.next_label.includes("命令退出"), `terminal live episode should wait for command exit, got ${episode.next_label}`);
   assert(episode.checkpoints.some((item) => item.label === "当前" && item.value === "执行"), "live episode should mark current step as executing");
+}
+
+function verify_active_event_stays_with_latest_round(now) {
+  const messages = [{
+    role: "assistant",
+    message_id: "msg-old-running",
+    session_key: "session:stage",
+    agent_id: "agent-stage",
+    round_id: "round-old",
+    timestamp: now - 3000,
+    is_complete: false,
+    content: [{
+      type: "tool_use",
+      id: "tool-old-bash",
+      name: "Bash",
+      input: {
+        command: "sleep 999",
+      },
+    }],
+  }, {
+    role: "assistant",
+    message_id: "msg-new-summary",
+    session_key: "session:stage",
+    agent_id: "agent-stage",
+    round_id: "round-new",
+    timestamp: now - 1000,
+    is_complete: true,
+    content: [{
+      type: "text",
+      text: "new round done",
+    }],
+    result_summary: {
+      subtype: "success",
+      duration_ms: 500,
+      duration_api_ms: 400,
+      num_turns: 1,
+      result: "new round done",
+      is_error: false,
+      timestamp: now - 900,
+    },
+  }];
+
+  const snapshot = project_operation_snapshot({
+    key: "session:stage",
+    session_key: "session:stage",
+    agent_id: "agent-stage",
+    messages,
+    pending_permissions: [],
+    live_round_ids: [],
+    workspace_events: [],
+  });
+
+  assert(snapshot.events.some((event) => event.round_id === "round-old" && event.phase === "running"), "fixture should include an older running event");
+  assert(snapshot.active_event?.round_id === "round-new", `active event should follow latest round, got ${snapshot.active_event?.round_id}`);
+  assert(snapshot.active_event?.kind === "round_summary", `latest completed round should focus summary, got ${snapshot.active_event?.kind}`);
 }
 
 function verify_workspace_live_stays_in_tool_round(now) {
