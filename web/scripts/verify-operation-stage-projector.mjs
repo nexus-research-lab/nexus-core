@@ -199,7 +199,7 @@ function verify_live_episode_narrates_running_round(now) {
     },
   );
 
-  assert(episode.status_label === "LIVE_OPERATION", `running tool should be narrated as live operation, got ${episode.status_label}`);
+  assert(episode.status_label === "现场执行", `running tool should be narrated as live operation, got ${episode.status_label}`);
   assert(episode.progress_label === "3/3", `live episode should expose current event position, got ${episode.progress_label}`);
   assert(episode.settled_count === 2, `live episode should count settled predecessors, got ${episode.settled_count}`);
   assert(episode.previous_label.includes("Write"), `live episode should point to previous settled tool, got ${episode.previous_label}`);
@@ -242,7 +242,7 @@ function verify_api_retry_runtime_projection(now) {
   assert(active_event?.target === "模型请求暂未成功，正在重试", `api retry should preserve retry detail, got ${active_event?.target}`);
   assert(active_event?.evidence?.some((item) => item.label === "api_retry"), "api retry event should carry retry evidence");
   const episode = build_operation_live_episode(active_event, snapshot.events, snapshot);
-  assert(episode.status_label === "API_RETRYING", `api retry should narrate as retrying, got ${episode.status_label}`);
+  assert(episode.status_label === "API 重试中", `api retry should narrate as retrying, got ${episode.status_label}`);
   assert(episode.next_label.includes("模型响应"), `api retry should wait for model response, got ${episode.next_label}`);
 }
 
@@ -355,7 +355,7 @@ function verify_error_summary_settles_live_handoff(now) {
   assert(merged.active_event?.id === error_summary.id, "error summary should remain active after merge");
   assert(settled_handoff?.phase === "error", `stale live handoff should be settled as error, got ${settled_handoff?.phase}`);
   const brief = build_operation_continuation_brief(merged.active_event, merged.events, merged);
-  assert(brief.checkpoints.every((item) => !String(item.value).includes("active")), "error completion brief should not report active running windows");
+  assert(brief.checkpoints.every((item) => !String(item.value).includes("个活动")), "error completion brief should not report active running windows");
 }
 
 function verify_stage_restore_merge_preserves_round_context(now) {
@@ -529,11 +529,11 @@ function verify_workspace_live_stays_in_tool_round(now) {
   assert(desktop.active_window_id?.includes(":run-manifest"), `completed stage should focus run manifest, got ${desktop.active_window_id}`);
   const manifest_window = desktop.windows.find((window) => window.kind === "run_manifest");
   assert(manifest_window, "completed stage should render a run manifest window");
-  assert(manifest_window.payload.handoff_summary?.status_label === "READY_TO_CONTINUE", `completed manifest should expose handoff summary, got ${manifest_window.payload.handoff_summary?.status_label}`);
+  assert(manifest_window.payload.handoff_summary?.status_label === "可继续", `completed manifest should expose handoff summary, got ${manifest_window.payload.handoff_summary?.status_label}`);
   assert(manifest_window.payload.handoff_summary?.resume_prompt.includes("gomoku.html"), "handoff resume prompt should point to current artifact");
   assert(!manifest_window.payload.handoff_summary?.resume_prompt.includes("stale-session.md"), "handoff resume prompt should not reference stale workspace artifact");
   const continuation_brief = build_operation_continuation_brief(snapshot.active_event, snapshot.events, snapshot);
-  assert(continuation_brief.status_label === "READY_TO_CONTINUE", `completed stage continuation brief should be ready, got ${continuation_brief.status_label}`);
+  assert(continuation_brief.status_label === "可继续", `completed stage continuation brief should be ready, got ${continuation_brief.status_label}`);
   assert(continuation_brief.primary_artifact === "gomoku.html", `completed stage continuation brief should point to current artifact, got ${continuation_brief.primary_artifact}`);
   assert(continuation_brief.resume_prompt.includes("gomoku.html"), "completed stage continuation prompt should point to current artifact");
   assert(desktop.windows.some((window) => window.kind === "browser"), "html artifact should remain open beside the run manifest");

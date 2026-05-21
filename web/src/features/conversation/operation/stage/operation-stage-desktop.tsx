@@ -69,15 +69,15 @@ const SURFACE_ACCENT_CLASS_NAME: Record<OperationSurface, string> = {
 };
 
 const SURFACE_LABEL: Record<OperationSurface, string> = {
-  workspace: "Workspace",
-  editor: "Editor",
-  terminal: "Terminal",
-  web: "Web",
-  knowledge: "Knowledge",
-  task: "Task",
-  conversation: "Conversation",
-  summary: "Summary",
-  fallback: "Operation",
+  workspace: "工作区",
+  editor: "编辑器",
+  terminal: "终端",
+  web: "浏览器",
+  knowledge: "知识库",
+  task: "任务",
+  conversation: "运行时",
+  summary: "交接",
+  fallback: "操作",
 };
 
 const PHASE_STATUS_META: Record<OperationPhase, {
@@ -540,8 +540,8 @@ function StageStatusBar({
         <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-[10.5px] font-semibold text-(--text-soft)">
           <span>{is_replay ? "回放中" : narrative.label}</span>
           <span>{SURFACE_LABEL[event.surface]}</span>
-          <span>{round_event_count} actions</span>
-          <span>{visible_window_count}/{window_count} windows</span>
+          <span>{round_event_count} 步</span>
+          <span>{visible_window_count}/{window_count} 窗口</span>
           <span>{elapsed}</span>
           <span>{format_operation_time(event.updated_at)}</span>
         </div>
@@ -629,19 +629,19 @@ function build_stage_director_cues({
 
   return [
     {
-      label: is_replay ? "Replay" : "Mission",
+      label: is_replay ? "回放" : "目标",
       value: primary_target,
       tone: error_count ? "warning" : "neutral",
       Icon: Route,
     },
     {
-      label: "Scene",
+      label: "现场",
       value: `${round_event_count} 步 · ${visible_window_count} 窗口 · ${workspace_count + evidence_count} 证据`,
       tone: done_count > 0 && !error_count ? "success" : error_count ? "warning" : "neutral",
       Icon: ListChecks,
     },
     {
-      label: "Next",
+      label: "下一步",
       value: next_step,
       tone: error_count || event.phase === "waiting" ? "warning" : "neutral",
       Icon: ArrowRight,
@@ -656,7 +656,9 @@ function is_low_signal_director_value(value: string | null | undefined): value i
   const normalized = value.trim().toLowerCase();
   return !normalized
     || /^\d+\s+turns?$/.test(normalized)
-    || /^\d+\s+actions?$/.test(normalized);
+    || /^\d+\s+actions?$/.test(normalized)
+    || /^\d+\s+turns?$/.test(normalized.replace("回合", "turns"))
+    || /^\d+\s+步$/.test(normalized);
 }
 
 function StageActGuide({
@@ -961,7 +963,7 @@ function StageNarrativeRail({
         ) : null}
         <div className="mb-2 flex items-center justify-between gap-3 text-[10px] font-bold text-(--text-soft)">
           <span>事件流</span>
-          <span>{events.length} actions · {Math.min(revealed_window_count, total_window_count)}/{total_window_count}</span>
+          <span>{events.length} 步 · {Math.min(revealed_window_count, total_window_count)}/{total_window_count}</span>
         </div>
         <div className="flex min-w-0 max-w-full gap-1.5 overflow-hidden">
           {events.slice(-7).map((item, index) => {
@@ -1127,25 +1129,25 @@ function StageCompletionLedger({
               ? "border-[rgba(223,157,46,0.24)] bg-[rgba(223,157,46,0.10)] text-[color:var(--warning)]"
               : "border-[rgba(47,184,132,0.22)] bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]",
           )}>
-            {active_index >= 0 ? `${active_index + 1}/${events.length}` : has_error ? "review" : "ready"}
+            {active_index >= 0 ? `${active_index + 1}/${events.length}` : has_error ? "回看" : "就绪"}
           </span>
         </div>
 
         <div className="mt-3 grid grid-cols-3 gap-1.5 text-center">
           <CompletionLedgerMetric
-            label="actions"
+            label="步骤"
             tone={has_error ? "warning" : "success"}
             value={`${completed_count}/${events.length}`}
           />
           <CompletionLedgerMetric
-            label="artifacts"
+            label="产物"
             tone={artifacts.length ? "success" : "neutral"}
             value={`${artifacts.length}`}
           />
           <CompletionLedgerMetric
-            label={interrupted_count ? "issues" : "state"}
+            label={interrupted_count ? "异常" : "状态"}
             tone={interrupted_count ? "warning" : "neutral"}
-            value={interrupted_count ? `${interrupted_count}` : narrative.phase === "completed" ? "done" : "saving"}
+            value={interrupted_count ? `${interrupted_count}` : narrative.phase === "completed" ? "完成" : "落盘"}
           />
         </div>
 
@@ -1351,7 +1353,7 @@ function StageOutcomeSummary({
                 {continuation_brief.status_label}
               </p>
               <span className="shrink-0 rounded-full bg-white/58 px-1.5 py-px text-[8.5px] font-bold text-(--text-soft)">
-                next
+                下一步
               </span>
             </div>
             <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-(--text-muted)">
@@ -1459,10 +1461,10 @@ function StageOutcomeSummary({
       </div>
 
       <div className="mt-3 grid grid-cols-4 gap-2 text-center">
-        <SummaryMetric label="actions" value={events.length} />
-        <SummaryMetric label="files" value={file_count} />
-        <SummaryMetric label="terminal" value={terminal_count} />
-        <SummaryMetric label="evidence" value={evidence_count} />
+        <SummaryMetric label="步骤" value={events.length} />
+        <SummaryMetric label="文件" value={file_count} />
+        <SummaryMetric label="终端" value={terminal_count} />
+        <SummaryMetric label="证据" value={evidence_count} />
       </div>
 
       <div className="mt-3 rounded-[12px] border border-white/50 bg-white/34 p-2">
@@ -1471,7 +1473,7 @@ function StageOutcomeSummary({
             <ListChecks className="h-3.5 w-3.5 shrink-0" />
             <span>交接清单</span>
           </span>
-          <span>{checklist_items.length} items</span>
+          <span>{checklist_items.length} 项</span>
         </div>
         <div className="grid gap-1">
           {checklist_items.map((item) => {
@@ -1546,7 +1548,7 @@ function StageArchiveShelf({
             </div>
           </div>
           <span className="shrink-0 rounded-full border border-white/56 bg-white/50 px-2 py-1 text-[9.5px] font-bold text-(--text-soft)">
-            {archived_count}/{events.length} archived
+            {archived_count}/{events.length} 已归档
           </span>
         </div>
 
@@ -1917,8 +1919,8 @@ function collect_archive_capsules({
     {
       id: "archive-windows",
       label: "窗口现场",
-      value: `${window_count} windows`,
-      meta: "layout saved",
+      value: `${window_count} 个窗口`,
+      meta: "布局已保存",
       tone: has_error ? "warning" : "success",
       Icon: FolderTree,
     },
@@ -1926,15 +1928,15 @@ function collect_archive_capsules({
       id: "archive-artifacts",
       label: artifacts.length ? "关键产物" : "上下文产物",
       value: artifacts[0]?.value ?? event.target ?? event.title,
-      meta: artifacts.length ? `${artifacts.length} item` : "context",
+      meta: artifacts.length ? `${artifacts.length} 项` : "上下文",
       tone: artifacts.length ? "success" : "neutral",
       Icon: artifacts[0]?.Icon ?? FileText,
     },
     {
       id: "archive-trace",
       label: "执行轨迹",
-      value: `${events.length} actions`,
-      meta: terminal_count || evidence_count ? `${terminal_count + evidence_count} proofs` : "timeline",
+      value: `${events.length} 步`,
+      meta: terminal_count || evidence_count ? `${terminal_count + evidence_count} 条证据` : "时间线",
       tone: has_error ? "warning" : "success",
       Icon: ListChecks,
     },
@@ -1966,19 +1968,19 @@ function collect_handoff_items({
   return [
     {
       label: narrative.phase === "settling" ? "落盘中" : "轨迹归档",
-      value: `${settled_count}/${events.length} steps`,
+      value: `${settled_count}/${events.length} 步`,
       tone: has_error ? "warning" : narrative.phase === "completed" ? "success" : "neutral",
       Icon: has_error ? AlertTriangle : CheckCircle2,
     },
     {
       label: "产物",
-      value: artifacts.length ? `${artifacts.length} items` : file_count ? `${file_count} files` : "none",
+      value: artifacts.length ? `${artifacts.length} 项` : file_count ? `${file_count} 个文件` : "无",
       tone: artifacts.length || file_count ? "success" : "neutral",
       Icon: artifacts[0]?.Icon ?? FileText,
     },
     {
       label: running_count ? "仍在现场" : "可继续",
-      value: running_count ? `${running_count} active` : `${terminal_count + evidence_count} proofs`,
+      value: running_count ? `${running_count} 个活动` : `${terminal_count + evidence_count} 条证据`,
       tone: running_count ? "warning" : "neutral",
       Icon: running_count ? Loader2 : Activity,
     },
@@ -2004,25 +2006,25 @@ function collect_handoff_checklist({
   return [
     {
       label: failed_count ? "需要回看异常" : "工具轨迹已归档",
-      value: failed_count ? `${failed_count} issue` : `${completed_count}/${events.length}`,
+      value: failed_count ? `${failed_count} 个异常` : `${completed_count}/${events.length}`,
       tone: failed_count ? "warning" : "success",
       Icon: failed_count ? AlertTriangle : CheckCircle2,
     },
     {
       label: artifacts.length ? "关键产物可打开" : "未形成独立产物",
-      value: artifacts.length ? `${artifacts.length} item` : "context only",
+      value: artifacts.length ? `${artifacts.length} 项` : "仅上下文",
       tone: artifacts.length ? "success" : "neutral",
       Icon: artifacts[0]?.Icon ?? FileText,
     },
     {
       label: evidence_count ? "证据可追溯" : "证据来自现场窗口",
-      value: evidence_count ? `${evidence_count} proof` : "window state",
+      value: evidence_count ? `${evidence_count} 条证据` : "窗口状态",
       tone: evidence_count ? "success" : "neutral",
       Icon: evidence_count ? ListChecks : Activity,
     },
     {
       label: waiting_count ? "等待用户确认" : running_count ? "仍有执行窗口" : "可以继续对话",
-      value: waiting_count ? `${waiting_count} gate` : running_count ? `${running_count} active` : "ready",
+      value: waiting_count ? `${waiting_count} 个关卡` : running_count ? `${running_count} 个活动` : "就绪",
       tone: waiting_count || running_count || has_error ? "warning" : "neutral",
       Icon: waiting_count ? ShieldQuestion : running_count ? Loader2 : Activity,
     },

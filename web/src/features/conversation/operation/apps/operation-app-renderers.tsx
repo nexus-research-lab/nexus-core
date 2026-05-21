@@ -402,16 +402,16 @@ function WorkspaceFinder({
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden rounded-[13px] border border-(--divider-subtle-color) bg-white/72">
       <div className="hidden w-24 shrink-0 border-r border-(--divider-subtle-color) bg-[#f4f7fb] p-2 text-[10px] font-bold text-(--text-soft) sm:block">
-        <div className="rounded-[9px] bg-white/70 px-2 py-2 text-(--text-strong)">Files</div>
-        <div className="mt-1 rounded-[9px] px-2 py-2">Search</div>
-        <div className="mt-1 rounded-[9px] px-2 py-2">Changes</div>
+        <div className="rounded-[9px] bg-white/70 px-2 py-2 text-(--text-strong)">文件</div>
+        <div className="mt-1 rounded-[9px] px-2 py-2">搜索</div>
+        <div className="mt-1 rounded-[9px] px-2 py-2">变更</div>
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-3 border-b border-(--divider-subtle-color) px-3 py-2">
           <div className="min-w-0">
-            <p className="truncate text-[11px] font-black text-(--text-strong)">workspace</p>
+            <p className="truncate text-[11px] font-black text-(--text-strong)">工作区</p>
             <p className="truncate text-[10px] text-(--text-soft)">
-              {display_items.length} files · {changed_count} changed
+              {display_items.length} 个文件 · {changed_count} 个变更
             </p>
           </div>
           <span className={cn(
@@ -1339,10 +1339,10 @@ function RunManifestSurface({
   const duration = format_manifest_duration(events);
   const result_text = extract_manifest_result_text(event);
   const status_label = event.phase === "error"
-    ? "REVIEW REQUIRED"
+    ? "需要回看"
     : event.phase === "cancelled"
-      ? "INTERRUPTED"
-      : "READY";
+      ? "已中断"
+      : "已归档";
 
   return (
     <div className="grid h-full min-h-[330px] min-w-0 grid-cols-[minmax(220px,0.38fr)_minmax(0,1fr)] gap-3 max-md:grid-cols-1">
@@ -1378,10 +1378,10 @@ function RunManifestSurface({
         </div>
 
         <div className="grid grid-cols-2 gap-1.5 border-b border-white/52 p-2 text-[10px]">
-          <ManifestMetric label="actions" value={events.length} />
-          <ManifestMetric label="done" value={`${completed_count}/${events.length}`} />
-          <ManifestMetric label="artifacts" value={artifacts.length} />
-          <ManifestMetric label="duration" value={duration} />
+          <ManifestMetric label="步骤" value={events.length} />
+          <ManifestMetric label="完成" value={`${completed_count}/${events.length}`} />
+          <ManifestMetric label="产物" value={artifacts.length} />
+          <ManifestMetric label="耗时" value={duration} />
         </div>
 
         <div className="soft-scrollbar min-h-0 flex-1 overflow-auto p-3">
@@ -1407,7 +1407,7 @@ function RunManifestSurface({
                       {handoff_summary.status_label}
                     </p>
                     <span className="shrink-0 rounded-full bg-white/58 px-1.5 py-px text-[8.5px] font-bold text-(--text-soft)">
-                      handoff
+                      交接
                     </span>
                   </div>
                   <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-(--text-muted)">
@@ -1538,13 +1538,13 @@ function RunManifestSurface({
         <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2 border-t border-(--divider-subtle-color) bg-white/48 p-2 max-sm:grid-cols-1">
           <ManifestFooterPanel
             Icon={Terminal}
-            label="Terminal"
-            value={terminal_events.length ? `${terminal_events.length} command` : "no command"}
+            label="终端"
+            value={terminal_events.length ? `${terminal_events.length} 条命令` : "无命令"}
           />
           <ManifestFooterPanel
             Icon={ClipboardList}
-            label="Evidence"
-            value={evidence.length ? `${evidence.length} proof` : "window state"}
+            label="证据"
+            value={evidence.length ? `${evidence.length} 条证据` : "窗口状态"}
           />
         </div>
       </section>
@@ -2171,7 +2171,7 @@ function OperationReviewPanel({
   ]).slice(0, compact ? 4 : 8);
   const rows = build_operation_input_rows(event.input_preview, profile.target_keys, compact ? 3 : 6);
   const waiting = event.phase === "waiting" || mode === "permission";
-  const lead = event.summary ?? event.title ?? event.target ?? event.tool_name ?? "Operation";
+  const lead = event.summary ?? event.title ?? event.target ?? event.tool_name ?? "操作";
 
   return (
     <div className="flex h-full min-h-[260px] min-w-0 max-w-full flex-col overflow-hidden rounded-[13px] border border-(--divider-subtle-color) bg-white/76">
@@ -2184,7 +2184,7 @@ function OperationReviewPanel({
         <div className="flex min-w-0 items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">
-              {waiting ? "Approval checkpoint" : "Evidence inspector"}
+              {waiting ? "授权检查点" : "证据检查器"}
             </p>
             <h3 className="mt-1 truncate text-[14px] font-black tracking-[-0.03em] text-(--text-strong)">
               {waiting ? "等待用户确认" : "执行证据"}

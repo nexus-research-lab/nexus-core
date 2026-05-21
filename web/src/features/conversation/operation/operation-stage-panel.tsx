@@ -89,47 +89,47 @@ const IDLE_PARTICLE_GLYPHS = ["{", "}", "<", ">", "/", "\\", "0", "1", "n", "x",
 
 const SURFACE_META: Record<OperationSurface, SurfaceMeta> = {
   workspace: {
-    label: "Workspace",
+    label: "工作区",
     Icon: FolderTree,
     accent_class_name: "from-[rgba(91,114,255,0.24)] via-[rgba(91,114,255,0.12)] to-transparent",
   },
   editor: {
-    label: "Editor",
+    label: "编辑器",
     Icon: Code2,
     accent_class_name: "from-[rgba(79,162,159,0.24)] via-[rgba(79,162,159,0.12)] to-transparent",
   },
   terminal: {
-    label: "Terminal",
+    label: "终端",
     Icon: Terminal,
     accent_class_name: "from-[rgba(47,184,132,0.22)] via-[rgba(47,184,132,0.1)] to-transparent",
   },
   web: {
-    label: "Web",
+    label: "浏览器",
     Icon: Globe2,
     accent_class_name: "from-[rgba(223,157,46,0.22)] via-[rgba(223,157,46,0.1)] to-transparent",
   },
   knowledge: {
-    label: "Knowledge",
+    label: "知识库",
     Icon: FileText,
     accent_class_name: "from-[rgba(91,114,255,0.2)] via-[rgba(79,162,159,0.1)] to-transparent",
   },
   task: {
-    label: "Task",
+    label: "任务",
     Icon: Activity,
     accent_class_name: "from-[rgba(223,157,46,0.2)] via-[rgba(91,114,255,0.1)] to-transparent",
   },
   conversation: {
-    label: "Conversation",
+    label: "运行时",
     Icon: MessageSquare,
     accent_class_name: "from-[rgba(91,114,255,0.2)] via-[rgba(255,255,255,0.08)] to-transparent",
   },
   summary: {
-    label: "Summary",
+    label: "交接",
     Icon: CheckCircle2,
     accent_class_name: "from-[rgba(47,184,132,0.2)] via-[rgba(79,162,159,0.1)] to-transparent",
   },
   fallback: {
-    label: "Operation",
+    label: "操作",
     Icon: Sparkles,
     accent_class_name: "from-[rgba(117,131,149,0.18)] via-[rgba(255,255,255,0.08)] to-transparent",
   },
@@ -546,7 +546,7 @@ export function OperationStagePanel({
       body_class_name="px-2 py-2 sm:px-3 xl:px-4"
       body_scrollable={false}
       content_class_name="flex h-full min-h-0 max-w-none"
-      eyebrow="Operation"
+      eyebrow="操作"
       max_width_class_name="max-w-none"
       show_eyebrow={false}
       title="操作舞台"
@@ -1035,10 +1035,13 @@ function StageEventSignal({
   const Icon = meta.Icon;
   const phase_meta = PHASE_META[event.phase];
   const PhaseIcon = phase_meta.Icon;
+  const incoming_label = event.tool_name ?? event.title;
+  const next_window_label = stage_transition_window_label(intent);
+  const completed_count = Math.max(0, round_event_count - 1);
 
   return (
     <div
-      className="operation-event-signal pointer-events-none absolute left-1/2 top-5 z-30 w-[min(360px,calc(100%-2rem))] rounded-[16px] border border-white/72 bg-white/68 p-2.5 shadow-[0_22px_54px_rgba(18,28,42,0.14)] backdrop-blur-2xl"
+      className="operation-event-signal pointer-events-none absolute left-1/2 top-5 z-30 w-[min(420px,calc(100%-2rem))] rounded-[16px] border border-white/72 bg-white/70 p-2.5 shadow-[0_22px_54px_rgba(18,28,42,0.14)] backdrop-blur-2xl"
       key={`event-signal-${sequence}`}
     >
       <div className="flex min-w-0 items-center gap-2.5">
@@ -1051,7 +1054,7 @@ function StageEventSignal({
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-2">
             <span className="truncate text-[12px] font-black text-(--text-strong)">
-              工具接入 · {meta.label}
+              第 {round_event_count} 个工具接入 · {meta.label}
             </span>
             <span className={cn(
               "inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold",
@@ -1062,12 +1065,61 @@ function StageEventSignal({
             </span>
           </div>
           <p className="mt-0.5 truncate text-[10.5px] font-semibold text-(--text-muted)">
-            {round_event_count} · {event.tool_name ?? event.title} · {event.target ?? event.summary ?? event.title}
+            {incoming_label} · {event.target ?? event.summary ?? event.title}
           </p>
         </div>
       </div>
+      <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
+        <StageSignalMetric label="已沉淀" value={`${completed_count}`} />
+        <StageSignalMetric label="接入中" value={incoming_label} strong />
+        <StageSignalMetric label="窗口" value={next_window_label} />
+      </div>
     </div>
   );
+}
+
+function StageSignalMetric({
+  label,
+  strong = false,
+  value,
+}: {
+  label: string;
+  strong?: boolean;
+  value: string;
+}) {
+  return (
+    <div className={cn(
+      "min-w-0 rounded-[10px] border px-2 py-1.5",
+      strong
+        ? "border-[rgba(91,114,255,0.22)] bg-[rgba(91,114,255,0.09)]"
+        : "border-white/50 bg-white/34",
+    )}>
+      <p className="truncate text-[9.5px] font-black text-(--text-strong)">{value}</p>
+      <p className="mt-0.5 truncate text-[8px] font-semibold text-(--text-soft)">{label}</p>
+    </div>
+  );
+}
+
+function stage_transition_window_label(intent: StageTransitionIntent): string {
+  if (intent === "terminal") {
+    return "终端窗口";
+  }
+  if (intent === "browser") {
+    return "浏览器窗口";
+  }
+  if (intent === "workspace") {
+    return "文件窗口";
+  }
+  if (intent === "editor") {
+    return "编辑窗口";
+  }
+  if (intent === "task") {
+    return "任务面板";
+  }
+  if (intent === "permission") {
+    return "确认面板";
+  }
+  return "交接面板";
 }
 
 function surface_meta_for_transition(

@@ -94,10 +94,10 @@ export function build_operation_continuation_brief(
 
   return {
     status_label: failed_count
-      ? "REVIEW_REQUIRED"
+      ? "需要回看"
       : running_count
-        ? "IN_PROGRESS"
-        : "READY_TO_CONTINUE",
+        ? "执行中"
+        : "可继续",
     status_detail: failed_count
       ? "本轮存在异常，现场保留了失败步骤、输入和证据。"
       : running_count
@@ -115,17 +115,17 @@ export function build_operation_continuation_brief(
       },
       {
         label: "产物",
-        value: workspace_items.length ? `${workspace_items.length} file` : primary_artifact,
+        value: workspace_items.length ? `${workspace_items.length} 个文件` : primary_artifact,
         tone: workspace_items.length ? "success" : "neutral",
       },
       {
         label: "证据",
-        value: evidence_count ? `${evidence_count} proof` : "window state",
+        value: evidence_count ? `${evidence_count} 条证据` : "窗口状态",
         tone: evidence_count ? "success" : "neutral",
       },
       {
         label: running_count ? "现场" : "继续",
-        value: running_count ? `${running_count} active` : "ready",
+        value: running_count ? `${running_count} 个活动` : "就绪",
         tone: running_count || failed_count ? "warning" : "neutral",
       },
     ],
@@ -162,12 +162,12 @@ export function build_operation_live_episode(
 
   return {
     status_label: is_queued
-      ? "AWAKENING"
+      ? "工作台唤醒"
       : is_waiting
-        ? "WAITING_FOR_APPROVAL"
+        ? "等待确认"
         : is_api_retry
-          ? "API_RETRYING"
-          : "LIVE_OPERATION",
+          ? "API 重试中"
+          : "现场执行",
     status_detail: is_queued
       ? "字符场正在展开为第一层工作现场。"
       : is_waiting

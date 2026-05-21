@@ -129,7 +129,7 @@ function build_windows(
     windows.push(window_state(latest_file_event ?? event, snapshot, {
       id: "finder",
       kind: "finder",
-      title: "Workspace",
+      title: "工作区",
       layout: "secondary",
       phase: focus_target === "finder" ? "focused" : "background",
       z: focus_target === "finder" ? 34 : 14,
@@ -174,7 +174,7 @@ function build_windows(
     windows.push(window_state(terminal_event, snapshot, {
       id: "terminal",
       kind: "terminal",
-      title: terminal_event.target ?? "Terminal",
+      title: terminal_event.target ?? "终端",
       layout: "terminal",
       phase: focus_target === "terminal" ? "focused" : "background",
       z: focus_target === "terminal" ? 36 : 18,
@@ -250,7 +250,7 @@ function build_windows(
     windows.push(window_state(event, snapshot, {
       id: "permission-checkpoint",
       kind: "permission_wait",
-      title: event.title || "Permission Checkpoint",
+      title: event.title || "权限确认",
       layout: "artifact",
       phase: "focused",
       z: 44,
@@ -285,7 +285,7 @@ function build_windows(
       windows.push(window_state(event, snapshot, {
         id: "run-manifest",
         kind: "run_manifest",
-        title: event.phase === "error" ? "Run Manifest · Review" : "Run Manifest",
+        title: event.phase === "error" ? "执行清单 · 回看" : "执行清单",
         layout: "primary",
         phase: focus_target === "manifest" ? "focused" : "background",
         z: focus_target === "manifest" ? 42 : 24,
@@ -386,7 +386,7 @@ function evidence_window(
   return window_state(event, snapshot, {
     id: "evidence",
     kind: event.phase === "waiting" ? "permission_wait" : "evidence",
-    title: event.phase === "waiting" ? "Waiting" : "Evidence",
+    title: event.phase === "waiting" ? "等待确认" : "证据",
     layout: "inspector",
     phase: event.phase === "done" ? "minimized" : "background",
     z,
