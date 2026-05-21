@@ -136,9 +136,3 @@ func cloneFields(values []Field) []Field {
 	return items
 }
 
-func min(left int, right int) int {
-	if left < right {
-		return left
-	}
-	return right
-}
