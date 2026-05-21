@@ -430,7 +430,14 @@ export function OperationStageDesktop({
               y: window_overrides[window.id]?.offset_y ?? 0,
             }}
             focus={is_active}
-            footer={<WindowSettlementBar active={is_active} event={window.payload.event} tone={window.kind === "terminal" ? "terminal" : "default"} />}
+            footer={(
+              <WindowSettlementBar
+                active={is_active}
+                event={window.payload.event}
+                sequence_label={event_sequence_label(window.payload.event, narrative_events)}
+                tone={window.kind === "terminal" ? "terminal" : "default"}
+              />
+            )}
             icon={icon_for_window_kind(window.kind)}
             key={window.id}
             mobile_hidden={!is_active}
@@ -446,7 +453,10 @@ export function OperationStageDesktop({
             {is_active ? (
               <StageWindowContent window={window} on_focus_event={focus_event_window} />
             ) : (
-              <BackgroundWindowSummary window={window} />
+              <BackgroundWindowSummary
+                sequence_label={event_sequence_label(window.payload.event, narrative_events)}
+                window={window}
+              />
             )}
           </OperationStageWindow>
         );
@@ -458,6 +468,7 @@ export function OperationStageDesktop({
       )}
       <StageWindowDock
         active_window_id={active_window_id}
+        events={narrative_events}
         windows={window_states}
         on_restore={restore_window}
       />
@@ -1798,12 +1809,14 @@ function StageWindowControls({
 }
 
 function StageWindowDock({
-  windows,
   active_window_id,
+  events,
+  windows,
   on_restore,
 }: {
-  windows: StageWindowState[];
   active_window_id: string | null;
+  events: NexusOperationEvent[];
+  windows: StageWindowState[];
   on_restore: (window_id: string) => void;
 }) {
   if (!windows.length) {
@@ -1825,6 +1838,7 @@ function StageWindowDock({
           const Icon = icon_for_window_kind(window.kind);
           const is_active = active_window_id === window.id && window.phase !== "closed" && window.phase !== "minimized";
           const app_label = stage_app_label_for_window_kind(window.kind);
+          const sequence_label = event_sequence_label(window.payload.event, events);
           const state_label = window.phase === "closed"
             ? "已关闭"
             : window.phase === "minimized"
@@ -1874,7 +1888,7 @@ function StageWindowDock({
                   {app_label}
                 </span>
                 <span className="block truncate text-[9px] font-semibold leading-tight text-(--text-soft)">
-                  {state_label}
+                  {sequence_label} · {state_label}
                 </span>
               </span>
               <span className={cn(
@@ -1889,7 +1903,7 @@ function StageWindowDock({
               )} />
               <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 hidden max-w-[210px] -translate-x-1/2 whitespace-nowrap rounded-[10px] border border-white/70 bg-[rgba(20,28,38,0.82)] px-2.5 py-1.5 text-[10px] font-semibold text-white shadow-[0_12px_30px_rgba(18,28,42,0.22)] backdrop-blur-xl group-hover:block group-focus-visible:block">
                 <span className="block max-w-[160px] truncate">{window.title}</span>
-                <span className="block text-[9px] font-medium text-white/66">{app_label} · {state_label}</span>
+                <span className="block text-[9px] font-medium text-white/66">{sequence_label} · {app_label} · {state_label}</span>
               </span>
             </button>
           );
@@ -1918,16 +1932,19 @@ function StageFocusBeam() {
 function WindowSettlementBar({
   active,
   event,
+  sequence_label,
   tone,
 }: {
   active: boolean;
   event: NexusOperationEvent;
+  sequence_label: string;
   tone: "default" | "terminal";
 }) {
   const phase_meta = PHASE_STATUS_META[event.phase];
   const PhaseIcon = phase_meta.Icon;
   const evidence_count = event.evidence?.length ?? 0;
-  const target = event.target ?? event.summary ?? event.title;
+  const target_candidate = event.target ?? event.summary ?? event.title;
+  const target = is_low_signal_director_value(target_candidate) ? event.title : target_candidate;
   const settled = event.phase === "done" || event.phase === "cancelled" || event.phase === "error";
 
   return (
@@ -1946,9 +1963,7 @@ function WindowSettlementBar({
         <PhaseIcon className={cn("h-3 w-3", event.phase === "running" && "animate-spin")} />
         {settled ? "已沉淀" : phase_meta.label}
       </span>
-      <span className="min-w-0 truncate font-semibold">
-        {target}
-      </span>
+      <span className="min-w-0 truncate font-semibold">{sequence_label} · {target}</span>
       <span className={cn(
         "shrink-0 rounded-full px-1.5 py-px font-bold",
         active
@@ -1966,30 +1981,37 @@ function WindowSettlementBar({
 }
 
 const BackgroundWindowSummary = memo(function BackgroundWindowSummary({
+  sequence_label,
   window,
 }: {
+  sequence_label: string;
   window: StageWindowState;
 }) {
   const event = window.payload.event;
-  const preview_text = window.payload.summary
+  const preview_candidate = window.payload.summary
     ?? event.summary
     ?? window.payload.target
     ?? window.target
     ?? event.target
     ?? event.title;
+  const preview_text = is_low_signal_director_value(String(preview_candidate ?? ""))
+    ? event.title
+    : preview_candidate;
+  const target_candidate = window.target ?? event.target ?? window.title;
+  const target = is_low_signal_director_value(target_candidate) ? window.title : target_candidate;
 
   return (
     <div className="flex h-full min-h-0 flex-col justify-between gap-3 rounded-[12px] border border-(--divider-subtle-color) bg-white/46 p-3">
       <div className="min-w-0">
         <p className="truncate text-[12px] font-black tracking-[-0.02em] text-(--text-strong)">
-          {event.tool_name ?? event.title}
+          {sequence_label} · {event.tool_name ?? event.title}
         </p>
         <p className="mt-1 line-clamp-3 text-[11px] leading-5 text-(--text-soft)">
           {String(preview_text ?? "等待窗口内容")}
         </p>
       </div>
       <div className="flex items-center justify-between gap-2 text-[10px] text-(--text-soft)">
-        <span className="truncate">{window.target ?? event.target ?? window.title}</span>
+        <span className="truncate">{target}</span>
         <span className={cn(
           "shrink-0 rounded-full px-1.5 py-px font-semibold",
           event.phase === "running"
@@ -2325,6 +2347,14 @@ function window_reveal_rank(window: StageWindowState, active_window_id: string |
     return 3;
   }
   return 2;
+}
+
+function event_sequence_label(event: NexusOperationEvent, events: NexusOperationEvent[]): string {
+  const index = events.findIndex((item) => item.id === event.id);
+  if (index >= 0) {
+    return `第 ${index + 1} 步`;
+  }
+  return "当前步";
 }
 
 function useRevealedWindowCount({
