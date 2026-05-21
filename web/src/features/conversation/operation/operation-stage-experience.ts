@@ -158,17 +158,22 @@ export function build_operation_live_episode(
   const is_queued = active_event.phase === "queued";
   const is_terminal = active_event.surface === "terminal";
   const is_handoff = active_event.surface === "conversation";
+  const is_api_retry = is_runtime_retry_event(active_event);
 
   return {
     status_label: is_queued
       ? "AWAKENING"
       : is_waiting
         ? "WAITING_FOR_APPROVAL"
-        : "LIVE_OPERATION",
+        : is_api_retry
+          ? "API_RETRYING"
+          : "LIVE_OPERATION",
     status_detail: is_queued
       ? "字符场正在展开为第一层工作现场。"
       : is_waiting
         ? "当前工具停在权限检查点，确认后会继续回到执行现场。"
+        : is_api_retry
+          ? "模型 API 暂未返回可执行事件，运行时正在重试并保留现场。"
         : is_terminal
           ? "命令窗口正在接收真实 stdout、stderr 和退出状态。"
           : is_handoff
@@ -186,6 +191,8 @@ export function build_operation_live_episode(
       ? "等待用户确认后继续执行"
       : is_terminal
         ? "等待命令退出并沉淀结果"
+        : is_api_retry
+          ? "等待模型响应恢复或返回错误"
         : is_handoff
           ? "等待第一个工具调用"
           : "等待下一个工具事件或本轮收束",
@@ -198,8 +205,14 @@ export function build_operation_live_episode(
       },
       {
         label: "当前",
-        value: active_event.phase === "waiting" ? "确认" : active_event.phase === "queued" ? "显影" : "执行",
-        tone: active_event.phase === "waiting" ? "warning" : "success",
+        value: active_event.phase === "waiting"
+          ? "确认"
+          : active_event.phase === "queued"
+            ? "显影"
+            : is_api_retry
+              ? "重试"
+              : "执行",
+        tone: active_event.phase === "waiting" || is_api_retry ? "warning" : "success",
       },
       {
         label: "焦点",
@@ -213,6 +226,11 @@ export function build_operation_live_episode(
       },
     ],
   };
+}
+
+function is_runtime_retry_event(event: NexusOperationEvent): boolean {
+  return event.surface === "conversation"
+    && (event.evidence ?? []).some((item) => item.label === "api_retry");
 }
 
 export function merge_operation_stage_snapshots_for_restore(
@@ -231,7 +249,16 @@ export function merge_operation_stage_snapshots_for_restore(
     return next;
   }
 
-  const current_round_events = current.events.filter((event) => event.round_id === active_round_id);
+  const terminal_round_summary = [...next.events]
+    .reverse()
+    .find((event) => (
+      event.round_id === active_round_id &&
+      event.kind === "round_summary" &&
+      (event.phase === "done" || event.phase === "error" || event.phase === "cancelled")
+    )) ?? null;
+  const current_round_events = current.events
+    .filter((event) => event.round_id === active_round_id)
+    .map((event) => settle_stale_live_event_for_round_summary(event, terminal_round_summary));
   if (!current_round_events.length) {
     return next;
   }
@@ -291,6 +318,40 @@ function collect_continuation_workspace_items(
     ? workspace_items.find((item) => item.path === event.target)
     : null;
   return event_target_item ? [event_target_item] : [];
+}
+
+function settle_stale_live_event_for_round_summary(
+  event: NexusOperationEvent,
+  summary: NexusOperationEvent | null,
+): NexusOperationEvent {
+  if (
+    !summary ||
+    (event.phase !== "running" && event.phase !== "waiting" && event.phase !== "queued") ||
+    event.id === summary.id
+  ) {
+    return event;
+  }
+
+  const settled_phase = summary.phase === "cancelled"
+    ? "cancelled"
+    : summary.phase === "error"
+      ? "error"
+      : "done";
+  return {
+    ...event,
+    phase: settled_phase,
+    summary: event.summary ?? summary.summary,
+    ended_at: summary.ended_at ?? summary.updated_at,
+    updated_at: Math.max(event.updated_at, summary.updated_at),
+    evidence: [
+      ...(event.evidence ?? []),
+      {
+        type: summary.phase === "error" ? "error" : "status",
+        label: summary.phase === "error" ? "round_error" : "round_settled",
+        value: summary.summary ?? summary.title,
+      },
+    ],
+  };
 }
 
 function merge_workspace_events_for_round(

@@ -481,6 +481,14 @@ function project_system_event({
     return null;
   }
 
+  const is_api_retry = subtype === "api_retry";
+  const title = is_api_retry
+    ? block.label || "API 正在重试"
+    : block.label || "运行接入中";
+  const target = is_api_retry
+    ? block.content || "模型请求暂未成功，正在重试"
+    : block.content || "等待第一个工具事件";
+
   return {
     id: `${message.message_id}:system:${subtype}:${block.timestamp}`,
     session_key: session_key ?? message.session_key,
@@ -490,11 +498,11 @@ function project_system_event({
     kind: "unknown",
     surface: "conversation",
     phase: "running",
-    title: block.label || "运行接入中",
-    target: block.content || "等待第一个工具事件",
-    summary: block.content || null,
+    title,
+    target,
+    summary: target,
     evidence: [
-      { type: "status", label: subtype, value: block.label || block.content },
+      { type: "status", label: subtype, value: title },
     ],
     started_at: message.timestamp,
     updated_at: block.timestamp || message.timestamp,
@@ -768,6 +776,15 @@ function pick_active_event(events: NexusOperationEvent[]): NexusOperationEvent |
   ), events[0]);
   const active_round_id = latest_event.round_id;
   const round_events = events.filter((item) => item.round_id === active_round_id);
+  const summary_event = [...round_events].reverse().find((item) => item.kind === "round_summary");
+  if (summary_event && (
+    summary_event.phase === "done" ||
+    summary_event.phase === "error" ||
+    summary_event.phase === "cancelled"
+  )) {
+    return summary_event;
+  }
+
   const priority = ["waiting", "running", "error"] satisfies OperationPhase[];
 
   for (const phase of priority) {
@@ -777,7 +794,6 @@ function pick_active_event(events: NexusOperationEvent[]): NexusOperationEvent |
     }
   }
 
-  const summary_event = [...round_events].reverse().find((item) => item.kind === "round_summary");
   if (summary_event) {
     return summary_event;
   }

@@ -1820,6 +1820,7 @@ function RuntimeHandoffSurface({
   const handoff_started_at = event.started_at ?? event.updated_at;
   const elapsed_ms = Math.max(0, now - handoff_started_at);
   const is_stalled = event.phase === "running" && elapsed_ms >= RUNTIME_HANDOFF_STALLED_MS && related_events.length <= 1;
+  const is_retrying = is_runtime_retry_event(event);
   const prompt = read_prompt_from_preview(event.input_preview) ?? summary ?? event.target ?? "等待运行时接入";
   const markers = [
     {
@@ -1833,10 +1834,10 @@ function RuntimeHandoffSurface({
       active: true,
     },
     {
-      label: is_stalled ? "接入等待过久" : "等待首个工具",
+      label: is_retrying ? "API 重试中" : is_stalled ? "接入等待过久" : "等待首个工具",
       detail: related_events.length > 1 ? `${related_events.length} events` : format_handoff_elapsed(elapsed_ms),
-      active: is_stalled,
-      warning: is_stalled,
+      active: is_retrying || is_stalled,
+      warning: is_retrying || is_stalled,
     },
   ];
 
@@ -1847,15 +1848,15 @@ function RuntimeHandoffSurface({
           <div className="flex min-w-0 items-center gap-2">
             <span className={cn(
               "grid h-8 w-8 shrink-0 place-items-center rounded-[11px] border",
-              is_stalled
+              is_stalled || is_retrying
                 ? "border-[rgba(223,157,46,0.26)] bg-[rgba(223,157,46,0.12)] text-[color:var(--warning)]"
                 : "border-[rgba(91,114,255,0.22)] bg-[rgba(91,114,255,0.10)] text-[color:var(--primary)]",
             )}>
-              {is_stalled ? <AlertTriangle className="h-4 w-4" /> : <RadioTower className="h-4 w-4" />}
+              {is_stalled || is_retrying ? <AlertTriangle className="h-4 w-4" /> : <RadioTower className="h-4 w-4" />}
             </span>
             <div className="min-w-0">
               <p className="truncate text-[13px] font-black text-(--text-strong)">
-                {is_stalled ? "接入等待中" : "运行接入"}
+                {is_retrying ? "API 正在重试" : is_stalled ? "接入等待中" : "运行接入"}
               </p>
               <p className="truncate text-[10.5px] text-(--text-soft)">
                 {format_handoff_elapsed(elapsed_ms)} · runtime handoff
@@ -1913,7 +1914,7 @@ function RuntimeHandoffSurface({
             <span className="ml-2 truncate text-[11px] font-bold text-[#e7eef5]">agent-runtime</span>
           </div>
           <span className="shrink-0 rounded bg-white/[0.06] px-1.5 py-px text-[9px] font-bold text-[#8aa0ad]">
-            {is_stalled ? "WAITING" : "CONNECTING"}
+            {is_retrying ? "RETRYING" : is_stalled ? "WAITING" : "CONNECTING"}
           </span>
         </div>
         <div className="soft-scrollbar min-h-0 flex-1 overflow-auto p-4 font-mono text-[11px] leading-5">
@@ -1922,15 +1923,19 @@ function RuntimeHandoffSurface({
           <RuntimeLine tone="ok" value="context loaded" />
           <RuntimeLine tone="ok" value="workspace mounted" />
           <RuntimeLine
-            tone={is_stalled ? "warn" : "active"}
-            value={is_stalled
-              ? `still waiting for first tool_use or terminal event after ${format_handoff_elapsed(elapsed_ms)}`
-              : "waiting for first tool_use event..."}
+            tone={is_stalled || is_retrying ? "warn" : "active"}
+            value={is_retrying
+              ? "model API request is retrying before the first tool event..."
+              : is_stalled
+                ? `still waiting for first tool_use or terminal event after ${format_handoff_elapsed(elapsed_ms)}`
+                : "waiting for first tool_use event..."}
           />
-          {is_stalled ? (
+          {is_stalled || is_retrying ? (
             <RuntimeLine
               tone="muted"
-              value="the stage is keeping the handoff open until runtime emits a tool, completion, or error"
+              value={is_retrying
+                ? "the stage is preserving the handoff while the runtime retries the upstream model request"
+                : "the stage is keeping the handoff open until runtime emits a tool, completion, or error"}
             />
           ) : null}
           <div className="mt-4 rounded-[10px] border border-white/10 bg-white/[0.04] p-3 font-sans">
@@ -1966,6 +1971,11 @@ function RuntimeLine({ tone, value }: { tone: "active" | "muted" | "ok" | "warn"
       </span>
     </div>
   );
+}
+
+function is_runtime_retry_event(event: NexusOperationEvent): boolean {
+  return event.surface === "conversation"
+    && (event.evidence ?? []).some((item) => item.label === "api_retry");
 }
 
 function useRuntimeClock(enabled: boolean): number {

@@ -58,7 +58,9 @@ const now = Date.now();
 
 verify_stage_experience_state_machine(now);
 verify_live_episode_narrates_running_round(now);
+verify_api_retry_runtime_projection(now);
 verify_active_event_stays_with_latest_round(now);
+verify_error_summary_settles_live_handoff(now);
 verify_stage_restore_merge_preserves_round_context(now);
 verify_workspace_live_stays_in_tool_round(now);
 verify_multi_file_windows_keep_event_identity(now);
@@ -205,6 +207,45 @@ function verify_live_episode_narrates_running_round(now) {
   assert(episode.checkpoints.some((item) => item.label === "当前" && item.value === "执行"), "live episode should mark current step as executing");
 }
 
+function verify_api_retry_runtime_projection(now) {
+  const messages = [{
+    role: "assistant",
+    message_id: "system_api_retry_round-retry",
+    session_key: "session:retry",
+    agent_id: "agent-stage",
+    round_id: "round-retry",
+    timestamp: now - 1000,
+    is_complete: false,
+    content: [{
+      type: "system_event",
+      subtype: "api_retry",
+      label: "API 正在重试",
+      content: "模型请求暂未成功，正在重试",
+      tone: "warning",
+      icon: "retry",
+      source_message_id: "system_api_retry_round-retry",
+      timestamp: now - 100,
+    }],
+  }];
+
+  const snapshot = project_operation_snapshot({
+    key: "session:retry",
+    session_key: "session:retry",
+    agent_id: "agent-stage",
+    messages,
+    pending_permissions: [],
+    live_round_ids: ["round-retry"],
+    workspace_events: [],
+  });
+  const active_event = snapshot.active_event;
+  assert(active_event?.title === "API 正在重试", `api retry should become explicit stage title, got ${active_event?.title}`);
+  assert(active_event?.target === "模型请求暂未成功，正在重试", `api retry should preserve retry detail, got ${active_event?.target}`);
+  assert(active_event?.evidence?.some((item) => item.label === "api_retry"), "api retry event should carry retry evidence");
+  const episode = build_operation_live_episode(active_event, snapshot.events, snapshot);
+  assert(episode.status_label === "API_RETRYING", `api retry should narrate as retrying, got ${episode.status_label}`);
+  assert(episode.next_label.includes("模型响应"), `api retry should wait for model response, got ${episode.next_label}`);
+}
+
 function verify_active_event_stays_with_latest_round(now) {
   const messages = [{
     role: "assistant",
@@ -258,6 +299,63 @@ function verify_active_event_stays_with_latest_round(now) {
   assert(snapshot.events.some((event) => event.round_id === "round-old" && event.phase === "running"), "fixture should include an older running event");
   assert(snapshot.active_event?.round_id === "round-new", `active event should follow latest round, got ${snapshot.active_event?.round_id}`);
   assert(snapshot.active_event?.kind === "round_summary", `latest completed round should focus summary, got ${snapshot.active_event?.kind}`);
+}
+
+function verify_error_summary_settles_live_handoff(now) {
+  const live_handoff = {
+    id: "live-round:round-error",
+    session_key: "session:error",
+    round_id: "round-error",
+    agent_id: "agent-stage",
+    message_id: "system_api_retry_round-error",
+    kind: "unknown",
+    surface: "conversation",
+    phase: "running",
+    title: "API 正在重试",
+    target: "模型请求暂未成功，正在重试",
+    evidence: [{ type: "status", label: "api_retry", value: "API 正在重试" }],
+    updated_at: now - 1000,
+  };
+  const error_summary = {
+    id: "summary-error",
+    session_key: "session:error",
+    round_id: "round-error",
+    agent_id: "agent-stage",
+    kind: "round_summary",
+    surface: "summary",
+    phase: "error",
+    title: "本轮执行异常",
+    target: "1 turns",
+    summary: "Failed to authenticate",
+    evidence: [{ type: "error", label: "error", value: "Failed to authenticate" }],
+    updated_at: now,
+    ended_at: now,
+  };
+  const current = {
+    key: "session:error",
+    session_key: "session:error",
+    active_event: live_handoff,
+    events: [live_handoff],
+    recent_evidence: [],
+    workspace_events: [],
+    updated_at: now - 900,
+  };
+  const next = {
+    key: "session:error",
+    session_key: "session:error",
+    active_event: error_summary,
+    events: [error_summary],
+    recent_evidence: error_summary.evidence,
+    workspace_events: [],
+    updated_at: now,
+  };
+
+  const merged = merge_operation_stage_snapshots_for_restore(current, next);
+  const settled_handoff = merged.events.find((event) => event.id === live_handoff.id);
+  assert(merged.active_event?.id === error_summary.id, "error summary should remain active after merge");
+  assert(settled_handoff?.phase === "error", `stale live handoff should be settled as error, got ${settled_handoff?.phase}`);
+  const brief = build_operation_continuation_brief(merged.active_event, merged.events, merged);
+  assert(brief.checkpoints.every((item) => !String(item.value).includes("active")), "error completion brief should not report active running windows");
 }
 
 function verify_stage_restore_merge_preserves_round_context(now) {

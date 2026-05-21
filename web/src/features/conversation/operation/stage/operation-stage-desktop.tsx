@@ -549,6 +549,7 @@ function StageActGuide({
   const episode = build_operation_live_episode(event, events, snapshot);
   const is_waiting = event.phase === "waiting";
   const is_runtime_handoff = event.surface === "conversation";
+  const is_runtime_retry = is_runtime_retry_event(event);
   const act_steps = is_waiting
     ? STAGE_WAITING_ACT_STEPS
     : is_runtime_handoff
@@ -560,6 +561,8 @@ function StageActGuide({
     ? Sparkles
     : is_waiting
       ? ShieldQuestion
+      : is_runtime_retry
+        ? AlertTriangle
       : is_runtime_handoff
         ? RadioTower
         : Route;
@@ -567,6 +570,8 @@ function StageActGuide({
     ? "工作台正在显影"
     : is_waiting
       ? "等待用户介入"
+      : is_runtime_retry
+        ? "API 正在重试"
       : is_runtime_handoff
         ? "运行正在接入"
         : "工具正在接管现场";
@@ -712,6 +717,11 @@ const STAGE_WAITING_ACT_STEPS = [
   { label: "确认", detail: "权限检查点" },
   { label: "继续", detail: "回到现场" },
 ] as const;
+
+function is_runtime_retry_event(event: NexusOperationEvent): boolean {
+  return event.surface === "conversation"
+    && (event.evidence ?? []).some((item) => item.label === "api_retry");
+}
 
 function StageNarrativeRail({
   events,
