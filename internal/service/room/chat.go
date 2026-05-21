@@ -10,6 +10,7 @@ import (
 
 	roomdomain "github.com/nexus-research-lab/nexus/internal/chat/room"
 	"github.com/nexus-research-lab/nexus/internal/infra/authctx"
+	"github.com/nexus-research-lab/nexus/internal/infra/logx"
 	"github.com/nexus-research-lab/nexus/internal/message"
 	"github.com/nexus-research-lab/nexus/internal/protocol"
 	"github.com/nexus-research-lab/nexus/internal/service/conversation/titlegen"
@@ -27,6 +28,11 @@ func (s *RealtimeService) HandleChat(ctx context.Context, request ChatRequest) e
 		return err
 	}
 	roomID := firstNonEmpty(strings.TrimSpace(request.RoomID), contextValue.Room.ID)
+	attachments := s.normalizeChatAttachments(request.Attachments, request.AttachmentAgentID, roomID, conversationID)
+	runtimeTriggerContent, err := s.renderRuntimeContentWithAttachments(ctx, request.Content, attachments)
+	if err != nil {
+		return err
+	}
 
 	agentNameByID, agentByID, err := s.buildAgentDirectory(ctx, contextValue)
 	if err != nil {
@@ -43,6 +49,12 @@ func (s *RealtimeService) HandleChat(ctx context.Context, request ChatRequest) e
 		}
 		targetResolution = "single_member_default"
 	}
+	if len(targetAgentIDs) == 0 {
+		if hostAgentID, ok := resolveRoomHostDefaultTarget(contextValue, agentNameByID); ok {
+			targetAgentIDs = []string{hostAgentID}
+			targetResolution = "room_host_default"
+		}
+	}
 	s.loggerFor(ctx).Info("受理 Room 会话消息",
 		"session_key", sessionKey,
 		"room_id", roomID,
@@ -52,6 +64,8 @@ func (s *RealtimeService) HandleChat(ctx context.Context, request ChatRequest) e
 		"target_agents", append([]string(nil), targetAgentIDs...),
 		"target_resolution", targetResolution,
 		"content_chars", utf8.RuneCountInString(strings.TrimSpace(request.Content)),
+		"content_preview", logx.PreviewText(request.Content, 240),
+		"attachment_count", len(attachments),
 	)
 
 	history, err := s.roomHistory.ReadMessages(conversationID, nil)
@@ -71,6 +85,9 @@ func (s *RealtimeService) HandleChat(ctx context.Context, request ChatRequest) e
 		"timestamp":       time.Now().UnixMilli(),
 	}
 	userMessage["delivery_policy"] = string(deliveryPolicy)
+	if len(attachments) > 0 {
+		userMessage["attachments"] = attachments
+	}
 	if err = s.persistSharedInlineMessage(conversationID, userMessage); err != nil {
 		return err
 	}
@@ -134,6 +151,7 @@ func (s *RealtimeService) HandleChat(ctx context.Context, request ChatRequest) e
 			conversationID,
 			targetAgentIDs,
 			strings.TrimSpace(request.Content),
+			attachments,
 			request.RoundID,
 			authctx.OwnerUserID(ctx),
 		)
@@ -168,6 +186,7 @@ func (s *RealtimeService) HandleChat(ctx context.Context, request ChatRequest) e
 			conversationID,
 			targetAgentIDs,
 			strings.TrimSpace(request.Content),
+			runtimeTriggerContent.PlainText(),
 			request.RoundID,
 		)
 		if guideErr != nil {
@@ -200,8 +219,12 @@ func (s *RealtimeService) HandleChat(ctx context.Context, request ChatRequest) e
 		sessionsByAgent[item.AgentID] = item
 	}
 
+	initialTriggerType := "public_chat"
+	if targetResolution == "room_host_default" {
+		initialTriggerType = "room_host_default"
+	}
 	initialTrigger := roomTrigger{
-		TriggerType: "public_chat",
+		TriggerType: initialTriggerType,
 		Content:     strings.TrimSpace(request.Content),
 		MessageID:   request.RoundID,
 	}
@@ -236,18 +259,19 @@ func (s *RealtimeService) HandleChat(ctx context.Context, request ChatRequest) e
 		slotTrigger := initialTrigger
 		slotTrigger.TargetAgentID = agentID
 		activeRound.Slots[msgID] = &activeRoomSlot{
-			RoomSessionID:     sessionRecord.ID,
-			SDKSessionID:      strings.TrimSpace(sessionRecord.SDKSessionID),
-			AgentID:           agentID,
-			AgentRoundID:      agentRoundID,
-			MsgID:             msgID,
-			RuntimeSessionKey: protocol.BuildRoomAgentSessionKey(conversationID, agentID, contextValue.Room.RoomType),
-			WorkspacePath:     agentValue.WorkspacePath,
-			Status:            "pending",
-			Index:             index,
-			TimestampMS:       normalizeInt64(userMessage["timestamp"]),
-			Trigger:           slotTrigger,
-			Done:              make(chan struct{}),
+			RoomSessionID:      sessionRecord.ID,
+			SDKSessionID:       strings.TrimSpace(sessionRecord.SDKSessionID),
+			AgentID:            agentID,
+			AgentRoundID:       agentRoundID,
+			MsgID:              msgID,
+			RuntimeSessionKey:  protocol.BuildRoomAgentSessionKey(conversationID, agentID, contextValue.Room.RoomType),
+			WorkspacePath:      agentValue.WorkspacePath,
+			Status:             "pending",
+			Index:              index,
+			TimestampMS:        normalizeInt64(userMessage["timestamp"]),
+			Trigger:            slotTrigger,
+			TriggerAttachments: attachments,
+			Done:               make(chan struct{}),
 		}
 		_ = sessionRecord
 		pending = append(pending, map[string]any{
@@ -292,6 +316,23 @@ func (s *RealtimeService) HandleChat(ctx context.Context, request ChatRequest) e
 	return nil
 }
 
+func resolveRoomHostDefaultTarget(
+	contextValue *protocol.ConversationContextAggregate,
+	agentNameByID map[string]string,
+) (string, bool) {
+	if contextValue == nil || !contextValue.Room.HostAutoReplyEnabled {
+		return "", false
+	}
+	hostAgentID := strings.TrimSpace(contextValue.Room.HostAgentID)
+	if hostAgentID == "" {
+		return "", false
+	}
+	if _, ok := agentNameByID[hostAgentID]; !ok {
+		return "", false
+	}
+	return hostAgentID, true
+}
+
 func (s *RealtimeService) scheduleTitleGeneration(
 	ctx context.Context,
 	sessionKey string,
@@ -333,7 +374,7 @@ func (s *RealtimeService) validateChatRequest(request ChatRequest) (string, stri
 	if strings.TrimSpace(request.RoundID) == "" {
 		return "", "", errors.New("round_id is required")
 	}
-	if strings.TrimSpace(request.Content) == "" {
+	if !protocol.HasChatInput(request.Content, request.Attachments) {
 		return "", "", errors.New("content is required")
 	}
 	conversationID := firstNonEmpty(strings.TrimSpace(request.ConversationID), protocol.ParseRoomConversationID(sessionKey))

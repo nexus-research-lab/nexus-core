@@ -3,6 +3,7 @@ package room
 import (
 	"context"
 	"log/slog"
+	"strings"
 	"sync"
 	"time"
 
@@ -17,8 +18,8 @@ import (
 	usagesvc "github.com/nexus-research-lab/nexus/internal/service/usage"
 	workspacestore "github.com/nexus-research-lab/nexus/internal/storage/workspace"
 
-	agentclient "github.com/nexus-research-lab/nexus-agent-sdk-go/client"
-	sdkmcp "github.com/nexus-research-lab/nexus-agent-sdk-go/mcp"
+	agentclient "github.com/nexus-research-lab/nexus-agent-sdk-bridge/client"
+	sdkmcp "github.com/nexus-research-lab/nexus-agent-sdk-bridge/mcp"
 )
 
 const (
@@ -43,13 +44,15 @@ func (f defaultRoomClientFactory) New(options agentclient.Options) runtimectx.Cl
 
 // ChatRequest 表示 Room 共享会话的一次聊天请求。
 type ChatRequest struct {
-	SessionKey     string
-	RoomID         string
-	ConversationID string
-	Content        string
-	RoundID        string
-	ReqID          string
-	DeliveryPolicy protocol.ChatDeliveryPolicy
+	SessionKey        string
+	RoomID            string
+	ConversationID    string
+	AttachmentAgentID string
+	Content           string
+	Attachments       []protocol.ChatAttachment
+	RoundID           string
+	ReqID             string
+	DeliveryPolicy    protocol.ChatDeliveryPolicy
 }
 
 // InterruptRequest 表示 Room 会话中断请求。
@@ -77,6 +80,7 @@ type RealtimeService struct {
 	providers   clientopts.RuntimeConfigResolver
 	history     *workspacestore.AgentHistoryStore
 	roomHistory *workspacestore.RoomHistoryStore
+	actions     *workspacestore.RoomActionStore
 	inputQueue  *workspacestore.InputQueueStore
 	usage       usageRecorder
 	factory     roomClientFactory
@@ -84,9 +88,15 @@ type RealtimeService struct {
 	logger      *slog.Logger
 	mcpServers  MCPServerBuilder
 	titles      roomTitleScheduler
+	internalAPI roomInternalAPI
 
 	mu           sync.Mutex
 	activeRounds map[string]*activeRoomRound
+}
+
+type roomInternalAPI struct {
+	BaseURL string
+	Token   string
 }
 
 type roomTitleScheduler interface {
@@ -128,6 +138,7 @@ func NewRealtimeServiceWithFactory(
 		permission:   permission,
 		history:      workspacestore.NewAgentHistoryStore(cfg.WorkspacePath),
 		roomHistory:  workspacestore.NewRoomHistoryStore(cfg.WorkspacePath),
+		actions:      workspacestore.NewRoomActionStore(cfg.WorkspacePath),
 		inputQueue:   workspacestore.NewInputQueueStore(cfg.WorkspacePath),
 		factory:      factory,
 		logger:       logx.NewDiscardLogger(),
@@ -167,6 +178,14 @@ func (s *RealtimeService) SetMCPServerBuilder(builder MCPServerBuilder) {
 // SetTitleGenerator 注入会话标题生成器。
 func (s *RealtimeService) SetTitleGenerator(generator roomTitleScheduler) {
 	s.titles = generator
+}
+
+// SetInternalAPI 注入 Room runtime 触发 nexusctl 时访问常驻 server 的内部控制面配置。
+func (s *RealtimeService) SetInternalAPI(baseURL string, token string) {
+	s.internalAPI = roomInternalAPI{
+		BaseURL: strings.TrimSpace(baseURL),
+		Token:   strings.TrimSpace(token),
+	}
 }
 
 func (s *RealtimeService) loggerFor(ctx context.Context) *slog.Logger {

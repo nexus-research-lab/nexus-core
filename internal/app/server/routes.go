@@ -10,6 +10,7 @@ func (s *Server) mountRoutes() {
 	s.mountCapabilityRoutes()
 	s.mountOperationRoutes()
 	s.mountPlaceholderRoutes()
+	s.mountWebAppRoutes()
 }
 
 // prefixPath 返回带 config.APIPrefix 前缀的完整路径。
@@ -20,6 +21,7 @@ func (s *Server) prefixPath(p string) string {
 // mountCoreRoutes 挂载 HTTP 基础能力路由。
 func (s *Server) mountCoreRoutes() {
 	s.router.Get(s.prefixPath("/health"), s.handlers.core.HandleHealth)
+	s.router.Get(s.prefixPath("/system/version"), s.handlers.core.HandleSystemVersion)
 	s.router.Get(s.prefixPath("/auth/status"), s.handlers.auth.HandleAuthStatus)
 	s.router.Post(s.prefixPath("/auth/login"), s.handlers.auth.HandleAuthLogin)
 	s.router.Post(s.prefixPath("/auth/logout"), s.handlers.auth.HandleAuthLogout)
@@ -57,6 +59,16 @@ func (s *Server) mountAgentRoutes() {
 	s.router.Post(s.prefixPath("/agents/{agent_id}/workspace/entry"), s.handlers.workspace.HandleCreateWorkspaceEntry)
 	s.router.Patch(s.prefixPath("/agents/{agent_id}/workspace/entry"), s.handlers.workspace.HandleRenameWorkspaceEntry)
 	s.router.Delete(s.prefixPath("/agents/{agent_id}/workspace/entry"), s.handlers.workspace.HandleDeleteWorkspaceEntry)
+	s.router.Get(s.prefixPath("/agents/{agent_id}/memory/items"), s.handlers.memory.HandleListMemory)
+	s.router.Get(s.prefixPath("/agents/{agent_id}/memory/search"), s.handlers.memory.HandleSearchMemory)
+	s.router.Post(s.prefixPath("/agents/{agent_id}/memory/recall"), s.handlers.memory.HandleRecallMemory)
+	s.router.Post(s.prefixPath("/agents/{agent_id}/memory/items"), s.handlers.memory.HandleAddMemory)
+	s.router.Patch(s.prefixPath("/agents/{agent_id}/memory/items/{entry_id}"), s.handlers.memory.HandleUpdateMemory)
+	s.router.Delete(s.prefixPath("/agents/{agent_id}/memory/items/{entry_id}"), s.handlers.memory.HandleDeleteMemory)
+	s.router.Post(s.prefixPath("/agents/{agent_id}/memory/items/{entry_id}/promote"), s.handlers.memory.HandlePromoteMemory)
+	s.router.Post(s.prefixPath("/agents/{agent_id}/memory/items/{entry_id}/ignore"), s.handlers.memory.HandleIgnoreMemory)
+	s.router.Get(s.prefixPath("/agents/{agent_id}/memory/stats"), s.handlers.memory.HandleMemoryStats)
+	s.router.Get(s.prefixPath("/agents/{agent_id}/memory/session-summary"), s.handlers.memory.HandleMemorySessionSummary)
 	s.router.Get(s.prefixPath("/agents/{agent_id}/skills"), s.handlers.skill.HandleAgentSkills)
 	s.router.Post(s.prefixPath("/agents/{agent_id}/skills"), s.handlers.skill.HandleInstallAgentSkill)
 	s.router.Delete(s.prefixPath("/agents/{agent_id}/skills/{skill_name}"), s.handlers.skill.HandleUninstallAgentSkill)
@@ -80,8 +92,10 @@ func (s *Server) mountRoomRoutes() {
 	s.router.Delete(s.prefixPath("/rooms/{room_id}/members/{agent_id}"), s.handlers.room.HandleRemoveRoomMember)
 	s.router.Post(s.prefixPath("/rooms/{room_id}/conversations"), s.handlers.room.HandleCreateConversation)
 	s.router.Get(s.prefixPath("/rooms/{room_id}/conversations/{conversation_id}/messages"), s.handlers.room.HandleConversationMessages)
+	s.router.Post(s.prefixPath("/rooms/{room_id}/conversations/{conversation_id}/attachments/upload"), s.handlers.room.HandleUploadConversationAttachment)
 	s.router.Patch(s.prefixPath("/rooms/{room_id}/conversations/{conversation_id}"), s.handlers.room.HandleUpdateConversation)
 	s.router.Delete(s.prefixPath("/rooms/{room_id}/conversations/{conversation_id}"), s.handlers.room.HandleDeleteConversation)
+	s.router.Post(s.prefixPath("/internal/rooms/{room_id}/conversations/{conversation_id}/actions"), s.handlers.room.HandleCreateAction)
 
 	s.router.Post(s.prefixPath("/launcher/query"), s.handlers.launcher.HandleLauncherQuery)
 	s.router.Get(s.prefixPath("/launcher/bootstrap"), s.handlers.launcher.HandleLauncherBootstrap)
@@ -107,11 +121,10 @@ func (s *Server) mountCapabilityRoutes() {
 	s.router.Get(s.prefixPath("/connectors/categories"), s.handlers.connector.HandleConnectorCategories)
 	s.router.Get(s.prefixPath("/connectors/count"), s.handlers.connector.HandleConnectorCount)
 	s.router.Get(s.prefixPath("/connectors/{connector_id}"), s.handlers.connector.HandleConnectorDetail)
-	s.router.Get(s.prefixPath("/connectors/{connector_id}/oauth-client"), s.handlers.connector.HandleGetConnectorOAuthClient)
-	s.router.Put(s.prefixPath("/connectors/{connector_id}/oauth-client"), s.handlers.connector.HandleUpsertConnectorOAuthClient)
-	s.router.Delete(s.prefixPath("/connectors/{connector_id}/oauth-client"), s.handlers.connector.HandleDeleteConnectorOAuthClient)
 	s.router.Get(s.prefixPath("/connectors/{connector_id}/auth-url"), s.handlers.connector.HandleConnectorAuthURL)
 	s.router.Post(s.prefixPath("/connectors/oauth/callback"), s.handlers.connector.HandleConnectorOAuthCallback)
+	s.router.Post(s.prefixPath("/connectors/{connector_id}/device/start"), s.handlers.connector.HandleConnectorDeviceAuthStart)
+	s.router.Post(s.prefixPath("/connectors/{connector_id}/device/poll"), s.handlers.connector.HandleConnectorDeviceAuthPoll)
 	s.router.Post(s.prefixPath("/connectors/{connector_id}/connect"), s.handlers.connector.HandleConnectConnector)
 	s.router.Post(s.prefixPath("/connectors/{connector_id}/disconnect"), s.handlers.connector.HandleDisconnectConnector)
 

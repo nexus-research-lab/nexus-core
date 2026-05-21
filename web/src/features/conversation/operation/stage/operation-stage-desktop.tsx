@@ -1649,12 +1649,21 @@ function StageWindowDock({
     return null;
   }
 
+  const active_window = windows.find((window) => window.id === active_window_id) ?? windows[0];
+  const settled_window_count = windows.filter((window) => window.phase === "closed" || window.phase === "minimized").length;
+  const live_window_count = windows.length - settled_window_count;
+
   return (
     <div className="absolute inset-x-4 bottom-4 z-30 flex justify-center max-md:relative max-md:inset-x-auto max-md:bottom-auto max-md:mt-3">
-      <div className="operation-window-dock soft-scrollbar flex max-w-full items-end gap-1 overflow-x-auto rounded-[22px] border border-white/70 bg-white/58 px-2 py-1.5 shadow-[0_22px_54px_rgba(18,28,42,0.18)] backdrop-blur-2xl">
+      <div className="operation-window-dock soft-scrollbar flex max-w-full items-center gap-1.5 overflow-x-auto rounded-[24px] border border-white/70 bg-[rgba(255,255,255,0.66)] px-2.5 py-2 shadow-[0_24px_60px_rgba(18,28,42,0.18),inset_0_1px_0_rgba(255,255,255,0.76)] backdrop-blur-2xl">
+        <div className="mr-1 hidden min-w-[112px] border-r border-white/56 pr-2 text-right sm:block">
+          <p className="text-[9px] font-black uppercase tracking-[0.16em] text-(--text-soft)">Nexus</p>
+          <p className="mt-0.5 truncate text-[10.5px] font-semibold text-(--text-muted)">工作台现场</p>
+        </div>
         {windows.map((window) => {
           const Icon = icon_for_window_kind(window.kind);
           const is_active = active_window_id === window.id && window.phase !== "closed" && window.phase !== "minimized";
+          const app_label = stage_app_label_for_window_kind(window.kind);
           const state_label = window.phase === "closed"
             ? "已关闭"
             : window.phase === "minimized"
@@ -1666,36 +1675,72 @@ function StageWindowDock({
             <button
               aria-label={`${state_label}：${window.title}`}
               className={cn(
-                "group relative grid h-10 w-10 shrink-0 place-items-center rounded-[16px] border transition duration-200 ease-out hover:-translate-y-1 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.42)]",
+                "group relative grid h-[46px] min-w-[46px] shrink-0 grid-cols-[34px_minmax(0,1fr)] items-center gap-1 rounded-[18px] border px-1.5 pr-2 text-left transition duration-200 ease-out hover:-translate-y-1 hover:scale-[1.035] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.42)]",
                 is_active
-                  ? "border-[rgba(91,114,255,0.32)] bg-[rgba(91,114,255,0.16)] text-[color:var(--primary)] shadow-[0_10px_24px_rgba(91,114,255,0.18)]"
+                  ? "w-[148px] border-[rgba(91,114,255,0.32)] bg-[rgba(91,114,255,0.16)] text-[color:var(--primary)] shadow-[0_12px_28px_rgba(91,114,255,0.20)]"
                   : window.phase === "closed" || window.phase === "minimized"
-                    ? "border-transparent bg-white/28 text-(--icon-muted) opacity-72 hover:bg-white/62 hover:text-(--text-strong) hover:opacity-100"
-                    : "border-transparent bg-white/42 text-(--icon-muted) hover:bg-white/72 hover:text-(--text-strong)",
+                    ? "w-[46px] border-transparent bg-white/28 text-(--icon-muted) opacity-72 hover:w-[132px] hover:bg-white/62 hover:text-(--text-strong) hover:opacity-100 focus-visible:w-[132px]"
+                    : "w-[46px] border-transparent bg-white/42 text-(--icon-muted) hover:w-[132px] hover:bg-white/72 hover:text-(--text-strong) focus-visible:w-[132px]",
               )}
               key={window.id}
               onClick={() => on_restore(window.id)}
               title={`${state_label}：${window.title}`}
               type="button"
             >
-              <Icon className="h-[18px] w-[18px]" />
               <span className={cn(
-                "absolute bottom-1 h-1 w-1 rounded-full transition",
+                "relative grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[14px] border shadow-[inset_0_1px_0_rgba(255,255,255,0.62)]",
                 is_active
-                  ? "bg-[color:var(--primary)]"
+                  ? "border-[rgba(91,114,255,0.28)] bg-white/58"
+                  : "border-white/52 bg-white/44",
+              )}>
+                <Icon className="h-[18px] w-[18px]" />
+                <span className={cn(
+                  "absolute -bottom-0.5 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full border border-white/72 transition",
+                  is_active
+                    ? "bg-[color:var(--primary)]"
+                    : window.phase === "minimized"
+                      ? "bg-[rgba(223,157,46,0.82)]"
+                      : window.phase === "closed"
+                        ? "bg-[rgba(117,131,149,0.58)]"
+                        : "bg-[rgba(47,184,132,0.72)]",
+                )} />
+              </span>
+              <span className={cn(
+                "min-w-0 overflow-hidden transition-opacity duration-150",
+                is_active ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100",
+              )}>
+                <span className="block truncate text-[10.5px] font-black leading-tight text-(--text-strong)">
+                  {app_label}
+                </span>
+                <span className="block truncate text-[9px] font-semibold leading-tight text-(--text-soft)">
+                  {state_label}
+                </span>
+              </span>
+              <span className={cn(
+                "absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full transition group-hover:opacity-0 group-focus-visible:opacity-0",
+                is_active
+                  ? "opacity-0"
                   : window.phase === "minimized"
                     ? "bg-[rgba(223,157,46,0.70)]"
                     : window.phase === "closed"
                       ? "bg-[rgba(117,131,149,0.42)]"
                       : "bg-transparent",
               )} />
-              <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 hidden max-w-[190px] -translate-x-1/2 whitespace-nowrap rounded-[10px] border border-white/70 bg-[rgba(20,28,38,0.82)] px-2.5 py-1.5 text-[10px] font-semibold text-white shadow-[0_12px_30px_rgba(18,28,42,0.22)] backdrop-blur-xl group-hover:block group-focus-visible:block">
+              <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 hidden max-w-[210px] -translate-x-1/2 whitespace-nowrap rounded-[10px] border border-white/70 bg-[rgba(20,28,38,0.82)] px-2.5 py-1.5 text-[10px] font-semibold text-white shadow-[0_12px_30px_rgba(18,28,42,0.22)] backdrop-blur-xl group-hover:block group-focus-visible:block">
                 <span className="block max-w-[160px] truncate">{window.title}</span>
-                <span className="block text-[9px] font-medium text-white/66">{state_label}</span>
+                <span className="block text-[9px] font-medium text-white/66">{app_label} · {state_label}</span>
               </span>
             </button>
           );
         })}
+        <div className="ml-1 hidden min-w-[128px] border-l border-white/56 pl-2 text-left md:block">
+          <p className="truncate text-[10.5px] font-black text-(--text-strong)">
+            {active_window ? stage_app_label_for_window_kind(active_window.kind) : "工作台"}
+          </p>
+          <p className="mt-0.5 truncate text-[9.5px] font-semibold text-(--text-soft)">
+            {live_window_count} 个现场 · {settled_window_count} 个沉淀
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -2256,6 +2301,46 @@ function icon_for_window_kind(kind: StageWindowKind): LucideIcon {
     return FileCode2;
   }
   return FileText;
+}
+
+function stage_app_label_for_window_kind(kind: StageWindowKind): string {
+  if (kind === "finder") {
+    return "文件";
+  }
+  if (kind === "terminal") {
+    return "终端";
+  }
+  if (kind === "browser") {
+    return "浏览器";
+  }
+  if (kind === "task_board") {
+    return "任务";
+  }
+  if (kind === "runtime_handoff") {
+    return "运行接入";
+  }
+  if (kind === "run_manifest") {
+    return "执行清单";
+  }
+  if (kind === "evidence") {
+    return "证据";
+  }
+  if (kind === "permission_wait") {
+    return "授权";
+  }
+  if (kind === "spreadsheet") {
+    return "表格";
+  }
+  if (kind === "image_viewer") {
+    return "图片";
+  }
+  if (kind === "code_editor") {
+    return "编辑器";
+  }
+  if (kind === "markdown_reader" || kind === "word_reader" || kind === "pdf_reader") {
+    return "阅读器";
+  }
+  return "工具";
 }
 
 function position_for_window(window: StageWindowState, narrative_phase: StageNarrativePhase): string {

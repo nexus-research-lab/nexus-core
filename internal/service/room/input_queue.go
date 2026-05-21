@@ -20,6 +20,7 @@ type InputQueueRequest struct {
 	Action         string
 	ItemID         string
 	Content        string
+	Attachments    []protocol.ChatAttachment
 	OrderedIDs     []string
 	DeliveryPolicy protocol.ChatDeliveryPolicy
 }
@@ -45,7 +46,8 @@ func (s *RealtimeService) HandleInputQueue(ctx context.Context, request InputQue
 	switch action {
 	case "enqueue", "":
 		content := strings.TrimSpace(request.Content)
-		if content == "" {
+		attachments := s.normalizeChatAttachments(request.Attachments, "", contextValue.Room.ID, contextValue.Conversation.ID)
+		if !protocol.HasChatInput(content, attachments) {
 			return errors.New("content is required")
 		}
 		location, targetAgentIDs, err := s.resolveRoomInputQueuePrimaryLocation(ctx, contextValue, content)
@@ -62,6 +64,7 @@ func (s *RealtimeService) HandleInputQueue(ctx context.Context, request InputQue
 			TargetAgentIDs: targetAgentIDs,
 			Source:         protocol.InputQueueSourceUser,
 			Content:        content,
+			Attachments:    attachments,
 			DeliveryPolicy: protocol.NormalizeChatDeliveryPolicy(string(request.DeliveryPolicy)),
 			OwnerUserID:    ownerUserID,
 		}); err != nil {
@@ -210,8 +213,9 @@ func (s *RealtimeService) dispatchInputQueueItem(
 	conversationID string,
 	item protocol.InputQueueItem,
 ) error {
-	if item.Source == protocol.InputQueueSourceAgentPublicMention {
-		return s.dispatchAgentPublicMentionQueueItem(
+	if item.Source == protocol.InputQueueSourceAgentPublicMention ||
+		item.Source == protocol.InputQueueSourceAgentRoomAction {
+		return s.dispatchAgentWakeQueueItem(
 			contextWithQueueOwner(ctx, item.OwnerUserID),
 			sessionKey,
 			roomID,
@@ -234,6 +238,7 @@ func (s *RealtimeService) dispatchInputQueueItem(
 		RoomID:         roomID,
 		ConversationID: conversationID,
 		Content:        item.Content,
+		Attachments:    item.Attachments,
 		RoundID:        "queue_" + item.ID,
 		ReqID:          "queue_" + item.ID,
 		DeliveryPolicy: protocol.NormalizeChatDeliveryPolicy(string(item.DeliveryPolicy)),
@@ -282,7 +287,7 @@ func (s *RealtimeService) dispatchRoomPublicTriggerQueueItem(
 	return s.startPublicMentionRound(ctx, parentRound, wakes)
 }
 
-func (s *RealtimeService) dispatchAgentPublicMentionQueueItem(
+func (s *RealtimeService) dispatchAgentWakeQueueItem(
 	ctx context.Context,
 	sessionKey string,
 	roomID string,
@@ -299,7 +304,11 @@ func (s *RealtimeService) dispatchAgentPublicMentionQueueItem(
 		return errors.New("content is required")
 	}
 	if protocol.ShouldGuideRunningRound(deliveryPolicy) {
-		guidedAgentIDs, err := s.guideActiveAgentSlots(ctx, sessionKey, roomID, conversationID, targetAgentIDs, content, "queue_"+item.ID)
+		runtimeContent, renderErr := s.renderRuntimeContentWithAttachments(ctx, content, item.Attachments)
+		if renderErr != nil {
+			return renderErr
+		}
+		guidedAgentIDs, err := s.guideActiveAgentSlots(ctx, sessionKey, roomID, conversationID, targetAgentIDs, content, runtimeContent.PlainText(), "queue_"+item.ID)
 		if err != nil {
 			return err
 		}
@@ -315,10 +324,15 @@ func (s *RealtimeService) dispatchAgentPublicMentionQueueItem(
 	wakes := make([]publicMentionWake, 0, len(targetAgentIDs))
 	for _, targetAgentID := range targetAgentIDs {
 		wakes = append(wakes, publicMentionWake{
+			TriggerType:   inputQueueWakeTriggerType(item),
+			QueueSource:   protocol.NormalizeInputQueueSource(string(item.Source)),
 			SourceAgentID: strings.TrimSpace(item.SourceAgentID),
 			TargetAgentID: targetAgentID,
 			Content:       content,
 			MessageID:     firstNonEmpty(strings.TrimSpace(item.SourceMessageID), "queue_"+item.ID),
+			RequestID:     strings.TrimSpace(item.RequestID),
+			ReplyTarget:   item.ReplyTarget,
+			ReplyAudience: append([]string(nil), item.AudienceAgentIDs...),
 		})
 	}
 	parentRound := &activeRoomRound{
@@ -333,6 +347,13 @@ func (s *RealtimeService) dispatchAgentPublicMentionQueueItem(
 		OwnerUserID:    strings.TrimSpace(item.OwnerUserID),
 	}
 	return s.startPublicMentionRound(ctx, parentRound, wakes)
+}
+
+func inputQueueWakeTriggerType(item protocol.InputQueueItem) string {
+	if item.Source == protocol.InputQueueSourceAgentRoomAction {
+		return "room_action"
+	}
+	return "public_mention"
 }
 
 func (s *RealtimeService) canDispatchInputQueueItem(sessionKey string, conversationID string, item protocol.InputQueueItem) bool {
@@ -436,6 +457,11 @@ func (s *RealtimeService) resolveRoomInputQueuePrimaryLocation(
 		}
 	}
 	if len(targetAgentIDs) == 0 {
+		if hostAgentID, ok := resolveRoomHostDefaultTarget(contextValue, agentNameByIDFromInputLocations(locationsByAgentID)); ok {
+			targetAgentIDs = []string{hostAgentID}
+		}
+	}
+	if len(targetAgentIDs) == 0 {
 		return workspacestore.InputQueueLocation{}, nil, errors.New("room input_queue content must mention target agent")
 	}
 
@@ -454,6 +480,18 @@ func (s *RealtimeService) resolveRoomInputQueuePrimaryLocation(
 		return workspacestore.InputQueueLocation{}, nil, errors.New("room input_queue target agent not found")
 	}
 	return locationsByAgentID[cleanTargets[0]].Location, cleanTargets, nil
+}
+
+func agentNameByIDFromInputLocations(locations map[string]roomInputQueueLocation) map[string]string {
+	result := make(map[string]string, len(locations))
+	for agentID := range locations {
+		normalizedAgentID := strings.TrimSpace(agentID)
+		if normalizedAgentID == "" {
+			continue
+		}
+		result[normalizedAgentID] = normalizedAgentID
+	}
+	return result
 }
 
 func (s *RealtimeService) roomInputQueueItems(ctx context.Context, contextValue *protocol.ConversationContextAggregate) ([]protocol.InputQueueItem, error) {

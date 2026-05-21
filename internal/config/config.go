@@ -24,12 +24,16 @@ type Config struct {
 	LogMaxAgeDays                  int
 	LogMaxBackups                  int
 	LogCompress                    bool
+	MessageDebugStreamEvent        bool
 	APIPrefix                      string
 	WebSocketPath                  string
 	DefaultAgentID                 string
 	DefaultTimezone                string
 	WorkspacePath                  string
 	CacheFileDir                   string
+	WebDistDir                     string
+	AppMode                        string
+	DesktopSessionToken            string
 	PnpmRegistry                   string
 	SkillsAPIURL                   string
 	SkillsAPISearchLimit           int
@@ -42,12 +46,18 @@ type Config struct {
 	AuthSessionTTLHours            int
 	BaseSystemPrompt               string
 	MainAgentSystemPrompt          string
+	MemoryEnabled                  bool
+	MemoryAutoRecall               bool
+	MemoryAutoExtract              bool
+	MemoryMaxResults               int
+	MemoryScoreThreshold           float64
 	DiscordEnabled                 bool
 	DiscordBotToken                string
 	TelegramEnabled                bool
 	TelegramBotToken               string
 	ConnectorOAuthRedirectURI      string
 	ConnectorOAuthAllowedOrigins   []string
+	AllowedWebSocketOrigins        []string
 	ConnectorOAuthStateTTLSeconds  int
 	ConnectorCredentialsKey        string
 	ConnectorGitHubClientID        string
@@ -106,12 +116,16 @@ func Load() Config {
 		LogMaxAgeDays:                  mustInt(getEnv("LOG_MAX_AGE_DAYS", "7")),
 		LogMaxBackups:                  mustInt(getEnv("LOG_MAX_BACKUPS", "7")),
 		LogCompress:                    mustBool(getEnv("LOG_COMPRESS", "true")),
+		MessageDebugStreamEvent:        mustBool(getEnv("MESSAGE_DEBUG_STREAM_EVENT", "false")),
 		APIPrefix:                      getEnv("API_PREFIX", "/nexus/v1"),
 		WebSocketPath:                  getEnv("WEBSOCKET_PATH", "/nexus/v1/chat/ws"),
 		DefaultAgentID:                 getEnv("DEFAULT_AGENT_ID", "nexus"),
 		DefaultTimezone:                getEnv("DEFAULT_TIMEZONE", "Asia/Shanghai"),
 		WorkspacePath:                  getEnv("WORKSPACE_PATH", ""),
 		CacheFileDir:                   cacheDir,
+		WebDistDir:                     getEnv("WEB_DIST_DIR", ""),
+		AppMode:                        getEnv("NEXUS_APP_MODE", ""),
+		DesktopSessionToken:            getEnv("NEXUS_DESKTOP_SESSION_TOKEN", ""),
 		PnpmRegistry:                   getEnv("PNPM_REGISTRY", ""),
 		SkillsAPIURL:                   getEnv("SKILLS_API_URL", "https://skills.sh"),
 		SkillsAPISearchLimit:           mustInt(getEnv("SKILLS_API_SEARCH_LIMIT", "20")),
@@ -124,12 +138,18 @@ func Load() Config {
 		AuthSessionTTLHours:            mustInt(getEnv("AUTH_SESSION_TTL_HOURS", "24")),
 		BaseSystemPrompt:               getEnv("BASE_SYSTEM_PROMPT", ""),
 		MainAgentSystemPrompt:          getEnv("MAIN_AGENT_SYSTEM_PROMPT", ""),
+		MemoryEnabled:                  mustBool(getEnv("MEMORY_ENABLED", "true")),
+		MemoryAutoRecall:               mustBool(getEnv("MEMORY_AUTO_RECALL", "true")),
+		MemoryAutoExtract:              mustBool(getEnv("MEMORY_AUTO_EXTRACT", "true")),
+		MemoryMaxResults:               mustInt(getEnv("MEMORY_MAX_RESULTS", "5")),
+		MemoryScoreThreshold:           mustFloat(getEnv("MEMORY_SCORE_THRESHOLD", "0.08")),
 		DiscordEnabled:                 mustBool(getEnv("DISCORD_ENABLED", "true")),
 		DiscordBotToken:                getEnv("DISCORD_BOT_TOKEN", ""),
 		TelegramEnabled:                mustBool(getEnv("TELEGRAM_ENABLED", "true")),
 		TelegramBotToken:               getEnv("TELEGRAM_BOT_TOKEN", ""),
 		ConnectorOAuthRedirectURI:      getEnv("CONNECTOR_OAUTH_REDIRECT_URI", "http://localhost:3000/capability/connectors/oauth/callback"),
 		ConnectorOAuthAllowedOrigins:   mustStringList(getEnv("CONNECTOR_OAUTH_ALLOWED_ORIGINS", "http://localhost:3000")),
+		AllowedWebSocketOrigins:        mustStringList(getEnv("ALLOWED_WEBSOCKET_ORIGINS", "")),
 		ConnectorOAuthStateTTLSeconds:  mustInt(getEnv("CONNECTOR_OAUTH_STATE_TTL_SECONDS", "600")),
 		ConnectorCredentialsKey:        getEnv("CONNECTOR_CREDENTIALS_KEY", ""),
 		ConnectorGitHubClientID:        getEnv("CONNECTOR_GITHUB_CLIENT_ID", ""),
@@ -166,6 +186,14 @@ func mustBool(raw string) bool {
 	value, err := strconv.ParseBool(raw)
 	if err != nil {
 		return false
+	}
+	return value
+}
+
+func mustFloat(raw string) float64 {
+	value, err := strconv.ParseFloat(raw, 64)
+	if err != nil {
+		return 0
 	}
 	return value
 }

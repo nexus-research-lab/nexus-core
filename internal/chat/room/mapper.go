@@ -4,7 +4,7 @@ import (
 	"github.com/nexus-research-lab/nexus/internal/message"
 	"github.com/nexus-research-lab/nexus/internal/protocol"
 
-	sdkprotocol "github.com/nexus-research-lab/nexus-agent-sdk-go/protocol"
+	sdkprotocol "github.com/nexus-research-lab/nexus-agent-sdk-bridge/protocol"
 )
 
 // SlotMessageMapper 将 SDK 消息映射为 Room 的协议事件与持久消息。
@@ -20,6 +20,7 @@ func NewSlotMessageMapper(
 	agentID string,
 	slotMessageID string,
 	agentRoundID string,
+	workspacePath ...string,
 ) *SlotMessageMapper {
 	return &SlotMessageMapper{EventMapper: message.NewEventMapper(message.EventMapperOptions{
 		Context: message.MessageContext{
@@ -27,6 +28,7 @@ func NewSlotMessageMapper(
 			RoomID:         roomID,
 			ConversationID: conversationID,
 			AgentID:        agentID,
+			WorkspacePath:  firstNonEmpty(workspacePath...),
 			RoundID:        agentRoundID,
 			ParentID:       slotMessageID,
 		},

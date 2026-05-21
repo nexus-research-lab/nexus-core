@@ -8,7 +8,7 @@ import (
 
 	"github.com/nexus-research-lab/nexus/internal/protocol"
 
-	sdkprotocol "github.com/nexus-research-lab/nexus-agent-sdk-go/protocol"
+	sdkprotocol "github.com/nexus-research-lab/nexus-agent-sdk-bridge/protocol"
 )
 
 // MessageContext 表示单轮消息处理上下文。
@@ -17,6 +17,7 @@ type MessageContext struct {
 	RoomID         string
 	ConversationID string
 	AgentID        string
+	WorkspacePath  string
 	RoundID        string
 	ParentID       string
 }
@@ -335,10 +336,27 @@ func (p *Processor) processToolResultMessage(message sdkprotocol.ReceivedMessage
 	}
 	enrichedBlocks := make([]map[string]any, 0, len(content))
 	for _, block := range content {
-		enrichedBlocks = append(enrichedBlocks, p.enrichToolResultBlock(block))
+		if !p.shouldKeepToolResultBlock(block) {
+			continue
+		}
+		enrichedBlock := p.enrichToolResultBlock(block)
+		enrichedBlocks = append(enrichedBlocks, enrichedBlock)
+		enrichedBlocks = append(enrichedBlocks, p.workspaceFileArtifactsForToolResult(enrichedBlock)...)
+	}
+	if len(enrichedBlocks) == 0 {
+		return nil
 	}
 	p.segment.AppendToolResults(enrichedBlocks)
 	return p.buildAssistantDurableMessage(true, true, "")
+}
+
+func (p *Processor) shouldKeepToolResultBlock(block map[string]any) bool {
+	toolUseID := normalizeString(block["tool_use_id"])
+	if p.segment.HasToolUse(toolUseID) {
+		return true
+	}
+	// 成功结果只是 tool_use 的附属状态；没有匹配工具时不要把它物化成独立内容块。
+	return boolValue(block["is_error"])
 }
 
 func (p *Processor) enrichToolResultBlock(block map[string]any) map[string]any {

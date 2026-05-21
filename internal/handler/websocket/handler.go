@@ -37,6 +37,7 @@ type Handler struct {
 	channels      *channelspkg.Router
 	roomSubs      *roomSubscriptionRegistry
 	workspaceSubs *workspaceSubscriptionRegistry
+	allowedOrigins []string
 }
 
 // NewHandler 创建 WebSocket handler。
@@ -50,6 +51,7 @@ func NewHandler(
 	channels *channelspkg.Router,
 	workspaceService *workspacepkg.Service,
 	runtimeProvider func(string) RuntimeSnapshot,
+	allowedOrigins []string,
 ) *Handler {
 	handler := &Handler{
 		api:           api,
@@ -61,6 +63,7 @@ func NewHandler(
 		channels:      channels,
 		roomSubs:      newRoomSubscriptionRegistry(128),
 		workspaceSubs: newWorkspaceSubscriptionRegistry(workspaceService, runtimeProvider),
+		allowedOrigins: allowedOrigins,
 	}
 	if roomRealtime != nil {
 		roomRealtime.SetRoomBroadcaster(handler.roomSubs)
@@ -70,8 +73,15 @@ func NewHandler(
 
 // HandleWebSocket 处理 WebSocket 会话。
 func (h *Handler) HandleWebSocket(writer http.ResponseWriter, request *http.Request) {
+	originPatterns := h.allowedOrigins
+	if len(originPatterns) == 0 {
+		// 未配置白名单时保持向后兼容，允许所有来源。
+		// 部署环境建议通过 ALLOWED_WEBSOCKET_ORIGINS 显式指定允许的 Origin。
+		originPatterns = []string{"*"}
+	}
 	connection, err := websocket.Accept(writer, request, &websocket.AcceptOptions{
-		OriginPatterns: []string{"*"},
+		OriginPatterns: originPatterns,
+		Subprotocols:   []string{handlershared.DesktopWebSocketSubprotocol},
 	})
 	if err != nil {
 		return
@@ -262,7 +272,11 @@ func (h *Handler) handleUnsubscribeRoom(sender *handlershared.WebSocketSender, i
 	if h.roomSubs == nil {
 		return
 	}
-	h.roomSubs.UnsubscribeRoom(sender, handlershared.StringValue(inbound["room_id"]))
+	h.roomSubs.UnsubscribeRoom(
+		sender,
+		handlershared.StringValue(inbound["room_id"]),
+		handlershared.StringValue(inbound["conversation_id"]),
+	)
 }
 
 func (h *Handler) handleBindSession(
@@ -375,19 +389,22 @@ func (h *Handler) handleControlMessage(
 		var err error
 		if parsed.Kind == protocol.SessionKeyKindRoom && h.roomRealtime != nil {
 			err = h.roomRealtime.HandleChat(ctx, roompkg.ChatRequest{
-				SessionKey:     sessionKey,
-				RoomID:         handlershared.StringValue(inbound["room_id"]),
-				ConversationID: handlershared.StringValue(inbound["conversation_id"]),
-				Content:        handlershared.StringValue(inbound["content"]),
-				RoundID:        handlershared.StringValue(inbound["round_id"]),
-				ReqID:          handlershared.StringValue(inbound["req_id"]),
-				DeliveryPolicy: protocol.NormalizeChatDeliveryPolicy(handlershared.StringValue(inbound["delivery_policy"])),
+				SessionKey:        sessionKey,
+				RoomID:            handlershared.StringValue(inbound["room_id"]),
+				ConversationID:    handlershared.StringValue(inbound["conversation_id"]),
+				AttachmentAgentID: handlershared.StringValue(inbound["agent_id"]),
+				Content:           handlershared.StringValue(inbound["content"]),
+				Attachments:       protocol.ChatAttachmentsFromAny(inbound["attachments"]),
+				RoundID:           handlershared.StringValue(inbound["round_id"]),
+				ReqID:             handlershared.StringValue(inbound["req_id"]),
+				DeliveryPolicy:    protocol.NormalizeChatDeliveryPolicy(handlershared.StringValue(inbound["delivery_policy"])),
 			})
 		} else {
 			err = h.dm.HandleChat(ctx, dmsvc.Request{
 				SessionKey:     sessionKey,
 				AgentID:        handlershared.StringValue(inbound["agent_id"]),
 				Content:        handlershared.StringValue(inbound["content"]),
+				Attachments:    protocol.ChatAttachmentsFromAny(inbound["attachments"]),
 				RoundID:        handlershared.StringValue(inbound["round_id"]),
 				ReqID:          handlershared.StringValue(inbound["req_id"]),
 				DeliveryPolicy: protocol.NormalizeChatDeliveryPolicy(handlershared.StringValue(inbound["delivery_policy"])),
@@ -435,6 +452,7 @@ func (h *Handler) handleControlMessage(
 				Action:         action,
 				ItemID:         handlershared.StringValue(inbound["item_id"]),
 				Content:        handlershared.StringValue(inbound["content"]),
+				Attachments:    protocol.ChatAttachmentsFromAny(inbound["attachments"]),
 				OrderedIDs:     stringSliceValue(inbound["ordered_ids"]),
 				DeliveryPolicy: protocol.NormalizeChatDeliveryPolicy(handlershared.StringValue(inbound["delivery_policy"])),
 			})
@@ -445,6 +463,7 @@ func (h *Handler) handleControlMessage(
 				Action:         action,
 				ItemID:         handlershared.StringValue(inbound["item_id"]),
 				Content:        handlershared.StringValue(inbound["content"]),
+				Attachments:    protocol.ChatAttachmentsFromAny(inbound["attachments"]),
 				OrderedIDs:     stringSliceValue(inbound["ordered_ids"]),
 				DeliveryPolicy: protocol.NormalizeChatDeliveryPolicy(handlershared.StringValue(inbound["delivery_policy"])),
 			})
@@ -570,11 +589,36 @@ func (h *Handler) errorEventDetail(errorType string, err error) string {
 		return "未找到待确认的权限请求"
 	case "session_control_denied":
 		return message
+	case "chat_error":
+		return chatErrorDetail(err)
 	default:
 		if handlershared.IsClientMessageError(err) || handlershared.IsStructuredSessionKeyError(err) {
 			return message
 		}
 		return "服务内部错误"
+	}
+}
+
+func chatErrorDetail(err error) string {
+	if err == nil {
+		return "Agent 启动失败，请检查运行时配置后重试。"
+	}
+	message := strings.TrimSpace(err.Error())
+	switch {
+	case strings.Contains(message, "cli executable") ||
+		strings.Contains(message, "claude.exe") ||
+		strings.Contains(message, "claude.cmd") ||
+		strings.Contains(message, "claude.ps1"):
+		return "未找到 Claude Code 命令，Agent 无法启动。请先安装 Claude Code，并在 PowerShell 里运行 `claude` 完成登录；如果已经安装，请确认 `claude` 在 PATH 中可用，或设置 NEXUS_CLAUDE_COMMAND_PATH 指向 claude.exe/claude.cmd。"
+	case strings.Contains(message, "LLM Provider") ||
+		strings.Contains(message, "provider=") ||
+		strings.Contains(message, "Provider"):
+		return "Agent 运行时 Provider 配置不可用。请到 Settings 检查默认 LLM Provider 是否已启用，并确认 auth_token、base_url、model 已填写完整。"
+	default:
+		if handlershared.IsClientMessageError(err) || handlershared.IsStructuredSessionKeyError(err) {
+			return message
+		}
+		return "Agent 启动失败，请检查 Claude Code、Provider 配置和日志后重试。"
 	}
 }
 

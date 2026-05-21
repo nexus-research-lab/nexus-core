@@ -14,6 +14,7 @@ import type {
   AssistantMessage,
   ContentBlock,
   Message,
+  MessageAttachment,
 } from "@/types/conversation/message";
 import type {
   PendingPermission,
@@ -27,6 +28,7 @@ export interface MessageItemProps {
   compact?: boolean;
   current_agent_name?: string | null;
   current_agent_avatar?: string | null;
+  workspace_agent_id?: string | null;
   current_user_avatar?: string | null;
   round_id: string;
   messages: Message[];
@@ -59,6 +61,8 @@ export interface MessageItemState {
   copied_assistant: boolean;
   user_message: Message | undefined;
   user_content: string;
+  user_attachments: MessageAttachment[];
+  assistant_agent_id: string | null;
   model: string | undefined;
   timestamp: number | undefined;
   stream_status: AssistantMessage["stream_status"] | null;

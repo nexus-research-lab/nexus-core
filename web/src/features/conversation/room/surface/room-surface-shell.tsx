@@ -22,6 +22,9 @@ interface RoomSurfaceShellProps {
   room_members: Agent[];
   available_room_agents: Agent[];
   current_room_title: string;
+  room_skill_names: string[];
+  room_host_agent_id?: string | null;
+  room_host_auto_reply_enabled: boolean;
   current_room_conversation: RoomConversationView | null;
   current_agent_session_identity: AgentConversationIdentity | null;
   conversation_id: string | null;
@@ -48,7 +51,6 @@ interface RoomSurfaceShellProps {
   on_update_room: (room_id: string, params: UpdateRoomParams) => Promise<void>;
   on_update_conversation_title: (conversation_id: string, title: string) => Promise<void>;
   on_open_workspace_file: (path: string | null) => void;
-  on_close_workspace_pane: () => void;
   on_start_editor_resize: () => void;
   on_loading_change: (is_loading: boolean) => void;
   on_todos_change: (todos: TodoItem[]) => void;
@@ -64,6 +66,9 @@ export function RoomSurfaceShell({
   room_members,
   available_room_agents,
   current_room_title,
+  room_skill_names,
+  room_host_agent_id,
+  room_host_auto_reply_enabled,
   current_room_conversation,
   current_agent_session_identity,
   conversation_id,
@@ -90,7 +95,6 @@ export function RoomSurfaceShell({
   on_update_room,
   on_update_conversation_title,
   on_open_workspace_file,
-  on_close_workspace_pane,
   on_start_editor_resize,
   on_loading_change,
   on_todos_change,
@@ -112,7 +116,6 @@ export function RoomSurfaceShell({
   }, [set_wide_panel_suppressed]);
 
   const handle_select_conversation_in_shell = useCallback((conversation_id: string) => {
-    set_active_surface_tab("chat");
     on_select_conversation(conversation_id);
   }, [on_select_conversation]);
 
@@ -121,7 +124,7 @@ export function RoomSurfaceShell({
       if (next_tab === "chat") {
         return "chat";
       }
-      return current_tab === next_tab ? "chat" : next_tab;
+      return next_tab;
     });
   }, []);
 
@@ -173,6 +176,9 @@ export function RoomSurfaceShell({
       room_avatar={room_avatar}
       room_members={room_members}
       current_room_title={current_room_title}
+      room_skill_names={room_skill_names}
+      room_host_agent_id={room_host_agent_id}
+      room_host_auto_reply_enabled={room_host_auto_reply_enabled}
       current_agent_session_identity={current_agent_session_identity}
       conversation_id={conversation_id}
       current_room_conversations={current_room_conversations}
@@ -190,7 +196,6 @@ export function RoomSurfaceShell({
       on_save_agent_options={on_save_agent_options}
       on_validate_agent_name={on_validate_agent_name}
       on_change_surface_tab={handle_change_surface_tab}
-      on_close_workspace_pane={on_close_workspace_pane}
       on_conversation_snapshot_change={on_conversation_snapshot_change}
       on_create_conversation={handle_create_conversation_in_shell}
       on_delete_conversation={on_delete_conversation}

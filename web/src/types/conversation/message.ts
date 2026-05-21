@@ -38,6 +38,25 @@ export interface ThinkingContent {
   signature?: string | null;
 }
 
+export interface ImageContent {
+  type: "image";
+  data?: string;
+  mime_type?: string | null;
+  alt?: string | null;
+  path?: string | null;
+  url?: string | null;
+  uri?: string | null;
+  source?: {
+    type?: string;
+    data?: string;
+    media_type?: string;
+    mime_type?: string;
+    url?: string;
+    uri?: string;
+    path?: string;
+  } | null;
+}
+
 export interface TaskProgressContent {
   type: "task_progress";
   task_id: string;
@@ -45,6 +64,22 @@ export interface TaskProgressContent {
   tool_use_id?: string | null;
   last_tool_name?: string | null;
   usage?: Record<string, any>;
+}
+
+export interface WorkspaceFileArtifactContent {
+  type: "workspace_file_artifact";
+  id?: string;
+  path: string;
+  display_path?: string | null;
+  label?: string | null;
+  title?: string | null;
+  artifact_kind?: string | null;
+  mime_type?: string | null;
+  operation?: string | null;
+  scope?: MessageAttachmentScope;
+  workspace_agent_id?: string | null;
+  source_tool_use_id?: string | null;
+  source_tool_name?: string | null;
 }
 
 export type SystemEventTone = "neutral" | "warning";
@@ -68,7 +103,9 @@ export type ContentBlock =
   | ToolUseContent
   | ToolResultContent
   | ThinkingContent
+  | ImageContent
   | TaskProgressContent
+  | WorkspaceFileArtifactContent
   | SystemEventContent;
 
 export interface BaseMessage {
@@ -86,10 +123,26 @@ export interface BaseMessage {
   delivery_mode?: "durable" | "ephemeral";
 }
 
+export type MessageAttachmentKind = "text" | "image" | "file";
+export type MessageAttachmentScope = "agent_workspace" | "room_conversation";
+
+export interface MessageAttachment {
+  file_name: string;
+  workspace_path: string;
+  workspace_agent_id?: string;
+  room_id?: string;
+  conversation_id?: string;
+  scope?: MessageAttachmentScope;
+  kind: MessageAttachmentKind;
+  mime_type?: string | null;
+  size?: number;
+}
+
 export interface UserMessage extends BaseMessage {
   role: "user";
   content: string;
   delivery_policy?: "queue" | "guide" | "interrupt" | "auto";
+  attachments?: MessageAttachment[];
 }
 
 export interface AgentMessage {
@@ -225,6 +278,8 @@ export interface EventMessage {
     | "room_member_added"
     | "room_member_removed"
     | "room_deleted"
+    | "room_action"
+    | "room_action_consumed"
     | "room_resync_required"
     | "session_resync_required"
     | "chat_ack"

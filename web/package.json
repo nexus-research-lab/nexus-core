@@ -1,6 +1,6 @@
 {
   "name": "web",
-  "version": "0.1.0",
+  "version": "0.1.8",
   "private": true,
   "packageManager": "pnpm@9.15.2",
   "scripts": {
@@ -19,9 +19,11 @@
     "@types/matter-js": "^0.20.2",
     "@types/react-syntax-highlighter": "^15.5.13",
     "clsx": "^2.1.1",
+    "dompurify": "^3.4.5",
     "katex": "^0.16.25",
     "lucide-react": "^0.554.0",
     "matter-js": "^0.20.0",
+    "mermaid": "^11.15.0",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-markdown": "^10.1.0",
@@ -53,5 +55,10 @@
     "typescript": "^5",
     "typescript-eslint": "^8.46.1",
     "vite": "npm:rolldown-vite@latest"
+  },
+  "pnpm": {
+    "overrides": {
+      "postcss": ">=8.5.10"
+    }
   }
 }

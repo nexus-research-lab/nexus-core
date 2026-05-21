@@ -18,6 +18,9 @@ import {
   Copy,
   CornerDownRight,
   Edit2,
+  File,
+  FileText,
+  Image as ImageIcon,
   Square,
   User,
   Wrench,
@@ -31,6 +34,8 @@ import type {
 } from "@/types/conversation/permission";
 
 import { ToolBlock } from "../blocks/tool-block";
+import { useWorkspaceFileArtifactsFromContent } from "../blocks/workspace-file-artifact-utils";
+import { WorkspaceFileArtifactList } from "../blocks/workspace-file-artifacts";
 import { MessageStats } from "../ui/message-stats";
 import {
   MessageActionButton,
@@ -40,27 +45,127 @@ import {
 import { ContentRenderer } from "./content-renderer";
 import { format_message_time } from "./message-item-support";
 import type { MessageItemState } from "./message-item-types";
+import type {
+  ContentBlock,
+  MessageAttachment,
+} from "@/types/conversation/message";
+
+const EMPTY_CONTENT_BLOCKS: ContentBlock[] = [];
 
 interface MessageUserSectionProps {
   compact: boolean;
   user_message: MessageItemState["user_message"];
   user_content: string;
+  user_attachments: MessageAttachment[];
   current_user_avatar?: string | null;
   copied_user: boolean;
   on_copy_user: () => Promise<void>;
   on_edit_user_message?: (message_id: string, new_content: string) => void;
   on_open_workspace_file?: (path: string) => void;
+  workspace_agent_id?: string | null;
+}
+
+function get_user_attachment_icon(kind: MessageAttachment["kind"]) {
+  if (kind === "image") {
+    return ImageIcon;
+  }
+  if (kind === "text") {
+    return FileText;
+  }
+  return File;
+}
+
+function get_user_attachment_kind_label(kind: MessageAttachment["kind"]) {
+  if (kind === "image") {
+    return "图片";
+  }
+  if (kind === "text") {
+    return "文本";
+  }
+  return "文件";
+}
+
+function MessageAttachmentList({
+  attachments,
+  on_open_workspace_file,
+  workspace_agent_id,
+}: {
+  attachments: MessageAttachment[];
+  on_open_workspace_file?: (path: string) => void;
+  workspace_agent_id?: string | null;
+}) {
+  if (attachments.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-2 flex flex-wrap justify-end gap-1.5">
+      {attachments.map((attachment, index) => {
+        const Icon = get_user_attachment_icon(attachment.kind);
+        const can_open =
+          Boolean(on_open_workspace_file) &&
+          Boolean(attachment.workspace_path) &&
+          Boolean(workspace_agent_id) &&
+          attachment.workspace_agent_id === workspace_agent_id;
+        const title = `${attachment.file_name || attachment.workspace_path} · ${attachment.workspace_path}`;
+        const class_name = cn(
+          "inline-flex max-w-[260px] items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
+          "border-(--divider-subtle-color) bg-(--surface-inset-background) text-(--text-muted)",
+          can_open
+            ? "cursor-pointer transition-colors hover:border-(--accent-color) hover:text-(--text-strong)"
+            : "cursor-default",
+        );
+        const content = (
+          <>
+            <Icon className="h-3.5 w-3.5 shrink-0" />
+            <span className="min-w-0 truncate">
+              {attachment.file_name || attachment.workspace_path}
+            </span>
+            <span className="shrink-0 text-[10px] text-(--text-faint)">
+              {get_user_attachment_kind_label(attachment.kind)}
+            </span>
+          </>
+        );
+
+        if (!can_open) {
+          return (
+            <span
+              key={`${attachment.workspace_path}-${index}`}
+              className={class_name}
+              title={title}
+            >
+              {content}
+            </span>
+          );
+        }
+
+        return (
+          <button
+            key={`${attachment.workspace_path}-${index}`}
+            type="button"
+            className={class_name}
+            title={title}
+            onClick={() => on_open_workspace_file?.(attachment.workspace_path)}
+          >
+            {content}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 export function MessageUserSection({
   compact,
   user_message,
   user_content,
+  user_attachments,
   current_user_avatar,
   copied_user,
   on_copy_user,
   on_edit_user_message,
   on_open_workspace_file,
+  workspace_agent_id,
 }: MessageUserSectionProps) {
   const [is_edit_dialog_open, set_is_edit_dialog_open] = useState(false);
 
@@ -132,16 +237,24 @@ export function MessageUserSection({
               </MessageAvatar>
             </div>
 
-            <div className="ml-auto w-fit max-w-full rounded-2xl px-4 py-3">
-              <ContentRenderer
-                content={user_content}
+            <div className="ml-auto flex w-fit max-w-full flex-col items-end rounded-2xl px-4 py-3">
+              {user_content.trim() ? (
+                <ContentRenderer
+                  content={user_content}
+                  on_open_workspace_file={on_open_workspace_file}
+                  workspace_agent_id={workspace_agent_id}
+                  class_name={cn(
+                    "w-fit max-w-[min(100%,760px)] self-end break-words text-left text-(--text-strong)",
+                    compact
+                      ? "text-[15px] leading-6 [&_.katex-display]:my-2"
+                      : "text-[16px] leading-7 [&_.katex-display]:my-3",
+                  )}
+                />
+              ) : null}
+              <MessageAttachmentList
+                attachments={user_attachments}
                 on_open_workspace_file={on_open_workspace_file}
-                class_name={cn(
-                  "text-left text-(--text-strong)",
-                  compact
-                    ? "text-[15px] leading-6 [&_.katex-display]:my-2"
-                    : "text-[16px] leading-7 [&_.katex-display]:my-3",
-                )}
+                workspace_agent_id={workspace_agent_id}
               />
             </div>
           </div>
@@ -178,6 +291,7 @@ interface PendingPermissionListProps {
   can_respond_to_permissions: boolean;
   permission_read_only_reason?: string;
   on_permission_response?: (payload: PermissionDecisionPayload) => boolean;
+  workspace_agent_id?: string | null;
 }
 
 function PendingPermissionList({
@@ -186,6 +300,7 @@ function PendingPermissionList({
   can_respond_to_permissions,
   permission_read_only_reason,
   on_permission_response,
+  workspace_agent_id,
 }: PendingPermissionListProps) {
   if (permissions.length === 0) {
     return null;
@@ -233,6 +348,7 @@ function PendingPermissionList({
           }}
           interaction_disabled={!can_respond_to_permissions}
           interaction_disabled_reason={permission_read_only_reason}
+          workspace_agent_id={workspace_agent_id}
         />
       ))}
     </div>
@@ -247,6 +363,7 @@ interface MessageAssistantSectionProps {
   permission_read_only_reason?: string;
   on_permission_response?: (payload: PermissionDecisionPayload) => boolean;
   on_open_workspace_file?: (path: string) => void;
+  workspace_agent_id?: string | null;
   hidden_tool_names?: string[];
   assistant_header_action?: ReactNode;
   assistant_content_mode:
@@ -265,16 +382,24 @@ export function MessageAssistantSection({
   permission_read_only_reason,
   on_permission_response,
   on_open_workspace_file,
+  workspace_agent_id,
   hidden_tool_names = ["TodoWrite"],
   assistant_header_action,
   assistant_content_mode,
   state,
 }: MessageAssistantSectionProps) {
+  const is_room_thread_mode = assistant_content_mode === "room_thread";
+  const content_workspace_agent_id = state.assistant_agent_id ?? workspace_agent_id;
+  const collapsed_process_file_artifacts = useWorkspaceFileArtifactsFromContent(
+    state.should_render_process_callchain && !state.is_process_expanded
+      ? state.process_projection.content
+      : EMPTY_CONTENT_BLOCKS,
+  );
+
   if (state.should_hide_assistant_content) {
     return null;
   }
 
-  const is_room_thread_mode = assistant_content_mode === "room_thread";
   const pending_permission_block = (
     <PendingPermissionList
       permissions={state.unmatched_pending_permissions}
@@ -282,6 +407,7 @@ export function MessageAssistantSection({
       can_respond_to_permissions={can_respond_to_permissions}
       permission_read_only_reason={permission_read_only_reason}
       on_permission_response={on_permission_response}
+      workspace_agent_id={content_workspace_agent_id}
     />
   );
 
@@ -395,6 +521,7 @@ export function MessageAssistantSection({
                     can_respond_to_permissions={can_respond_to_permissions}
                     permission_read_only_reason={permission_read_only_reason}
                     on_open_workspace_file={on_open_workspace_file}
+                    workspace_agent_id={content_workspace_agent_id}
                     hidden_tool_names={hidden_tool_names}
                     show_timeline_dots
                   />
@@ -426,6 +553,15 @@ export function MessageAssistantSection({
                     </div>
                   </button>
 
+                  {!state.is_process_expanded ? (
+                    <WorkspaceFileArtifactList
+                      artifacts={collapsed_process_file_artifacts}
+                      class_name="ml-5 pb-1"
+                      label="生成文件"
+                      on_open_workspace_file={on_open_workspace_file}
+                    />
+                  ) : null}
+
                   {state.is_process_expanded ? (
                     <div className="pt-1">
                       <ContentRenderer
@@ -444,6 +580,7 @@ export function MessageAssistantSection({
                           permission_read_only_reason
                         }
                         on_open_workspace_file={on_open_workspace_file}
+                        workspace_agent_id={content_workspace_agent_id}
                         hidden_tool_names={hidden_tool_names}
                         class_name="ml-1"
                         show_timeline_dots
@@ -465,6 +602,7 @@ export function MessageAssistantSection({
                     }
                     fallback_activity_state={state.live_activity_state}
                     on_open_workspace_file={on_open_workspace_file}
+                    workspace_agent_id={content_workspace_agent_id}
                   />
                 </div>
               ) : null}

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	serverapp "github.com/nexus-research-lab/nexus/internal/app/server"
+	"github.com/nexus-research-lab/nexus/internal/infra/appfs"
 	"github.com/nexus-research-lab/nexus/internal/message"
 	"github.com/nexus-research-lab/nexus/internal/protocol"
 	runtimectx "github.com/nexus-research-lab/nexus/internal/runtime"
@@ -23,10 +24,10 @@ import (
 	usagesvc "github.com/nexus-research-lab/nexus/internal/service/usage"
 	workspacestore "github.com/nexus-research-lab/nexus/internal/storage/workspace"
 
-	_ "github.com/mattn/go-sqlite3"
-	agentclient "github.com/nexus-research-lab/nexus-agent-sdk-go/client"
-	sdkpermission "github.com/nexus-research-lab/nexus-agent-sdk-go/permission"
-	sdkprotocol "github.com/nexus-research-lab/nexus-agent-sdk-go/protocol"
+	agentclient "github.com/nexus-research-lab/nexus-agent-sdk-bridge/client"
+	sdkpermission "github.com/nexus-research-lab/nexus-agent-sdk-bridge/permission"
+	sdkprotocol "github.com/nexus-research-lab/nexus-agent-sdk-bridge/protocol"
+	_ "modernc.org/sqlite"
 )
 
 var NewRealtimeServiceWithFactory = roomsvc.NewRealtimeServiceWithFactory
@@ -323,6 +324,20 @@ func TestRealtimeServiceHandleChatWithDirectRoomFallbackTarget(t *testing.T) {
 		"# Nexus Room 公区协作规则",
 		"你正在 Nexus 的多人协作 Room 中参与公开协作",
 		"Room 运行时会在系统提示词中提供成员目录，并在每轮用户消息里提供 public_feed 和 latest_trigger",
+		"直接创建 Room action",
+		`nexusctl --json room action`,
+		`room action private-message --target-agent-id <agent_id> --wake-policy immediate|none --content "<text>"`,
+		`room action private-message --audience-agent-id <agent_id> --audience-agent-id <agent_id> --wake-policy immediate|none --content "<text>"`,
+		`--wake-policy delayed --delay-seconds <seconds>`,
+		`room action request-reply --target-agent-id <agent_id> --reply-target public_feed|sender_private|target_private|audience|none --wake-policy immediate|none --content "<text>"`,
+		`延迟唤醒后要把最终回复发布到公区`,
+		`request-reply 指向自己并设置 --reply-target public_feed`,
+		"latest_trigger 标注“群主默认接管”",
+		"收到 request_reply 时，优先直接用本轮最终 assistant 回复回答请求",
+		"不要为了回答这个请求再调用 room action 或 CLI",
+		"不要公开复述 private_message、request_reply、private_note 中的正文",
+		`room action private-note --content "<text>"`,
+		`room action marker --visibility public|private --content "<text>"`,
 		"# Nexus Room 成员目录",
 		"<room_member_directory>",
 		"- name=单聊助手 agent_id=" + memberAgent.AgentID,
@@ -338,6 +353,9 @@ func TestRealtimeServiceHandleChatWithDirectRoomFallbackTarget(t *testing.T) {
 		if strings.Contains(roomSystemPrompt, unexpected) {
 			t.Fatalf("Room 固定规则不应包含动态变量 %q:\n%s", unexpected, roomSystemPrompt)
 		}
+	}
+	if got := factory.LastOptions().Env["NEXUS_PROJECT_ROOT"]; got != appfs.Root() {
+		t.Fatalf("Room runtime 未注入项目根目录: got=%q want=%q", got, appfs.Root())
 	}
 
 	privateSessionKey := protocol.BuildRoomAgentSessionKey(dmContext.Conversation.ID, memberAgent.AgentID, dmContext.Room.RoomType)
@@ -429,6 +447,80 @@ func TestRealtimeServiceHandleChatWithDirectRoomFallbackTarget(t *testing.T) {
 	}
 	if usageSummary.SessionCount != 1 || usageSummary.MessageCount != 1 {
 		t.Fatalf("room usage 计数不正确: %+v", usageSummary)
+	}
+}
+
+func TestRealtimeServiceRoutesUnmentionedGroupMessageToRoomHost(t *testing.T) {
+	cfg := newRoomTestConfig(t)
+	migrateRoomSQLite(t, cfg.DatabaseURL)
+
+	agentService, db, err := serverapp.NewAgentService(cfg)
+	if err != nil {
+		t.Fatalf("创建 agent service 失败: %v", err)
+	}
+	roomService := serverapp.NewRoomServiceWithDB(cfg, db, agentService)
+
+	ctx := authsvc.WithPrincipal(context.Background(), &authsvc.Principal{
+		UserID:   "user-room-host-default",
+		Username: "room-owner",
+		Role:     authsvc.RoleOwner,
+	})
+	amy := createTestAgent(t, agentService, ctx, "Amy")
+	devin := createTestAgent(t, agentService, ctx, "Devin")
+	roomContext, err := roomService.CreateRoom(ctx, protocol.CreateRoomRequest{
+		AgentIDs:             []string{amy.AgentID, devin.AgentID},
+		Name:                 "群主接管测试房间",
+		HostAgentID:          amy.AgentID,
+		HostAutoReplyEnabled: true,
+	})
+	if err != nil {
+		t.Fatalf("创建 room 失败: %v", err)
+	}
+
+	client := newFakeRoomClient()
+	hostPrompt := make(chan string, 1)
+	client.onQuery = func(_ context.Context, prompt string) error {
+		hostPrompt <- prompt
+		go sendFakeAssistantResult(client, "amy-room-host-default", "@Devin 请你处理这条需求。")
+		return nil
+	}
+
+	permission := permissionctx.NewContext()
+	factory := &fakeRoomFactory{clients: []*fakeRoomClient{client}}
+	service := roomsvc.NewRealtimeServiceWithFactory(cfg, roomService, agentService, runtimectx.NewManager(), permission, factory)
+	sharedSessionKey := protocol.BuildRoomSharedSessionKey(roomContext.Conversation.ID)
+	sender := newRealtimeTestSender("room-sender-host-default")
+	permission.BindSession(sharedSessionKey, sender, "client-host-default", true)
+
+	if err = service.HandleChat(ctx, roomsvc.ChatRequest{
+		SessionKey:     sharedSessionKey,
+		RoomID:         roomContext.Room.ID,
+		ConversationID: roomContext.Conversation.ID,
+		Content:        "帮我拆一下这个需求",
+		RoundID:        "room-round-host-default",
+		ReqID:          "room-round-host-default",
+	}); err != nil {
+		t.Fatalf("HandleChat 失败: %v", err)
+	}
+
+	events := collectRoomEventsUntil(t, sender.events, func(events []protocol.EventMessage, event protocol.EventMessage) bool {
+		return event.EventType == protocol.EventTypeRoundStatus &&
+			event.Data["round_id"] == "room-round-host-default" &&
+			event.Data["status"] == "finished"
+	})
+	select {
+	case prompt := <-hostPrompt:
+		if !strings.Contains(prompt, "群主默认接管") || !strings.Contains(prompt, "帮我拆一下这个需求") {
+			t.Fatalf("群主 prompt 缺少默认接管上下文: %s", prompt)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("未 @ 消息没有唤醒群主")
+	}
+	if !hasChatAckPendingAgent(events, amy.AgentID) {
+		t.Fatalf("事件流缺少群主 pending slot: %+v", events)
+	}
+	if hasChatAckPendingAgent(events, devin.AgentID) {
+		t.Fatalf("未 @ 消息不应直接唤醒非群主成员: %+v", events)
 	}
 }
 
@@ -943,7 +1035,7 @@ func TestRealtimeServiceBypassPermissionsKeepsQuestionChannel(t *testing.T) {
 	if options.Runtime.PermissionMode != sdkpermission.ModeBypassPermissions {
 		t.Fatalf("room bypass 权限模式未透传: %+v", options)
 	}
-	if options.Adapters.PermissionHandler == nil {
+	if options.Callbacks.PermissionHandler == nil {
 		t.Fatalf("room bypass 权限模式应保留 AskUserQuestion 交互通道: %+v", options)
 	}
 }
@@ -1248,6 +1340,14 @@ func TestRealtimeServiceQueuesPublicMentionWhenTargetRunning(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("目标 agent 空闲后未派发 queued mention")
 	}
+	_ = collectRoomEventsUntil(t, sender.events, func(events []protocol.EventMessage, event protocol.EventMessage) bool {
+		if event.EventType != protocol.EventTypeRoundStatus {
+			return false
+		}
+		roundID, _ := event.Data["round_id"].(string)
+		status, _ := event.Data["status"].(string)
+		return strings.HasPrefix(roundID, "room_mention_") && status == "finished"
+	})
 }
 
 func TestRealtimeServiceDispatchesRoomUserQueueForIdleTargetWhileAnotherAgentRuns(t *testing.T) {
@@ -1352,6 +1452,14 @@ func TestRealtimeServiceDispatchesRoomUserQueueForIdleTargetWhileAnotherAgentRun
 	if len(targetQueueItems) != 0 {
 		t.Fatalf("空闲目标派发后不应残留队列项: %+v", targetQueueItems)
 	}
+	_ = collectRoomEventsUntil(t, sender.events, func(events []protocol.EventMessage, event protocol.EventMessage) bool {
+		if event.EventType != protocol.EventTypeRoundStatus {
+			return false
+		}
+		roundID, _ := event.Data["round_id"].(string)
+		status, _ := event.Data["status"].(string)
+		return strings.HasPrefix(roundID, "queue_") && status == "finished"
+	})
 }
 
 func TestRealtimeServiceAcksPublicMessageWithoutMention(t *testing.T) {
@@ -2190,7 +2298,7 @@ func TestRealtimeServiceUsesAndPersistsRoomSDKSessionID(t *testing.T) {
 		t.Fatalf("期望只有一个 room session: %+v", roomContext.Sessions)
 	}
 
-	db, err = sql.Open("sqlite3", cfg.DatabaseURL)
+	db, err = sql.Open("sqlite", cfg.DatabaseURL)
 	if err != nil {
 		t.Fatalf("打开测试数据库失败: %v", err)
 	}

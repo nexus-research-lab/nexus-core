@@ -62,6 +62,131 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 修复 synthetic/API 认证失败的 summary 预览仍显示成功 envelope 的问题，错误窗口内部数据现在与舞台状态保持一致。
 - 修复真实运行失败后旧的 live handoff 仍被标记为执行中的问题，同轮 summary/error 到达后会把早先运行事件沉淀为失败证据。
 - 修复完成态终端窗口继承 summary 事件身份的问题，归档后的终端窗口现在保留真实命令事件与输出上下文。
+- 修复聊天侧边栏删除确认在删除请求失败时不会关闭的问题。
+
+## [0.1.8] - 2026-05-21
+
+### Added
+- Windows 桌面 App 托盘右键菜单新增“检查更新”入口，可手动触发 GitHub Release 检测、下载和 sha256 校验安装链路。
+
+### Changed
+- `make app-win-build` 默认使用当前时间戳作为 Windows 桌面 app 构建号，方便未提交改动的本地临时测试；需要固定构建号时仍可通过 `APP_WIN_BUILD_NUMBER` 覆盖。
+- 收口 Memory 调度与接口测试，提升记忆动态召回、checkpoint 和 HTTP API 的回归覆盖。
+- Windows 桌面 App 点击窗口关闭按钮时改为隐藏到系统托盘，真正退出需通过托盘图标右键菜单执行。
+- Windows 桌面 App 托盘右键菜单改为带标题、分组和悬停高亮的样式化菜单。
+
+### Fixed
+- 修复桌面 App 在 Windows/macOS 因 sidecar 本地端口变化导致引导完成状态每次启动丢失的问题。
+- 修复点击 Nexus 或 DM 入口时未进入最近活跃会话的问题。
+- 修复发送附件时同一文件可能被重复存储的问题。
+- 修复 Windows 桌面 App 自动更新检查在请求前写入 24 小时节流状态，导致失败后后续启动被误判为近期已检查的问题。
+- 修复 Windows 桌面 App 受系统“动画效果”关闭影响时，首页 Nexus 动效被 WebView2 的 reduced-motion 媒体查询完全降级为静态文字的问题，并在启动日志中记录 reduced-motion 状态便于排查。
+- 修复 Windows 桌面 App 关闭主窗口后可能仍残留壳进程和 sidecar，导致下一次临时构建覆盖 `.build/app/Nexus` 时文件被占用的问题。
+- 修复 Agent 启动失败时 WebSocket 只返回笼统内部错误，缺少 Claude Code 或 Provider 配置指引的问题。
+- 修复 Windows 上通过 npm 安装 Claude Code 只提供 `claude.cmd` 时，Agent runtime 仍按 `claude.exe` 查找而初始化失败的问题。
+- 修复 Windows 桌面 App 导出日志时，正在写入的 sidecar 日志文件可能因文件共享锁导致导出失败的问题。
+- 修复 Windows WebView2 未写入 `nexus_desktop_token` cookie 时，WebSocket 握手可能被 sidecar 判定为桌面会话 token 无效并返回 401 的问题。
+
+## [0.1.7] - 2026-05-20
+
+### Added
+- 新增 Nexus Memory v1：支持本地 Markdown 真相源、自动动态召回、候选提升、checkpoint 去重、`nexusctl memory` 管理命令、HTTP API 与 Web Memory 面板。
+- 聊天消息完成后新增通知闭环：非激活窗口触发浏览器系统通知，左侧聊天入口和会话行显示未读完成消息数，进入对应会话后自动清除。
+- 工作区文件预览支持 Markdown、HTML、Mermaid、图片、SVG、PDF 和普通文本，并在预览区、聊天文件卡和文件右键菜单提供统一下载入口。
+- 桌面 App 内置 GitHub OAuth Device Flow：发布包只注入公开 Client ID，用户输入 GitHub 授权码后由本地 sidecar 轮询并保存 token。
+- 桌面 App 本地模式默认跳过账号登录，由原生壳注入的本地 session token 保护 sidecar API。
+
+### Changed
+- `make logs`、`make logs-all` 与 `make logs-nginx` 默认显示最近 1000 行，便于直接查看启动前后的服务日志。
+- 移除 Makefile 中针对 bridge SDK 的额外可访问性预检查，安装、迁移、生成协议和发布包构建直接使用 Go 模块工具链校验依赖。
+- 连接器前端不再提供 OAuth App 自助配置入口，统一由后端环境变量或桌面内置配置决定是否可连接。
+- 优化 Markdown/预览流式输出：按 block 显式区分已稳定内容和流式尾块，未闭合代码围栏直接对齐真实内容，Mermaid 流式预览保留上一版合法 SVG，代码块流式期间跳过完整高亮，HTML 预览按 head 就绪和节流提交减少重载抖动。
+- 优化 Markdown 表格渲染：修正公式与 GFM 表格解析顺序，并让宽表格在自身容器内横向滚动。
+- 优化 Markdown 列表渲染：修正列表项段落块导致 marker 后内容另起一行的问题。
+- 优化 Markdown 文本渲染：支持安全的行内文本标签与 `<br>` 换行，并改善正文段落换行观感。
+- 优化 Mermaid SVG 渲染观感：统一边标签背景、节点圆角、note 配色和菱形节点圆角处理。
+
+### Fixed
+- 修复 Markdown 中 `Cron*（...）` 这类标识符星号被误解析为强调标记的问题。
+- 修复工作区文件编辑/预览工具栏按钮点击文字区域时先触发编辑器失焦，导致视图跳动的问题。
+- 修复 Agent 任务结束后工作区文件状态可能停留在“写入中”的问题。
+- 修复用户消息正文在右侧气泡中未按发送方方向对齐的问题。
+- 修复用户消息附件打开后文件树误聚焦到 `.nexus/attachments` 内部目录，导致刷新后附件预览路径异常的问题。
+- 修复图片附件只作为 `@"path"` 文本传入 runtime，导致首轮对话不稳定触发读图的问题，并对齐 Claude Code 的 `source.base64` 图片内容块。
+- 修复聊天未读只记在全局入口、会话行不显示且点击未进入对应未读会话的问题。
+- 修复 Windows 安装器在 Windows 11 ARM64 x64 兼容环境下因 Inno Setup 架构约束误报不支持当前 Windows 版本的问题。
+- 修复 Windows 桌面 App 内聊天、侧边栏订阅和完成通知 WebSocket 未携带桌面会话 token，导致连接被本地 sidecar 拒绝的问题。
+- 移除桌面发布包内 GitHub OAuth Client Secret 注入，避免分发产物暴露 confidential client secret。
+- 修复 macOS Dock 点击重新打开时把当前工作台路由重置到 launcher 的问题。
+
+## [0.1.6] - 2026-05-20
+
+### Added
+- Windows 桌面应用启动更新检测补齐下载安装链路：按 24 小时节流读取 GitHub Release 的 Windows metadata，发现新版本时可下载 `NexusSetup-*.exe` 与 sha256，校验通过后再提示启动安装器。
+- Windows 桌面发布链路新增 Inno Setup 安装包，输出 `NexusSetup-<version>-<build>.exe`、sha256，并注册开始菜单、可选桌面快捷方式和 `nexus://` 协议。
+- Windows 桌面应用接入 Nexus app 图标，打包后的 `Nexus.exe` 会显示独立应用图标。
+- macOS 原生菜单新增“检查更新...”，启动后会按 24 小时节流后台检测 GitHub Release，并在发现新版本时提示打开下载页。
+- Windows 桌面第一阶段新增 WPF/WebView2 原生壳骨架，支持启动 Go sidecar、随机本地端口、runtime config 注入、完整 launcher 默认入口、单实例唤起、`nexus://` 路由、DPAPI 凭据 key、基础桌面 bridge、诊断导出、smoke 脚本、zip/metadata 打包和 GitHub Release app asset 上传。
+- 对话输入框支持粘贴图片，并可上传图片、PDF、Office、Markdown、HTML 与常见文本文件作为工作区附件。
+
+### Changed
+- 桌面 app 的运行数据目录统一为 `~/.nexus`，macOS 与 Windows 不再分别使用 `Application Support/Nexus` 或 `%LOCALAPPDATA%\Nexus`。
+- 聊天附件改为结构化 metadata 传递，正文不再拼接文件清单或内容摘录，DM/Room 待发送队列和历史回放会保留附件信息；Room 群聊附件上传到 conversation 级公共目录。
+- 文件类工具执行成功后会写入结构化工作区文件产物，并在聊天区提供单击打开入口。
+
+### Fixed
+- 修复 macOS 桌面 smoke 在未登录状态下把 `/login` 误判为启动失败的问题。
+
+## [0.1.5] - 2026-05-19
+
+### Added
+- Room 创建与管理支持设置群主，并可启用未 @ 公区消息由群主默认接管后回答或委派成员。
+- GitHub Release 发布流程新增 macOS app 构建 job，并把 dmg、sha256、metadata 作为同一个 tag 的 Release assets 上传。
+- macOS 桌面 smoke 支持 CI 友好的 launcher 分布式通知兜底和可配置 fallback reveal 容忍度。
+- 新增 macOS app QA 清单，并补充 WebView 外链/阻断、launcher 关闭原因和 WebContent 终止诊断记录。
+- Makefile 新增 macOS app 开发、构建、运行、smoke 和打包入口。
+- macOS 桌面新增 Nexus 概念 App 图标，并接入 `.app` bundle。
+
+### Changed
+- 重做侧边栏聊天工作台：联系人、能力入口、最近会话与 launcher 控制台的信息结构更清晰。
+- macOS app 默认启动和 `nexus://launcher` 统一打开主窗口完整 launcher 首页，移除独立紧凑 launcher 浮层，关闭 `Option + Space` 默认全局唤起，并移除设置页里的启动器快捷键配置。
+
+### Fixed
+- 修复 Room slot 状态并发访问风险，并稳定 Room 异步清理测试。
+- 修复 `nexus-server --help` 会提前触发迁移的问题。
+- 修复聊天区侧栏 tab 激活态在路由切换后丢失的问题。
+- 修复 macOS app 已运行时再次打开不会唤起 launcher 的问题。
+- 修正 macOS smoke 对默认 launcher 路由的校验，确保启动和 URL 唤起都落到 `/`。
+
+## [0.1.4] - 2026-05-19
+
+### Added
+- 新增 Nexus 版本展示入口：发布包注入版本号、Git commit 与构建时间，`/system/version` 返回当前二进制信息，Web 设置页提供 GitHub Release 下载入口。
+- 补充 Windows 发布包运行说明，明确 Claude Code、PowerShell、WinGet 与 Git for Windows 的安装路径。
+
+### Changed
+- Agent workspace 目录改为按 `agent_id` 生成，改名时不再移动目录，只同步数据库名称与工作区 `AGENTS.md` 身份标识。
+- Workspace 初始化增强 Windows 兼容：补充 `nexusctl.cmd` 入口，Claude skill 链接在目录 symlink 不可用时会镜像目录。
+- 跳过新手引导时立即记为已读，避免后续反复出现同一导览。
+
+### Fixed
+- 修复发布包首页点击“进入工作台”后仍停留在 Launcher 的问题。
+- 修复 Windows 下 Agent 改名时因 workspace 目录被占用导致失败的问题。
+- 修复 SQLite URL 中 `~` 与 Windows 路径分隔符展开不完整，以及 SQLite 父目录不存在时打开数据库失败的问题。
+
+## [0.1.3] - 2026-05-15
+
+### Added
+- 发布包进入可直接运行阶段：Linux 与 Windows 运行包内置服务端、前端资源、数据库迁移和内置技能，启动后即可通过同一个本地地址访问 Nexus。
+- 图片生成能力成型：支持独立的图片生成 Provider、内置 `imagegen` 技能，以及会话内图片结果预览。
+- Room 协作动作增强：支持私域消息、请求指定成员回复、小范围受众投递、延迟唤醒和房间级技能规则。
+- 桌面端内部验证链路完成第一阶段：本地 sidecar、独立窗口、桌面会话凭据、启动诊断和内部验证包已具备闭环。
+
+### Fixed
+- 会话运行态以真实执行中的任务为准，减少异常退出或中断失败后仍显示“对话中”的情况。
+- Room 删除会完整清理成员、会话、消息和执行记录，避免残留数据影响后续使用。
+- Room 私域动作的来源身份由运行时统一注入，避免模型侧伪造或误填发送者。
+- 私域动作默认不在工具结果中回显正文，降低协作过程里的信息泄漏风险。
 
 ## [0.1.2] - 2026-05-12
 

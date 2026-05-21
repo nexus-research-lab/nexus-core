@@ -27,6 +27,13 @@ interface GroupRoundCardGroupProps {
   on_open_workspace_file?: (path: string) => void;
 }
 
+function get_user_attachment_workspace_agent_id(message: Message | undefined) {
+  if (!message || message.role !== "user") {
+    return null;
+  }
+  return message.attachments?.[0]?.workspace_agent_id ?? null;
+}
+
 function GroupCompletedReply(
   {
     round_id,
@@ -57,6 +64,7 @@ function GroupCompletedReply(
       <MessageItem
         current_agent_name={agent_name}
         current_agent_avatar={agent_avatar}
+        workspace_agent_id={agent_id}
         round_id={`${round_id}:${agent_id}`}
         messages={messages_for_render}
         assistant_content_mode="room_result"
@@ -149,9 +157,11 @@ function GroupRoundCardGroupInner(
           <MessageItem
             round_id={round_id}
             messages={[user_message]}
+            workspace_agent_id={get_user_attachment_workspace_agent_id(user_message)}
             current_user_avatar={current_user_avatar}
             is_last_round={false}
             is_loading
+            on_open_workspace_file={on_open_workspace_file}
             class_name="border-b-0"
           />
         </div>

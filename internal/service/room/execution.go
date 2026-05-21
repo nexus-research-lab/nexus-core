@@ -9,11 +9,12 @@ import (
 	"time"
 	"unicode/utf8"
 
-	sdkmcp "github.com/nexus-research-lab/nexus-agent-sdk-go/mcp"
-	sdkpermission "github.com/nexus-research-lab/nexus-agent-sdk-go/permission"
-	sdkprotocol "github.com/nexus-research-lab/nexus-agent-sdk-go/protocol"
+	sdkmcp "github.com/nexus-research-lab/nexus-agent-sdk-bridge/mcp"
+	sdkpermission "github.com/nexus-research-lab/nexus-agent-sdk-bridge/permission"
+	sdkprotocol "github.com/nexus-research-lab/nexus-agent-sdk-bridge/protocol"
 
 	roomdomain "github.com/nexus-research-lab/nexus/internal/chat/room"
+	"github.com/nexus-research-lab/nexus/internal/infra/logx"
 	"github.com/nexus-research-lab/nexus/internal/message"
 	"github.com/nexus-research-lab/nexus/internal/protocol"
 	runtimectx "github.com/nexus-research-lab/nexus/internal/runtime"
@@ -99,7 +100,7 @@ func (s *RealtimeService) runSlot(
 	agentValue *protocol.Agent,
 ) {
 	if agentValue == nil {
-		slot.Status = "error"
+		slot.setStatus("error")
 		s.loggerFor(ctx).Error("Room slot 缺少 agent 配置",
 			"s", roundValue.SessionKey,
 			"r", roundValue.RoomID,
@@ -119,8 +120,16 @@ func (s *RealtimeService) runSlot(
 		"s", roundValue.SessionKey,
 		"a", slot.AgentID,
 	)
-	mapper := roomdomain.NewSlotMessageMapper(roundValue.SessionKey, roundValue.RoomID, roundValue.ConversationID, slot.AgentID, slot.MsgID, slot.AgentRoundID)
-	slot.Status = "running"
+	mapper := roomdomain.NewSlotMessageMapper(
+		roundValue.SessionKey,
+		roundValue.RoomID,
+		roundValue.ConversationID,
+		slot.AgentID,
+		slot.MsgID,
+		slot.AgentRoundID,
+		agentValue.WorkspacePath,
+	)
+	slot.setStatus("running")
 	logger.Info("开始执行 Room slot")
 	defer s.finishSlot(slot)
 
@@ -151,6 +160,13 @@ func (s *RealtimeService) runSlot(
 		return
 	}
 	appendSystemPrompt = appendPromptSection(appendSystemPrompt, roomdomain.BuildSystemPrompt())
+	appendSystemPrompt = appendPromptSection(appendSystemPrompt, s.buildRoomMemorySystemPrompt(slotCtx, roundValue))
+	roomSkillPrompt, err := s.rooms.BuildRoomSkillPrompt(slotCtx, roundValue.Context.Room.SkillNames)
+	if err != nil {
+		s.handleSlotFailure(slotCtx, roundValue, slot, mapper, err)
+		return
+	}
+	appendSystemPrompt = appendPromptSection(appendSystemPrompt, roomSkillPrompt)
 	appendSystemPrompt = appendPromptSection(appendSystemPrompt, roomdomain.BuildMemberDirectoryPrompt(agentNameByID))
 	mcpServers := map[string]sdkmcp.SDKMCPServer(nil)
 	if s.mcpServers != nil {
@@ -175,10 +191,11 @@ func (s *RealtimeService) runSlot(
 		DisallowedTools:    agentValue.Options.DisallowedTools,
 		SettingSources:     agentValue.Options.SettingSources,
 		AppendSystemPrompt: appendSystemPrompt,
-		ResumeSessionID:    slot.SDKSessionID,
+		ResumeSessionID:    slot.getSDKSessionID(),
 		MaxThinkingTokens:  agentValue.Options.MaxThinkingTokens,
 		MaxTurns:           agentValue.Options.MaxTurns,
 		MCPServers:         mcpServers,
+		ExtraEnv:           s.roomRuntimeEnv(roundValue, slot),
 	})
 	if err != nil {
 		s.handleSlotFailure(slotCtx, roundValue, slot, mapper, err)
@@ -191,15 +208,15 @@ func (s *RealtimeService) runSlot(
 		RoomID:         roundValue.RoomID,
 		ConversationID: roundValue.ConversationID,
 	}))
-	previousStderr := options.Stderr
-	options.Stderr = func(line string) {
+	previousStderr := options.Callbacks.Stderr
+	options.Callbacks.Stderr = func(line string) {
 		if previousStderr != nil {
 			previousStderr(line)
 		}
-		logger.Warn("Agent SDK stderr", "stderr", line)
+		logger.Warn("Agent SDK stderr", "stderr", runtimectx.RedactSensitiveText(line))
 	}
 	client := s.factory.New(options)
-	slot.Client = client
+	slot.setClient(client)
 
 	if err := client.Connect(slotCtx); err != nil {
 		s.handleSlotFailure(slotCtx, roundValue, slot, mapper, err)
@@ -225,7 +242,7 @@ func (s *RealtimeService) runSlot(
 		slot.AgentRoundID,
 	))
 
-	dispatchPrompt, err := s.buildSlotVisibleContext(slotCtx, roundValue, slot, history, agentNameByID)
+	dispatchPrompt, err := s.buildSlotVisibleContext(slotCtx, roundValue, slot, history, agentNameByID, agentValue)
 	if err != nil {
 		s.handleSlotFailure(slotCtx, roundValue, slot, mapper, err)
 		return
@@ -234,11 +251,16 @@ func (s *RealtimeService) runSlot(
 		s.handleSlotFailure(slotCtx, roundValue, slot, mapper, err)
 		return
 	}
-	slot.NoReplyCandidate = true
+	dispatchRuntimeContent, err := s.renderRuntimeContentWithAttachments(slotCtx, dispatchPrompt, slot.TriggerAttachments)
+	if err != nil {
+		s.handleSlotFailure(slotCtx, roundValue, slot, mapper, err)
+		return
+	}
+	slot.beginNoReplyCandidate()
 	result, err := runtimectx.ExecuteRound(slotCtx, runtimectx.RoundExecutionRequest{
-		Query:  dispatchPrompt,
-		Client: client,
-		Mapper: roomRoundMapperAdapter{mapper: mapper},
+		Content: dispatchRuntimeContent.Payload(),
+		Client:  client,
+		Mapper:  roomRoundMapperAdapter{mapper: mapper},
 		InterruptReason: func() string {
 			return roomSlotInterruptReason(slot)
 		},
@@ -250,13 +272,26 @@ func (s *RealtimeService) runSlot(
 				logger.Info("发送已排队的 Room 消息",
 					"queued_round_id", input.RoundID,
 					"content_chars", utf8.RuneCountInString(input.Content),
+					"content_preview", logx.PreviewText(input.Content, 240),
 				)
 			}
 			return nil
 		},
 		ObserveIncomingMessage: func(incoming sdkprotocol.ReceivedMessage) {
 			if streamLogger.Enabled(slotCtx, slog.LevelDebug) {
-				streamLogger.Debug("Room slot 收到 SDK 消息", runtimectx.BuildSDKMessageLogFields(incoming)...)
+				if incoming.Type == sdkprotocol.MessageTypeStreamEvent && !s.config.MessageDebugStreamEvent {
+					return
+				}
+				streamLogger.Debug(
+					"Room slot 收到 SDK 消息",
+					runtimectx.BuildSDKMessageLogFieldsWithOptions(
+						incoming,
+						runtimectx.SDKMessageLogOptions{
+							IncludeStreamEvent:  s.config.MessageDebugStreamEvent,
+							IncludeSnapshotData: true,
+						},
+					)...,
+				)
 			}
 		},
 		SyncSessionID: func(sessionID string) error {
@@ -265,14 +300,22 @@ func (s *RealtimeService) runSlot(
 		HandleDurableMessage: func(messageValue protocol.Message) error {
 			messageRole := protocol.MessageRole(messageValue)
 			if messageRole == "result" {
-				slot.Status = resultStatus(messageValue["subtype"])
+				slot.setStatus(resultStatus(messageValue["subtype"]))
 				s.recordUsage(roundValue, messageValue)
 			}
 			if messageRole == "assistant" && roomdomain.IsNoReplyAssistantMessage(messageValue) {
-				slot.SuppressOutput = true
+				slot.suppressOutput()
 				return nil
 			}
-			if slot.SuppressOutput {
+			if slot.shouldSuppressOutput() {
+				return nil
+			}
+			if !roomSlotPublishesPublicOutput(slot) {
+				if !protocol.IsTranscriptNativeMessage(protocol.Message(messageValue)) {
+					if err := s.persistPrivateOverlayMessage(slot, cloneMessageWithSessionKey(messageValue, slot.RuntimeSessionKey)); err != nil {
+						return err
+					}
+				}
 				return nil
 			}
 			if err := s.persistSharedDurableMessage(roundValue.ConversationID, slot, messageValue); err != nil {
@@ -286,6 +329,9 @@ func (s *RealtimeService) runSlot(
 			return nil
 		},
 		EmitEvent: func(event protocol.EventMessage) error {
+			if roomSlotShouldDropPublicOutputEvent(slot, event) {
+				return nil
+			}
 			for _, readyEvent := range roomEventsReadyForEmission(slot, event) {
 				s.broadcastSharedEventWithTimeout(slotCtx, roundValue.SessionKey, roundValue.RoomID, readyEvent)
 			}
@@ -304,20 +350,42 @@ func (s *RealtimeService) runSlot(
 	if result.CompletedByAssistant {
 		s.recordTerminalAssistantUsage(roundValue, mapper.LastAssistantMessage())
 	}
-	if slot.Status == "running" {
-		slot.Status = resultStatus(result.ResultSubtype)
+	if slot.getStatus() == "running" {
+		slot.setStatus(resultStatus(result.ResultSubtype))
 	}
-	if !slot.SuppressOutput {
-		if err := s.collectPublicMentionWakes(slotCtx, roundValue, slot, mapper.LastAssistantMessage()); err != nil {
+	if !slot.shouldSuppressOutput() {
+		if err := s.recordRoomActionReply(slotCtx, roundValue, slot, mapper.LastAssistantMessage()); err != nil {
 			s.handleSlotFailure(slotCtx, roundValue, slot, mapper, err)
 			return
 		}
+		if roomSlotPublishesPublicOutput(slot) {
+			if err := s.collectPublicMentionWakes(slotCtx, roundValue, slot, mapper.LastAssistantMessage()); err != nil {
+				s.handleSlotFailure(slotCtx, roundValue, slot, mapper, err)
+				return
+			}
+		}
 	}
-	if slot.Status == "finished" {
+	if slot.getStatus() == "finished" {
 		if err := s.recordRoomPublicCursor(slot, roundValue, slot.PublicCursorID, slot.PublicCursorTS); err != nil {
 			s.handleSlotFailure(slotCtx, roundValue, slot, mapper, err)
 			return
 		}
+		actionCursor, actionCursorRecorded, err := s.recordRoomActionCursor(slot, roundValue)
+		if err != nil {
+			s.handleSlotFailure(slotCtx, roundValue, slot, mapper, err)
+			return
+		}
+		if actionCursorRecorded {
+			s.broadcastSharedEventWithTimeout(
+				slotCtx,
+				roundValue.SessionKey,
+				roundValue.RoomID,
+				newRoomActionConsumedEvent(actionCursor),
+			)
+		}
+	}
+	if result.CompletedByAssistant && roomSlotCanCommitMemory(slot) {
+		go s.commitRoomMemoryTurn(roundValue, slot, mapper.LastAssistantMessage())
 	}
 	s.broadcastSharedEventWithTimeout(slotCtx, roundValue.SessionKey, roundValue.RoomID, roomdomain.WrapLifecycleEvent(
 		protocol.EventTypeStreamEnd,
@@ -328,7 +396,7 @@ func (s *RealtimeService) runSlot(
 		slot.MsgID,
 		slot.AgentRoundID,
 	))
-	logger.Info("Room slot 结束", "status", slot.Status)
+	logger.Info("Room slot 结束", "status", slot.getStatus())
 }
 
 func roomSourceContextLabel(roundValue *activeRoomRound) string {
@@ -369,10 +437,10 @@ func (s *RealtimeService) writeUsage(roundValue *activeRoomRound, message protoc
 
 func (s *RealtimeService) syncSlotSDKSessionID(ctx context.Context, slot *activeRoomSlot, sessionID string) error {
 	sessionID = strings.TrimSpace(sessionID)
-	if sessionID == "" || sessionID == strings.TrimSpace(slot.SDKSessionID) {
+	if sessionID == "" || sessionID == slot.getSDKSessionID() {
 		return nil
 	}
-	slot.SDKSessionID = sessionID
+	slot.setSDKSessionID(sessionID)
 	if s.rooms == nil {
 		return nil
 	}
@@ -391,7 +459,7 @@ func (s *RealtimeService) handleSlotFailure(ctx context.Context, roundValue *act
 	}
 	fields = append(fields, roomSlotFailureDiagnostics(err, slot, mapper)...)
 	s.loggerFor(ctx).Error("Room slot 执行失败", fields...)
-	slot.Status = "error"
+	slot.setStatus("error")
 	resultMessage := protocol.Message{
 		"message_id":      "result_" + slot.AgentRoundID,
 		"session_key":     roundValue.SessionKey,
@@ -409,24 +477,26 @@ func (s *RealtimeService) handleSlotFailure(ctx context.Context, roundValue *act
 		"is_error":        true,
 		"timestamp":       time.Now().UnixMilli(),
 	}
-	_ = s.persistSharedInlineMessage(roundValue.ConversationID, resultMessage)
 	_ = s.persistPrivateOverlayMessage(slot, cloneMessageWithSessionKey(resultMessage, slot.RuntimeSessionKey))
-	projectedMessage := message.ProjectResultMessage(nil, resultMessage)
-	if mapper != nil {
-		projectedMessage = mapper.ProjectResultMessage(resultMessage)
-	}
-	s.broadcastSharedEventWithTimeout(
-		ctx,
-		roundValue.SessionKey,
-		roundValue.RoomID,
-		roomdomain.WrapMessageEvent(
+	if roomSlotPublishesPublicOutput(slot) {
+		_ = s.persistSharedInlineMessage(roundValue.ConversationID, resultMessage)
+		projectedMessage := message.ProjectResultMessage(nil, resultMessage)
+		if mapper != nil {
+			projectedMessage = mapper.ProjectResultMessage(resultMessage)
+		}
+		s.broadcastSharedEventWithTimeout(
+			ctx,
+			roundValue.SessionKey,
 			roundValue.RoomID,
-			roundValue.ConversationID,
-			projectedMessage,
-			slot.AgentRoundID,
-		),
-	)
-	s.broadcastSharedEventWithTimeout(ctx, roundValue.SessionKey, roundValue.RoomID, roomdomain.NewErrorEvent(roundValue.SessionKey, roundValue.RoomID, roundValue.ConversationID, "room_error", err.Error(), slot.AgentRoundID))
+			roomdomain.WrapMessageEvent(
+				roundValue.RoomID,
+				roundValue.ConversationID,
+				projectedMessage,
+				slot.AgentRoundID,
+			),
+		)
+		s.broadcastSharedEventWithTimeout(ctx, roundValue.SessionKey, roundValue.RoomID, roomdomain.NewErrorEvent(roundValue.SessionKey, roundValue.RoomID, roundValue.ConversationID, "room_error", err.Error(), slot.AgentRoundID))
+	}
 	s.broadcastSharedEventWithTimeout(ctx, roundValue.SessionKey, roundValue.RoomID, roomdomain.WrapLifecycleEvent(
 		protocol.EventTypeStreamEnd,
 		roundValue.SessionKey,
@@ -461,8 +531,8 @@ func roomSlotFailureDiagnostics(err error, slot *activeRoomSlot, mapper *roomdom
 			"last_assistant_chars", utf8.RuneCountInString(strings.TrimSpace(roomdomain.ExtractHistoryText(lastAssistant))),
 		)
 	}
-	if slot != nil && slot.Client != nil {
-		fields = append(fields, "client_session_id", slot.Client.SessionID())
+	if client := slot.getClient(); client != nil {
+		fields = append(fields, "client_session_id", client.SessionID())
 	}
 	return fields
 }
@@ -485,11 +555,10 @@ func (s *RealtimeService) handleSlotCancelled(ctx context.Context, roundValue *a
 }
 
 func (s *RealtimeService) markSlotCancelled(slot *activeRoomSlot) bool {
-	if slot == nil || slot.Status == "cancelled" {
+	if slot == nil {
 		return false
 	}
-	slot.Status = "cancelled"
-	return true
+	return slot.markCancelled()
 }
 
 func (s *RealtimeService) broadcastSlotCancelled(ctx context.Context, roundValue *activeRoomRound, slot *activeRoomSlot) {
@@ -527,34 +596,36 @@ func (s *RealtimeService) emitInterruptedSlotResult(roundValue *activeRoomRound,
 	if trimmedResult := strings.TrimSpace(resultText); trimmedResult != "" {
 		resultMessage["result"] = trimmedResult
 	}
-	if slot.Client != nil {
-		if sessionID := strings.TrimSpace(slot.Client.SessionID()); sessionID != "" {
+	if client := slot.getClient(); client != nil {
+		if sessionID := strings.TrimSpace(client.SessionID()); sessionID != "" {
 			resultMessage["session_id"] = sessionID
 		}
 	}
-	if err := s.persistSharedInlineMessage(roundValue.ConversationID, resultMessage); err != nil {
-		s.loggerFor(context.Background()).Error("Room interrupted 共享结果持久化失败",
-			"s", roundValue.SessionKey,
-			"r", roundValue.RoomID,
-			"c", roundValue.ConversationID,
-			"err", err,
-		)
-	} else {
-		projectedMessage := message.ProjectResultMessage(nil, resultMessage)
-		if mapper != nil {
-			projectedMessage = mapper.ProjectResultMessage(resultMessage)
-		}
-		s.broadcastSharedEvent(
-			context.Background(),
-			roundValue.SessionKey,
-			roundValue.RoomID,
-			roomdomain.WrapMessageEvent(
+	if roomSlotPublishesPublicOutput(slot) {
+		if err := s.persistSharedInlineMessage(roundValue.ConversationID, resultMessage); err != nil {
+			s.loggerFor(context.Background()).Error("Room interrupted 共享结果持久化失败",
+				"s", roundValue.SessionKey,
+				"r", roundValue.RoomID,
+				"c", roundValue.ConversationID,
+				"err", err,
+			)
+		} else {
+			projectedMessage := message.ProjectResultMessage(nil, resultMessage)
+			if mapper != nil {
+				projectedMessage = mapper.ProjectResultMessage(resultMessage)
+			}
+			s.broadcastSharedEvent(
+				context.Background(),
+				roundValue.SessionKey,
 				roundValue.RoomID,
-				roundValue.ConversationID,
-				projectedMessage,
-				slot.AgentRoundID,
-			),
-		)
+				roomdomain.WrapMessageEvent(
+					roundValue.RoomID,
+					roundValue.ConversationID,
+					projectedMessage,
+					slot.AgentRoundID,
+				),
+			)
+		}
 	}
 	if err := s.persistPrivateOverlayMessage(slot, cloneMessageWithSessionKey(resultMessage, slot.RuntimeSessionKey)); err != nil {
 		s.loggerFor(context.Background()).Error("Room interrupted 私有结果持久化失败",
@@ -585,7 +656,7 @@ func (s *RealtimeService) persistPrivateOverlayMessage(slot *activeRoomSlot, mes
 	}
 	privateMessage := normalizePrivateOverlayMessage(cloneMessageWithSessionKey(message, slot.RuntimeSessionKey))
 	privateMessage["session_key"] = slot.RuntimeSessionKey
-	if sessionID := firstNonEmpty(strings.TrimSpace(anyString(privateMessage["session_id"])), strings.TrimSpace(slot.SDKSessionID)); sessionID != "" {
+	if sessionID := firstNonEmpty(strings.TrimSpace(anyString(privateMessage["session_id"])), slot.getSDKSessionID()); sessionID != "" {
 		privateMessage["session_id"] = sessionID
 	}
 	if strings.TrimSpace(anyString(privateMessage["message_id"])) == "" {

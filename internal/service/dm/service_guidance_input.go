@@ -9,8 +9,8 @@ import (
 	runtimectx "github.com/nexus-research-lab/nexus/internal/runtime"
 	workspacestore "github.com/nexus-research-lab/nexus/internal/storage/workspace"
 
-	agentclient "github.com/nexus-research-lab/nexus-agent-sdk-go/client"
-	sdkhook "github.com/nexus-research-lab/nexus-agent-sdk-go/hook"
+	agentclient "github.com/nexus-research-lab/nexus-agent-sdk-bridge/client"
+	sdkhook "github.com/nexus-research-lab/nexus-agent-sdk-bridge/hook"
 )
 
 func (s *Service) withInputQueueGuidanceHook(
@@ -48,9 +48,13 @@ func (s *Service) inputQueueGuidanceHook(
 		for _, item := range items {
 			sourceRoundID := "queue_" + strings.TrimSpace(item.ID)
 			targetRoundID := dmdomain.FirstNonEmpty(item.RootRoundID, runningRoundIDs[0])
+			runtimeContent, renderErr := s.renderRuntimeContentWithAttachments(ctx, item.Content, item.Attachments)
+			if renderErr != nil {
+				return sdkhook.Output{}, renderErr
+			}
 			inputs = append(inputs, runtimectx.GuidedInput{
 				RoundID: sourceRoundID,
-				Content: item.Content,
+				Content: runtimeContent.PlainText(),
 			})
 			s.broadcastGuidanceMessage(ctx, sessionItem, targetRoundID, sourceRoundID, item.Content)
 		}

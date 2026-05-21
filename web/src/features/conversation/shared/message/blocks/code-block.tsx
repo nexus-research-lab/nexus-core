@@ -3,9 +3,11 @@
 import { lazy, Suspense } from "react";
 
 import { CodeShell } from "./code-shell";
+import { StreamingCodeBlock } from "./streaming-code-block";
 
 interface CodeBlockProps {
   language: string;
+  is_streaming?: boolean;
   value: string;
 }
 
@@ -14,7 +16,7 @@ const LazyCodeBlockContent = lazy(async () => {
   return { default: module.CodeBlockContent };
 });
 
-function CodeBlockFallback({ language, value }: CodeBlockProps) {
+function CodeBlockLoadingFallback({ language, value }: CodeBlockProps) {
   return (
     <CodeShell
       language={language}
@@ -35,9 +37,13 @@ function CodeBlockFallback({ language, value }: CodeBlockProps) {
   );
 }
 
-export function CodeBlock({ language, value }: CodeBlockProps) {
+export function CodeBlock({ language, value, is_streaming }: CodeBlockProps) {
+  if (is_streaming) {
+    return <StreamingCodeBlock language={language} value={value} />;
+  }
+
   return (
-    <Suspense fallback={<CodeBlockFallback language={language} value={value} />}>
+    <Suspense fallback={<CodeBlockLoadingFallback language={language} value={value} />}>
       <LazyCodeBlockContent language={language} value={value} />
     </Suspense>
   );

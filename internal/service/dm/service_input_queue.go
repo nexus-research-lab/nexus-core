@@ -18,6 +18,7 @@ type InputQueueRequest struct {
 	Action         string
 	ItemID         string
 	Content        string
+	Attachments    []protocol.ChatAttachment
 	OrderedIDs     []string
 	DeliveryPolicy protocol.ChatDeliveryPolicy
 }
@@ -33,7 +34,8 @@ func (s *Service) HandleInputQueue(ctx context.Context, request InputQueueReques
 	switch action {
 	case "enqueue", "":
 		content := strings.TrimSpace(request.Content)
-		if content == "" {
+		attachments := protocol.NormalizeChatAttachments(request.Attachments, request.AgentID)
+		if !protocol.HasChatInput(content, attachments) {
 			return errors.New("content is required")
 		}
 		ownerUserID := authctx.OwnerUserID(ctx)
@@ -43,6 +45,7 @@ func (s *Service) HandleInputQueue(ctx context.Context, request InputQueueReques
 			AgentID:        inputQueueLocationAgentID(location),
 			Source:         protocol.InputQueueSourceUser,
 			Content:        content,
+			Attachments:    attachments,
 			DeliveryPolicy: protocol.NormalizeChatDeliveryPolicy(string(request.DeliveryPolicy)),
 			OwnerUserID:    ownerUserID,
 		})
@@ -50,7 +53,12 @@ func (s *Service) HandleInputQueue(ctx context.Context, request InputQueueReques
 			return err
 		}
 		s.broadcastInputQueueSnapshot(ctx, sessionKey, items)
-		go s.dispatchNextInputQueueItem(contextWithQueueOwner(context.Background(), ownerUserID), sessionKey, request.AgentID)
+		go s.dispatchNextInputQueueItemAtLocation(
+			contextWithQueueOwner(context.Background(), ownerUserID),
+			sessionKey,
+			request.AgentID,
+			location,
+		)
 		return nil
 	case "delete":
 		items, err := s.inputQueue.Delete(location, request.ItemID)
@@ -84,7 +92,7 @@ func (s *Service) SendInputQueueSnapshot(ctx context.Context, sessionKey string,
 		return err
 	}
 	s.broadcastInputQueueSnapshot(ctx, normalizedSessionKey, items)
-	go s.dispatchNextInputQueueItem(context.Background(), normalizedSessionKey, agentID)
+	go s.dispatchNextInputQueueItemAtLocation(context.Background(), normalizedSessionKey, agentID, location)
 	return nil
 }
 
@@ -116,7 +124,12 @@ func (s *Service) guideInputQueueItem(
 			return err
 		}
 		s.broadcastInputQueueSnapshot(ctx, sessionKey, items)
-		go s.dispatchNextInputQueueItem(contextWithQueueOwner(context.Background(), selected.OwnerUserID), sessionKey, selected.AgentID)
+		go s.dispatchNextInputQueueItemAtLocation(
+			contextWithQueueOwner(context.Background(), selected.OwnerUserID),
+			sessionKey,
+			selected.AgentID,
+			location,
+		)
 		return nil
 	}
 	runningRoundIDs := s.runtime.GetRunningRoundIDs(sessionKey)
@@ -141,6 +154,18 @@ func (s *Service) dispatchNextInputQueueItem(ctx context.Context, sessionKey str
 		s.loggerFor(ctx).Warn("解析 DM 待发送队列位置失败", "session_key", sessionKey, "err", err)
 		return
 	}
+	s.dispatchNextInputQueueItemAtLocation(ctx, normalizedSessionKey, agentID, location)
+}
+
+func (s *Service) dispatchNextInputQueueItemAtLocation(
+	ctx context.Context,
+	normalizedSessionKey string,
+	agentID string,
+	location workspacestore.InputQueueLocation,
+) {
+	if strings.TrimSpace(normalizedSessionKey) == "" || len(s.runtime.GetRunningRoundIDs(normalizedSessionKey)) > 0 {
+		return
+	}
 	item, items, err := s.inputQueue.DispatchFirstDispatchable(location)
 	if err != nil {
 		s.loggerFor(ctx).Error("弹出 DM 待发送队列失败", "session_key", normalizedSessionKey, "err", err)
@@ -154,6 +179,7 @@ func (s *Service) dispatchNextInputQueueItem(ctx context.Context, sessionKey str
 		SessionKey:           normalizedSessionKey,
 		AgentID:              dmdomain.FirstNonEmpty(item.AgentID, inputQueueLocationAgentID(location)),
 		Content:              item.Content,
+		Attachments:          item.Attachments,
 		RoundID:              "queue_" + item.ID,
 		ReqID:                "queue_" + item.ID,
 		DeliveryPolicy:       protocol.NormalizeChatDeliveryPolicy(string(item.DeliveryPolicy)),
@@ -161,7 +187,12 @@ func (s *Service) dispatchNextInputQueueItem(ctx context.Context, sessionKey str
 	})
 	if err == nil {
 		if len(s.runtime.GetRunningRoundIDs(normalizedSessionKey)) == 0 {
-			go s.dispatchNextInputQueueItem(ctx, normalizedSessionKey, dmdomain.FirstNonEmpty(item.AgentID, inputQueueLocationAgentID(location)))
+			go s.dispatchNextInputQueueItemAtLocation(
+				ctx,
+				normalizedSessionKey,
+				dmdomain.FirstNonEmpty(item.AgentID, inputQueueLocationAgentID(location)),
+				location,
+			)
 		}
 		return
 	}

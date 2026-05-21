@@ -126,6 +126,14 @@ func (s *Service) UnsubscribeLive(token string) {
 	s.live.Unsubscribe(token)
 }
 
+// FlushLiveWrites 立即结算指定 Agent 尚未发出结束事件的实时写入。
+func (s *Service) FlushLiveWrites(agentID string) {
+	if s.live == nil {
+		return
+	}
+	s.live.FlushActiveWrites(agentID)
+}
+
 // ListFiles 返回 Agent workspace 的文件树。
 func (s *Service) ListFiles(ctx context.Context, agentID string) ([]FileEntry, error) {
 	agentValue, err := s.ensureAgentWorkspace(ctx, agentID)
@@ -397,45 +405,109 @@ func (s *Service) UploadFile(ctx context.Context, agentID string, filename strin
 	if err != nil {
 		return nil, err
 	}
+	result, content, err := uploadFileToRoot(
+		agentValue.WorkspacePath,
+		filename,
+		destination,
+		reader,
+		uploadFileOptions{dedupeRoots: []string{".nexus/attachments"}},
+		func(path string) {
+			if s.live != nil {
+				s.live.SuppressWatcher(agentValue.AgentID, path)
+			}
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	if s.live != nil {
+		if snapshot, ok := tryDecodeTextSnapshot(result.Path, content); ok {
+			s.live.EmitAPIWrite(agentValue.AgentID, result.Path, snapshot)
+		}
+	}
+	return result, nil
+}
+
+// UploadFileToRoot 上传单个文件到指定根目录，调用方负责保证根目录归属。
+func UploadFileToRoot(root string, filename string, destination string, reader io.Reader) (*UploadResult, error) {
+	result, _, err := uploadFileToRoot(
+		root,
+		filename,
+		destination,
+		reader,
+		uploadFileOptions{dedupeRoots: []string{"attachments"}},
+		nil,
+	)
+	return result, err
+}
+
+func uploadFileToRoot(
+	root string,
+	filename string,
+	destination string,
+	reader io.Reader,
+	options uploadFileOptions,
+	beforeWrite func(string),
+) (*UploadResult, []byte, error) {
 	safeName := normalizeUploadName(filename)
 	if safeName == "" {
 		safeName = "uploaded_file"
 	}
 	content, err := io.ReadAll(io.LimitReader(reader, maxUploadSize+1))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if len(content) > maxUploadSize {
-		return nil, errors.New("文件大小超过限制 (20MB)")
+		return nil, nil, errors.New("文件大小超过限制 (20MB)")
 	}
+	contentMD5 := md5Hex(content)
 
 	relativePath := buildUploadTargetPath(strings.TrimSpace(destination), safeName)
-	targetPath, normalizedPath, err := resolveWorkspacePath(agentValue.WorkspacePath, relativePath)
+	targetPath, normalizedPath, err := resolveWorkspacePath(root, relativePath)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+	if matched, err := fileMatchesMD5(targetPath, contentMD5, int64(len(content))); err != nil {
+		return nil, nil, err
+	} else if matched {
+		return &UploadResult{
+			Path: normalizedPath,
+			Name: filepath.Base(normalizedPath),
+			Size: int64(len(content)),
+		}, content, nil
+	}
+	if existingPath, matched, err := findDuplicateUploadedFile(
+		root,
+		normalizedPath,
+		contentMD5,
+		int64(len(content)),
+		options.dedupeRoots,
+	); err != nil {
+		return nil, nil, err
+	} else if matched {
+		return &UploadResult{
+			Path: existingPath,
+			Name: filepath.Base(existingPath),
+			Size: int64(len(content)),
+		}, content, nil
 	}
 	if normalizedPath, targetPath, err = ensureUniqueWorkspaceFile(targetPath, normalizedPath); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if err = os.MkdirAll(filepath.Dir(targetPath), 0o755); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	if s.live != nil {
-		s.live.SuppressWatcher(agentValue.AgentID, normalizedPath)
+	if beforeWrite != nil {
+		beforeWrite(normalizedPath)
 	}
 	if err = os.WriteFile(targetPath, content, 0o644); err != nil {
-		return nil, err
-	}
-	if s.live != nil {
-		if snapshot, ok := tryDecodeTextSnapshot(normalizedPath, content); ok {
-			s.live.EmitAPIWrite(agentValue.AgentID, normalizedPath, snapshot)
-		}
+		return nil, nil, err
 	}
 	return &UploadResult{
 		Path: normalizedPath,
 		Name: filepath.Base(normalizedPath),
 		Size: int64(len(content)),
-	}, nil
+	}, content, nil
 }
 
 // GetFileForDownload 返回下载所需的真实文件路径和文件名。
@@ -554,6 +626,8 @@ func shouldHideWorkspaceEntry(relativePath string) bool {
 	normalizedPath := filepath.ToSlash(strings.TrimSpace(relativePath))
 	return normalizedPath == ".agents" ||
 		strings.HasPrefix(normalizedPath, ".agents/") ||
+		normalizedPath == ".nexus" ||
+		strings.HasPrefix(normalizedPath, ".nexus/") ||
 		normalizedPath == ".git" ||
 		strings.HasPrefix(normalizedPath, ".git/") ||
 		normalizedPath == ".claude" ||

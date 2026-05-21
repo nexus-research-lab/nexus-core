@@ -16,9 +16,8 @@ import (
 	usagesvc "github.com/nexus-research-lab/nexus/internal/service/usage"
 	workspacestore "github.com/nexus-research-lab/nexus/internal/storage/workspace"
 
-	agentclient "github.com/nexus-research-lab/nexus-agent-sdk-go/client"
-	sdkmcp "github.com/nexus-research-lab/nexus-agent-sdk-go/mcp"
-	sdkpermission "github.com/nexus-research-lab/nexus-agent-sdk-go/permission"
+	sdkmcp "github.com/nexus-research-lab/nexus-agent-sdk-bridge/mcp"
+	sdkpermission "github.com/nexus-research-lab/nexus-agent-sdk-bridge/permission"
 )
 
 var (
@@ -31,12 +30,13 @@ type Request struct {
 	SessionKey           string
 	AgentID              string
 	Content              string
+	Attachments          []protocol.ChatAttachment
 	RoundID              string
 	ReqID                string
 	DeliveryPolicy       protocol.ChatDeliveryPolicy
 	BroadcastUserMessage bool
 	PermissionMode       sdkpermission.Mode
-	PermissionHandler    agentclient.PermissionHandler
+	PermissionHandler    sdkpermission.Handler
 }
 
 // InterruptRequest 表示一次中断请求。

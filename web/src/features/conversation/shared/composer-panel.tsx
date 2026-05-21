@@ -1,12 +1,14 @@
 "use client";
 
-import { ChangeEvent, KeyboardEvent, memo, useCallback, useEffect, useRef, useState } from "react";
+import { ChangeEvent, ClipboardEvent, KeyboardEvent, memo, useCallback, useEffect, useRef, useState } from "react";
 import {
   ChevronDown,
   ChevronUp,
   CornerDownRight,
+  File as FileIcon,
   FileText,
   GripVertical,
+  Image as ImageIcon,
   Paperclip,
   Send,
   StopCircle,
@@ -39,6 +41,8 @@ import {
 } from "./composer-styles";
 import {
   COMPOSER_ATTACHMENT_ACCEPT,
+  ComposerAttachmentKind,
+  get_composer_attachment_kind,
   get_attachment_rejection_reason,
   PreparedComposerAttachment,
 } from "./composer-attachments";
@@ -47,6 +51,7 @@ import { MentionTargetItem, MentionTargetPopover } from "./mention-popover";
 interface AttachmentFile {
   id: string;
   file: File;
+  kind: ComposerAttachmentKind;
 }
 
 interface ComposerPanelProps {
@@ -56,11 +61,13 @@ interface ComposerPanelProps {
   on_send_message: (
     content: string,
     delivery_policy: AgentConversationDeliveryPolicy,
+    attachments?: PreparedComposerAttachment[],
   ) => void | Promise<void>;
   input_queue_items?: InputQueueItem[];
   on_enqueue_message?: (
     content: string,
     delivery_policy: AgentConversationDeliveryPolicy,
+    attachments?: PreparedComposerAttachment[],
   ) => void | Promise<void>;
   on_delete_queued_message?: (item_id: string) => void | Promise<void>;
   on_guide_queued_message?: (item_id: string) => void | Promise<void>;
@@ -91,6 +98,16 @@ const PENDING_QUEUE_AUTO_SCROLL_ZONE_PX = 28;
 const PENDING_QUEUE_AUTO_SCROLL_MAX_DELTA_PX = 10;
 const COMPOSER_HINT_CLASS_NAME = "inline-flex shrink-0 items-center gap-1 whitespace-nowrap";
 const COMPOSER_STATUS_CLASS_NAME = "min-w-0 truncate whitespace-nowrap text-(--text-default)";
+const MAX_COMPOSER_ATTACHMENTS = 6;
+
+const CLIPBOARD_IMAGE_EXTENSION_BY_MIME: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+  "image/gif": "gif",
+  "image/bmp": "bmp",
+  "image/svg+xml": "svg",
+};
 
 function get_compact_control_status_text(status?: string) {
   if (!status) {
@@ -100,6 +117,61 @@ function get_compact_control_status_text(status?: string) {
     return "主理人";
   }
   return status.replace(/^当前窗口是/, "");
+}
+
+function create_attachment_id() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
+
+function get_attachment_kind_label(kind: ComposerAttachmentKind) {
+  if (kind === "image") {
+    return "图片";
+  }
+  if (kind === "text") {
+    return "文本文件";
+  }
+  return "工作文件";
+}
+
+function get_attachment_icon(kind: ComposerAttachmentKind) {
+  if (kind === "image") {
+    return ImageIcon;
+  }
+  if (kind === "text") {
+    return FileText;
+  }
+  return FileIcon;
+}
+
+function build_pasted_image_file(file: File, index: number): File {
+  if (!file.type.startsWith("image/")) {
+    return file;
+  }
+
+  const extension = CLIPBOARD_IMAGE_EXTENSION_BY_MIME[file.type] ?? "png";
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  return new File(
+    [file],
+    `pasted-image-${timestamp}-${index + 1}.${extension}`,
+    {
+      lastModified: Date.now(),
+      type: file.type,
+    },
+  );
+}
+
+function get_clipboard_files(clipboard_data: DataTransfer): File[] {
+  const files_from_items = Array.from(clipboard_data.items)
+    .filter((item) => item.kind === "file")
+    .map((item) => item.getAsFile())
+    .filter((file): file is File => Boolean(file))
+    .map(build_pasted_image_file);
+
+  if (files_from_items.length > 0) {
+    return files_from_items;
+  }
+
+  return Array.from(clipboard_data.files).map(build_pasted_image_file);
 }
 
 function is_caret_on_first_line(target: HTMLTextAreaElement) {
@@ -118,33 +190,6 @@ function is_caret_on_last_line(target: HTMLTextAreaElement) {
     return false;
   }
   return !target.value.slice(selection_end).includes("\n");
-}
-
-function build_message_with_attachments(
-  content: string,
-  attachments: PreparedComposerAttachment[],
-) {
-  if (attachments.length === 0) {
-    return content.trim();
-  }
-
-  const attachment_manifest = attachments
-    .map((attachment) => `- ${attachment.file_name}（工作区文件：${attachment.workspace_path}）`)
-    .join("\n");
-  const attachment_blocks = attachments.map((attachment) => [
-    `文件《${attachment.file_name}》内容摘录：`,
-    "```text",
-    attachment.excerpt,
-    "```",
-    attachment.truncated ? "注：消息里只附带前 12000 个字符，完整内容已写入工作区文件。" : null,
-  ].filter(Boolean).join("\n"));
-
-  return [
-    content.trim(),
-    "已附加文本文件：",
-    attachment_manifest,
-    ...attachment_blocks,
-  ].filter(Boolean).join("\n\n");
 }
 
 function reorder_pending_messages(
@@ -179,7 +224,7 @@ const ComposerPanelView = memo(({
   disabled = false,
   allow_send_while_loading = false,
   queue_when_session_busy = true,
-  placeholder = "继续描述目标、补充上下文，或直接开始协作…",
+  placeholder,
   max_length = 10000,
   room_members = [],
   mention_unavailable_agent_ids = [],
@@ -188,6 +233,7 @@ const ComposerPanelView = memo(({
   tour_anchor,
 }: ComposerPanelProps) => {
   const { t } = useI18n();
+  const resolved_placeholder = placeholder ?? t("composer.default_placeholder");
   const [input, setInput] = useState("");
   const [input_history, setInputHistory] = useState<string[]>([]);
   const [history_index, setHistoryIndex] = useState(-1);
@@ -343,8 +389,9 @@ const ComposerPanelView = memo(({
   const dispatch_message = useCallback(async (
     content: string,
     policy: AgentConversationDeliveryPolicy,
+    prepared_attachments: PreparedComposerAttachment[],
   ) => {
-    await on_send_message(content, policy);
+    await on_send_message(content, policy, prepared_attachments);
   }, [on_send_message]);
 
   const handle_send = useCallback(async () => {
@@ -357,20 +404,19 @@ const ComposerPanelView = memo(({
       return;
     }
 
-    let next_message = trimmed_input;
+    let prepared_attachments: PreparedComposerAttachment[] = [];
     if (attachments.length > 0) {
       if (!on_prepare_attachments) {
-        setAttachmentError("当前会话暂不支持附件。");
+        setAttachmentError(t("composer.unsupported_attachment"));
         return;
       }
 
       setIsPreparingAttachments(true);
       setAttachmentError(null);
       try {
-        const prepared_attachments = await on_prepare_attachments(attachments.map((attachment) => attachment.file));
-        next_message = build_message_with_attachments(trimmed_input, prepared_attachments);
+        prepared_attachments = await on_prepare_attachments(attachments.map((attachment) => attachment.file));
       } catch (error) {
-        setAttachmentError(error instanceof Error ? error.message : "附件整理失败，请稍后重试。");
+        setAttachmentError(error instanceof Error ? error.message : t("composer.attachment_failed"));
         return;
       } finally {
         setIsPreparingAttachments(false);
@@ -389,12 +435,12 @@ const ComposerPanelView = memo(({
         if (!on_enqueue_message) {
           return;
         }
-        await on_enqueue_message?.(next_message, default_delivery_policy);
+        await on_enqueue_message(trimmed_input, default_delivery_policy, prepared_attachments);
       } else {
         const delivery_policy = is_loading || input_queue_items.length > 0
           ? default_delivery_policy
           : "queue";
-        await dispatch_message(next_message, delivery_policy);
+        await dispatch_message(trimmed_input, delivery_policy, prepared_attachments);
       }
       setInput("");
       setAttachments([]);
@@ -419,6 +465,7 @@ const ComposerPanelView = memo(({
     on_enqueue_message,
     on_prepare_attachments,
     queue_when_session_busy,
+    t,
   ]);
 
   const remove_pending_message = useCallback(async (id: string) => {
@@ -535,42 +582,67 @@ const ComposerPanelView = memo(({
     }
   };
 
-  const handle_file_select = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files) {
+  const append_attachment_files = useCallback((files: File[]) => {
+    if (files.length === 0) {
       return;
     }
 
     const next_attachments: AttachmentFile[] = [];
     const rejected_files: string[] = [];
 
-    Array.from(files).forEach((file) => {
+    files.forEach((file) => {
       const rejection_reason = get_attachment_rejection_reason(file);
       if (rejection_reason) {
         rejected_files.push(rejection_reason);
         return;
       }
 
+      const kind = get_composer_attachment_kind(file);
+      if (!kind) {
+        rejected_files.push(t("composer.attachment_format_unsupported"));
+        return;
+      }
+
       next_attachments.push({
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+        id: create_attachment_id(),
         file,
+        kind,
       });
     });
 
     if (rejected_files.length > 0) {
-      setAttachmentError(rejected_files[0] ?? "附件格式不受支持。");
+      setAttachmentError(rejected_files[0] ?? t("composer.attachment_format_unsupported"));
     } else {
       setAttachmentError(null);
     }
 
     if (next_attachments.length > 0) {
-      setAttachments((prev) => [...prev, ...next_attachments].slice(0, 6));
+      setAttachments((prev) => [...prev, ...next_attachments].slice(0, MAX_COMPOSER_ATTACHMENTS));
     }
+  }, [t]);
+
+  const handle_file_select = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) {
+      return;
+    }
+
+    append_attachment_files(Array.from(files));
 
     if (file_input_ref.current) {
       file_input_ref.current.value = "";
     }
   };
+
+  const handle_paste = useCallback((event: ClipboardEvent<HTMLTextAreaElement>) => {
+    const pasted_files = get_clipboard_files(event.clipboardData);
+    if (pasted_files.length === 0) {
+      return;
+    }
+
+    event.preventDefault();
+    append_attachment_files(pasted_files);
+  }, [append_attachment_files]);
 
   const remove_attachment = (id: string) => {
     setAttachments((prev) => prev.filter((item) => item.id !== id));
@@ -604,7 +676,7 @@ const ComposerPanelView = memo(({
       <input
         ref={file_input_ref}
         accept={COMPOSER_ATTACHMENT_ACCEPT}
-        aria-label="选择附件文件"
+        aria-label={t("composer.choose_attachment_file")}
         className="hidden"
         multiple
         onChange={handle_file_select}
@@ -621,11 +693,11 @@ const ComposerPanelView = memo(({
           >
             <div className="flex items-center justify-between gap-2 text-[10px] font-medium text-(--text-soft)">
               <span className="inline-flex items-center gap-1.5">
-                待发送队列
+                {t("composer.pending_queue")}
                 <span className="tabular-nums">{input_queue_items.length}</span>
               </span>
               <button
-                aria-label={is_pending_queue_collapsed ? "展开待发送队列" : "收起待发送队列"}
+                aria-label={is_pending_queue_collapsed ? t("composer.expand_pending_queue") : t("composer.collapse_pending_queue")}
                 className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-(--text-soft) transition-colors hover:bg-(--surface-interactive-hover-background) hover:text-(--text-strong)"
                 onClick={() => set_is_pending_queue_collapsed((current) => !current)}
                 type="button"
@@ -699,16 +771,23 @@ const ComposerPanelView = memo(({
                     }}
                   >
                     <span
-                      aria-label="拖动调整顺序"
+                      aria-label={t("composer.drag_to_reorder")}
                       className="inline-flex h-5 w-3.5 shrink-0 cursor-grab items-center justify-center text-(--text-soft) active:cursor-grabbing"
                     >
                       <GripVertical className="h-3.5 w-3.5" />
                     </span>
                     <p className="line-clamp-1 min-w-0 flex-1 text-[12px] leading-5 text-(--text-strong)">
-                      {message.content}
+                      {message.content.trim() ? (
+                        message.content
+                      ) : message.attachments && message.attachments.length > 0 ? (
+                        <span className="inline-flex items-center gap-1 text-(--text-muted)">
+                          <Paperclip className="h-3 w-3 shrink-0" />
+                          {message.attachments.map((attachment) => attachment.file_name || attachment.workspace_path).join("、")}
+                        </span>
+                      ) : null}
                     </p>
                     <button
-                      aria-label={is_guidance_waiting ? "取消引导" : "引导当前 round"}
+                      aria-label={is_guidance_waiting ? t("composer.cancel_guidance") : t("composer.mark_guidance")}
                       className="inline-flex h-6 shrink-0 items-center justify-center gap-1 px-1 text-[11px] font-semibold text-(--text-soft) transition-colors hover:text-(--text-strong) disabled:pointer-events-none disabled:opacity-(--disabled-opacity)"
                       disabled={disabled || is_queue_action_running}
                       onClick={() => {
@@ -717,10 +796,10 @@ const ComposerPanelView = memo(({
                       type="button"
                     >
                       <CornerDownRight className="h-3 w-3" />
-                      {is_guidance_waiting ? "取消引导" : "引导"}
+                      {is_guidance_waiting ? t("composer.cancel_guide_action") : t("composer.guide_action")}
                     </button>
                     <button
-                      aria-label="删除待发送消息"
+                      aria-label={t("composer.delete_pending")}
                       className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-(--text-soft) transition-colors hover:text-(--destructive)"
                       onClick={() => {
                         void remove_pending_message(message.id);
@@ -739,13 +818,20 @@ const ComposerPanelView = memo(({
         {attachments.length > 0 ? (
           <div className={COMPOSER_ATTACHMENT_ROW_CLASS_NAME}>
             {attachments.map((attachment) => (
-              <div key={attachment.id} className={COMPOSER_ATTACHMENT_CLASS_NAME}>
-                <FileText size={16} className="text-accent" />
+              <div
+                key={attachment.id}
+                className={COMPOSER_ATTACHMENT_CLASS_NAME}
+                title={`${get_attachment_kind_label(attachment.kind)}：${attachment.file.name}`}
+              >
+                {(() => {
+                  const AttachmentIcon = get_attachment_icon(attachment.kind);
+                  return <AttachmentIcon size={16} className="text-accent" />;
+                })()}
                 <span className="max-w-[120px] truncate text-xs text-foreground/70">
                   {attachment.file.name}
                 </span>
                 <button
-                  aria-label="移除附件"
+                  aria-label={t("composer.remove_attachment")}
                   className={COMPOSER_ATTACHMENT_REMOVE_CLASS_NAME}
                   onClick={() => remove_attachment(attachment.id)}
                 >
@@ -758,7 +844,7 @@ const ComposerPanelView = memo(({
 
         <div className={cn("flex items-end gap-2", composer_input_row_padding_class)}>
           <button
-            aria-label="添加附件"
+            aria-label={t("composer.add_attachment")}
             className={COMPOSER_ACTION_BUTTON_CLASS_NAME}
             disabled={is_input_locked || is_preparing_attachments}
             onClick={() => file_input_ref.current?.click()}
@@ -809,14 +895,15 @@ const ComposerPanelView = memo(({
               ignore_next_enter_after_composition_ref.current = false;
             }}
             onKeyDown={handle_key_down}
-            placeholder={placeholder}
+            onPaste={handle_paste}
+            placeholder={resolved_placeholder}
             rows={1}
             value={input}
           />
 
           {should_show_stop_button ? (
             <button
-              aria-label="停止生成"
+              aria-label={t("composer.stop_generation")}
               className={COMPOSER_DANGER_ACTION_BUTTON_CLASS_NAME}
               onClick={on_stop}
               type="button"
@@ -825,7 +912,7 @@ const ComposerPanelView = memo(({
             </button>
           ) : (
             <button
-              aria-label="发送消息"
+              aria-label={t("composer.send_message")}
               className={COMPOSER_PRIMARY_ACTION_BUTTON_CLASS_NAME}
               disabled={is_send_disabled}
               onClick={() => {
@@ -866,13 +953,13 @@ const ComposerPanelView = memo(({
                 <LoadingOrb frames={["✽", "✻", "✶", "✢", "·"]} />
                 <span className="truncate whitespace-nowrap animate-pulse">{t("status.replying")}…</span>
                 <span className={cn("shrink-0 whitespace-nowrap text-(--text-soft)", compact && "hidden")}>
-                  [ESC 停止]
+                  [{t("composer.esc_stop")}]
                 </span>
               </span>
             ) : is_preparing_attachments ? (
               <span className="inline-flex min-w-0 items-center gap-2 text-(--text-default)">
                 <LoadingOrb frames={["·", "◦", "•", "◦"]} />
-                <span className="truncate whitespace-nowrap">正在整理附件并同步到工作区…</span>
+                <span className="truncate whitespace-nowrap">{t("composer.preparing_attachments")}</span>
               </span>
             ) : attachment_error ? (
               <span className="truncate whitespace-nowrap text-(--destructive)">{attachment_error}</span>
@@ -881,7 +968,9 @@ const ComposerPanelView = memo(({
                 <span className={COMPOSER_HINT_CLASS_NAME}>
                   <kbd>Enter</kbd>
                   <span className="whitespace-nowrap">
-                    {queue_when_session_busy && (is_loading || input_queue_items.length > 0) ? "入队" : "发送"}
+                    {queue_when_session_busy && (is_loading || input_queue_items.length > 0)
+                      ? t("composer.enter_queue")
+                      : t("composer.enter_send")}
                   </span>
                 </span>
                 {!compact ? (
@@ -890,10 +979,10 @@ const ComposerPanelView = memo(({
                       <kbd>Shift</kbd>
                       <span>+</span>
                       <kbd>Enter</kbd>
-                      <span className="whitespace-nowrap">换行</span>
+                      <span className="whitespace-nowrap">{t("composer.shift_enter_newline")}</span>
                     </span>
                     <span className="hidden whitespace-nowrap text-(--text-soft) lg:inline">
-                      附件仅支持文本文件
+                      {t("composer.text_attachment_only")}
                     </span>
                   </>
                 ) : null}
@@ -923,7 +1012,10 @@ const ComposerPanelView = memo(({
             ) : null}
             {history_index >= 0 ? (
               <div className="text-[10px] whitespace-nowrap text-(--text-default)">
-                历史 {history_index + 1}/{input_history.length}
+                {t("composer.history_position", {
+                  current: history_index + 1,
+                  total: input_history.length,
+                })}
               </div>
             ) : null}
           </div>

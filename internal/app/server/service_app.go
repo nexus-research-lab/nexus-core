@@ -15,6 +15,7 @@ import (
 	connectorsvc "github.com/nexus-research-lab/nexus/internal/service/connectors"
 	"github.com/nexus-research-lab/nexus/internal/service/conversation/titlegen"
 	dmsvc "github.com/nexus-research-lab/nexus/internal/service/dm"
+	imagegensvc "github.com/nexus-research-lab/nexus/internal/service/imagegen"
 	"github.com/nexus-research-lab/nexus/internal/service/launcher"
 	operationsvc "github.com/nexus-research-lab/nexus/internal/service/operation"
 	preferencessvc "github.com/nexus-research-lab/nexus/internal/service/preferences"
@@ -47,6 +48,7 @@ type AppServices struct {
 	Ingress        *channels.IngressService
 	RoomRealtime   *roomsvc.RealtimeService
 	Automation     *automationsvc.Service
+	Imagegen       *imagegensvc.Service
 }
 
 // NewAppServices 创建完整应用依赖容器。
@@ -67,16 +69,19 @@ func NewAppServicesWithDB(cfg config.Config, db *sql.DB, logger *slog.Logger) *A
 	authService := authsvc.NewServiceWithDB(cfg, db)
 	usageService := usagesvc.NewServiceWithDB(cfg, db)
 	providerService := providercfg.NewServiceWithDB(cfg, db)
+	imagegenService := imagegensvc.NewService(providerService)
 	preferencesService := preferencessvc.NewService(cfg)
 	operationService := operationsvc.NewService(cfg)
 	workspaceService := workspacepkg.NewService(cfg, core.Agent)
 	skillService := skillsvc.NewService(cfg, core.Agent, workspaceService)
+	core.Room.SetSkillCatalog(skillService)
 	connectorService := connectorsvc.NewService(cfg, db)
 	launcherService := launcher.NewService(cfg, core.Agent, core.Room, core.Session)
 	permission := permissionctx.NewContext()
 	titleService := titlegen.NewService(providerService, core.Session, core.Room, permission)
 	titleService.SetLogger(logger.With("component", "title"))
 	runtimeManager := runtimectx.NewManager()
+	core.Session.SetRuntimeManager(runtimeManager)
 	channelRouter := channels.NewRouter(cfg, db, core.Agent, permission)
 	channelRouter.SetLogger(logger.With("component", "channels"))
 	channelControl := channels.NewControlService(cfg, db, core.Agent, channelRouter)
@@ -108,7 +113,7 @@ func NewAppServicesWithDB(cfg config.Config, db *sql.DB, logger *slog.Logger) *A
 	automationService.SetRuntimeSessionCloser(runtimeManager)
 	automationService.SetLogger(logger.With("component", "automation"))
 
-	// 把内置 MCP server 注入 DM/Room runtime。
+	// 把内置自动化与连接器 MCP server 注入 DM/Room runtime。
 	automationBuilder := newAutomationMCPBuilder(automationService, core.Agent, cfg.DefaultTimezone)
 	connectorBuilder := newConnectorMCPBuilder(connectorService, core.Agent)
 	mcpBuilder := combinedMCPBuilder(automationBuilder, connectorBuilder)
@@ -138,6 +143,7 @@ func NewAppServicesWithDB(cfg config.Config, db *sql.DB, logger *slog.Logger) *A
 		Ingress:        ingressService,
 		RoomRealtime:   roomRealtime,
 		Automation:     automationService,
+		Imagegen:       imagegenService,
 	}
 }
 

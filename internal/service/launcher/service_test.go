@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/nexus-research-lab/nexus/internal/protocol"
 
@@ -15,15 +16,15 @@ import (
 	sessionsvc "github.com/nexus-research-lab/nexus/internal/service/session"
 	sqliterepo "github.com/nexus-research-lab/nexus/internal/storage/sqlite"
 
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/pressly/goose/v3"
+	_ "modernc.org/sqlite"
 )
 
 func TestLauncherQueryAndSuggestions(t *testing.T) {
 	cfg := newLauncherTestConfig(t)
 	migrateLauncherSQLite(t, cfg.DatabaseURL)
 
-	db, err := sql.Open("sqlite3", cfg.DatabaseURL)
+	db, err := sql.Open("sqlite", cfg.DatabaseURL)
 	if err != nil {
 		t.Fatalf("打开测试数据库失败: %v", err)
 	}
@@ -146,6 +147,35 @@ func assertContainsConversationTitle(
 	t.Fatalf("bootstrap conversations 缺少标题 %q: %+v", title, items)
 }
 
+func TestBuildBootstrapConversationsIncludesRuntimeState(t *testing.T) {
+	roomID := "room-1"
+	conversationID := "conversation-1"
+	now := time.Date(2026, 5, 20, 9, 30, 0, 0, time.UTC)
+
+	items := buildBootstrapConversations([]protocol.Session{
+		{
+			SessionKey:     protocol.BuildRoomSharedSessionKey(conversationID),
+			AgentID:        "amy",
+			RoomID:         &roomID,
+			ConversationID: &conversationID,
+			ChatType:       protocol.RoomTypeGroup,
+			Status:         "active",
+			IsActive:       true,
+			CreatedAt:      now,
+			LastActivity:   now,
+			Title:          "room",
+			MessageCount:   2,
+		},
+	}, map[string]string{roomID: protocol.RoomTypeGroup})
+
+	if len(items) != 1 {
+		t.Fatalf("bootstrap conversations 数量不正确: %+v", items)
+	}
+	if items[0].Status != "active" || !items[0].IsActive {
+		t.Fatalf("bootstrap conversation 应携带运行态: %+v", items[0])
+	}
+}
+
 func createLauncherAgent(
 	t *testing.T,
 	service *agentsvc.Service,
@@ -181,7 +211,7 @@ func newLauncherTestConfig(t *testing.T) config.Config {
 func migrateLauncherSQLite(t *testing.T, databaseURL string) {
 	t.Helper()
 
-	db, err := sql.Open("sqlite3", databaseURL)
+	db, err := sql.Open("sqlite", databaseURL)
 	if err != nil {
 		t.Fatalf("打开测试数据库失败: %v", err)
 	}

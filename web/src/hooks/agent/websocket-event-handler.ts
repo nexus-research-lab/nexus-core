@@ -26,6 +26,7 @@ import {
 export function handle_agent_conversation_web_socket_message({
   backend_message,
   apply_workspace_event,
+  is_current_room_event,
   is_current_session_event,
   set_error,
   set_messages,
@@ -117,9 +118,14 @@ export function handle_agent_conversation_web_socket_message({
     event.event_type === "room_member_added" ||
     event.event_type === "room_member_removed" ||
     event.event_type === "room_deleted" ||
+    event.event_type === "room_action" ||
+    event.event_type === "room_action_consumed" ||
     event.event_type === "room_resync_required" ||
     event.event_type === "session_resync_required"
   ) {
+    if (is_current_room_event && !is_current_room_event(event.room_id)) {
+      return;
+    }
     on_room_event?.(event.event_type, (event.data ?? {}) as RoomEventPayload);
     return;
   }

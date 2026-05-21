@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/nexus-research-lab/nexus/internal/config"
 	agenthandler "github.com/nexus-research-lab/nexus/internal/handler/agent"
 	authhandler "github.com/nexus-research-lab/nexus/internal/handler/auth"
 	automationhandler "github.com/nexus-research-lab/nexus/internal/handler/automation"
@@ -9,6 +10,7 @@ import (
 	connectorhandler "github.com/nexus-research-lab/nexus/internal/handler/connector"
 	corehandler "github.com/nexus-research-lab/nexus/internal/handler/core"
 	launcherhandler "github.com/nexus-research-lab/nexus/internal/handler/launcher"
+	memoryhandler "github.com/nexus-research-lab/nexus/internal/handler/memory"
 	operationhandler "github.com/nexus-research-lab/nexus/internal/handler/operation"
 	roomhandler "github.com/nexus-research-lab/nexus/internal/handler/room"
 	handlershared "github.com/nexus-research-lab/nexus/internal/handler/shared"
@@ -28,6 +30,7 @@ type handlerSet struct {
 	channel    *channelhandler.Handlers
 	automation *automationhandler.Handlers
 	launcher   *launcherhandler.Handlers
+	memory     *memoryhandler.Handlers
 	operation  *operationhandler.Handlers
 	workspace  *workspacehandler.Handlers
 	websocket  *handlerwebsocket.Handler
@@ -37,6 +40,8 @@ func newHandlerSet(
 	api *handlershared.API,
 	services *AppServices,
 	websocketHandler *handlerwebsocket.Handler,
+	internalControlToken string,
+	cfg config.Config,
 ) handlerSet {
 	return handlerSet{
 		auth: authhandler.New(api, services.Auth, services.Usage),
@@ -62,6 +67,7 @@ func newHandlerSet(
 			websocketHandler.BroadcastRoomEvent,
 			websocketHandler.BroadcastRoomResyncRequired,
 			websocketHandler.RemoveRoom,
+			internalControlToken,
 		),
 		capability: capabilityhandler.New(api, services.Skills, services.Connectors, services.Automation, services.ChannelControl),
 		skill:      skillhandler.New(api, services.Skills),
@@ -69,6 +75,7 @@ func newHandlerSet(
 		channel:    channelhandler.New(api, services.Ingress, services.ChannelControl),
 		automation: automationhandler.New(api, services.Automation),
 		launcher:   launcherhandler.New(api, services.Launcher),
+		memory:     memoryhandler.New(api, cfg, services.Core.Agent),
 		operation:  operationhandler.New(api, services.Operation),
 		workspace:  workspacehandler.New(api, services.Workspace),
 		websocket:  websocketHandler,

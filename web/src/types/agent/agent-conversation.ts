@@ -13,6 +13,7 @@ import { get_session_key_identity } from '@/lib/conversation/session-key';
 import {
   AssistantMessage,
   ChatAckData,
+  MessageAttachment,
   Message,
   RoundLifecycleStatus,
   SessionStatusEventPayload,
@@ -113,6 +114,7 @@ export interface UseAgentConversationReturn {
   enqueue_input_queue_message: (
     content: string,
     delivery_policy?: AgentConversationDeliveryPolicy,
+    attachments?: MessageAttachment[],
   ) => Promise<void>;
   delete_input_queue_message: (item_id: string) => Promise<void>;
   guide_input_queue_message: (item_id: string) => Promise<void>;
@@ -132,7 +134,7 @@ export type AgentConversationDeliveryPolicy = 'queue' | 'guide' | 'interrupt' | 
 export type AgentConversationDefaultDeliveryPolicy = 'queue' | 'interrupt';
 
 export type InputQueueScope = 'dm' | 'room';
-export type InputQueueSource = 'user' | 'agent_public_mention';
+export type InputQueueSource = 'user' | 'agent_public_mention' | 'agent_room_action';
 
 export interface InputQueueItem {
   id: string;
@@ -146,6 +148,7 @@ export interface InputQueueItem {
   target_agent_ids?: string[];
   source: InputQueueSource;
   content: string;
+  attachments?: MessageAttachment[];
   delivery_policy: AgentConversationDeliveryPolicy;
   owner_user_id?: string;
   root_round_id?: string;
@@ -161,6 +164,7 @@ export interface InputQueueEventPayload {
 
 export interface AgentConversationSendOptions {
   delivery_policy?: AgentConversationDeliveryPolicy;
+  attachments?: MessageAttachment[];
 }
 
 export interface ConversationSnapshot {
@@ -221,7 +225,22 @@ export interface RoomEventPayload {
   conversation_id?: string;
   agent_id?: string;
   agent_name?: string;
+  action_id?: string;
+  event_kind?: "created" | "wake_scheduled" | "wake_started" | "wake_queued";
+  action_type?: "private_message" | "request_reply" | "private_note" | "marker";
+  request_id?: string;
+  source_agent_id?: string;
+  target_agent_id?: string;
+  audience_agent_ids?: string[];
+  visibility?: "public" | "private";
+  reply_target?: "public_feed" | "sender_private" | "target_private" | "audience" | "none";
+  wake_policy?: "none" | "immediate" | "delayed";
+  delay_seconds?: number;
+  content_chars?: number;
+  content?: string;
   round_id?: string;
+  last_action_id?: string;
+  last_action_timestamp?: number;
   last_seen_room_seq?: number;
   latest_room_seq?: number;
   buffer_start_room_seq?: number | null;
@@ -230,6 +249,7 @@ export interface RoomEventPayload {
 export interface HandleAgentConversationWebSocketMessageParams {
   backend_message: unknown;
   apply_workspace_event: (payload: WorkspaceEventPayload) => void;
+  is_current_room_event?: (incoming_room_id?: string | null) => boolean;
   is_current_session_event: (incoming_session_key?: string | null) => boolean;
   set_error: Dispatch<SetStateAction<string | null>>;
   set_messages: Dispatch<SetStateAction<Message[]>>;

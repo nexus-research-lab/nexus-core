@@ -12,8 +12,8 @@ import (
 
 	"github.com/nexus-research-lab/nexus/internal/config"
 
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/pressly/goose/v3"
+	_ "modernc.org/sqlite"
 )
 
 func TestServiceSetupOwnerLoginLogoutAndResetPassword(t *testing.T) {
@@ -177,6 +177,36 @@ func TestServiceAccessTokenBearer(t *testing.T) {
 	}
 }
 
+func TestServiceDesktopModeBypassesPasswordAuth(t *testing.T) {
+	cfg, db := newAuthTestDB(t)
+	cfg.AppMode = "desktop"
+	service := NewServiceWithDB(cfg, db)
+	ctx := context.Background()
+
+	if _, err := service.InitOwner(ctx, InitOwnerInput{
+		Username: "admin",
+		Password: "password123",
+	}); err != nil {
+		t.Fatalf("初始化 owner 失败: %v", err)
+	}
+
+	state, err := service.GetState(ctx)
+	if err != nil {
+		t.Fatalf("读取 desktop auth 状态失败: %v", err)
+	}
+	if state.SetupRequired || state.AuthRequired || state.PasswordLoginEnabled {
+		t.Fatalf("desktop 模式不应要求本地账号登录: %+v", state)
+	}
+
+	status, err := service.BuildStatusPayload(ctx, httptest.NewRequest(http.MethodGet, "/nexus/v1/auth/status", nil))
+	if err != nil {
+		t.Fatalf("构建 desktop auth 状态失败: %v", err)
+	}
+	if status.AuthRequired || status.SetupRequired || !status.Authenticated {
+		t.Fatalf("desktop auth status 不正确: %+v", status)
+	}
+}
+
 func TestServiceDisablesAccessTokenAfterOwnerInit(t *testing.T) {
 	cfg, db := newAuthTestDB(t)
 	cfg.AccessToken = "access-token"
@@ -218,7 +248,7 @@ func newAuthTestDB(t *testing.T) (config.Config, *sql.DB) {
 		DatabaseURL:    filepath.Join(root, "auth.db"),
 	}
 
-	db, err := sql.Open("sqlite3", cfg.DatabaseURL)
+	db, err := sql.Open("sqlite", cfg.DatabaseURL)
 	if err != nil {
 		t.Fatalf("打开认证测试数据库失败: %v", err)
 	}

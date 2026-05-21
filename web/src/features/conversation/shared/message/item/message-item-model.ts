@@ -159,6 +159,7 @@ export function useMessageItemState({
   }, [messages]);
 
   const first_assistant = assistant_messages[0] as AssistantMessage | undefined;
+  const assistant_agent_id = first_assistant?.agent_id ?? null;
   const model = first_assistant?.model;
   const timestamp =
     first_assistant?.timestamp ||
@@ -205,6 +206,12 @@ export function useMessageItemState({
       return "";
     }
     return typeof user_message.content === "string" ? user_message.content : "";
+  }, [user_message]);
+  const user_attachments = useMemo(() => {
+    if (!user_message || user_message.role !== "user") {
+      return [];
+    }
+    return user_message.attachments ?? [];
   }, [user_message]);
 
   const {
@@ -1098,6 +1105,8 @@ export function useMessageItemState({
     copied_assistant,
     user_message,
     user_content,
+    user_attachments,
+    assistant_agent_id,
     model,
     timestamp,
     stream_status,

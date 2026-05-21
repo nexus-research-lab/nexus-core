@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	sdkprotocol "github.com/nexus-research-lab/nexus-agent-sdk-go/protocol"
+	sdkprotocol "github.com/nexus-research-lab/nexus-agent-sdk-bridge/protocol"
 
 	"github.com/nexus-research-lab/nexus/internal/protocol"
 )
@@ -111,6 +111,7 @@ type RoundMapper interface {
 // RoundExecutionRequest 表示执行单轮查询所需的回调与依赖。
 type RoundExecutionRequest struct {
 	Query                  string
+	Content                any
 	Client                 Client
 	Mapper                 RoundMapper
 	IdleTimeout            time.Duration
@@ -142,7 +143,7 @@ func ExecuteRound(
 		return RoundExecutionResult{}, errors.New("round mapper is required")
 	}
 
-	if err := request.Client.Query(ctx, request.Query); err != nil {
+	if err := QueryClientContent(ctx, request.Client, roundQueryContent(request)); err != nil {
 		if ctx.Err() != nil || errors.Is(err, context.Canceled) {
 			return RoundExecutionResult{}, ErrRoundInterrupted
 		}
@@ -248,6 +249,13 @@ func ExecuteRound(
 			}
 		}
 	}
+}
+
+func roundQueryContent(request RoundExecutionRequest) any {
+	if request.Content != nil {
+		return request.Content
+	}
+	return request.Query
 }
 
 func normalizeAssistantTerminalGrace(value time.Duration) time.Duration {

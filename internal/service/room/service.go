@@ -33,7 +33,7 @@ type Repository interface {
 	GetConversationContext(context.Context, string, string) (*protocol.ConversationContextAggregate, error)
 	FindDMRoomContext(context.Context, string, string) (*protocol.ConversationContextAggregate, error)
 	CreateRoom(context.Context, roomrepo.CreateRoomBundle) (*protocol.ConversationContextAggregate, error)
-	UpdateRoom(context.Context, string, string, *string, *string, *string, *string) (*protocol.ConversationContextAggregate, error)
+	UpdateRoom(context.Context, string, string, *string, *string, *string, *string, *[]string, *string, *bool) (*protocol.ConversationContextAggregate, error)
 	AddRoomMember(context.Context, string, string, roomrepo.AgentRuntimeRef) (*protocol.ConversationContextAggregate, error)
 	RemoveRoomMember(context.Context, string, string, string) (*protocol.ConversationContextAggregate, error)
 	DeleteRoom(context.Context, string, string) (bool, error)
@@ -50,6 +50,7 @@ type Service struct {
 	repository Repository
 	files      *workspacestore.SessionFileStore
 	history    *workspacestore.AgentHistoryStore
+	skills     RoomSkillCatalog
 }
 
 // NewService 创建 Room 服务。
@@ -107,7 +108,7 @@ func (s *Service) GetConversationContext(ctx context.Context, conversationID str
 	return contextValue, nil
 }
 
-// EnsureDirectRoom 获取或创建直聊房间。
+// EnsureDirectRoom 获取或创建直聊房间，并返回最近活跃的对话上下文。
 func (s *Service) EnsureDirectRoom(ctx context.Context, agentID string) (*protocol.ConversationContextAggregate, error) {
 	agentValue, err := s.resolveRoomAgent(ctx, agentID)
 	if err != nil {
@@ -165,14 +166,28 @@ func (s *Service) createRoom(ctx context.Context, request protocol.CreateRoomReq
 	}
 
 	conversationID := roomdomain.NewEntityID()
+	skillNames, err := s.normalizeRoomSkillNames(ctx, request.SkillNames)
+	if err != nil {
+		return nil, err
+	}
+	if normalizedRoomType == protocol.RoomTypeDM && len(skillNames) > 0 {
+		return nil, errors.New("DM room 不支持启用 room skill")
+	}
+	hostAgentID, hostAutoReplyEnabled, err := s.normalizeRoomHostSettings(normalizedRoomType, normalizedAgentIDs, request.HostAgentID, request.HostAutoReplyEnabled)
+	if err != nil {
+		return nil, err
+	}
 	bundle := roomrepo.CreateRoomBundle{
 		Room: protocol.RoomRecord{
-			ID:          roomID,
-			OwnerUserID: ownerUserID,
-			RoomType:    normalizedRoomType,
-			Name:        roomName,
-			Description: roomdomain.NormalizeOptionalText(request.Description),
-			Avatar:      roomdomain.NormalizeOptionalText(request.Avatar),
+			ID:                   roomID,
+			OwnerUserID:          ownerUserID,
+			RoomType:             normalizedRoomType,
+			Name:                 roomName,
+			Description:          roomdomain.NormalizeOptionalText(request.Description),
+			Avatar:               roomdomain.NormalizeOptionalText(request.Avatar),
+			SkillNames:           skillNames,
+			HostAgentID:          hostAgentID,
+			HostAutoReplyEnabled: hostAutoReplyEnabled,
 		},
 		Members: roomdomain.BuildMembers(roomID, ownerUserID, normalizedAgentIDs),
 		Conversation: protocol.ConversationRecord{
@@ -215,6 +230,47 @@ func (s *Service) UpdateRoom(ctx context.Context, roomID string, request protoco
 		avatarValue := roomdomain.NormalizeOptionalText(*request.Avatar)
 		avatarPtr = &avatarValue
 	}
+	var skillNamesPtr *[]string
+	var existingRoom *protocol.RoomAggregate
+	loadExistingRoom := func() (*protocol.RoomAggregate, error) {
+		if existingRoom != nil {
+			return existingRoom, nil
+		}
+		value, err := s.GetRoom(ctx, roomID)
+		if err != nil {
+			return nil, err
+		}
+		existingRoom = value
+		return existingRoom, nil
+	}
+	if request.SkillNames != nil {
+		existing, err := loadExistingRoom()
+		if err != nil {
+			return nil, err
+		}
+		if existing.Room.RoomType == protocol.RoomTypeDM && len(*request.SkillNames) > 0 {
+			return nil, errors.New("DM room 不支持启用 room skill")
+		}
+		skillNames, err := s.normalizeRoomSkillNames(ctx, *request.SkillNames)
+		if err != nil {
+			return nil, err
+		}
+		skillNamesPtr = &skillNames
+	}
+	var hostAgentIDPtr *string
+	var hostAutoReplyEnabledPtr *bool
+	if request.HostAgentID != nil || request.HostAutoReplyEnabled != nil {
+		existing, err := loadExistingRoom()
+		if err != nil {
+			return nil, err
+		}
+		hostAgentID, hostAutoReplyEnabled, err := s.normalizeRoomHostSettingsPatch(existing, request.HostAgentID, request.HostAutoReplyEnabled)
+		if err != nil {
+			return nil, err
+		}
+		hostAgentIDPtr = &hostAgentID
+		hostAutoReplyEnabledPtr = &hostAutoReplyEnabled
+	}
 
 	contextValue, err := s.repository.UpdateRoom(
 		ctx,
@@ -224,6 +280,9 @@ func (s *Service) UpdateRoom(ctx context.Context, roomID string, request protoco
 		descriptionPtr,
 		titlePtr,
 		avatarPtr,
+		skillNamesPtr,
+		hostAgentIDPtr,
+		hostAutoReplyEnabledPtr,
 	)
 	if err != nil {
 		return nil, err
@@ -510,7 +569,7 @@ func (s *Service) resolveAgentWorkspacePath(ctx context.Context, agentID string)
 	if strings.TrimSpace(agentValue.WorkspacePath) != "" {
 		return strings.TrimSpace(agentValue.WorkspacePath), nil
 	}
-	return agentsvc.ResolveWorkspacePath(s.config, agentValue.OwnerUserID, agentValue.Name), nil
+	return agentsvc.ResolveWorkspacePath(s.config, agentValue.OwnerUserID, agentValue.AgentID), nil
 }
 
 func (s *Service) normalizeDirectAgentIDs(ctx context.Context, agentIDs []string) ([]string, error) {
@@ -548,6 +607,69 @@ func (s *Service) normalizeGroupAgentIDs(ctx context.Context, agentIDs []string)
 		return nil, errors.New("room 至少需要一个普通成员 agent，主智能体不能作为 room 成员")
 	}
 	return normalizedIDs, nil
+}
+
+func (s *Service) normalizeRoomHostSettings(
+	roomType string,
+	memberAgentIDs []string,
+	hostAgentID string,
+	hostAutoReplyEnabled bool,
+) (string, bool, error) {
+	hostAgentID = strings.TrimSpace(hostAgentID)
+	if roomType == protocol.RoomTypeDM {
+		if hostAgentID != "" || hostAutoReplyEnabled {
+			return "", false, errors.New("DM room 不支持设置群主")
+		}
+		return "", false, nil
+	}
+	if hostAgentID == "" {
+		if hostAutoReplyEnabled {
+			return "", false, errors.New("启用群主接管时必须设置群主")
+		}
+		return "", false, nil
+	}
+	if !roomdomain.ContainsString(memberAgentIDs, hostAgentID) {
+		return "", false, errors.New("群主必须是当前 room 成员")
+	}
+	return hostAgentID, hostAutoReplyEnabled, nil
+}
+
+func (s *Service) normalizeRoomHostSettingsPatch(
+	existing *protocol.RoomAggregate,
+	hostAgentIDPatch *string,
+	hostAutoReplyEnabledPatch *bool,
+) (string, bool, error) {
+	if existing == nil {
+		return "", false, ErrRoomNotFound
+	}
+	memberAgentIDs := roomAgentMemberIDs(existing.Members)
+	hostAgentID := strings.TrimSpace(existing.Room.HostAgentID)
+	if hostAgentIDPatch != nil {
+		hostAgentID = strings.TrimSpace(*hostAgentIDPatch)
+	}
+	hostAutoReplyEnabled := existing.Room.HostAutoReplyEnabled
+	if hostAutoReplyEnabledPatch != nil {
+		hostAutoReplyEnabled = *hostAutoReplyEnabledPatch
+	}
+	if hostAgentID == "" {
+		hostAutoReplyEnabled = false
+	}
+	return s.normalizeRoomHostSettings(existing.Room.RoomType, memberAgentIDs, hostAgentID, hostAutoReplyEnabled)
+}
+
+func roomAgentMemberIDs(members []protocol.MemberRecord) []string {
+	result := make([]string, 0, len(members))
+	for _, member := range members {
+		if member.MemberType != protocol.MemberTypeAgent {
+			continue
+		}
+		agentID := strings.TrimSpace(member.MemberAgentID)
+		if agentID == "" {
+			continue
+		}
+		result = append(result, agentID)
+	}
+	return result
 }
 
 func (s *Service) loadAgentRefs(ctx context.Context, agentIDs []string) ([]roomrepo.AgentRuntimeRef, error) {
