@@ -526,6 +526,72 @@ function DynamicStageFrame({
   );
 }
 
+function StagePhasePath({ narrative }: { narrative: StageNarrativeState }) {
+  const resolved_active_index = stage_phase_compass_active_index(narrative.phase);
+
+  return (
+    <div className="mt-3 rounded-[12px] border border-white/46 bg-white/30 px-2 py-2">
+      <div className="mb-1.5 flex items-center justify-between gap-2 text-[8.5px] font-black uppercase tracking-[0.10em] text-(--text-soft)">
+        <span>stage</span>
+        <span className="normal-case tracking-normal">{narrative.label}</span>
+      </div>
+      <div className="relative grid grid-cols-5 gap-1">
+        <div className="absolute left-[10%] right-[10%] top-[13px] h-px bg-white/64" />
+        {STAGE_PHASE_COMPASS_ITEMS.map((item, index) => {
+          const Icon = item.Icon;
+          const is_active = index === resolved_active_index;
+          const is_done = index < resolved_active_index || narrative.phase === "completed";
+          return (
+            <div className="relative min-w-0 text-center" key={item.id}>
+              <span className={cn(
+                "relative z-10 mx-auto grid h-6 w-6 place-items-center rounded-[9px] border shadow-[inset_0_1px_0_rgba(255,255,255,0.62)]",
+                is_active
+                  ? "border-[rgba(91,114,255,0.30)] bg-[rgba(91,114,255,0.15)] text-[color:var(--primary)]"
+                  : is_done
+                    ? "border-[rgba(47,184,132,0.20)] bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]"
+                    : "border-white/48 bg-white/48 text-(--icon-muted)",
+              )}>
+                <Icon className="h-3 w-3" />
+              </span>
+              <span className={cn(
+                "mt-1 block truncate text-[8px] font-black",
+                is_active ? "text-(--text-strong)" : "text-(--text-soft)",
+              )}>
+                {item.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+const STAGE_PHASE_COMPASS_ITEMS: Array<{
+  id: "idle" | StageNarrativePhase;
+  label: string;
+  Icon: LucideIcon;
+}> = [
+  { id: "idle", label: "入口", Icon: Sparkles },
+  { id: "awakening", label: "唤醒", Icon: RadioTower },
+  { id: "running", label: "执行", Icon: Activity },
+  { id: "settling", label: "落盘", Icon: ListTree },
+  { id: "completed", label: "交接", Icon: CheckCircle2 },
+];
+
+function stage_phase_compass_active_index(phase: StageNarrativePhase): number {
+  if (phase === "awakening") {
+    return 1;
+  }
+  if (phase === "running") {
+    return 2;
+  }
+  if (phase === "settling") {
+    return 3;
+  }
+  return 4;
+}
+
 function StageStatusBar({
   event,
   is_replay,
@@ -611,6 +677,7 @@ function StageStatusBar({
             );
           })}
         </div>
+        <StagePhasePath narrative={narrative} />
       </div>
     </div>
   );
