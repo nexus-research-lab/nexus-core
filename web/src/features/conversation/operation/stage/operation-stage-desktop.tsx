@@ -21,6 +21,7 @@ import {
   StageCompletionLedger,
   StageOutcomeSummary,
 } from "./operation-stage-completion";
+import { build_stage_episodes } from "./operation-stage-episodes";
 import {
   build_stage_narrative,
   collect_narrative_events,
@@ -69,6 +70,12 @@ export function OperationStageDesktop({
   const active_narrative_event = useMemo(() => (
     narrative_events.find((item) => item.id === active_narrative_event_id) ?? event
   ), [active_narrative_event_id, event, narrative_events]);
+  const episodes = useMemo(() => build_stage_episodes({
+    active_event_id: active_narrative_event_id,
+    events: narrative_events,
+    narrative,
+    snapshot,
+  }), [active_narrative_event_id, narrative, narrative_events, snapshot]);
   const desktop = useMemo(() => (
     plan_operation_desktop({ event: active_narrative_event, snapshot })
   ), [active_narrative_event, snapshot]);
@@ -275,6 +282,7 @@ export function OperationStageDesktop({
       />
       <StageOperationRunway
         active_event_id={active_narrative_event_id}
+        episodes={episodes}
         events={narrative_events}
         narrative={narrative}
         on_focus_event={focus_event_window}
@@ -299,6 +307,7 @@ export function OperationStageDesktop({
         <StageNarrativeRail
           active_event_id={active_narrative_event_id}
           active_window={active_window}
+          episodes={episodes}
           events={narrative_events}
           narrative={narrative}
           on_focus_event={focus_event_window}

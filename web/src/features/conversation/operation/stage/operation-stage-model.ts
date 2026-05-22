@@ -18,6 +18,8 @@ export interface StageNarrativeState {
   detail: string;
 }
 
+export type StageEpisodeState = "active" | "entered" | "settled" | "upcoming";
+
 export interface CompletionArtifact {
   id: string;
   label: string;

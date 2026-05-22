@@ -7,6 +7,8 @@ import { build_operation_event_io_summary } from "../operation-event-io";
 import { build_operation_live_episode } from "../operation-stage-experience";
 import type { NexusOperationEvent, NexusOperationSnapshot } from "../operation-types";
 import { resolve_operation_tool_profile } from "../operation-tool-catalog";
+import type { StageEpisodeMap } from "./operation-stage-episodes";
+import { episode_tone } from "./operation-stage-episodes";
 import { icon_for_operation_kind } from "./operation-stage-helpers";
 import type { StageNarrativeState } from "./operation-stage-model";
 import { PHASE_STATUS_META, SURFACE_LABEL } from "./operation-stage-style";
@@ -17,6 +19,7 @@ export function StageNarrativeRail({
   active_window,
   narrative,
   on_focus_event,
+  episodes,
   revealed_window_count,
   snapshot,
   total_window_count,
@@ -26,6 +29,7 @@ export function StageNarrativeRail({
   active_window: StageWindowState | null;
   narrative: StageNarrativeState;
   on_focus_event?: (event: NexusOperationEvent) => void;
+  episodes: StageEpisodeMap;
   revealed_window_count: number;
   snapshot: NexusOperationSnapshot | null;
   total_window_count: number;
@@ -44,6 +48,7 @@ export function StageNarrativeRail({
   const episode = active_event
     ? build_operation_live_episode(active_event, events, snapshot)
     : null;
+  const active_episode = episodes.active_episode;
 
   return (
     <div className="operation-stage-mobile-panel absolute bottom-[76px] left-4 z-30 w-[min(390px,calc(100%-2rem))] max-md:relative max-md:bottom-auto max-md:left-auto max-md:mb-3 max-md:!w-full max-md:min-w-0 max-md:!max-w-full max-md:overflow-hidden">
@@ -63,7 +68,7 @@ export function StageNarrativeRail({
                     当前工具 · {active_event.tool_name ?? active_event.title}
                   </p>
                   <p className="mt-0.5 truncate text-[10px] text-(--text-soft)">
-                    {active_target}
+                    {active_episode?.detail ?? active_target}
                   </p>
                 </div>
               </div>
@@ -73,7 +78,7 @@ export function StageNarrativeRail({
             </div>
             <div className="mt-2 grid min-w-0 grid-cols-3 gap-1.5 overflow-hidden text-center text-[9px] font-semibold text-(--text-soft)">
               <div className="rounded-[8px] bg-white/44 px-1.5 py-1.5">
-                <div className="text-[11px] font-black text-(--text-strong)">{settled_count}</div>
+                <div className="text-[11px] font-black text-(--text-strong)">{episodes.settled_count || settled_count}</div>
                 <div>已沉淀</div>
               </div>
               <div className="rounded-[8px] bg-white/44 px-1.5 py-1.5">
@@ -82,9 +87,9 @@ export function StageNarrativeRail({
               </div>
               <div className="rounded-[8px] bg-white/44 px-1.5 py-1.5">
                 <div className="text-[11px] font-black text-(--text-strong)">
-                  {Math.min(revealed_window_count, total_window_count)}/{total_window_count}
+                  {episodes.progress_label}
                 </div>
-                <div>现场窗口</div>
+                <div>执行进度</div>
               </div>
             </div>
           </div>
@@ -125,7 +130,7 @@ export function StageNarrativeRail({
         </div>
         <StageEventBeatList
           active_event_id={active_event_id}
-          events={events}
+          episodes={episodes}
           on_focus_event={on_focus_event}
         />
         <div className="flex min-w-0 max-w-full gap-1.5 overflow-hidden">
@@ -220,35 +225,35 @@ function TraceArrow() {
 
 function StageEventBeatList({
   active_event_id,
-  events,
+  episodes,
   on_focus_event,
 }: {
   active_event_id: string;
-  events: NexusOperationEvent[];
+  episodes: StageEpisodeMap;
   on_focus_event?: (event: NexusOperationEvent) => void;
 }) {
-  const visible_events = events.slice(-5);
-  const active_index = Math.max(0, visible_events.findIndex((item) => item.id === active_event_id));
+  const visible_episodes = episodes.episodes.slice(-5);
 
   return (
     <div className="mb-2 space-y-1.5">
-      {visible_events.map((item, index) => {
+      {visible_episodes.map((episode) => {
+        const item = episode.event;
         const profile = resolve_operation_tool_profile(item.tool_name, item.kind, item.surface);
         const Icon = icon_for_operation_kind(item.kind);
         const phase_meta = PHASE_STATUS_META[item.phase];
         const PhaseIcon = phase_meta.Icon;
         const is_active = item.id === active_event_id;
-        const beat = event_beat_state(item, index, active_index);
+        const tone = episode_tone(episode.state);
         const target = item.target ?? item.summary ?? item.title;
 
         return (
           <button
-            aria-label={`回放第 ${events.length - visible_events.length + index + 1} 步：${profile.action_label} ${item.tool_name ?? item.title}`}
+            aria-label={`回放第 ${episode.index + 1} 步：${profile.action_label} ${item.tool_name ?? item.title}`}
             className={cn(
               "group grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-[11px] border px-2 py-1.5 text-left transition hover:-translate-y-0.5 hover:border-[rgba(91,114,255,0.24)] hover:bg-[rgba(91,114,255,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.34)]",
               is_active
                 ? "border-[rgba(91,114,255,0.30)] bg-[rgba(91,114,255,0.12)]"
-                : beat.tone === "settled"
+                : tone === "settled"
                   ? "border-[rgba(47,184,132,0.18)] bg-[rgba(47,184,132,0.06)]"
                   : "border-white/44 bg-white/28",
             )}
@@ -260,15 +265,15 @@ function StageEventBeatList({
               "relative grid h-7 w-7 shrink-0 place-items-center rounded-[10px] border",
               is_active
                 ? "border-[rgba(91,114,255,0.28)] bg-white/68 text-[color:var(--primary)]"
-                : beat.tone === "settled"
+                : tone === "settled"
                   ? "border-[rgba(47,184,132,0.18)] bg-white/58 text-[color:var(--success)]"
                   : phase_meta.class_name,
             )}>
               <Icon className="h-3.5 w-3.5" />
-              {index > 0 ? (
+              {episode.index > 0 ? (
                 <span className={cn(
                   "absolute -left-[9px] top-1/2 h-px w-[9px]",
-                  beat.tone === "settled" ? "bg-[rgba(47,184,132,0.42)]" : "bg-white/54",
+                  tone === "settled" ? "bg-[rgba(47,184,132,0.42)]" : "bg-white/54",
                 )} />
               ) : null}
             </span>
@@ -280,17 +285,17 @@ function StageEventBeatList({
                 </span>
                 <span className={cn(
                   "shrink-0 rounded-full px-1.5 py-px text-[8px] font-black",
-                  beat.tone === "active"
+                  tone === "active"
                     ? "bg-[rgba(91,114,255,0.12)] text-[color:var(--primary)]"
-                    : beat.tone === "settled"
+                    : tone === "settled"
                       ? "bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]"
                       : "bg-white/52 text-(--text-soft)",
                 )}>
-                  {beat.label}
+                  {episode.state_label}
                 </span>
               </span>
               <span className="mt-0.5 block truncate text-[9px] font-semibold text-(--text-soft)">
-                {target}
+                {episode.detail || target}
               </span>
             </span>
 
@@ -309,49 +314,28 @@ function StageEventBeatList({
   );
 }
 
-function event_beat_state(
-  event: NexusOperationEvent,
-  index: number,
-  active_index: number,
-): { label: string; tone: "active" | "settled" | "pending" } {
-  if (index === active_index) {
-    return {
-      label: event.phase === "waiting" ? "等待确认" : "当前聚焦",
-      tone: "active",
-    };
-  }
-  if (index < active_index || event.phase === "done" || event.phase === "cancelled" || event.phase === "error") {
-    return {
-      label: event.phase === "error" || event.phase === "cancelled" ? "异常沉淀" : "已沉淀",
-      tone: "settled",
-    };
-  }
-  return {
-    label: "待接续",
-    tone: "pending",
-  };
-}
-
 export function StageOperationRunway({
   events,
   active_event_id,
   narrative,
   on_focus_event,
+  episodes,
 }: {
   events: NexusOperationEvent[];
   active_event_id: string;
   narrative: StageNarrativeState;
   on_focus_event?: (event: NexusOperationEvent) => void;
+  episodes: StageEpisodeMap;
 }) {
   if (events.length <= 1) {
     return null;
   }
 
-  const runway_events = events.slice(-6);
-  const active_index = Math.max(0, runway_events.findIndex((item) => item.id === active_event_id));
-  const progress_percent = runway_events.length <= 1
+  const runway_episodes = episodes.episodes.slice(-6);
+  const active_index = Math.max(0, runway_episodes.findIndex((item) => item.id === active_event_id));
+  const progress_percent = runway_episodes.length <= 1
     ? 100
-    : Math.round((active_index / (runway_events.length - 1)) * 100);
+    : Math.round((active_index / (runway_episodes.length - 1)) * 100);
 
   return (
     <div className="operation-stage-mobile-panel absolute left-1/2 top-3 z-20 w-[min(430px,34vw)] -translate-x-1/2 max-xl:top-[92px] max-xl:w-[min(430px,calc(100%-2rem))] max-md:relative max-md:left-auto max-md:top-auto max-md:mb-3 max-md:!w-full max-md:min-w-0 max-md:!max-w-full max-md:translate-x-0 max-md:overflow-hidden">
@@ -359,7 +343,7 @@ export function StageOperationRunway({
         <div className="mb-1.5 flex items-center justify-between gap-3 text-[9.5px] font-black uppercase tracking-[0.12em] text-(--text-soft)">
           <span>工作台航线</span>
           <span className="normal-case tracking-normal">
-            {active_index + 1}/{runway_events.length} · {narrative.label}
+            {episodes.progress_label} · {narrative.label}
           </span>
         </div>
         <div className="relative">
@@ -368,21 +352,22 @@ export function StageOperationRunway({
             className="absolute left-3.5 top-[14px] h-px bg-[linear-gradient(90deg,rgba(91,114,255,0.68),rgba(47,184,132,0.58))] transition-[width] duration-500"
             style={{ width: `calc((100% - 1.75rem) * ${progress_percent / 100})` }}
           />
-          <div className="relative grid gap-1" style={{ gridTemplateColumns: `repeat(${runway_events.length}, minmax(0, 1fr))` }}>
-            {runway_events.map((item, index) => {
+          <div className="relative grid gap-1" style={{ gridTemplateColumns: `repeat(${runway_episodes.length}, minmax(0, 1fr))` }}>
+            {runway_episodes.map((episode) => {
+              const item = episode.event;
               const profile = resolve_operation_tool_profile(item.tool_name, item.kind, item.surface);
               const Icon = icon_for_operation_kind(item.kind);
               const phase_meta = PHASE_STATUS_META[item.phase];
               const is_active = item.id === active_event_id;
-              const runway_state = event_beat_state(item, index, active_index);
-              const is_settled = runway_state.tone === "settled";
+              const tone = episode_tone(episode.state);
+              const is_settled = tone === "settled";
               return (
                 <button
-                  aria-label={`聚焦工作台航线 ${index + 1}：${profile.action_label} ${item.tool_name ?? item.title}`}
+                  aria-label={`聚焦工作台航线 ${episode.index + 1}：${profile.action_label} ${item.tool_name ?? item.title}`}
                   className="min-w-0 rounded-[12px] text-center transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.34)]"
                   key={item.id}
                   onClick={() => on_focus_event?.(item)}
-                  title={`${index + 1}. ${profile.action_label} · ${item.tool_name ?? item.title}`}
+                  title={`${episode.index + 1}. ${profile.action_label} · ${item.tool_name ?? item.title}`}
                   type="button"
                 >
                   <div className={cn(
@@ -403,13 +388,13 @@ export function StageOperationRunway({
                   </p>
                   <p className={cn(
                     "mx-auto mt-0.5 w-fit max-w-full truncate rounded-full px-1.5 py-px text-[7.5px] font-black",
-                    runway_state.tone === "active"
+                    tone === "active"
                       ? "bg-[rgba(91,114,255,0.12)] text-[color:var(--primary)]"
-                      : runway_state.tone === "settled"
+                      : tone === "settled"
                         ? "bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]"
                         : "bg-white/48 text-(--text-soft)",
                   )}>
-                    {runway_state.label}
+                    {episode.state_label}
                   </p>
                   <p className="truncate text-[8px] font-semibold text-(--text-soft)">
                     {item.tool_name ?? SURFACE_LABEL[item.surface]}
