@@ -56,9 +56,6 @@ export function OperationStageDesktop({
   event: NexusOperationEvent;
   snapshot: NexusOperationSnapshot | null;
 }) {
-  const desktop = useMemo(() => (
-    plan_operation_desktop({ event, snapshot })
-  ), [event, snapshot]);
   const [focused_window_id, set_focused_window_id] = useState<string | null>(null);
   const [replay_event_id, set_replay_event_id] = useState<string | null>(null);
   const [window_overrides, set_window_overrides] = useState<Record<string, StageWindowOverride>>({});
@@ -72,11 +69,15 @@ export function OperationStageDesktop({
   const active_narrative_event = useMemo(() => (
     narrative_events.find((item) => item.id === active_narrative_event_id) ?? event
   ), [active_narrative_event_id, event, narrative_events]);
+  const desktop = useMemo(() => (
+    plan_operation_desktop({ event: active_narrative_event, snapshot })
+  ), [active_narrative_event, snapshot]);
+  const is_replay = active_narrative_event.id !== event.id;
   const windows_for_reveal = useMemo(() => (
     order_windows_for_reveal(desktop.windows, desktop.active_window_id)
   ), [desktop.active_window_id, desktop.windows]);
   const revealed_window_count = useRevealedWindowCount({
-    event_key: `${event.round_id}:${event.id}:${event.phase}`,
+    event_key: `${active_narrative_event.round_id}:${active_narrative_event.id}:${active_narrative_event.phase}`,
     minimum_count: minimum_revealed_window_count({
       event_count: narrative_events.length,
       phase: narrative.phase,
@@ -111,7 +112,7 @@ export function OperationStageDesktop({
         minimized: false,
       },
     }));
-  }, [desktop.active_window_id, event.id]);
+  }, [active_narrative_event.id, desktop.active_window_id]);
 
   const window_states = useMemo(() => (
     windows_for_reveal
@@ -266,7 +267,7 @@ export function OperationStageDesktop({
       <StageStatusBar
         active_window={active_window}
         event={active_narrative_event}
-        is_replay={active_narrative_event.id !== event.id}
+        is_replay={is_replay}
         narrative={narrative}
         snapshot={snapshot}
         visible_window_count={visible_windows.length}
@@ -378,6 +379,13 @@ export function OperationStageDesktop({
             snapshot={snapshot}
             windows={window_states}
           />
+          {is_replay ? (
+            <StageReplayReturn
+              current_event={active_narrative_event}
+              final_event={event}
+              on_return={() => set_replay_event_id(null)}
+            />
+          ) : null}
           <StageOutcomeSummary
             event={event}
             events={narrative_events}
@@ -390,6 +398,49 @@ export function OperationStageDesktop({
         ? null
         : <StageFocusBeam />}
     </DynamicStageFrame>
+  );
+}
+
+function StageReplayReturn({
+  current_event,
+  final_event,
+  on_return,
+}: {
+  current_event: NexusOperationEvent;
+  final_event: NexusOperationEvent;
+  on_return: () => void;
+}) {
+  return (
+    <div className="operation-stage-mobile-panel absolute right-[31%] top-3 z-30 w-[min(310px,24vw)] max-xl:right-4 max-xl:top-[92px] max-xl:w-[min(330px,calc(100%-2rem))] max-md:relative max-md:right-auto max-md:top-auto max-md:mb-3 max-md:!w-full max-md:min-w-0 max-md:!max-w-full">
+      <div className="rounded-[15px] border border-[rgba(91,114,255,0.20)] bg-white/62 p-2.5 shadow-[0_16px_42px_rgba(18,28,42,0.10)] backdrop-blur-xl">
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate text-[10px] font-black uppercase tracking-[0.10em] text-(--text-strong)">
+              现场回放中
+            </p>
+            <p className="mt-0.5 truncate text-[10px] font-semibold text-(--text-soft)">
+              {current_event.tool_name ?? current_event.title}
+            </p>
+          </div>
+          <button
+            className="shrink-0 rounded-full border border-[rgba(91,114,255,0.20)] bg-[rgba(91,114,255,0.08)] px-2 py-1 text-[9px] font-bold text-[color:var(--primary)] transition hover:bg-[rgba(91,114,255,0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.30)]"
+            onClick={on_return}
+            type="button"
+          >
+            回到交接
+          </button>
+        </div>
+        <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 text-[9px] font-semibold text-(--text-soft)">
+          <span className="truncate rounded-[9px] bg-white/44 px-2 py-1.5">
+            {current_event.target ?? current_event.summary ?? "当前切片"}
+          </span>
+          <span>→</span>
+          <span className="truncate rounded-[9px] bg-white/44 px-2 py-1.5">
+            {final_event.title}
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }
 
