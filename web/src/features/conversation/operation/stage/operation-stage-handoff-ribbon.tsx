@@ -1,9 +1,11 @@
 import {
   ArrowRight,
+  CheckCircle2,
   FileText,
   ListChecks,
   MessageSquareText,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import { emit_composer_draft } from "@/features/conversation/shared/composer-draft-events";
@@ -23,9 +25,24 @@ export function StageHandoffRibbon({
   events: NexusOperationEvent[];
   has_error: boolean;
 }) {
+  const [draft_sent, set_draft_sent] = useState(false);
   const primary_artifact = artifacts[0]?.value ?? continuation.primary_artifact;
   const resume_prompt = continuation.resume_prompt;
   const replayable_count = events.filter((item) => item.kind !== "round_summary").length || events.length;
+
+  useEffect(() => {
+    if (!draft_sent) {
+      return;
+    }
+    const timer = window.setTimeout(() => set_draft_sent(false), 2400);
+    return () => window.clearTimeout(timer);
+  }, [draft_sent]);
+
+  const send_resume_prompt = () => {
+    emit_composer_draft({ text: resume_prompt });
+    set_draft_sent(true);
+  };
+
   const items = [
     {
       Icon: artifacts[0]?.Icon ?? FileText,
@@ -64,12 +81,18 @@ export function StageHandoffRibbon({
           </p>
         </div>
         <button
-          className="inline-flex shrink-0 items-center gap-1 rounded-full border border-white/56 bg-white/56 px-2 py-1 text-[8.5px] font-black text-(--text-soft) transition hover:border-[rgba(91,114,255,0.24)] hover:bg-[rgba(91,114,255,0.10)] hover:text-[color:var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.30)]"
-          onClick={() => emit_composer_draft({ text: resume_prompt })}
+          aria-live="polite"
+          className={cn(
+            "inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 text-[8.5px] font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.30)]",
+            draft_sent
+              ? "border-[rgba(47,184,132,0.20)] bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]"
+              : "border-white/56 bg-white/56 text-(--text-soft) hover:border-[rgba(91,114,255,0.24)] hover:bg-[rgba(91,114,255,0.10)] hover:text-[color:var(--primary)]",
+          )}
+          onClick={send_resume_prompt}
           type="button"
         >
-          下一步
-          <ArrowRight className="h-3 w-3" />
+          {draft_sent ? "已写入输入框" : "写入输入框"}
+          {draft_sent ? <CheckCircle2 className="h-3 w-3" /> : <ArrowRight className="h-3 w-3" />}
         </button>
       </div>
       <div className="grid grid-cols-3 gap-1.5 max-sm:grid-cols-1">
