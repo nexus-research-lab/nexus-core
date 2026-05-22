@@ -140,6 +140,12 @@ export function OperationStageMotionStyles() {
           100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
         }
 
+        @keyframes nexus-operation-handoff-spotlight {
+          0% { opacity: 0; transform: translate3d(0, 16px, 0) scale(.986); filter: blur(4px); }
+          42% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
+          100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
+        }
+
         .operation-stage-window {
           animation:
             nexus-operation-window-enter 420ms cubic-bezier(.18,.88,.24,1) both,
@@ -321,6 +327,10 @@ export function OperationStageMotionStyles() {
           animation: nexus-operation-director-cue 520ms cubic-bezier(.16,.84,.24,1) both;
         }
 
+        .operation-stage-handoff-spotlight {
+          animation: nexus-operation-handoff-spotlight 640ms cubic-bezier(.16,.84,.24,1) both;
+        }
+
         @media (max-width: 767px) {
           .operation-stage-mobile-panel {
             left: auto !important;
@@ -351,7 +361,8 @@ export function OperationStageMotionStyles() {
           .operation-event-signal,
           .operation-materializing-signal,
           .operation-materializing-line,
-          .operation-stage-director-cue {
+          .operation-stage-director-cue,
+          .operation-stage-handoff-spotlight {
             animation: none !important;
           }
         }

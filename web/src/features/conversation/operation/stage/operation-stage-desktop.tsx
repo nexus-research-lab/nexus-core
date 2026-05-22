@@ -40,6 +40,7 @@ import {
   DynamicStageFrame,
   StageReplayReturn,
 } from "./operation-stage-frame";
+import { StageHandoffSpotlight } from "./operation-stage-handoff-spotlight";
 import { StageStatusBar } from "./operation-stage-status";
 import { OperationStageWindow } from "./operation-stage-window";
 import {
@@ -325,6 +326,13 @@ export function OperationStageDesktop({
           total_window_count={windows_for_reveal.length}
         />
       )}
+      <StageHandoffSpotlight
+        event={event}
+        episodes={episodes}
+        events={narrative_events}
+        narrative={narrative}
+        snapshot={snapshot}
+      />
       {visible_windows.length ? visible_windows.map((window, index) => {
         const is_active = active_window_id === window.id && window.phase !== "minimized";
         const sequence_label = event_sequence_label(window.payload.event, narrative_events);
