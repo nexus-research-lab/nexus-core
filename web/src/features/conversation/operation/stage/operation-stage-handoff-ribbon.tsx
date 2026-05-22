@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { emit_composer_draft } from "@/features/conversation/shared/composer-draft-events";
 
 import type { OperationContinuationBrief } from "../operation-stage-experience";
 import type { NexusOperationEvent } from "../operation-types";
@@ -23,6 +24,7 @@ export function StageHandoffRibbon({
   has_error: boolean;
 }) {
   const primary_artifact = artifacts[0]?.value ?? continuation.primary_artifact;
+  const resume_prompt = continuation.resume_prompt;
   const replayable_count = events.filter((item) => item.kind !== "round_summary").length || events.length;
   const items = [
     {
@@ -40,7 +42,7 @@ export function StageHandoffRibbon({
     {
       Icon: MessageSquareText,
       label: has_error ? "建议追问" : "继续协作",
-      value: continuation.resume_prompt,
+      value: resume_prompt,
       tone: has_error ? "warning" : "neutral",
     },
   ] as const;
@@ -61,10 +63,14 @@ export function StageHandoffRibbon({
             {continuation.status_detail}
           </p>
         </div>
-        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/56 px-2 py-1 text-[8.5px] font-black text-(--text-soft)">
+        <button
+          className="inline-flex shrink-0 items-center gap-1 rounded-full border border-white/56 bg-white/56 px-2 py-1 text-[8.5px] font-black text-(--text-soft) transition hover:border-[rgba(91,114,255,0.24)] hover:bg-[rgba(91,114,255,0.10)] hover:text-[color:var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.30)]"
+          onClick={() => emit_composer_draft({ text: resume_prompt })}
+          type="button"
+        >
           下一步
           <ArrowRight className="h-3 w-3" />
-        </span>
+        </button>
       </div>
       <div className="grid grid-cols-3 gap-1.5 max-sm:grid-cols-1">
         {items.map((item) => {

@@ -47,6 +47,7 @@ import {
   PreparedComposerAttachment,
 } from "./composer-attachments";
 import { MentionTargetItem, MentionTargetPopover } from "./mention-popover";
+import { useComposerDraftEvents } from "./use-composer-draft-events";
 
 interface AttachmentFile {
   id: string;
@@ -385,6 +386,14 @@ const ComposerPanelView = memo(({
     }
     setInput((current_value) => current_value || normalized_draft);
   }, [initial_draft]);
+
+  useComposerDraftEvents({
+    is_input_locked,
+    setAttachmentError,
+    setInput,
+    set_mention_active,
+    textarea_ref,
+  });
 
   const dispatch_message = useCallback(async (
     content: string,
