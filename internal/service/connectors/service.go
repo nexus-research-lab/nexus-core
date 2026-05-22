@@ -88,6 +88,13 @@ const (
 	deviceAuthStatusDenied    = "denied"
 )
 
+var (
+	errUnknownConnector       = errors.New("未知连接器")
+	errConnectorUnavailable   = errors.New("连接器暂不可用")
+	errConnectorNotOAuth      = errors.New("连接器不支持 OAuth")
+	errOAuthStateInvalidOrExp = errors.New("OAuth state 无效或已过期")
+)
+
 type connectionRecord struct {
 	ConnectorID          string
 	State                string
@@ -233,7 +240,7 @@ func (s *Service) LoadActiveConnection(ctx context.Context, ownerUserID, connect
 func (s *Service) connectionSnapshotFromRecord(record connectionRecord) (*connectordomain.ConnectionSnapshot, error) {
 	entry, ok := getConnector(record.ConnectorID)
 	if !ok {
-		return nil, errors.New("未知连接器")
+		return nil, errUnknownConnector
 	}
 	payload, err := s.connectionCredentialsPayload(record)
 	if err != nil {
@@ -288,10 +295,10 @@ func (s *Service) RequiredExtraKeys(connectorID string) []string {
 func (s *Service) GetAuthURL(ctx context.Context, ownerUserID string, connectorID string, redirectURI string, extras map[string]string) (*AuthURLResult, error) {
 	entry, ok := getConnector(connectorID)
 	if !ok {
-		return nil, errors.New("未知连接器")
+		return nil, errUnknownConnector
 	}
 	if entry.Status != "available" {
-		return nil, errors.New("连接器暂不可用")
+		return nil, errConnectorUnavailable
 	}
 	if err := s.purgeExpiredStates(ctx); err != nil {
 		return nil, err
@@ -372,14 +379,14 @@ func (s *Service) CompleteOAuthCallback(ctx context.Context, ownerUserID string,
 		return nil, err
 	}
 	if state == nil {
-		return nil, errors.New("OAuth state 无效或已过期")
+		return nil, errOAuthStateInvalidOrExp
 	}
 	if state.ExpiresAt.Before(time.Now()) {
-		return nil, errors.New("OAuth state 无效或已过期")
+		return nil, errOAuthStateInvalidOrExp
 	}
 	entry, ok := getConnector(state.ConnectorID)
 	if !ok {
-		return nil, errors.New("未知连接器")
+		return nil, errUnknownConnector
 	}
 	requestRedirectURI := strings.TrimSpace(request.RedirectURI)
 	if requestRedirectURI != "" && state.RedirectURI != "" && requestRedirectURI != state.RedirectURI {
@@ -514,10 +521,10 @@ func (s *Service) PollDeviceAuth(ctx context.Context, ownerUserID string, connec
 func (s *Service) Connect(ctx context.Context, connectorID string, credentials map[string]string) (*Info, error) {
 	entry, ok := getConnector(connectorID)
 	if !ok {
-		return nil, errors.New("未知连接器")
+		return nil, errUnknownConnector
 	}
 	if entry.Status != "available" {
-		return nil, errors.New("连接器暂不可用")
+		return nil, errConnectorUnavailable
 	}
 	if entry.AuthType == "oauth2" {
 		return nil, errors.New("OAuth2 连接器请先调用 auth-url 完成授权")
@@ -542,7 +549,7 @@ func (s *Service) Connect(ctx context.Context, connectorID string, credentials m
 func (s *Service) Disconnect(ctx context.Context, connectorID string) (*Info, error) {
 	entry, ok := getConnector(connectorID)
 	if !ok {
-		return nil, errors.New("未知连接器")
+		return nil, errUnknownConnector
 	}
 	if err := s.upsertConnection(ctx, connectionRecord{
 		ConnectorID: entry.ConnectorID,
@@ -849,7 +856,81 @@ func (s *Service) oauthPublicClientID(_ context.Context, _ string, connectorID s
 	return "", err
 }
 
-func (s *Service) oauthCredentials(_ context.Context, _ string, connectorID string) (string, string, error) {
+func (s *Service) GetOAuthClient(ctx context.Context, ownerUserID, connectorID string) (*OAuthClientView, error) {
+	entry, ok := getConnector(connectorID)
+	if !ok {
+		return nil, errUnknownConnector
+	}
+	if entry.AuthType != "oauth2" {
+		return nil, errConnectorNotOAuth
+	}
+	if s.clients == nil {
+		return nil, nil
+	}
+	record, err := s.clients.Get(ctx, ownerUserID, entry.ConnectorID)
+	if err != nil {
+		return nil, err
+	}
+	if record == nil {
+		return nil, nil
+	}
+	return &OAuthClientView{
+		ConnectorID:     record.ConnectorID,
+		ClientID:        record.ClientID,
+		HasClientSecret: strings.TrimSpace(record.ClientSecret) != "",
+		UpdatedAt:       record.UpdatedAt,
+	}, nil
+}
+
+func (s *Service) UpsertOAuthClient(ctx context.Context, ownerUserID, connectorID, clientID, clientSecret string) error {
+	entry, ok := getConnector(connectorID)
+	if !ok {
+		return errUnknownConnector
+	}
+	if entry.AuthType != "oauth2" {
+		return errConnectorNotOAuth
+	}
+	if entry.Status != "available" {
+		return errConnectorUnavailable
+	}
+	if strings.TrimSpace(clientID) == "" || strings.TrimSpace(clientSecret) == "" {
+		return errors.New("OAuth Client ID / Secret 不能为空")
+	}
+	if s.clients == nil {
+		return errors.New("CONNECTOR_CREDENTIALS_KEY 未配置，无法保存 OAuth 应用凭据")
+	}
+	return s.clients.Upsert(ctx, connectorstore.OAuthClient{
+		OwnerUserID:  ownerUserID,
+		ConnectorID:  entry.ConnectorID,
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+	})
+}
+
+func (s *Service) DeleteOAuthClient(ctx context.Context, ownerUserID, connectorID string) error {
+	entry, ok := getConnector(connectorID)
+	if !ok {
+		return errUnknownConnector
+	}
+	if entry.AuthType != "oauth2" {
+		return errConnectorNotOAuth
+	}
+	if s.clients == nil {
+		return nil
+	}
+	return s.clients.Delete(ctx, ownerUserID, entry.ConnectorID)
+}
+
+func (s *Service) oauthCredentials(ctx context.Context, ownerUserID string, connectorID string) (string, string, error) {
+	if s.clients != nil {
+		record, err := s.clients.Get(ctx, ownerUserID, connectorID)
+		if err != nil {
+			return "", "", err
+		}
+		if record != nil {
+			return requireOAuthCredentials(record.ClientID, record.ClientSecret, connectorID)
+		}
+	}
 	return s.defaultOAuthCredentials(connectorID)
 }
 
