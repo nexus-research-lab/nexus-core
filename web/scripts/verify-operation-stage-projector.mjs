@@ -4,6 +4,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { tmpdir } from "node:os";
 
+import { verify_completed_round_replay_uses_event_slice } from "./operation-stage-replay-verifier.mjs";
+
 const script_dir = dirname(fileURLToPath(import.meta.url));
 const web_root = dirname(script_dir);
 const out_dir = join(tmpdir(), "nexus-operation-stage-projector");
@@ -66,6 +68,12 @@ verify_workspace_live_stays_in_tool_round(now);
 verify_multi_file_windows_keep_event_identity(now);
 verify_terminal_result_envelope(now);
 verify_completed_manifest_keeps_terminal_window_identity(now);
+verify_completed_round_replay_uses_event_slice({
+  assert,
+  now,
+  plan_operation_desktop,
+  project_operation_snapshot,
+});
 verify_pending_permissions_are_scoped_and_precise(now);
 verify_live_round_placeholder(now);
 verify_synthetic_error_summary(now);

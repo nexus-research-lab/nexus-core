@@ -1,0 +1,99 @@
+export function verify_completed_round_replay_uses_event_slice({
+  assert,
+  now,
+  plan_operation_desktop,
+  project_operation_snapshot,
+}) {
+  const messages = [{
+    role: "assistant",
+    message_id: "msg-completed-replay",
+    session_key: "session:stage-replay",
+    agent_id: "agent-stage",
+    round_id: "round-completed-replay",
+    timestamp: now - 1800,
+    is_complete: true,
+    content: [
+      {
+        type: "tool_use",
+        id: "tool-write",
+        name: "Write",
+        input: {
+          file_path: "gomoku.html",
+          content: "<html><body>gomoku</body></html>",
+        },
+      },
+      {
+        type: "tool_result",
+        tool_use_id: "tool-write",
+        content: "created gomoku.html",
+        is_error: false,
+      },
+      {
+        type: "tool_use",
+        id: "tool-bash",
+        name: "Bash",
+        input: {
+          command: "open gomoku.html",
+        },
+      },
+      {
+        type: "tool_result",
+        tool_use_id: "tool-bash",
+        content: "opened gomoku.html",
+        is_error: false,
+      },
+    ],
+    result_summary: {
+      subtype: "success",
+      duration_ms: 1800,
+      duration_api_ms: 1400,
+      num_turns: 1,
+      result: "delivered gomoku html",
+      is_error: false,
+      timestamp: now - 100,
+    },
+  }];
+  const workspace_events = [{
+    id: "workspace-replay-html",
+    agent_id: "agent-stage",
+    path: "gomoku.html",
+    status: "updated",
+    version: 1,
+    source: "agent",
+    session_key: "session:stage-replay",
+    tool_use_id: "tool-write",
+    event_type: "file_write_end",
+    live_content: "<html><body>gomoku</body></html>",
+    updated_at: now - 700,
+  }];
+
+  const snapshot = project_operation_snapshot({
+    key: "session:stage-replay",
+    session_key: "session:stage-replay",
+    agent_id: "agent-stage",
+    messages,
+    pending_permissions: [],
+    live_round_ids: [],
+    workspace_events,
+  });
+  assert(snapshot.active_event?.kind === "round_summary", `completed replay fixture should finish on summary, got ${snapshot.active_event?.kind}`);
+
+  const final_desktop = plan_operation_desktop({
+    event: snapshot.active_event,
+    snapshot,
+  });
+  assert(final_desktop.active_window_id?.includes(":run-manifest"), `completed desktop should focus manifest, got ${final_desktop.active_window_id}`);
+  assert(final_desktop.windows.some((window) => window.kind === "run_manifest"), "completed desktop should include manifest handoff");
+
+  const bash_event = snapshot.events.find((event) => event.tool_use_id === "tool-bash");
+  assert(bash_event, "replay fixture should project Bash event");
+  const replay_desktop = plan_operation_desktop({
+    event: bash_event,
+    snapshot,
+  });
+  assert(replay_desktop.active_window_id?.includes(":terminal"), `event replay slice should focus terminal, got ${replay_desktop.active_window_id}`);
+  assert(!replay_desktop.windows.some((window) => window.kind === "run_manifest"), "event replay slice should not keep final manifest as the active scene");
+  const terminal_window = replay_desktop.windows.find((window) => window.kind === "terminal");
+  assert(terminal_window?.payload.event.id === bash_event.id, "event replay terminal should keep selected Bash identity");
+  assert(terminal_window?.payload.command === "open gomoku.html", `event replay terminal should keep selected command, got ${terminal_window?.payload.command}`);
+}
