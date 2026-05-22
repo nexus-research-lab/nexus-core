@@ -17,6 +17,7 @@ import type {
 import type { OperationStageExperiencePhase } from "./operation-stage-experience";
 import {
   build_stage_transition_style,
+  surface_meta_for_transition,
 } from "./operation-stage-transition";
 import type { StageTransitionIntent } from "./operation-stage-transition";
 import { StageBootSignal } from "./operation-stage-launch-overlay";
@@ -93,7 +94,13 @@ export function EmptyStage({
         </div>
       </div>
 
-      <IdleWorkstationStatus snapshot={snapshot} subtitle={subtitle} />
+      <IdleWorkstationStatus
+        active_event={active_event}
+        exiting={exiting}
+        snapshot={snapshot}
+        subtitle={subtitle}
+        transition_intent={transition_intent}
+      />
       <IdleNarrativeDock phase={exiting ? "awakening" : "idle"} snapshot={snapshot} />
 
       {exiting && active_event ? (
@@ -107,35 +114,68 @@ export function EmptyStage({
 }
 
 function IdleWorkstationStatus({
+  active_event,
+  exiting,
   snapshot,
   subtitle,
+  transition_intent,
 }: {
+  active_event: NexusOperationEvent | null;
+  exiting: boolean;
   snapshot: NexusOperationSnapshot | null;
   subtitle: string;
+  transition_intent: StageTransitionIntent;
 }) {
   const event_count = snapshot?.events.length ?? 0;
   const artifact_count = snapshot?.workspace_events.length ?? 0;
   const evidence_count = snapshot?.recent_evidence.length ?? 0;
+  const launch_meta = active_event ? surface_meta_for_transition(active_event, transition_intent) : null;
+  const LaunchIcon = launch_meta?.Icon ?? Sparkles;
+  const launch_target = active_event?.target ?? active_event?.summary ?? active_event?.title ?? "等待第一个工具事件";
 
   return (
     <div className="operation-idle-status-card pointer-events-none absolute left-8 top-7 z-10 w-[min(320px,calc(100%-4rem))] max-sm:left-5 max-sm:top-5 max-sm:w-[min(280px,calc(100%-2.5rem))]">
       <div className="rounded-[18px] border border-white/66 bg-white/46 p-3 shadow-[0_18px_46px_rgba(18,28,42,0.09)] backdrop-blur-xl">
         <div className="flex min-w-0 items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[11px] border border-[rgba(91,114,255,0.18)] bg-[rgba(91,114,255,0.09)] text-[color:var(--primary)]">
-              <Sparkles className="h-4 w-4" />
+            <span className={cn(
+              "grid h-8 w-8 shrink-0 place-items-center rounded-[11px] border text-[color:var(--primary)]",
+              exiting
+                ? "border-[rgba(91,114,255,0.24)] bg-[rgba(91,114,255,0.12)]"
+                : "border-[rgba(91,114,255,0.18)] bg-[rgba(91,114,255,0.09)]",
+            )}>
+              <LaunchIcon className={cn("h-4 w-4", exiting && "animate-pulse")} />
             </span>
             <div className="min-w-0">
-              <p className="truncate text-[12px] font-black text-(--text-strong)">nexus 字符场</p>
-              <p className="truncate text-[10px] font-semibold text-(--text-soft)">{subtitle}</p>
+              <p className="truncate text-[12px] font-black text-(--text-strong)">
+                {exiting && launch_meta ? `${launch_meta.label} 接入` : "nexus 字符场"}
+              </p>
+              <p className="truncate text-[10px] font-semibold text-(--text-soft)">
+                {exiting ? active_event?.tool_name ?? active_event?.title ?? subtitle : subtitle}
+              </p>
             </div>
           </div>
-          <span className="shrink-0 rounded-full border border-[rgba(47,184,132,0.20)] bg-[rgba(47,184,132,0.10)] px-2 py-1 text-[9.5px] font-bold text-[color:var(--success)]">
-            待机
+          <span className={cn(
+            "shrink-0 rounded-full border px-2 py-1 text-[9.5px] font-bold",
+            exiting
+              ? "border-[rgba(91,114,255,0.24)] bg-[rgba(91,114,255,0.10)] text-[color:var(--primary)]"
+              : "border-[rgba(47,184,132,0.20)] bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]",
+          )}>
+            {exiting ? "唤醒中" : "待机"}
           </span>
         </div>
+        {exiting ? (
+          <div className="mt-3 rounded-[12px] border border-[rgba(91,114,255,0.16)] bg-[rgba(91,114,255,0.07)] px-2.5 py-2">
+            <p className="truncate text-[9px] font-black uppercase tracking-[0.10em] text-(--text-soft)">
+              next tool
+            </p>
+            <p className="mt-0.5 truncate text-[10.5px] font-semibold text-(--text-strong)">
+              {launch_target}
+            </p>
+          </div>
+        ) : null}
         <div className="mt-3 grid grid-cols-3 gap-1.5 text-center">
-          <IdleStatusMetric label="状态" value="就绪" />
+          <IdleStatusMetric label="状态" value={exiting ? "唤醒" : "就绪"} />
           <IdleStatusMetric label="现场" value={event_count ? `${event_count}` : "空"} />
           <IdleStatusMetric label="证据" value={artifact_count + evidence_count ? `${artifact_count + evidence_count}` : "0"} />
         </div>
