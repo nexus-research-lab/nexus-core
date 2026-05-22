@@ -119,6 +119,11 @@ export function StageNarrativeRail({
           <span>事件流</span>
           <span>{events.length} 步 · {Math.min(revealed_window_count, total_window_count)}/{total_window_count}</span>
         </div>
+        <StageEventBeatList
+          active_event_id={active_event_id}
+          events={events}
+          on_focus_event={on_focus_event}
+        />
         <div className="flex min-w-0 max-w-full gap-1.5 overflow-hidden">
           {events.slice(-7).map((item, index) => {
             const profile = resolve_operation_tool_profile(item.tool_name, item.kind, item.surface);
@@ -151,6 +156,120 @@ export function StageNarrativeRail({
       </div>
     </div>
   );
+}
+
+function StageEventBeatList({
+  active_event_id,
+  events,
+  on_focus_event,
+}: {
+  active_event_id: string;
+  events: NexusOperationEvent[];
+  on_focus_event?: (event: NexusOperationEvent) => void;
+}) {
+  const visible_events = events.slice(-5);
+  const active_index = Math.max(0, visible_events.findIndex((item) => item.id === active_event_id));
+
+  return (
+    <div className="mb-2 space-y-1.5">
+      {visible_events.map((item, index) => {
+        const profile = resolve_operation_tool_profile(item.tool_name, item.kind, item.surface);
+        const Icon = icon_for_operation_kind(item.kind);
+        const phase_meta = PHASE_STATUS_META[item.phase];
+        const PhaseIcon = phase_meta.Icon;
+        const is_active = item.id === active_event_id;
+        const beat = event_beat_state(item, index, active_index);
+        const target = item.target ?? item.summary ?? item.title;
+
+        return (
+          <button
+            aria-label={`回放第 ${events.length - visible_events.length + index + 1} 步：${profile.action_label} ${item.tool_name ?? item.title}`}
+            className={cn(
+              "group grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-[11px] border px-2 py-1.5 text-left transition hover:-translate-y-0.5 hover:border-[rgba(91,114,255,0.24)] hover:bg-[rgba(91,114,255,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.34)]",
+              is_active
+                ? "border-[rgba(91,114,255,0.30)] bg-[rgba(91,114,255,0.12)]"
+                : beat.tone === "settled"
+                  ? "border-[rgba(47,184,132,0.18)] bg-[rgba(47,184,132,0.06)]"
+                  : "border-white/44 bg-white/28",
+            )}
+            key={item.id}
+            onClick={() => on_focus_event?.(item)}
+            type="button"
+          >
+            <span className={cn(
+              "relative grid h-7 w-7 shrink-0 place-items-center rounded-[10px] border",
+              is_active
+                ? "border-[rgba(91,114,255,0.28)] bg-white/68 text-[color:var(--primary)]"
+                : beat.tone === "settled"
+                  ? "border-[rgba(47,184,132,0.18)] bg-white/58 text-[color:var(--success)]"
+                  : phase_meta.class_name,
+            )}>
+              <Icon className="h-3.5 w-3.5" />
+              {index > 0 ? (
+                <span className={cn(
+                  "absolute -left-[9px] top-1/2 h-px w-[9px]",
+                  beat.tone === "settled" ? "bg-[rgba(47,184,132,0.42)]" : "bg-white/54",
+                )} />
+              ) : null}
+            </span>
+
+            <span className="min-w-0">
+              <span className="flex min-w-0 items-center gap-1.5">
+                <span className="truncate text-[10px] font-black text-(--text-strong)">
+                  {profile.action_label} · {item.tool_name ?? item.title}
+                </span>
+                <span className={cn(
+                  "shrink-0 rounded-full px-1.5 py-px text-[8px] font-black",
+                  beat.tone === "active"
+                    ? "bg-[rgba(91,114,255,0.12)] text-[color:var(--primary)]"
+                    : beat.tone === "settled"
+                      ? "bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]"
+                      : "bg-white/52 text-(--text-soft)",
+                )}>
+                  {beat.label}
+                </span>
+              </span>
+              <span className="mt-0.5 block truncate text-[9px] font-semibold text-(--text-soft)">
+                {target}
+              </span>
+            </span>
+
+            <span className="flex shrink-0 items-center gap-1.5">
+              <span className="hidden rounded-full bg-white/48 px-1.5 py-px text-[8px] font-bold text-(--text-soft) sm:inline">
+                {SURFACE_LABEL[item.surface]}
+              </span>
+              <span className={cn("grid h-5 w-5 place-items-center rounded-full border", phase_meta.class_name)}>
+                <PhaseIcon className={cn("h-3 w-3", item.phase === "running" && is_active && "animate-spin")} />
+              </span>
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function event_beat_state(
+  event: NexusOperationEvent,
+  index: number,
+  active_index: number,
+): { label: string; tone: "active" | "settled" | "pending" } {
+  if (index === active_index) {
+    return {
+      label: event.phase === "waiting" ? "等待确认" : "当前聚焦",
+      tone: "active",
+    };
+  }
+  if (index < active_index || event.phase === "done" || event.phase === "cancelled" || event.phase === "error") {
+    return {
+      label: event.phase === "error" || event.phase === "cancelled" ? "异常沉淀" : "已沉淀",
+      tone: "settled",
+    };
+  }
+  return {
+    label: "待接续",
+    tone: "pending",
+  };
 }
 
 export function StageOperationRunway({
