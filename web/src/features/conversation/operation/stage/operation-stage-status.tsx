@@ -126,8 +126,11 @@ export function StageStatusBar({
   const PhaseIcon = phase_meta.Icon;
   const round_event_count = snapshot?.events.filter((item) => item.round_id === event.round_id).length ?? 1;
   const elapsed = format_elapsed(event.started_at, event.ended_at, event.updated_at);
+  const display_title = stage_status_display_title(event, narrative, active_window);
+  const target_detail = stage_status_target_detail(event, narrative, active_window, display_title);
   const director_cues = build_stage_director_cues({
     active_window,
+    display_title,
     event,
     is_replay: Boolean(is_replay),
     narrative,
@@ -148,7 +151,7 @@ export function StageStatusBar({
             {phase_meta.label}
           </span>
           <span className="truncate text-[12px] font-black tracking-[-0.02em] text-(--text-strong)">
-            {event.title}
+            {display_title}
           </span>
         </div>
         <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-[10.5px] font-semibold text-(--text-soft)">
@@ -159,9 +162,9 @@ export function StageStatusBar({
           <span>{elapsed}</span>
           <span>{format_operation_time(event.updated_at)}</span>
         </div>
-        {event.target || active_window?.title || narrative.detail ? (
+        {target_detail ? (
           <p className="mt-1.5 truncate text-[11px] text-(--text-muted)">
-            {event.target ?? active_window?.title ?? narrative.detail}
+            {target_detail}
           </p>
         ) : null}
         <div className="mt-3 grid grid-cols-3 gap-1.5 max-sm:grid-cols-1">
@@ -198,6 +201,7 @@ export function StageStatusBar({
 
 function build_stage_director_cues({
   active_window,
+  display_title,
   event,
   is_replay,
   narrative,
@@ -206,6 +210,7 @@ function build_stage_director_cues({
   visible_window_count,
 }: {
   active_window: StageWindowState | null;
+  display_title: string;
   event: NexusOperationEvent;
   is_replay: boolean;
   narrative: StageNarrativeState;
@@ -230,7 +235,7 @@ function build_stage_director_cues({
     ?? event.title
     ?? event.summary;
   const primary_target = is_low_signal_director_value(primary_target_candidate)
-    ? event.title
+    ? display_title
     : primary_target_candidate;
   const next_step = error_count
     ? "先回看异常窗口、输入参数和证据，再决定重试或改写任务。"
@@ -262,4 +267,34 @@ function build_stage_director_cues({
       Icon: ArrowRight,
     },
   ];
+}
+
+function stage_status_display_title(
+  event: NexusOperationEvent,
+  narrative: StageNarrativeState,
+  active_window: StageWindowState | null,
+): string {
+  const title = event.title || active_window?.title || narrative.label;
+  if (!is_low_signal_director_value(title) && event.kind !== "round_summary") {
+    return title;
+  }
+  if (event.kind === "round_summary" || event.surface === "summary") {
+    return narrative.phase === "completed" || narrative.phase === "settling"
+      ? "交接面板"
+      : "执行收口";
+  }
+  return active_window?.title ?? narrative.label;
+}
+
+function stage_status_target_detail(
+  event: NexusOperationEvent,
+  narrative: StageNarrativeState,
+  active_window: StageWindowState | null,
+  display_title: string,
+): string | null {
+  const candidate = event.target ?? active_window?.target ?? active_window?.title ?? narrative.detail;
+  if (is_low_signal_director_value(candidate)) {
+    return display_title === candidate ? narrative.detail : display_title;
+  }
+  return candidate ?? null;
 }

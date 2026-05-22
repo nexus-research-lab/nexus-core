@@ -16,6 +16,10 @@ import type {
 } from "./operation-types";
 import type { OperationStageExperiencePhase } from "./operation-stage-experience";
 import {
+  fallback_stage_event_object_label,
+  is_low_signal_stage_label,
+} from "./operation-stage-labels";
+import {
   build_stage_transition_style,
   surface_meta_for_transition,
 } from "./operation-stage-transition";
@@ -137,7 +141,14 @@ function IdleWorkstationStatus({
   const evidence_count = snapshot?.recent_evidence.length ?? 0;
   const launch_meta = active_event ? surface_meta_for_transition(active_event, transition_intent) : null;
   const LaunchIcon = launch_meta?.Icon ?? Sparkles;
-  const launch_target = active_event?.target ?? active_event?.summary ?? active_event?.title ?? "等待第一个工具事件";
+  const launch_target_candidate = active_event?.target ?? active_event?.summary ?? active_event?.title;
+  const launch_target = is_low_signal_stage_label(launch_target_candidate)
+    ? fallback_stage_event_object_label(active_event, launch_meta?.label)
+    : launch_target_candidate;
+  const launch_subtitle_candidate = active_event?.tool_name ?? active_event?.title ?? subtitle;
+  const launch_subtitle = is_low_signal_stage_label(launch_subtitle_candidate)
+    ? fallback_stage_event_object_label(active_event, launch_meta?.label)
+    : launch_subtitle_candidate;
 
   return (
     <div className="operation-idle-status-card pointer-events-none absolute left-8 top-7 z-10 w-[min(320px,calc(100%-4rem))] max-sm:left-5 max-sm:top-5 max-sm:w-[min(280px,calc(100%-2.5rem))]">
@@ -157,7 +168,7 @@ function IdleWorkstationStatus({
                 {exiting && launch_meta ? `${launch_meta.label} 接入` : "nexus 字符场"}
               </p>
               <p className="truncate text-[10px] font-semibold text-(--text-soft)">
-                {exiting ? active_event?.tool_name ?? active_event?.title ?? subtitle : subtitle}
+                {exiting ? launch_subtitle : subtitle}
               </p>
             </div>
           </div>
@@ -173,7 +184,7 @@ function IdleWorkstationStatus({
         {exiting ? (
           <div className="mt-3 rounded-[12px] border border-[rgba(91,114,255,0.16)] bg-[rgba(91,114,255,0.07)] px-2.5 py-2">
             <p className="truncate text-[9px] font-black uppercase tracking-[0.10em] text-(--text-soft)">
-              next tool
+              下一步
             </p>
             <p className="mt-0.5 truncate text-[10.5px] font-semibold text-(--text-strong)">
               {launch_target}

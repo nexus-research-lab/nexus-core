@@ -7,6 +7,11 @@ import { cn } from "@/lib/utils";
 
 import type { NexusOperationEvent } from "./operation-types";
 import {
+  fallback_stage_event_object_label,
+  fallback_stage_event_target_label,
+  is_low_signal_stage_label,
+} from "./operation-stage-labels";
+import {
   PHASE_META,
 } from "./operation-stage-panel-style";
 import {
@@ -30,8 +35,8 @@ export function StageBootSignal({
   const phase_meta = PHASE_META[event.phase];
   const PhaseIcon = phase_meta.Icon;
   const window_label = stage_transition_window_label(intent);
-  const tool_label = event.tool_name ?? event.title;
-  const target_label = event.target ?? event.summary ?? event.title;
+  const tool_label = stage_transition_tool_label(event, meta.label);
+  const target_label = stage_transition_target_label(event, meta.label);
   const launch_copy = build_boot_signal_copy(event, round_event_count, previous_event);
 
   return (
@@ -99,10 +104,10 @@ export function StageEventSignal({
   const Icon = meta.Icon;
   const phase_meta = PHASE_META[event.phase];
   const PhaseIcon = phase_meta.Icon;
-  const incoming_label = event.tool_name ?? event.title;
+  const incoming_label = stage_transition_tool_label(event, meta.label);
   const next_window_label = stage_transition_window_label(intent);
   const completed_count = Math.max(0, round_event_count - 1);
-  const target_label = event.target ?? event.summary ?? event.title;
+  const target_label = stage_transition_target_label(event, meta.label);
   const previous_label = previous_event?.tool_name ?? previous_event?.title ?? (
     completed_count ? `${completed_count} 已沉淀` : "首个窗口"
   );
@@ -170,8 +175,8 @@ export function StageMaterializingSignal({
   const meta = surface_meta_for_transition(event, intent);
   const Icon = meta.Icon;
   const window_label = stage_transition_window_label(intent);
-  const tool_label = event.tool_name ?? event.title;
-  const target_label = event.target ?? event.summary ?? event.title;
+  const tool_label = stage_transition_tool_label(event, meta.label);
+  const target_label = stage_transition_target_label(event, meta.label);
 
   return (
     <div className="operation-materializing-signal pointer-events-none absolute right-5 top-5 z-30 w-[min(330px,calc(100%-2rem))] rounded-[16px] border border-white/72 bg-white/70 p-2.5 shadow-[0_22px_54px_rgba(18,28,42,0.13)] backdrop-blur-2xl max-md:right-3 max-md:top-3">
@@ -206,6 +211,22 @@ export function StageMaterializingSignal({
       </div>
     </div>
   );
+}
+
+function stage_transition_tool_label(event: NexusOperationEvent, surface_label: string): string {
+  const candidate = event.tool_name ?? event.title;
+  if (!is_low_signal_stage_label(candidate) && event.kind !== "round_summary") {
+    return candidate;
+  }
+  return fallback_stage_event_object_label(event, surface_label);
+}
+
+function stage_transition_target_label(event: NexusOperationEvent, surface_label: string): string {
+  const candidate = event.target ?? event.summary ?? event.title;
+  if (!is_low_signal_stage_label(candidate)) {
+    return candidate;
+  }
+  return fallback_stage_event_target_label(event, surface_label);
 }
 
 function StageLaunchRoute({
