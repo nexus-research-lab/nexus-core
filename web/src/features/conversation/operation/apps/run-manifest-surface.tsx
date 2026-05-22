@@ -15,10 +15,8 @@ import type {
   NexusOperationSnapshot,
   OperationEvidence,
 } from "../operation-types";
-import {
-  build_operation_input_rows,
-  resolve_operation_tool_profile,
-} from "../operation-tool-catalog";
+import { build_operation_event_io_summary } from "../operation-event-io";
+import { resolve_operation_tool_profile } from "../operation-tool-catalog";
 import { ACTION_ICON, ACTION_TONE_CLASS } from "./operation-action-style";
 import {
   collect_manifest_artifacts,
@@ -206,7 +204,8 @@ export function RunManifestSurface({
               const profile = resolve_operation_tool_profile(item.tool_name, item.kind, item.surface);
               const Icon = ACTION_ICON[profile.action];
               const can_focus_event = Boolean(on_focus_event);
-              const input_row = build_operation_input_rows(item.input_preview, profile.target_keys, 1)[0] ?? null;
+              const io_summary = build_operation_event_io_summary(item);
+              const input_label = io_summary.input_detail;
               const output_label = extract_manifest_event_output(item);
               return (
                 <button
@@ -236,10 +235,10 @@ export function RunManifestSurface({
                     <span className="mt-0.5 block truncate text-[10px] text-(--text-soft)">
                       {item.target ?? item.summary ?? profile.title}
                     </span>
-                    {input_row || output_label ? (
+                    {input_label || output_label ? (
                       <span className="mt-1 grid min-w-0 grid-cols-2 gap-1.5 max-sm:grid-cols-1">
-                        {input_row ? (
-                          <ManifestEventIOPill label="输入" value={`${input_row.label}: ${input_row.value}`} />
+                        {input_label ? (
+                          <ManifestEventIOPill label="输入" value={input_label} />
                         ) : null}
                         {output_label ? (
                           <ManifestEventIOPill label="输出" value={output_label} />

@@ -15,6 +15,7 @@ import type {
   OperationEvidence,
   OperationPhase,
 } from "../operation-types";
+import { resolve_operation_event_output_label } from "../operation-event-io";
 
 export const PHASE_LABEL: Record<OperationPhase, string> = {
   queued: "排队中",
@@ -139,23 +140,7 @@ export function extract_manifest_result_text(event: NexusOperationEvent): string
 }
 
 export function extract_manifest_event_output(event: NexusOperationEvent): string | null {
-  if (event.kind === "round_summary") {
-    return event.summary ?? compact_manifest_result(event.result_preview);
-  }
-  if (event.phase === "running") {
-    return event.surface === "terminal" ? "等待 stdout/stderr" : "等待工具结果";
-  }
-  if (event.phase === "waiting") {
-    return "等待确认";
-  }
-
-  const result_text = compact_manifest_result(event.result_preview);
-  if (result_text) {
-    return result_text;
-  }
-
-  const evidence = event.evidence?.find((item) => item.value || item.label);
-  return evidence?.value ?? evidence?.label ?? event.summary ?? null;
+  return resolve_operation_event_output_label(event);
 }
 
 export function icon_for_manifest_artifact(type: OperationEvidence["type"], value: string): LucideIcon {
@@ -246,35 +231,6 @@ function evidence_type_label(type: OperationEvidence["type"]): string {
     return "错误证据";
   }
   return "执行证据";
-}
-
-function compact_manifest_result(value: unknown): string | null {
-  if (value == null) {
-    return null;
-  }
-  if (typeof value === "string") {
-    return value.trim().split(/\r?\n/).find(Boolean)?.slice(0, 160) ?? null;
-  }
-  if (typeof value === "number" || typeof value === "boolean") {
-    return String(value);
-  }
-  if (Array.isArray(value)) {
-    return value.map((item) => compact_manifest_result(item)).find(Boolean) ?? null;
-  }
-  if (typeof value === "object") {
-    const record = value as Record<string, unknown>;
-    for (const key of ["stderr", "stdout", "output", "content", "error", "message", "result", "text"]) {
-      const item = compact_manifest_result(record[key]);
-      if (item) {
-        return item;
-      }
-    }
-  }
-  try {
-    return JSON.stringify(value).slice(0, 160);
-  } catch {
-    return String(value).slice(0, 160);
-  }
 }
 
 function icon_for_file_path(value: string): LucideIcon {
