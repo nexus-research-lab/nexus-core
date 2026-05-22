@@ -1,5 +1,6 @@
 import {
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -137,6 +138,54 @@ export function StageEventSignal({
         <StageSignalMetric label="已沉淀" value={`${completed_count}`} />
         <StageSignalMetric label="接入中" value={incoming_label} strong />
         <StageSignalMetric label="窗口" value={next_window_label} />
+      </div>
+    </div>
+  );
+}
+
+export function StageMaterializingSignal({
+  event,
+  intent,
+}: {
+  event: NexusOperationEvent;
+  intent: StageTransitionIntent;
+}) {
+  const meta = surface_meta_for_transition(event, intent);
+  const Icon = meta.Icon;
+  const window_label = stage_transition_window_label(intent);
+  const tool_label = event.tool_name ?? event.title;
+  const target_label = event.target ?? event.summary ?? event.title;
+
+  return (
+    <div className="operation-materializing-signal pointer-events-none absolute right-5 top-5 z-30 w-[min(330px,calc(100%-2rem))] rounded-[16px] border border-white/72 bg-white/70 p-2.5 shadow-[0_22px_54px_rgba(18,28,42,0.13)] backdrop-blur-2xl max-md:right-3 max-md:top-3">
+      <div className="flex min-w-0 items-center gap-2.5">
+        <span className={cn(
+          "grid h-8 w-8 shrink-0 place-items-center rounded-[11px] border bg-gradient-to-br text-[color:var(--primary)]",
+          meta.accent_class_name,
+        )}>
+          <Icon className="h-4 w-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-[color:var(--primary)]" />
+            <p className="truncate text-[11.5px] font-black text-(--text-strong)">
+              {window_label}装配中
+            </p>
+          </div>
+          <p className="mt-0.5 truncate text-[10px] font-semibold text-(--text-soft)">
+            {tool_label} · {target_label}
+          </p>
+        </div>
+      </div>
+      <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 text-[8.5px] font-bold text-(--text-soft)">
+        <span className="truncate rounded-[9px] bg-white/42 px-2 py-1.5">字符场让位</span>
+        <ArrowRight className="h-3 w-3" />
+        <span className="truncate rounded-[9px] bg-[rgba(91,114,255,0.09)] px-2 py-1.5 text-[color:var(--primary)]">
+          {meta.label}接管
+        </span>
+      </div>
+      <div className="mt-2 overflow-hidden rounded-full bg-white/48">
+        <div className="operation-materializing-line h-1.5 rounded-full bg-[linear-gradient(90deg,rgba(91,114,255,0.68),rgba(79,162,159,0.62),rgba(47,184,132,0.58))]" />
       </div>
     </div>
   );

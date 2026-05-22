@@ -122,6 +122,18 @@ export function OperationStageMotionStyles() {
           100% { opacity: 0; transform: translate3d(-50%, -4px, 0) scale(1.006); filter: blur(.8px); }
         }
 
+        @keyframes nexus-operation-materializing-signal {
+          0% { opacity: 0; transform: translate3d(8px, -8px, 0) scale(.985); filter: blur(3px); }
+          22% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
+          100% { opacity: .92; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
+        }
+
+        @keyframes nexus-operation-materializing-line {
+          0% { transform: scaleX(.18); opacity: .42; }
+          55% { transform: scaleX(.82); opacity: .9; }
+          100% { transform: scaleX(1); opacity: .78; }
+        }
+
         .operation-stage-window {
           animation:
             nexus-operation-window-enter 420ms cubic-bezier(.18,.88,.24,1) both,
@@ -290,6 +302,15 @@ export function OperationStageMotionStyles() {
           animation: nexus-operation-event-signal 1400ms cubic-bezier(.16,.84,.24,1) both;
         }
 
+        .operation-materializing-signal {
+          animation: nexus-operation-materializing-signal 520ms cubic-bezier(.16,.84,.24,1) both;
+        }
+
+        .operation-materializing-line {
+          animation: nexus-operation-materializing-line 980ms cubic-bezier(.2,.8,.2,1) both;
+          transform-origin: left center;
+        }
+
         @media (max-width: 767px) {
           .operation-stage-mobile-panel {
             left: auto !important;
@@ -317,7 +338,9 @@ export function OperationStageMotionStyles() {
           .operation-idle-particle-canvas,
           .operation-boot-signal,
           .operation-boot-line,
-          .operation-event-signal {
+          .operation-event-signal,
+          .operation-materializing-signal,
+          .operation-materializing-line {
             animation: none !important;
           }
         }
