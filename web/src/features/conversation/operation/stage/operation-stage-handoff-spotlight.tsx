@@ -10,15 +10,12 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-import { build_operation_continuation_brief } from "../operation-stage-experience";
+import { build_operation_stage_handoff_spotlight_model } from "../operation-stage-handoff-spotlight-model";
 import type {
   NexusOperationEvent,
   NexusOperationSnapshot,
 } from "../operation-types";
 import type { StageEpisodeMap } from "./operation-stage-episodes";
-import {
-  collect_completion_artifacts,
-} from "./operation-stage-helpers";
 import type { StageNarrativeState } from "./operation-stage-model";
 
 export function StageHandoffSpotlight({
@@ -38,12 +35,17 @@ export function StageHandoffSpotlight({
     return null;
   }
 
-  const artifacts = collect_completion_artifacts(event, snapshot);
-  const continuation = build_operation_continuation_brief(event, events, snapshot);
-  const failed_count = events.filter((item) => item.phase === "error" || item.phase === "cancelled").length;
-  const is_completed = narrative.phase === "completed" && failed_count === 0;
-  const primary_artifact = artifacts[0] ?? null;
-  const artifact_label = primary_artifact?.value ?? event.target ?? event.summary ?? "本轮上下文";
+  const spotlight = build_operation_stage_handoff_spotlight_model({
+    completed_count: episodes.completed_count,
+    event,
+    events,
+    narrative_phase: narrative.phase,
+    snapshot,
+    total_count: episodes.total_count,
+  });
+  if (!spotlight) {
+    return null;
+  }
 
   return (
     <div className="operation-stage-mobile-panel pointer-events-none absolute left-1/2 top-[98px] z-20 w-[min(420px,31vw)] -translate-x-1/2 max-xl:top-[150px] max-xl:w-[min(420px,calc(100%-2rem))] max-md:relative max-md:left-auto max-md:top-auto max-md:mb-3 max-md:!w-full max-md:min-w-0 max-md:!max-w-full max-md:translate-x-0">
@@ -52,37 +54,37 @@ export function StageHandoffSpotlight({
           <div className="flex min-w-0 items-center gap-2">
             <span className={cn(
               "grid h-9 w-9 shrink-0 place-items-center rounded-[14px] border",
-              is_completed
+              spotlight.is_completed
                 ? "border-[rgba(47,184,132,0.22)] bg-[rgba(47,184,132,0.11)] text-[color:var(--success)]"
                 : "border-[rgba(91,114,255,0.22)] bg-[rgba(91,114,255,0.10)] text-[color:var(--primary)]",
             )}>
-              {is_completed ? <CheckCircle2 className="h-4.5 w-4.5" /> : <RadioTower className="h-4.5 w-4.5" />}
+              {spotlight.is_completed ? <CheckCircle2 className="h-4.5 w-4.5" /> : <RadioTower className="h-4.5 w-4.5" />}
             </span>
             <div className="min-w-0">
               <p className="truncate text-[12.5px] font-black text-(--text-strong)">
-                {is_completed ? "工作台已完成交接" : "工作台正在收束"}
+                {spotlight.title}
               </p>
               <p className="mt-0.5 truncate text-[10.5px] font-semibold text-(--text-soft)">
-                {continuation.status_label} · {episodes.completed_count}/{episodes.total_count} 步
+                {spotlight.subtitle}
               </p>
             </div>
           </div>
           <span className={cn(
             "shrink-0 rounded-full border px-2 py-1 text-[9px] font-black",
-            failed_count
+            spotlight.tone === "warning"
               ? "border-[rgba(223,157,46,0.24)] bg-[rgba(223,157,46,0.10)] text-[color:var(--warning)]"
               : "border-[rgba(47,184,132,0.22)] bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]",
           )}>
-            {failed_count ? `${failed_count} 异常` : "ready"}
+            {spotlight.badge_label}
           </span>
         </div>
 
         <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-stretch gap-1.5 text-[9px] max-sm:grid-cols-1">
-          <HandoffStep icon={<Sparkles className="h-3.5 w-3.5" />} label="入口" value="nexus 字符场" />
+          <HandoffStep icon={<Sparkles className="h-3.5 w-3.5" />} label={spotlight.steps[0].label} value={spotlight.steps[0].value} />
           <HandoffArrow />
-          <HandoffStep icon={<ListChecks className="h-3.5 w-3.5" />} label="执行" value={`${events.length} 个动作`} />
+          <HandoffStep icon={<ListChecks className="h-3.5 w-3.5" />} label={spotlight.steps[1].label} value={spotlight.steps[1].value} />
           <HandoffArrow />
-          <HandoffStep icon={<FileText className="h-3.5 w-3.5" />} label="交接" value={artifact_label} />
+          <HandoffStep icon={<FileText className="h-3.5 w-3.5" />} label={spotlight.steps[2].label} value={spotlight.steps[2].value} />
         </div>
 
         <div className="mt-3 rounded-[13px] border border-white/48 bg-white/36 p-2.5">
@@ -95,10 +97,10 @@ export function StageHandoffSpotlight({
             </span>
           </div>
           <p className="line-clamp-2 text-[10.5px] font-semibold leading-5 text-(--text-muted)">
-            {continuation.status_detail}
+            {spotlight.continuation.detail}
           </p>
           <p className="mt-2 rounded-[10px] border border-white/48 bg-white/42 px-2 py-1.5 text-[10px] font-bold leading-4 text-(--text-strong)">
-            {continuation.resume_prompt}
+            {spotlight.continuation.prompt}
           </p>
         </div>
       </div>
