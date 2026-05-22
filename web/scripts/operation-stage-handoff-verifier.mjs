@@ -1,6 +1,9 @@
 export function verify_handoff_spotlight_model({
   assert,
   build_operation_stage_handoff_spotlight_model,
+  fallback_stage_event_object_label,
+  fallback_stage_event_target_label,
+  is_low_signal_stage_label,
   now,
 }) {
   const base = {
@@ -69,4 +72,16 @@ export function verify_handoff_spotlight_model({
     total_count: 1,
   });
   assert(running_model === null, "running phase should not show completed handoff spotlight");
+
+  const low_signal_summary = { ...summary_event, target: "3 turns", title: "本轮执行收口" };
+  assert(is_low_signal_stage_label(low_signal_summary.target), "turn-count summary target should be treated as low signal");
+  assert(is_low_signal_stage_label(low_signal_summary.title), "round summary title should be treated as low signal");
+  assert(
+    fallback_stage_event_object_label(low_signal_summary, "交接") === "交接面板",
+    "round summary should fall back to a workbench handoff object label",
+  );
+  assert(
+    fallback_stage_event_target_label(low_signal_summary, "交接") === "交接交接",
+    "round summary target should fall back to handoff target label",
+  );
 }

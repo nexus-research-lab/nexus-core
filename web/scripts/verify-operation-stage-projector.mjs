@@ -52,6 +52,7 @@ copyFileSync(join(operation_dir, "operation-types.js"), join(operation_dir, "ope
 copyFileSync(join(operation_dir, "operation-desktop-types.js"), join(operation_dir, "operation-desktop-types"));
 copyFileSync(join(operation_dir, "operation-preview.js"), join(operation_dir, "operation-preview"));
 copyFileSync(join(operation_dir, "operation-scene-planner-helpers.js"), join(operation_dir, "operation-scene-planner-helpers"));
+copyFileSync(join(operation_dir, "operation-stage-labels.js"), join(operation_dir, "operation-stage-labels"));
 copyFileSync(join(operation_dir, "operation-stage-experience.js"), join(operation_dir, "operation-stage-experience"));
 copyFileSync(join(operation_dir, "operation-stage-handoff-spotlight-model.js"), join(operation_dir, "operation-stage-handoff-spotlight-model"));
 copyFileSync(join(operation_dir, "operation-terminal-lines.js"), join(operation_dir, "operation-terminal-lines"));
@@ -71,12 +72,20 @@ const {
 const {
   build_operation_stage_handoff_spotlight_model,
 } = await import(pathToFileURL(join(operation_dir, "operation-stage-handoff-spotlight-model.js")));
+const {
+  fallback_stage_event_object_label,
+  fallback_stage_event_target_label,
+  is_low_signal_stage_label,
+} = await import(pathToFileURL(join(operation_dir, "operation-stage-labels.js")));
 const now = Date.now();
 
 verify_stage_experience_state_machine(now);
 verify_handoff_spotlight_model({
   assert,
   build_operation_stage_handoff_spotlight_model,
+  fallback_stage_event_object_label,
+  fallback_stage_event_target_label,
+  is_low_signal_stage_label,
   now,
 });
 verify_live_episode_narrates_running_round(now);

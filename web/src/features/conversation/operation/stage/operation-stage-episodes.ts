@@ -1,4 +1,9 @@
 import type { NexusOperationEvent, NexusOperationSnapshot } from "../operation-types";
+import {
+  fallback_stage_event_object_label,
+  fallback_stage_event_target_label,
+  is_low_signal_stage_label,
+} from "../operation-stage-labels";
 import { resolve_operation_tool_profile } from "../operation-tool-catalog";
 import type { StageEpisodeState, StageNarrativeState } from "./operation-stage-model";
 import { SURFACE_LABEL } from "./operation-stage-style";
@@ -43,7 +48,8 @@ export function build_stage_episodes({
   const episodes = events.map((event, index) => {
     const state = resolve_episode_state(event, index, active_index, narrative);
     const profile = resolve_operation_tool_profile(event.tool_name, event.kind, event.surface);
-    const target = event.target ?? event.summary ?? event.title;
+    const title = episode_event_title(event);
+    const target = episode_event_target(event);
     return {
       id: event.id,
       event,
@@ -51,7 +57,7 @@ export function build_stage_episodes({
       state,
       act_label: `Act ${index + 1}`,
       action_label: profile.action_label,
-      title: event.tool_name ?? event.title,
+      title,
       target,
       surface_label: SURFACE_LABEL[event.surface],
       state_label: episode_state_label(event, state),
@@ -80,6 +86,22 @@ export function build_stage_episodes({
     total_count: episodes.length,
     upcoming_count,
   };
+}
+
+function episode_event_title(event: NexusOperationEvent): string {
+  const candidate = event.tool_name ?? event.title;
+  if (!is_low_signal_stage_label(candidate) && event.kind !== "round_summary") {
+    return candidate;
+  }
+  return fallback_stage_event_object_label(event, SURFACE_LABEL[event.surface]);
+}
+
+function episode_event_target(event: NexusOperationEvent): string {
+  const candidate = event.target ?? event.summary ?? event.title;
+  if (!is_low_signal_stage_label(candidate)) {
+    return candidate;
+  }
+  return fallback_stage_event_target_label(event, SURFACE_LABEL[event.surface]);
 }
 
 export function episode_tone(
