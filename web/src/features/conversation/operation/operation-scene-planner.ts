@@ -14,6 +14,10 @@ import type {
 } from "./operation-desktop-types";
 import { find_operation_html_artifact } from "./operation-html-artifacts";
 import { build_operation_continuation_brief } from "./operation-stage-experience";
+import {
+  build_operation_terminal_lines,
+  read_terminal_command,
+} from "./operation-terminal-lines";
 
 interface PlanOperationDesktopParams {
   event: NexusOperationEvent;
@@ -171,7 +175,7 @@ function build_windows(
 
   if (terminal_events.length > 0) {
     const terminal_event = terminal_events.at(-1) ?? event;
-    const terminal_lines = build_terminal_lines(terminal_events);
+    const terminal_lines = build_operation_terminal_lines(terminal_events);
     windows.push(window_state(terminal_event, snapshot, {
       id: "terminal",
       kind: "terminal",
@@ -180,9 +184,7 @@ function build_windows(
       phase: focus_target === "terminal" ? "focused" : "background",
       z: focus_target === "terminal" ? 36 : 18,
       payload: {
-        command: read_input_string(terminal_event.input_preview, ["command", "description"])
-          ?? terminal_event.target
-          ?? "",
+        command: read_terminal_command(terminal_event),
         lines: terminal_lines,
         related_events: terminal_events,
       },
@@ -631,68 +633,6 @@ function preferred_window_kind_for_event(event: NexusOperationEvent): StageWindo
     return ["code_editor", "markdown_reader", "word_reader", "pdf_reader", "spreadsheet", "image_viewer"];
   }
   return ["generic_tool", "summary"];
-}
-
-function build_terminal_lines(events: NexusOperationEvent[]): string[] {
-  return events.flatMap((event) => {
-    const command = read_input_string(event.input_preview, ["command", "description"]) ?? event.target ?? event.tool_name ?? "command";
-    const result_lines = terminal_result_lines(event).filter((line) => !terminal_line_matches_command(line, command));
-    return [
-      `$ ${command}`,
-      ...result_lines,
-    ];
-  }).slice(-80);
-}
-
-function terminal_result_lines(event: NexusOperationEvent): string[] {
-  const result_lines = extract_terminal_lines(event.result_preview).slice(0, 24);
-  if (result_lines.length > 0) {
-    return result_lines;
-  }
-  if (event.summary) {
-    return split_terminal_text(event.summary).slice(0, 8);
-  }
-  if (event.phase === "running") {
-    return ["waiting for output..."];
-  }
-  return [];
-}
-
-function extract_terminal_lines(value: unknown): string[] {
-  if (value == null) {
-    return [];
-  }
-  if (typeof value === "string") {
-    return split_terminal_text(value);
-  }
-  if (typeof value === "number" || typeof value === "boolean") {
-    return [String(value)];
-  }
-  if (Array.isArray(value)) {
-    return value.flatMap((item) => extract_terminal_lines(item));
-  }
-  if (typeof value === "object") {
-    const record = value as Record<string, unknown>;
-    const preferred_keys = ["stdout", "stderr", "output", "text", "content", "result", "message", "error"] as const;
-    const lines = preferred_keys.flatMap((key) => extract_terminal_lines(record[key]));
-    if (lines.length > 0) {
-      return lines;
-    }
-    return split_terminal_text(safe_json_stringify(value));
-  }
-  return [String(value)];
-}
-
-function split_terminal_text(value: string): string[] {
-  const normalized = value.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-  if (!normalized.trim()) {
-    return [];
-  }
-  return normalized.split("\n").map((line) => line.trimEnd());
-}
-
-function terminal_line_matches_command(line: string, command: string): boolean {
-  return line.replace(/^\s*[$>]\s?/, "").trim() === command.trim();
 }
 
 function normalize_window_id(value: string): string {
