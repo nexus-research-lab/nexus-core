@@ -50,6 +50,7 @@ copyFileSync(join(operation_dir, "operation-projection-timeline.js"), join(opera
 copyFileSync(join(operation_dir, "operation-types.js"), join(operation_dir, "operation-types"));
 copyFileSync(join(operation_dir, "operation-desktop-types.js"), join(operation_dir, "operation-desktop-types"));
 copyFileSync(join(operation_dir, "operation-preview.js"), join(operation_dir, "operation-preview"));
+copyFileSync(join(operation_dir, "operation-scene-planner-helpers.js"), join(operation_dir, "operation-scene-planner-helpers"));
 copyFileSync(join(operation_dir, "operation-stage-experience.js"), join(operation_dir, "operation-stage-experience"));
 copyFileSync(join(operation_dir, "operation-terminal-lines.js"), join(operation_dir, "operation-terminal-lines"));
 copyFileSync(join(operation_dir, "operation-summary-events.js"), join(operation_dir, "operation-summary-events"));

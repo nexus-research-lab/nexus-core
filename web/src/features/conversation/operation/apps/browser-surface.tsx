@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 
-import { HtmlFilePreview } from "@/features/conversation/shared/editor/html-file-preview";
+import { HtmlFilePreview, HtmlPreviewViewport } from "@/features/conversation/shared/editor/html-file-preview";
 import { get_workspace_file_raw_url } from "@/lib/api/agent-manage-api";
 import { cn } from "@/lib/utils";
 
@@ -216,14 +216,11 @@ function BrowserViewport({
 
   if (iframe_url) {
     return (
-      <div className="min-h-0 flex-1 bg-white">
-        <iframe
-          className="h-full w-full bg-white"
-          sandbox="allow-forms allow-modals allow-pointer-lock allow-popups allow-scripts"
-          src={iframe_url}
-          title={target ?? query}
-        />
-      </div>
+      <HtmlPreviewViewport
+        class_name="flex-1 bg-white"
+        source_url={iframe_url}
+        title={target ?? query}
+      />
     );
   }
 

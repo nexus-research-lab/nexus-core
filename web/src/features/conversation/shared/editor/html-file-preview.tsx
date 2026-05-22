@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { cn } from "@/lib/utils";
+
 const HTML_PREVIEW_WIDTH = 1920;
 const HTML_PREVIEW_HEIGHT = 1080;
 const HTML_PREVIEW_PADDING = 32;
@@ -135,18 +137,26 @@ function useHtmlPreviewDocument(content: string, is_streaming: boolean) {
   };
 }
 
-export function HtmlFilePreview({
+export function HtmlPreviewViewport({
+  class_name,
   content,
   is_streaming = false,
+  source_url,
   title,
 }: {
-  content: string;
+  class_name?: string;
+  content?: string | null;
   is_streaming?: boolean;
+  source_url?: string | null;
   title: string;
 }) {
   const container_ref = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
-  const { has_committed_content, is_waiting_for_head, preview_document } = useHtmlPreviewDocument(content, is_streaming);
+  const has_document_source = typeof content === "string";
+  const { has_committed_content, is_waiting_for_head, preview_document } = useHtmlPreviewDocument(
+    content ?? "",
+    has_document_source && is_streaming,
+  );
 
   useEffect(() => {
     const el = container_ref.current;
@@ -181,9 +191,12 @@ export function HtmlFilePreview({
     return () => observer.disconnect();
   }, []);
 
-  if (!has_committed_content && is_waiting_for_head) {
+  if (has_document_source && !has_committed_content && is_waiting_for_head) {
     return (
-      <div className="soft-scrollbar h-full min-h-0 w-full overflow-auto bg-(--surface-panel-subtle-background) p-4">
+      <div className={cn(
+        "soft-scrollbar h-full min-h-0 w-full overflow-auto bg-(--surface-panel-subtle-background) p-4",
+        class_name,
+      )}>
         <pre className="message-cjk-code-font whitespace-pre-wrap break-words text-sm leading-6 text-(--text-muted)">
           {content}
         </pre>
@@ -194,7 +207,10 @@ export function HtmlFilePreview({
   return (
     <div
       ref={container_ref}
-      className="soft-scrollbar flex h-full min-h-0 w-full items-start justify-center overflow-auto bg-(--surface-panel-subtle-background) p-4"
+      className={cn(
+        "soft-scrollbar flex h-full min-h-0 w-full items-start justify-center overflow-auto bg-(--surface-panel-subtle-background) p-4",
+        class_name,
+      )}
     >
       <div
         className="shrink-0 overflow-hidden rounded-[10px] border border-(--divider-subtle-color) bg-white shadow-[0_20px_60px_rgba(15,23,42,0.10)]"
@@ -213,12 +229,31 @@ export function HtmlFilePreview({
         >
           <iframe
             className="h-full w-full bg-white"
-            sandbox="allow-downloads allow-forms allow-modals allow-popups allow-scripts"
-            srcDoc={preview_document}
+            sandbox="allow-downloads allow-forms allow-modals allow-pointer-lock allow-popups allow-scripts"
+            src={source_url ?? undefined}
+            srcDoc={has_document_source ? preview_document : undefined}
             title={title}
           />
         </div>
       </div>
     </div>
+  );
+}
+
+export function HtmlFilePreview({
+  content,
+  is_streaming = false,
+  title,
+}: {
+  content: string;
+  is_streaming?: boolean;
+  title: string;
+}) {
+  return (
+    <HtmlPreviewViewport
+      content={content}
+      is_streaming={is_streaming}
+      title={title}
+    />
   );
 }
