@@ -94,10 +94,11 @@ export function StageEventSignal({
   const incoming_label = event.tool_name ?? event.title;
   const next_window_label = stage_transition_window_label(intent);
   const completed_count = Math.max(0, round_event_count - 1);
+  const target_label = event.target ?? event.summary ?? event.title;
 
   return (
     <div
-      className="operation-event-signal pointer-events-none absolute left-1/2 top-5 z-30 w-[min(440px,calc(100%-2rem))] rounded-[16px] border border-white/72 bg-white/72 p-2.5 shadow-[0_22px_54px_rgba(18,28,42,0.14)] backdrop-blur-2xl"
+      className="operation-event-signal pointer-events-none absolute left-1/2 top-5 z-30 w-[min(460px,calc(100%-2rem))] -translate-x-1/2 rounded-[16px] border border-white/72 bg-white/72 p-2.5 shadow-[0_22px_54px_rgba(18,28,42,0.14)] backdrop-blur-2xl"
       key={`event-signal-${sequence}`}
     >
       <div className="flex min-w-0 items-center gap-2.5">
@@ -121,10 +122,17 @@ export function StageEventSignal({
             </span>
           </div>
           <p className="mt-0.5 truncate text-[10.5px] font-semibold text-(--text-muted)">
-            {incoming_label} · {event.target ?? event.summary ?? event.title}
+            {incoming_label} · {target_label}
           </p>
         </div>
       </div>
+      <StageLaunchRoute
+        steps={[
+          { label: "上一现场", value: completed_count ? `${completed_count} 已沉淀` : "首个窗口", tone: "success" },
+          { label: "当前工具", value: incoming_label, tone: "active" },
+          { label: "窗口接管", value: next_window_label, tone: "pending" },
+        ]}
+      />
       <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
         <StageSignalMetric label="已沉淀" value={`${completed_count}`} />
         <StageSignalMetric label="接入中" value={incoming_label} strong />
