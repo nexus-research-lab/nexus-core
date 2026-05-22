@@ -25,15 +25,25 @@ import { PHASE_STATUS_META, SURFACE_LABEL } from "./operation-stage-style";
 
 function StagePhasePath({ narrative }: { narrative: StageNarrativeState }) {
   const resolved_active_index = stage_phase_compass_active_index(narrative.phase);
+  const progress_width = `${(resolved_active_index / (STAGE_PHASE_COMPASS_ITEMS.length - 1)) * 80}%`;
 
   return (
-    <div className="mt-3 rounded-[12px] border border-white/46 bg-white/30 px-2 py-2">
-      <div className="mb-1.5 flex items-center justify-between gap-2 text-[8.5px] font-black uppercase tracking-[0.10em] text-(--text-soft)">
-        <span>stage</span>
-        <span className="normal-case tracking-normal">{narrative.label}</span>
+    <div className="mt-3 rounded-[13px] border border-white/50 bg-white/34 px-2.5 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.46)]">
+      <div className="mb-2 flex min-w-0 items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-[8.5px] font-black uppercase tracking-[0.14em] text-(--text-soft)">episode path</p>
+          <p className="mt-0.5 truncate text-[10.5px] font-bold text-(--text-strong)">{narrative.detail}</p>
+        </div>
+        <span className="shrink-0 rounded-full border border-white/54 bg-white/46 px-2 py-1 text-[8.5px] font-black text-(--text-soft)">
+          {narrative.label}
+        </span>
       </div>
-      <div className="relative grid grid-cols-5 gap-1">
+      <div className="relative grid grid-cols-5 gap-1.5">
         <div className="absolute left-[10%] right-[10%] top-[13px] h-px bg-white/64" />
+        <div
+          className="absolute left-[10%] top-[13px] h-px bg-[linear-gradient(90deg,rgba(91,114,255,0.72),rgba(79,162,159,0.66),rgba(47,184,132,0.62))] transition-[width] duration-500"
+          style={{ width: progress_width }}
+        />
         {STAGE_PHASE_COMPASS_ITEMS.map((item, index) => {
           const Icon = item.Icon;
           const is_active = index === resolved_active_index;
@@ -41,9 +51,9 @@ function StagePhasePath({ narrative }: { narrative: StageNarrativeState }) {
           return (
             <div className="relative min-w-0 text-center" key={item.id}>
               <span className={cn(
-                "relative z-10 mx-auto grid h-6 w-6 place-items-center rounded-[9px] border shadow-[inset_0_1px_0_rgba(255,255,255,0.62)]",
+                "relative z-10 mx-auto grid h-6 w-6 place-items-center rounded-[9px] border shadow-[inset_0_1px_0_rgba(255,255,255,0.62)] transition",
                 is_active
-                  ? "border-[rgba(91,114,255,0.30)] bg-[rgba(91,114,255,0.15)] text-[color:var(--primary)]"
+                  ? "scale-110 border-[rgba(91,114,255,0.34)] bg-[rgba(91,114,255,0.16)] text-[color:var(--primary)] shadow-[0_8px_20px_rgba(91,114,255,0.16)]"
                   : is_done
                     ? "border-[rgba(47,184,132,0.20)] bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]"
                     : "border-white/48 bg-white/48 text-(--icon-muted)",
@@ -55,6 +65,12 @@ function StagePhasePath({ narrative }: { narrative: StageNarrativeState }) {
                 is_active ? "text-(--text-strong)" : "text-(--text-soft)",
               )}>
                 {item.label}
+              </span>
+              <span className={cn(
+                "mt-0.5 block truncate text-[7.5px] font-semibold",
+                is_active ? "text-[color:var(--primary)]" : "text-(--text-soft)",
+              )}>
+                {is_active ? "当前" : is_done ? "沉淀" : "待接入"}
               </span>
             </div>
           );
