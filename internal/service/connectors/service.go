@@ -17,6 +17,7 @@ import (
 	"github.com/nexus-research-lab/nexus/internal/connectors/credentials"
 	"github.com/nexus-research-lab/nexus/internal/connectors/providers"
 	"github.com/nexus-research-lab/nexus/internal/storage"
+	connectorstore "github.com/nexus-research-lab/nexus/internal/storage/connectors"
 )
 
 // Info 表示连接器列表项。
@@ -77,6 +78,14 @@ type DeviceAuthPollResult struct {
 	Connector *Info  `json:"connector,omitempty"`
 }
 
+// OAuthClientView 是前端可见的 OAuth 应用配置摘要，不包含 secret 明文。
+type OAuthClientView struct {
+	ConnectorID     string    `json:"connector_id"`
+	ClientID        string    `json:"client_id"`
+	HasClientSecret bool      `json:"has_client_secret"`
+	UpdatedAt       time.Time `json:"updated_at"`
+}
+
 const (
 	oauthRedirectKindWeb     = "web"
 	oauthRedirectKindDesktop = "desktop"
@@ -122,15 +131,23 @@ type Service struct {
 	db         *sql.DB
 	driver     string
 	httpClient *http.Client
+	clients    *connectorstore.OAuthClientStore
 }
 
 // NewService 创建连接器服务。
 func NewService(cfg config.Config, db *sql.DB) *Service {
 	driver := storage.NormalizeSQLDriver(cfg.DatabaseDriver)
+	var clients *connectorstore.OAuthClientStore
+	if key, err := credentials.DecodeKey(cfg.ConnectorCredentialsKey); err == nil {
+		clients = connectorstore.NewOAuthClientStore(db, driver, key)
+	} else if strings.TrimSpace(cfg.ConnectorCredentialsKey) != "" {
+		fmt.Fprintln(os.Stderr, "WARNING: CONNECTOR_CREDENTIALS_KEY 解析失败，OAuth client DB 配置将不可用")
+	}
 	return &Service{
-		config: cfg,
-		db:     db,
-		driver: driver,
+		config:  cfg,
+		db:      db,
+		driver:  driver,
+		clients: clients,
 		httpClient: &http.Client{
 			Timeout: 20 * time.Second,
 		},
