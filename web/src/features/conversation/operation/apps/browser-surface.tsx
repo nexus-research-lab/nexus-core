@@ -205,7 +205,13 @@ function BrowserViewport({
   target?: string | null;
 }) {
   if (srcdoc) {
-    return <HtmlFilePreview content={srcdoc} title={target ?? query} />;
+    return (
+      <HtmlFilePreview
+        content={srcdoc}
+        is_streaming={event.phase === "running"}
+        title={target ?? query}
+      />
+    );
   }
 
   if (iframe_url) {

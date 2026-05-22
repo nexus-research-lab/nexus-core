@@ -1,0 +1,82 @@
+import type {
+  NexusOperationEvent,
+  NexusOperationSnapshot,
+} from "./operation-types";
+
+export interface OperationHtmlArtifact {
+  path: string;
+  live_content: string | null;
+}
+
+export function find_operation_html_artifact(
+  snapshot: NexusOperationSnapshot | null,
+  events: NexusOperationEvent[],
+): OperationHtmlArtifact | null {
+  const html_targets = new Set<string>();
+  let candidate_path: string | null = null;
+  for (const event of [...events].reverse()) {
+    if (!event.target || !looks_like_html_path(event.target)) {
+      continue;
+    }
+    html_targets.add(event.target);
+    candidate_path ??= event.target;
+    const content = read_event_html_content(event);
+    if (content) {
+      return {
+        path: event.target,
+        live_content: content,
+      };
+    }
+  }
+
+  const workspace_artifact = snapshot?.workspace_events.find((item) => (
+    html_targets.has(item.path) &&
+    looks_like_html_path(item.path)
+  ));
+  if (workspace_artifact) {
+    return {
+      path: workspace_artifact.path,
+      live_content: workspace_artifact.live_content ?? null,
+    };
+  }
+
+  if (candidate_path) {
+    return {
+      path: candidate_path,
+      live_content: null,
+    };
+  }
+
+  return null;
+}
+
+function read_event_html_content(event: NexusOperationEvent): string | null {
+  return read_input_string(event.input_preview, ["content", "text", "body"])
+    ?? (typeof event.result_preview === "string" && looks_like_html_content(event.result_preview)
+      ? event.result_preview
+      : null);
+}
+
+function read_input_string(
+  input: Record<string, unknown> | null | undefined,
+  keys: string[],
+): string | null {
+  if (!input) {
+    return null;
+  }
+  for (const key of keys) {
+    const value = input[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+  return null;
+}
+
+function looks_like_html_path(path: string): boolean {
+  return /\.(html?|xhtml)$/i.test(path);
+}
+
+function looks_like_html_content(value: string): boolean {
+  return /<html|<!doctype|<script/i.test(value);
+}

@@ -12,6 +12,7 @@ import type {
   StageWindowPhase,
   StageWindowState,
 } from "./operation-desktop-types";
+import { find_operation_html_artifact } from "./operation-html-artifacts";
 import { build_operation_continuation_brief } from "./operation-stage-experience";
 
 interface PlanOperationDesktopParams {
@@ -115,7 +116,7 @@ function build_windows(
     round_events,
     workspace_items,
   });
-  const html_artifact = find_html_artifact(snapshot, round_events);
+  const html_artifact = find_operation_html_artifact(snapshot, round_events);
   const focus_target = resolve_focus_target(event, {
     has_file: Boolean(latest_file_target),
     has_html_artifact: Boolean(html_artifact),
@@ -539,51 +540,6 @@ function collect_file_documents({
     .sort((left, right) => right.event.updated_at - left.event.updated_at)
     .slice(0, 4)
     .reverse();
-}
-
-function find_html_artifact(
-  snapshot: NexusOperationSnapshot | null,
-  events: NexusOperationEvent[],
-): { path: string; live_content: string | null } | null {
-  const html_targets = new Set<string>();
-  let candidate_path: string | null = null;
-  for (const event of [...events].reverse()) {
-    if (!event.target || !/\.(html?|xhtml)$/i.test(event.target)) {
-      continue;
-    }
-    html_targets.add(event.target);
-    candidate_path ??= event.target;
-    const content = read_input_string(event.input_preview, ["content", "text", "body"])
-      ?? (typeof event.result_preview === "string" && /<html|<!doctype|<script/i.test(event.result_preview)
-        ? event.result_preview
-        : null);
-    if (content) {
-      return {
-        path: event.target,
-        live_content: content,
-      };
-    }
-  }
-
-  const workspace_artifact = snapshot?.workspace_events.find((item) => (
-    html_targets.has(item.path) &&
-    /\.(html?|xhtml)$/i.test(item.path)
-  ));
-  if (workspace_artifact) {
-    return {
-      path: workspace_artifact.path,
-      live_content: workspace_artifact.live_content ?? null,
-    };
-  }
-
-  if (candidate_path) {
-    return {
-      path: candidate_path,
-      live_content: null,
-    };
-  }
-
-  return null;
 }
 
 function build_handoff_summary(
