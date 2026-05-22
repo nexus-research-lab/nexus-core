@@ -42,6 +42,7 @@ writeFileSync(join(out_dir, "package.json"), "{\"type\":\"module\"}\n");
 // matching files when executing the compiled projector directly.
 copyFileSync(join(operation_dir, "operation-tool-catalog.js"), join(operation_dir, "operation-tool-catalog"));
 copyFileSync(join(operation_dir, "operation-tool-inference.js"), join(operation_dir, "operation-tool-inference"));
+copyFileSync(join(operation_dir, "operation-file-documents.js"), join(operation_dir, "operation-file-documents"));
 copyFileSync(join(operation_dir, "operation-html-artifacts.js"), join(operation_dir, "operation-html-artifacts"));
 copyFileSync(join(operation_dir, "operation-pending-permissions.js"), join(operation_dir, "operation-pending-permissions"));
 copyFileSync(join(operation_dir, "operation-projection-preview.js"), join(operation_dir, "operation-projection-preview"));
