@@ -41,6 +41,7 @@ writeFileSync(join(out_dir, "package.json"), "{\"type\":\"module\"}\n");
 // The app uses bundler-style extensionless imports. Node's ESM loader needs
 // matching files when executing the compiled projector directly.
 copyFileSync(join(operation_dir, "operation-tool-catalog.js"), join(operation_dir, "operation-tool-catalog"));
+copyFileSync(join(operation_dir, "operation-tool-inference.js"), join(operation_dir, "operation-tool-inference"));
 copyFileSync(join(operation_dir, "operation-types.js"), join(operation_dir, "operation-types"));
 copyFileSync(join(operation_dir, "operation-desktop-types.js"), join(operation_dir, "operation-desktop-types"));
 copyFileSync(join(operation_dir, "operation-preview.js"), join(operation_dir, "operation-preview"));
