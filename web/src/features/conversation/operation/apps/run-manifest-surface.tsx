@@ -15,10 +15,14 @@ import type {
   NexusOperationSnapshot,
   OperationEvidence,
 } from "../operation-types";
-import { resolve_operation_tool_profile } from "../operation-tool-catalog";
+import {
+  build_operation_input_rows,
+  resolve_operation_tool_profile,
+} from "../operation-tool-catalog";
 import { ACTION_ICON, ACTION_TONE_CLASS } from "./operation-action-style";
 import {
   collect_manifest_artifacts,
+  extract_manifest_event_output,
   extract_manifest_result_text,
   format_manifest_duration,
   icon_for_manifest_artifact,
@@ -202,6 +206,8 @@ export function RunManifestSurface({
               const profile = resolve_operation_tool_profile(item.tool_name, item.kind, item.surface);
               const Icon = ACTION_ICON[profile.action];
               const can_focus_event = Boolean(on_focus_event);
+              const input_row = build_operation_input_rows(item.input_preview, profile.target_keys, 1)[0] ?? null;
+              const output_label = extract_manifest_event_output(item);
               return (
                 <button
                   aria-label={`查看执行步骤 ${index + 1}：${profile.action_label} ${item.tool_name ?? item.title}`}
@@ -230,6 +236,16 @@ export function RunManifestSurface({
                     <span className="mt-0.5 block truncate text-[10px] text-(--text-soft)">
                       {item.target ?? item.summary ?? profile.title}
                     </span>
+                    {input_row || output_label ? (
+                      <span className="mt-1 grid min-w-0 grid-cols-2 gap-1.5 max-sm:grid-cols-1">
+                        {input_row ? (
+                          <ManifestEventIOPill label="输入" value={`${input_row.label}: ${input_row.value}`} />
+                        ) : null}
+                        {output_label ? (
+                          <ManifestEventIOPill label="输出" value={output_label} />
+                        ) : null}
+                      </span>
+                    ) : null}
                   </span>
                   <span className={cn(
                     "shrink-0 rounded-full px-1.5 py-px text-[9px] font-bold",
@@ -261,6 +277,15 @@ export function RunManifestSurface({
         </div>
       </section>
     </div>
+  );
+}
+
+function ManifestEventIOPill({ label, value }: { label: string; value: string }) {
+  return (
+    <span className="flex min-w-0 overflow-hidden rounded-[8px] border border-white/46 bg-white/38 px-1.5 py-1">
+      <span className="mr-1 shrink-0 font-black text-(--text-soft)">{label}</span>
+      <span className="truncate font-semibold text-(--text-muted)">{value}</span>
+    </span>
   );
 }
 
