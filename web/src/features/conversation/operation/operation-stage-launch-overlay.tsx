@@ -80,11 +80,13 @@ export function StageBootSignal({
 export function StageEventSignal({
   event,
   intent,
+  previous_event,
   round_event_count,
   sequence,
 }: {
   event: NexusOperationEvent;
   intent: StageTransitionIntent;
+  previous_event?: NexusOperationEvent | null;
   round_event_count: number;
   sequence: number;
 }) {
@@ -96,6 +98,10 @@ export function StageEventSignal({
   const next_window_label = stage_transition_window_label(intent);
   const completed_count = Math.max(0, round_event_count - 1);
   const target_label = event.target ?? event.summary ?? event.title;
+  const previous_label = previous_event?.tool_name ?? previous_event?.title ?? (
+    completed_count ? `${completed_count} 已沉淀` : "首个窗口"
+  );
+  const previous_target = previous_event?.target ?? previous_event?.summary ?? previous_event?.title;
 
   return (
     <div
@@ -129,11 +135,17 @@ export function StageEventSignal({
       </div>
       <StageLaunchRoute
         steps={[
-          { label: "上一现场", value: completed_count ? `${completed_count} 已沉淀` : "首个窗口", tone: "success" },
+          { label: "上一现场", value: previous_label, tone: "success" },
           { label: "当前工具", value: incoming_label, tone: "active" },
           { label: "窗口接管", value: next_window_label, tone: "pending" },
         ]}
       />
+      {previous_target ? (
+        <div className="mt-2 rounded-[10px] border border-[rgba(47,184,132,0.16)] bg-[rgba(47,184,132,0.07)] px-2 py-1.5 text-[9px] font-semibold text-(--text-soft)">
+          <span className="font-black text-[color:var(--success)]">已沉淀：</span>
+          <span className="ml-1">{previous_target}</span>
+        </div>
+      ) : null}
       <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
         <StageSignalMetric label="已沉淀" value={`${completed_count}`} />
         <StageSignalMetric label="接入中" value={incoming_label} strong />

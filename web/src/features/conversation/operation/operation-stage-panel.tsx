@@ -149,6 +149,9 @@ function StageSurface({
   const round_event_count = active_event && snapshot
     ? snapshot.events.filter((item) => item.round_id === active_event.round_id).length
     : active_event ? 1 : 0;
+  const previous_round_event = active_event && snapshot
+    ? find_previous_round_event(active_event, snapshot)
+    : null;
 
   return (
     <section className={cn(
@@ -194,6 +197,7 @@ function StageSurface({
                   <StageEventSignal
                     event={active_event}
                     intent={stage_transition.intent}
+                    previous_event={previous_round_event}
                     round_event_count={round_event_count}
                     sequence={stage_transition.sequence}
                   />
@@ -270,6 +274,20 @@ function StageScene({
   snapshot: NexusOperationSnapshot | null;
 }) {
   return <OperationStageDesktop event={event} snapshot={snapshot} />;
+}
+
+function find_previous_round_event(
+  active_event: NexusOperationEvent,
+  snapshot: NexusOperationSnapshot,
+): NexusOperationEvent | null {
+  const round_events = snapshot.events
+    .filter((item) => item.round_id === active_event.round_id)
+    .sort((left, right) => left.updated_at - right.updated_at);
+  const active_index = round_events.findIndex((item) => item.id === active_event.id);
+  if (active_index <= 0) {
+    return null;
+  }
+  return round_events[active_index - 1] ?? null;
 }
 
 function useStageTransition(active_event: NexusOperationEvent | null): StageTransitionState {
