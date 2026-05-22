@@ -1,7 +1,6 @@
 import type { WorkspaceActivityItem } from "@/types/app/workspace-live";
 import type {
   Message,
-  ResultSummary,
   SystemEventContent,
   ToolResultContent,
   ToolUseContent,
@@ -14,6 +13,12 @@ import type {
   OperationEvidence,
   OperationPhase,
 } from "./operation-types";
+import {
+  collect_recent_operation_evidence,
+  filter_workspace_events_for_stage,
+  pick_operation_active_event,
+  resolve_workspace_event_round_id,
+} from "./operation-projection-timeline";
 import {
   DEFAULT_TARGET_KEYS,
   extract_operation_input_value,
@@ -30,6 +35,7 @@ import {
   summarize_projected_value,
   truncate_projected_text,
 } from "./operation-projection-preview";
+import { project_result_summary_event } from "./operation-summary-events";
 
 const MAX_EVENTS = 24;
 const MAX_EVIDENCE = 8;
@@ -130,45 +136,12 @@ export function project_operation_snapshot({
       }
     }
 
-    if (message.result_summary) {
-      const is_summary_error = is_result_summary_error(message);
-      const summary_text = message.result_summary.result ?? extract_assistant_text_preview(message) ?? null;
-      const result_preview = build_summary_result_preview(
-        message.result_summary,
-        is_summary_error,
-        summary_text,
-      );
-      const round_started_at = find_round_start_timestamp(
-        projected_messages,
-        message.round_id,
-        message.timestamp,
-      );
-      events.push({
-        id: `${message.message_id}:summary`,
-        session_key: message.session_key,
-        round_id: message.round_id,
-        agent_id: message.agent_id,
-        message_id: message.message_id,
-        kind: "round_summary",
-        surface: "summary",
-        phase: is_summary_error
-          ? "error"
-          : message.result_summary.subtype === "interrupted"
-            ? "cancelled"
-            : "done",
-        title: is_summary_error ? "本轮执行异常" : "本轮执行收口",
-        target: `${message.result_summary.num_turns} turns`,
-        summary: summary_text,
-        result_preview,
-        evidence: [
-          ...(is_summary_error ? [{ type: "error" as const, label: "error", value: summary_text }] : []),
-          { type: "status", label: "duration", value: `${Math.round(message.result_summary.duration_ms / 1000)}s` },
-          { type: "status", label: "turns", value: String(message.result_summary.num_turns) },
-        ],
-        started_at: round_started_at,
-        updated_at: message.result_summary.timestamp ?? message.timestamp,
-        ended_at: message.result_summary.timestamp ?? message.timestamp,
-      });
+    const summary_event = project_result_summary_event({
+      message,
+      projected_messages,
+    });
+    if (summary_event) {
+      events.push(summary_event);
     }
   }
 
@@ -213,8 +186,8 @@ export function project_operation_snapshot({
   const sorted_events = events
     .sort((left, right) => (left.updated_at || 0) - (right.updated_at || 0))
     .slice(-MAX_EVENTS);
-  const active_event = pick_active_event(sorted_events);
-  const recent_evidence = collect_recent_evidence(sorted_events);
+  const active_event = pick_operation_active_event(sorted_events);
+  const recent_evidence = collect_recent_operation_evidence(sorted_events, MAX_EVIDENCE);
 
   return {
     key,
@@ -225,76 +198,6 @@ export function project_operation_snapshot({
     workspace_events: relevant_workspace_events.slice(0, 8),
     updated_at: Date.now(),
   };
-}
-
-function filter_workspace_events_for_stage(
-  workspace_events: WorkspaceActivityItem[],
-  session_key: string | null,
-  projected_events: NexusOperationEvent[],
-): WorkspaceActivityItem[] {
-  if (!session_key) {
-    return workspace_events;
-  }
-
-  const tool_use_ids = new Set(
-    projected_events
-      .map((event) => event.tool_use_id)
-      .filter((tool_use_id): tool_use_id is string => Boolean(tool_use_id)),
-  );
-
-  return workspace_events.filter((event) => {
-    if (event.session_key === session_key) {
-      return true;
-    }
-    return Boolean(event.tool_use_id && tool_use_ids.has(event.tool_use_id));
-  });
-}
-
-function build_summary_result_preview(
-  summary: ResultSummary,
-  is_error: boolean,
-  summary_text: string | null,
-): unknown {
-  const redacted = redact_projected_value(summary) as Record<string, unknown>;
-  if (!is_error) {
-    return redacted;
-  }
-
-  return {
-    ...redacted,
-    is_error: true,
-    result: summary_text,
-    subtype: summary.subtype === "interrupted" ? "interrupted" : "error",
-  };
-}
-
-function is_result_summary_error(message: Extract<Message, { role: "assistant" }>): boolean {
-  if (!message.result_summary) {
-    return false;
-  }
-  if (message.result_summary.is_error || message.result_summary.subtype === "error") {
-    return true;
-  }
-  if (message.stream_status === "error") {
-    return true;
-  }
-  if (message.model === "<synthetic>") {
-    const text = extract_assistant_text_preview(message) ?? "";
-    return /\b(error|failed|unauthorized|authenticate|invalid|expired)\b/i.test(text);
-  }
-  return false;
-}
-
-function extract_assistant_text_preview(message: Extract<Message, { role: "assistant" }>): string | null {
-  const text = message.content
-    .filter((block) => block.type === "text")
-    .map((block) => block.text)
-    .join("\n")
-    .trim();
-  if (!text) {
-    return null;
-  }
-  return text.length > OPERATION_MAX_TEXT_PREVIEW ? `${text.slice(0, OPERATION_MAX_TEXT_PREVIEW)}...` : text;
 }
 
 function project_system_event({
@@ -402,15 +305,6 @@ function find_round_user_prompt(messages: Message[], round_id: string): string |
     message.role === "user"
   ));
   return user_message?.role === "user" ? user_message.content : null;
-}
-
-function find_round_start_timestamp(
-  messages: Message[],
-  round_id: string,
-  fallback_timestamp: number,
-): number {
-  const first_round_message = messages.find((message) => message.round_id === round_id);
-  return first_round_message?.timestamp ?? fallback_timestamp;
 }
 
 function collect_tool_results(messages: Message[]): Map<string, ToolResultContent> {
@@ -605,64 +499,6 @@ function project_workspace_event(
     ],
     updated_at: event.updated_at,
   };
-}
-
-function pick_active_event(events: NexusOperationEvent[]): NexusOperationEvent | null {
-  if (!events.length) {
-    return null;
-  }
-
-  const latest_event = events.reduce((latest, item) => (
-    (item.updated_at || 0) >= (latest.updated_at || 0) ? item : latest
-  ), events[0]);
-  const active_round_id = latest_event.round_id;
-  const round_events = events.filter((item) => item.round_id === active_round_id);
-  const summary_event = [...round_events].reverse().find((item) => item.kind === "round_summary");
-  if (summary_event && (
-    summary_event.phase === "done" ||
-    summary_event.phase === "error" ||
-    summary_event.phase === "cancelled"
-  )) {
-    return summary_event;
-  }
-
-  const priority = ["waiting", "running", "error"] satisfies OperationPhase[];
-
-  for (const phase of priority) {
-    const event = [...round_events].reverse().find((item) => item.phase === phase);
-    if (event) {
-      return event;
-    }
-  }
-
-  if (summary_event) {
-    return summary_event;
-  }
-
-  return round_events.at(-1) ?? latest_event;
-}
-
-function resolve_workspace_event_round_id(
-  event: WorkspaceActivityItem,
-  projected_events: NexusOperationEvent[],
-): string {
-  if (event.tool_use_id) {
-    const matched_tool_event = [...projected_events].reverse().find((item) => (
-      item.tool_use_id === event.tool_use_id &&
-      item.agent_id === event.agent_id
-    ));
-    if (matched_tool_event) {
-      return matched_tool_event.round_id;
-    }
-    return event.tool_use_id;
-  }
-  return event.session_key ?? event.id;
-}
-
-function collect_recent_evidence(events: NexusOperationEvent[]): OperationEvidence[] {
-  return events
-    .flatMap((event) => event.evidence ?? [])
-    .slice(-MAX_EVIDENCE);
 }
 
 function extract_target(input: Record<string, unknown>, keys: readonly string[]): string | null {

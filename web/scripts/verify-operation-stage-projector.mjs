@@ -46,11 +46,13 @@ copyFileSync(join(operation_dir, "operation-file-documents.js"), join(operation_
 copyFileSync(join(operation_dir, "operation-html-artifacts.js"), join(operation_dir, "operation-html-artifacts"));
 copyFileSync(join(operation_dir, "operation-pending-permissions.js"), join(operation_dir, "operation-pending-permissions"));
 copyFileSync(join(operation_dir, "operation-projection-preview.js"), join(operation_dir, "operation-projection-preview"));
+copyFileSync(join(operation_dir, "operation-projection-timeline.js"), join(operation_dir, "operation-projection-timeline"));
 copyFileSync(join(operation_dir, "operation-types.js"), join(operation_dir, "operation-types"));
 copyFileSync(join(operation_dir, "operation-desktop-types.js"), join(operation_dir, "operation-desktop-types"));
 copyFileSync(join(operation_dir, "operation-preview.js"), join(operation_dir, "operation-preview"));
 copyFileSync(join(operation_dir, "operation-stage-experience.js"), join(operation_dir, "operation-stage-experience"));
 copyFileSync(join(operation_dir, "operation-terminal-lines.js"), join(operation_dir, "operation-terminal-lines"));
+copyFileSync(join(operation_dir, "operation-summary-events.js"), join(operation_dir, "operation-summary-events"));
 
 const { project_operation_snapshot } = await import(pathToFileURL(join(operation_dir, "operation-projector.js")));
 const {
