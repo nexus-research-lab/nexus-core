@@ -1,0 +1,201 @@
+import { useEffect, useState } from "react";
+
+import type { StageWindowState } from "../operation-desktop-types";
+import { derive_operation_stage_experience_phase } from "../operation-stage-experience";
+import type {
+  NexusOperationEvent,
+  NexusOperationSnapshot,
+} from "../operation-types";
+import type {
+  StageNarrativePhase,
+  StageNarrativeState,
+} from "./operation-stage-model";
+
+export function order_windows_for_reveal(
+  windows: StageWindowState[],
+  active_window_id: string | null,
+): StageWindowState[] {
+  return [...windows].sort((left, right) => {
+    const left_rank = window_reveal_rank(left, active_window_id);
+    const right_rank = window_reveal_rank(right, active_window_id);
+    if (left_rank !== right_rank) {
+      return left_rank - right_rank;
+    }
+    return right.z - left.z;
+  });
+}
+
+function window_reveal_rank(window: StageWindowState, active_window_id: string | null): number {
+  if (window.id === active_window_id || window.phase === "focused") {
+    return 0;
+  }
+  if (window.kind === "terminal" || window.kind === "browser" || window.kind === "code_editor") {
+    return 1;
+  }
+  if (window.kind === "runtime_handoff" || window.kind === "run_manifest") {
+    return 1;
+  }
+  if (window.kind === "finder" || window.layout === "artifact") {
+    return 2;
+  }
+  if (window.kind === "evidence" || window.kind === "permission_wait") {
+    return 3;
+  }
+  return 2;
+}
+
+export function event_sequence_label(event: NexusOperationEvent, events: NexusOperationEvent[]): string {
+  const index = events.findIndex((item) => item.id === event.id);
+  if (index >= 0) {
+    return `第 ${index + 1} 步`;
+  }
+  return "当前步";
+}
+
+export function is_low_signal_director_value(value: string | null | undefined): value is string {
+  if (!value) {
+    return true;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  return (
+    !normalized ||
+    normalized === "0 turns" ||
+    normalized === "1 turns" ||
+    normalized === "2 turns" ||
+    normalized === "3 turns" ||
+    normalized.endsWith(" turns") ||
+    /^\d+\s+turns?$/.test(normalized) ||
+    /^\d+\s+actions?$/.test(normalized) ||
+    /^\d+\s+turns?$/.test(normalized.replace("回合", "turns")) ||
+    /^\d+\s+步$/.test(normalized) ||
+    normalized === "0s" ||
+    normalized === "1s" ||
+    normalized === "当前目标" ||
+    normalized === "本轮执行收口"
+  );
+}
+
+export function useRevealedWindowCount({
+  event_key,
+  minimum_count,
+  phase,
+  window_count,
+}: {
+  event_key: string;
+  minimum_count: number;
+  phase: StageNarrativePhase;
+  window_count: number;
+}): number {
+  const [revealed_count, set_revealed_count] = useState(window_count);
+
+  useEffect(() => {
+    if (window_count <= 0) {
+      set_revealed_count(0);
+      return;
+    }
+    if (phase === "completed" || phase === "settling") {
+      set_revealed_count(window_count);
+      return;
+    }
+
+    set_revealed_count(minimum_count);
+    const hidden_count = Math.max(0, window_count - minimum_count);
+    const timers = Array.from({ length: hidden_count }).map((_, index) => (
+      window.setTimeout(() => {
+        set_revealed_count((current) => Math.max(current, minimum_count + index + 1));
+      }, 620 + index * 320)
+    ));
+
+    return () => {
+      timers.forEach((timer) => window.clearTimeout(timer));
+    };
+  }, [event_key, minimum_count, phase, window_count]);
+
+  return Math.min(revealed_count, window_count);
+}
+
+export function minimum_revealed_window_count({
+  event_count,
+  phase,
+  window_count,
+}: {
+  event_count: number;
+  phase: StageNarrativePhase;
+  window_count: number;
+}): number {
+  if (window_count <= 0) {
+    return 0;
+  }
+  if (phase === "completed" || phase === "settling") {
+    return window_count;
+  }
+  return Math.min(window_count, Math.max(1, event_count));
+}
+
+export function build_stage_narrative(
+  event: NexusOperationEvent,
+  snapshot: NexusOperationSnapshot | null,
+): StageNarrativeState {
+  const events = collect_narrative_events(event, snapshot);
+  const phase = derive_operation_stage_experience_phase(event, snapshot);
+  if (phase === "awakening") {
+    return {
+      phase: "awakening",
+      label: event.surface === "conversation" ? "运行接入" : "唤醒工作台",
+      detail: event.surface === "conversation"
+        ? "nexus 字符场正在接入运行时，等待第一个工具窗口显影"
+        : "nexus 字符场正在展开为执行现场",
+    };
+  }
+  if (event.phase === "waiting") {
+    return {
+      phase: "running",
+      label: "等待确认",
+      detail: "工具已暂停，等待用户确认后继续",
+    };
+  }
+  if (phase === "running") {
+    if (event.surface === "conversation") {
+      return {
+        phase: "running",
+        label: "运行接入",
+        detail: "运行时正在装载上下文，等待第一个工具事件",
+      };
+    }
+    return {
+      phase: "running",
+      label: "现场执行",
+      detail: `${events.length} 个工具动作正在形成工作台轨迹`,
+    };
+  }
+  if (
+    phase === "completed" ||
+    (phase === "settling" && (event.phase === "done" || event.phase === "cancelled"))
+  ) {
+    return {
+      phase,
+      label: phase === "completed" ? "完成沉淀" : "结果落盘",
+      detail: "工具窗口已收束为可回看的执行现场",
+    };
+  }
+  return {
+    phase: "settling",
+    label: "异常回看",
+    detail: "执行现场保留错误证据与上下文",
+  };
+}
+
+export function collect_narrative_events(
+  event: NexusOperationEvent,
+  snapshot: NexusOperationSnapshot | null,
+): NexusOperationEvent[] {
+  const events = snapshot?.events.filter((item) => item.round_id === event.round_id) ?? [];
+  const merged = events.some((item) => item.id === event.id) ? events : [...events, event];
+  const sorted = [...merged].sort((left, right) => left.updated_at - right.updated_at);
+  const active_index = sorted.findIndex((item) => item.id === event.id);
+  if (active_index < 0) {
+    return sorted.slice(-10);
+  }
+  return sorted.slice(0, active_index + 1).slice(-10);
+}
