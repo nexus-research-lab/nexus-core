@@ -24,14 +24,16 @@ import {
   filter_pending_permissions_for_stage,
   match_pending_permissions_to_tool_uses,
 } from "./operation-pending-permissions";
+import {
+  OPERATION_MAX_TEXT_PREVIEW,
+  redact_projected_value,
+  summarize_projected_value,
+  truncate_projected_text,
+} from "./operation-projection-preview";
 
 const MAX_EVENTS = 24;
 const MAX_EVIDENCE = 8;
 const MAX_PROJECTED_MESSAGES = 80;
-const MAX_TEXT_PREVIEW = 1200;
-const MAX_RUNNABLE_ARTIFACT_PREVIEW = 32000;
-const SECRET_KEY_PATTERN = /(api[_-]?key|token|password|secret|authorization|cookie|credential|private[_-]?key)/i;
-const SECRET_VALUE_PATTERN = /(sk-[A-Za-z0-9_-]{16,}|ghp_[A-Za-z0-9_]{16,}|Bearer\s+[A-Za-z0-9._-]{16,})/g;
 
 interface ProjectOperationSnapshotParams {
   key: string;
@@ -102,7 +104,7 @@ export function project_operation_snapshot({
           phase: live_round_id_set.has(message.round_id) ? "running" : "done",
           title: block.description || "子任务进度",
           target: block.last_tool_name ?? block.task_id,
-          summary: summarize_value(block.usage),
+          summary: summarize_projected_value(block.usage),
           input_preview: {
             task_id: block.task_id,
             last_tool_name: block.last_tool_name ?? null,
@@ -253,7 +255,7 @@ function build_summary_result_preview(
   is_error: boolean,
   summary_text: string | null,
 ): unknown {
-  const redacted = redact_value(summary) as Record<string, unknown>;
+  const redacted = redact_projected_value(summary) as Record<string, unknown>;
   if (!is_error) {
     return redacted;
   }
@@ -292,7 +294,7 @@ function extract_assistant_text_preview(message: Extract<Message, { role: "assis
   if (!text) {
     return null;
   }
-  return text.length > MAX_TEXT_PREVIEW ? `${text.slice(0, MAX_TEXT_PREVIEW)}...` : text;
+  return text.length > OPERATION_MAX_TEXT_PREVIEW ? `${text.slice(0, OPERATION_MAX_TEXT_PREVIEW)}...` : text;
 }
 
 function project_system_event({
@@ -444,7 +446,7 @@ function project_tool_use({
   is_live_round: boolean;
 }): NexusOperationEvent {
   const projection = resolve_operation_tool_profile(block.name);
-  const input_preview = redact_value(as_record(block.input)) as Record<string, unknown>;
+  const input_preview = redact_projected_value(as_record(block.input)) as Record<string, unknown>;
   const target = extract_target(input_preview, projection.target_keys) ?? block.name;
   const phase = resolve_tool_phase(result, pending_permission, is_live_round, message.is_complete);
   const evidence = build_tool_evidence(block.name, target, result, pending_permission);
@@ -512,9 +514,9 @@ function build_tool_evidence(
     });
   }
   if (result?.is_error) {
-    evidence.push({ type: "error", label: "error", value: summarize_value(result.content) });
+    evidence.push({ type: "error", label: "error", value: summarize_projected_value(result.content) });
   } else if (result) {
-    evidence.push({ type: "status", label: "result", value: summarize_value(result.content) });
+    evidence.push({ type: "status", label: "result", value: summarize_projected_value(result.content) });
   }
   return evidence;
 }
@@ -527,7 +529,7 @@ function build_tool_result_preview(
     return null;
   }
 
-  const redacted_content = redact_value(result.content);
+  const redacted_content = redact_projected_value(result.content);
   if (kind === "command_run" || kind === "command_stop") {
     return {
       content: redacted_content,
@@ -545,7 +547,7 @@ function project_unmatched_permission(
 ): NexusOperationEvent {
   const profile = resolve_operation_tool_profile(permission.tool_name);
   const target = extract_target(
-    redact_value(permission.tool_input) as Record<string, unknown>,
+    redact_projected_value(permission.tool_input) as Record<string, unknown>,
     profile.target_keys,
   ) ?? permission.tool_name;
   return {
@@ -561,7 +563,7 @@ function project_unmatched_permission(
     title: permission.interaction_mode === "question" ? "等待用户回答" : "等待权限确认",
     target,
     summary: permission.summary ?? permission.risk_label ?? null,
-    input_preview: redact_value(permission.tool_input) as Record<string, unknown>,
+    input_preview: redact_projected_value(permission.tool_input) as Record<string, unknown>,
     evidence: [
       { type: "permission", label: permission.risk_label || "waiting", value: permission.summary ?? permission.tool_name },
     ],
@@ -592,7 +594,7 @@ function project_workspace_event(
     summary: event.diff_stats
       ? `+${event.diff_stats.additions} -${event.diff_stats.deletions}`
       : null,
-    result_preview: event.live_content ? truncate_text(event.live_content, MAX_TEXT_PREVIEW) : null,
+    result_preview: event.live_content ? truncate_projected_text(event.live_content, OPERATION_MAX_TEXT_PREVIEW) : null,
     evidence: [
       { type: "file", label: event.status, value: event.path },
       ...(event.diff_stats ? [{
@@ -666,74 +668,21 @@ function collect_recent_evidence(events: NexusOperationEvent[]): OperationEviden
 function extract_target(input: Record<string, unknown>, keys: readonly string[]): string | null {
   const primary = extract_operation_input_value(input, keys);
   if (primary?.value) {
-    return truncate_text(primary.value, 96);
+    return truncate_projected_text(primary.value, 96);
   }
   const fallback = extract_operation_input_value(input, DEFAULT_TARGET_KEYS);
-  return fallback?.value ? truncate_text(fallback.value, 96) : null;
+  return fallback?.value ? truncate_projected_text(fallback.value, 96) : null;
 }
 
 function summarize_result(result?: ToolResultContent): string | null {
   if (!result) {
     return null;
   }
-  return summarize_value(result.content);
-}
-
-function summarize_value(value: unknown): string {
-  if (value == null) {
-    return "";
-  }
-  if (typeof value === "string") {
-    return truncate_text(value.replace(SECRET_VALUE_PATTERN, "[REDACTED]"), 180);
-  }
-  try {
-    return truncate_text(JSON.stringify(redact_value(value)), 180);
-  } catch {
-    return truncate_text(String(value), 180);
-  }
-}
-
-function redact_value(value: unknown, depth = 0): unknown {
-  if (depth > 4) {
-    return "[Truncated]";
-  }
-  if (typeof value === "string") {
-    return truncate_text(value.replace(SECRET_VALUE_PATTERN, "[REDACTED]"), MAX_TEXT_PREVIEW);
-  }
-  if (Array.isArray(value)) {
-    return value.slice(0, 12).map((item) => redact_value(item, depth + 1));
-  }
-  if (value && typeof value === "object") {
-    const next: Record<string, unknown> = {};
-    for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
-      if (SECRET_KEY_PATTERN.test(key)) {
-        next[key] = "[REDACTED]";
-        continue;
-      }
-      if (typeof item === "string" && key === "content" && looks_like_runnable_artifact(item)) {
-        next[key] = truncate_text(item.replace(SECRET_VALUE_PATTERN, "[REDACTED]"), MAX_RUNNABLE_ARTIFACT_PREVIEW);
-        continue;
-      }
-      next[key] = redact_value(item, depth + 1);
-    }
-    return next;
-  }
-  return value;
-}
-
-function looks_like_runnable_artifact(value: string): boolean {
-  return /<!doctype html|<html[\s>]|<body[\s>]|<script[\s>]/i.test(value);
+  return summarize_projected_value(result.content);
 }
 
 function as_record(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown>
     : {};
-}
-
-function truncate_text(value: string, max_length: number): string {
-  if (value.length <= max_length) {
-    return value;
-  }
-  return `${value.slice(0, max_length - 1)}…`;
 }
