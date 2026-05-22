@@ -43,6 +43,7 @@ writeFileSync(join(out_dir, "package.json"), "{\"type\":\"module\"}\n");
 copyFileSync(join(operation_dir, "operation-tool-catalog.js"), join(operation_dir, "operation-tool-catalog"));
 copyFileSync(join(operation_dir, "operation-tool-inference.js"), join(operation_dir, "operation-tool-inference"));
 copyFileSync(join(operation_dir, "operation-html-artifacts.js"), join(operation_dir, "operation-html-artifacts"));
+copyFileSync(join(operation_dir, "operation-pending-permissions.js"), join(operation_dir, "operation-pending-permissions"));
 copyFileSync(join(operation_dir, "operation-types.js"), join(operation_dir, "operation-types"));
 copyFileSync(join(operation_dir, "operation-desktop-types.js"), join(operation_dir, "operation-desktop-types"));
 copyFileSync(join(operation_dir, "operation-preview.js"), join(operation_dir, "operation-preview"));
