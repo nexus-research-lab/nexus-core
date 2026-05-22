@@ -8,6 +8,9 @@ import { memo } from "react";
 import { cn } from "@/lib/utils";
 
 import type { StageWindowState } from "../operation-desktop-types";
+import {
+  display_stage_event_title,
+} from "../operation-stage-labels";
 import type { NexusOperationEvent } from "../operation-types";
 import {
   event_sequence_label,
@@ -128,7 +131,7 @@ export function StageWindowDock({
       <div className="flex max-w-full flex-col items-center gap-1.5">
         <div className="hidden max-w-[360px] rounded-full border border-white/60 bg-[rgba(20,28,38,0.72)] px-3 py-1.5 text-center text-white shadow-[0_14px_36px_rgba(18,28,42,0.18)] backdrop-blur-xl md:block">
           <p className="truncate text-[10px] font-bold">
-            {active_window ? `${active_sequence_label} · ${active_app_label} · ${active_window.title}` : "Nexus 工作台"}
+            {active_window ? `${active_sequence_label} · ${active_app_label} · ${display_window_title(active_window)}` : "Nexus 工作台"}
           </p>
           <p className="mt-0.5 truncate text-[8.5px] font-semibold text-white/58">
             {live_window_count} 个现场窗口 · {settled_window_count} 个已收起/沉淀
@@ -144,6 +147,7 @@ export function StageWindowDock({
           const is_active = active_window_id === window.id && window.phase !== "closed" && window.phase !== "minimized";
           const app_label = stage_app_label_for_window_kind(window.kind);
           const sequence_label = event_sequence_label(window.payload.event, events);
+          const window_title = display_window_title(window);
           const state_label = window.phase === "closed"
             ? "已关闭"
             : window.phase === "minimized"
@@ -153,7 +157,7 @@ export function StageWindowDock({
                 : "后台";
           return (
             <button
-              aria-label={`${state_label}：${window.title}`}
+              aria-label={`${state_label}：${window_title}`}
               className={cn(
                 "group relative grid shrink-0 place-items-center rounded-[18px] border text-left transition duration-200 ease-out hover:-translate-y-2 hover:scale-110 focus-visible:-translate-y-2 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.42)]",
                 is_active
@@ -164,7 +168,7 @@ export function StageWindowDock({
               )}
               key={window.id}
               onClick={() => on_restore(window.id)}
-              title={`${state_label}：${window.title}`}
+              title={`${state_label}：${window_title}`}
               type="button"
             >
               <span className={cn(
@@ -196,7 +200,7 @@ export function StageWindowDock({
                       : "w-2 bg-[rgba(47,184,132,0.54)]",
               )} />
               <span className="pointer-events-none absolute bottom-[calc(100%+10px)] left-1/2 hidden max-w-[230px] -translate-x-1/2 whitespace-nowrap rounded-[10px] border border-white/70 bg-[rgba(20,28,38,0.82)] px-2.5 py-1.5 text-[10px] font-semibold text-white shadow-[0_12px_30px_rgba(18,28,42,0.22)] backdrop-blur-xl group-hover:block group-focus-visible:block">
-                <span className="block max-w-[160px] truncate">{window.title}</span>
+                <span className="block max-w-[160px] truncate">{window_title}</span>
                 <span className="block text-[9px] font-medium text-white/66">{sequence_label} · {app_label} · {state_label}</span>
               </span>
             </button>
@@ -231,7 +235,9 @@ export function WindowSettlementBar({
   const PhaseIcon = phase_meta.Icon;
   const evidence_count = event.evidence?.length ?? 0;
   const target_candidate = event.target ?? event.summary ?? event.title;
-  const target = is_low_signal_director_value(target_candidate) ? event.title : target_candidate;
+  const target = is_low_signal_director_value(target_candidate)
+    ? display_stage_event_title(event)
+    : target_candidate;
   const settled = event.phase === "done" || event.phase === "cancelled" || event.phase === "error";
 
   return (
@@ -282,16 +288,16 @@ export const BackgroundWindowSummary = memo(function BackgroundWindowSummary({
     ?? event.target
     ?? event.title;
   const preview_text = is_low_signal_director_value(String(preview_candidate ?? ""))
-    ? event.title
+    ? display_stage_event_title(event)
     : preview_candidate;
   const target_candidate = window.target ?? event.target ?? window.title;
-  const target = is_low_signal_director_value(target_candidate) ? window.title : target_candidate;
+  const target = is_low_signal_director_value(target_candidate) ? display_window_title(window) : target_candidate;
 
   return (
     <div className="flex h-full min-h-0 flex-col justify-between gap-3 rounded-[12px] border border-(--divider-subtle-color) bg-white/46 p-3">
       <div className="min-w-0">
         <p className="truncate text-[12px] font-black tracking-[-0.02em] text-(--text-strong)">
-          {sequence_label} · {event.tool_name ?? event.title}
+          {sequence_label} · {display_stage_event_title(event)}
         </p>
         <p className="mt-1 line-clamp-3 text-[11px] leading-5 text-(--text-soft)">
           {String(preview_text ?? "等待窗口内容")}
@@ -311,3 +317,10 @@ export const BackgroundWindowSummary = memo(function BackgroundWindowSummary({
     </div>
   );
 });
+
+function display_window_title(window: StageWindowState): string {
+  if (!is_low_signal_director_value(window.title)) {
+    return window.title;
+  }
+  return display_stage_event_title(window.payload.event, stage_app_label_for_window_kind(window.kind));
+}

@@ -30,6 +30,11 @@ import {
   build_operation_terminal_lines,
   read_terminal_command,
 } from "./operation-terminal-lines";
+import {
+  fallback_stage_event_object_label,
+  fallback_stage_event_target_label,
+  is_low_signal_stage_label,
+} from "./operation-stage-labels";
 
 interface PlanOperationDesktopParams {
   event: NexusOperationEvent;
@@ -344,12 +349,15 @@ function window_state(
     payload?: Partial<StageWindowPayload>;
   },
 ): StageWindowState {
+  const title = normalize_stage_window_title(event, config.title);
+  const subtitle = normalize_stage_window_subtitle(event);
+  const target = normalize_stage_window_target(event, config.payload?.target);
   return {
     id: `${event.id}:${config.id}`,
     kind: config.kind,
-    title: config.title,
-    subtitle: event.summary ?? null,
-    target: config.payload?.target ?? event.target ?? null,
+    title,
+    subtitle,
+    target,
     phase: config.phase,
     z: config.z,
     layout: config.layout,
@@ -361,6 +369,34 @@ function window_state(
       ...config.payload,
     },
   };
+}
+
+function normalize_stage_window_title(event: NexusOperationEvent, title: string): string {
+  if (!is_low_signal_stage_label(title)) {
+    return title;
+  }
+  return fallback_stage_event_object_label(event);
+}
+
+function normalize_stage_window_subtitle(event: NexusOperationEvent): string | null {
+  if (!event.summary || is_low_signal_stage_label(event.summary)) {
+    return null;
+  }
+  return event.summary;
+}
+
+function normalize_stage_window_target(
+  event: NexusOperationEvent,
+  target: string | null | undefined,
+): string | null {
+  const candidate = target ?? event.target;
+  if (!candidate) {
+    return null;
+  }
+  if (!is_low_signal_stage_label(candidate)) {
+    return candidate;
+  }
+  return fallback_stage_event_target_label(event);
 }
 
 function evidence_window(

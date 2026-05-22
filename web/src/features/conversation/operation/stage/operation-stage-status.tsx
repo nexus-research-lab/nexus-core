@@ -281,7 +281,7 @@ function stage_status_display_title(
   if (event.kind === "round_summary" || event.surface === "summary") {
     return narrative.phase === "completed" || narrative.phase === "settling"
       ? "交接面板"
-      : "执行收口";
+      : "执行交接";
   }
   return active_window?.title ?? narrative.label;
 }

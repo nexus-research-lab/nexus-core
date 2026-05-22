@@ -2,6 +2,10 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
+import {
+  display_stage_event_target,
+  display_stage_event_title,
+} from "../operation-stage-labels";
 import type { NexusOperationEvent } from "../operation-types";
 import type { StageNarrativeState } from "./operation-stage-model";
 import { SURFACE_ACCENT_CLASS_NAME } from "./operation-stage-style";
@@ -24,7 +28,7 @@ export function StageReplayReturn({
               现场回放中
             </p>
             <p className="mt-0.5 truncate text-[10px] font-semibold text-(--text-soft)">
-              {current_event.tool_name ?? current_event.title}
+              {display_stage_event_title(current_event)}
             </p>
           </div>
           <button
@@ -37,11 +41,11 @@ export function StageReplayReturn({
         </div>
         <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 text-[9px] font-semibold text-(--text-soft)">
           <span className="truncate rounded-[9px] bg-white/44 px-2 py-1.5">
-            {current_event.target ?? current_event.summary ?? "当前切片"}
+            {display_stage_event_target(current_event)}
           </span>
           <span>-&gt;</span>
           <span className="truncate rounded-[9px] bg-white/44 px-2 py-1.5">
-            {final_event.title}
+            {display_stage_event_title(final_event)}
           </span>
         </div>
       </div>

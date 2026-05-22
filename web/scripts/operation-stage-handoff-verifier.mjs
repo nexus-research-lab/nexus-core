@@ -81,7 +81,7 @@ export function verify_handoff_spotlight_model({
     "round summary should fall back to a workbench handoff object label",
   );
   assert(
-    fallback_stage_event_target_label(low_signal_summary, "交接") === "交接交接",
+    fallback_stage_event_target_label(low_signal_summary, "交接") === "完成交接",
     "round summary target should fall back to handoff target label",
   );
 }

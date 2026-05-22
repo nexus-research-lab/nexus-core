@@ -1,5 +1,7 @@
 import type { NexusOperationEvent, NexusOperationSnapshot } from "../operation-types";
 import {
+  display_stage_event_target,
+  display_stage_event_title,
   fallback_stage_event_object_label,
   fallback_stage_event_target_label,
   is_low_signal_stage_label,
@@ -89,19 +91,11 @@ export function build_stage_episodes({
 }
 
 function episode_event_title(event: NexusOperationEvent): string {
-  const candidate = event.tool_name ?? event.title;
-  if (!is_low_signal_stage_label(candidate) && event.kind !== "round_summary") {
-    return candidate;
-  }
-  return fallback_stage_event_object_label(event, SURFACE_LABEL[event.surface]);
+  return display_stage_event_title(event, SURFACE_LABEL[event.surface]);
 }
 
 function episode_event_target(event: NexusOperationEvent): string {
-  const candidate = event.target ?? event.summary ?? event.title;
-  if (!is_low_signal_stage_label(candidate)) {
-    return candidate;
-  }
-  return fallback_stage_event_target_label(event, SURFACE_LABEL[event.surface]);
+  return display_stage_event_target(event, SURFACE_LABEL[event.surface]);
 }
 
 export function episode_tone(

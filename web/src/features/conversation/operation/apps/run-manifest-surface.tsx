@@ -16,6 +16,10 @@ import type {
   OperationEvidence,
 } from "../operation-types";
 import { build_operation_event_io_summary } from "../operation-event-io";
+import {
+  display_stage_event_target,
+  display_stage_event_title,
+} from "../operation-stage-labels";
 import { resolve_operation_tool_profile } from "../operation-tool-catalog";
 import { ACTION_ICON, ACTION_TONE_CLASS } from "./operation-action-style";
 import {
@@ -207,9 +211,11 @@ export function RunManifestSurface({
               const io_summary = build_operation_event_io_summary(item);
               const input_label = io_summary.input_detail;
               const output_label = extract_manifest_event_output(item);
+              const event_title = display_stage_event_title(item, profile.action_label);
+              const event_target = display_stage_event_target(item, profile.action_label);
               return (
                 <button
-                  aria-label={`查看执行步骤 ${index + 1}：${profile.action_label} ${item.tool_name ?? item.title}`}
+                  aria-label={`查看执行步骤 ${index + 1}：${profile.action_label} ${event_title}`}
                   className={cn(
                     "grid w-full grid-cols-[28px_minmax(0,1fr)_auto] items-start gap-2 rounded-[12px] border px-2.5 py-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.36)]",
                     can_focus_event && "cursor-pointer hover:-translate-y-0.5 hover:border-[rgba(91,114,255,0.22)] hover:bg-[rgba(91,114,255,0.06)]",
@@ -219,7 +225,7 @@ export function RunManifestSurface({
                   )}
                   key={item.id}
                   onClick={() => on_focus_event?.(item)}
-                  title={`${profile.action_label} · ${item.tool_name ?? item.title}`}
+                  title={`${profile.action_label} · ${event_title}`}
                   type="button"
                 >
                   <span className={cn(
@@ -230,10 +236,10 @@ export function RunManifestSurface({
                   </span>
                   <span className="min-w-0">
                     <span className="block truncate text-[11px] font-black text-(--text-strong)">
-                      {String(index + 1).padStart(2, "0")} · {profile.action_label} · {item.tool_name ?? item.title}
+                      {String(index + 1).padStart(2, "0")} · {profile.action_label} · {event_title}
                     </span>
                     <span className="mt-0.5 block truncate text-[10px] text-(--text-soft)">
-                      {item.target ?? item.summary ?? profile.title}
+                      {event_target}
                     </span>
                     {input_label || output_label ? (
                       <span className="mt-1 grid min-w-0 grid-cols-2 gap-1.5 max-sm:grid-cols-1">

@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 
 import type { StageWindowState } from "../operation-desktop-types";
 import { build_operation_live_episode } from "../operation-stage-experience";
+import { display_stage_event_target } from "../operation-stage-labels";
 import type { NexusOperationEvent, NexusOperationSnapshot } from "../operation-types";
 import { resolve_operation_tool_profile } from "../operation-tool-catalog";
 import type { StageNarrativeState } from "./operation-stage-model";
@@ -43,7 +44,9 @@ export function StageActGuide({
       ? STAGE_HANDOFF_ACT_STEPS
       : STAGE_RUNNING_ACT_STEPS;
   const stage_index = narrative.phase === "awakening" ? 0 : 1;
-  const target = event.target ?? event.summary ?? active_window?.title ?? event.title;
+  const target = (event.target || event.summary)
+    ? display_stage_event_target(event, SURFACE_LABEL[event.surface])
+    : active_window?.title ?? display_stage_event_target(event, SURFACE_LABEL[event.surface]);
   const GuideIcon = narrative.phase === "awakening"
     ? Sparkles
     : is_waiting
@@ -209,4 +212,3 @@ function is_runtime_retry_event(event: NexusOperationEvent): boolean {
   return event.surface === "conversation"
     && (event.evidence ?? []).some((item) => item.label === "api_retry");
 }
-

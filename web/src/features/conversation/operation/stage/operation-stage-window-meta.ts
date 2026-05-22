@@ -122,6 +122,9 @@ export function stage_app_label_for_window_kind(kind: StageWindowKind): string {
   if (kind === "run_manifest") {
     return "执行清单";
   }
+  if (kind === "summary") {
+    return "交接";
+  }
   if (kind === "evidence") {
     return "证据";
   }

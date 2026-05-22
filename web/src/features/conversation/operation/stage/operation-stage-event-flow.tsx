@@ -5,6 +5,10 @@ import { cn } from "@/lib/utils";
 import type { StageWindowState } from "../operation-desktop-types";
 import { build_operation_event_io_summary } from "../operation-event-io";
 import { build_operation_live_episode } from "../operation-stage-experience";
+import {
+  display_stage_event_target,
+  display_stage_event_title,
+} from "../operation-stage-labels";
 import type { NexusOperationEvent, NexusOperationSnapshot } from "../operation-types";
 import { resolve_operation_tool_profile } from "../operation-tool-catalog";
 import type { StageEpisodeMap } from "./operation-stage-episodes";
@@ -44,7 +48,9 @@ export function StageNarrativeRail({
   const settled_count = events.filter((item) => item.id !== active_event_id && (
     item.phase === "done" || item.phase === "cancelled" || item.phase === "error"
   )).length;
-  const active_target = active_event?.target ?? active_event?.summary ?? active_window?.title ?? active_event?.title;
+  const active_target = active_event
+    ? display_stage_event_target(active_event, SURFACE_LABEL[active_event.surface])
+    : active_window?.title;
   const episode = active_event
     ? build_operation_live_episode(active_event, events, snapshot)
     : null;
@@ -65,7 +71,7 @@ export function StageNarrativeRail({
                 </span>
                 <div className="min-w-0">
                   <p className="truncate text-[11.5px] font-black text-(--text-strong)">
-                    当前工具 · {active_event.tool_name ?? active_event.title}
+                    当前工具 · {display_stage_event_title(active_event, SURFACE_LABEL[active_event.surface])}
                   </p>
                   <p className="mt-0.5 truncate text-[10px] text-(--text-soft)">
                     {active_episode?.detail ?? active_target}
@@ -138,9 +144,10 @@ export function StageNarrativeRail({
             const profile = resolve_operation_tool_profile(item.tool_name, item.kind, item.surface);
             const Icon = icon_for_operation_kind(item.kind);
             const is_active = item.id === active_event_id;
+            const event_title = display_stage_event_title(item, profile.action_label);
             return (
               <button
-                aria-label={`聚焦执行事件 ${index + 1}：${profile.action_label} ${item.tool_name ?? item.title}`}
+                aria-label={`聚焦执行事件 ${index + 1}：${profile.action_label} ${event_title}`}
                 className={cn(
                   "group relative flex h-9 min-w-0 flex-1 items-center gap-1.5 rounded-[11px] border px-2 text-left transition hover:-translate-y-0.5 hover:border-[rgba(91,114,255,0.22)] hover:bg-[rgba(91,114,255,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.34)]",
                   is_active
@@ -149,7 +156,7 @@ export function StageNarrativeRail({
                 )}
                 key={item.id}
                 onClick={() => on_focus_event?.(item)}
-                title={`${index + 1}. ${profile.action_label} · ${item.tool_name ?? item.title}`}
+                title={`${index + 1}. ${profile.action_label} · ${event_title}`}
                 type="button"
               >
                 <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white/64">
@@ -244,11 +251,12 @@ function StageEventBeatList({
         const PhaseIcon = phase_meta.Icon;
         const is_active = item.id === active_event_id;
         const tone = episode_tone(episode.state);
-        const target = item.target ?? item.summary ?? item.title;
+        const event_title = display_stage_event_title(item, profile.action_label);
+        const target = display_stage_event_target(item, profile.action_label);
 
         return (
           <button
-            aria-label={`回放第 ${episode.index + 1} 步：${profile.action_label} ${item.tool_name ?? item.title}`}
+            aria-label={`回放第 ${episode.index + 1} 步：${profile.action_label} ${event_title}`}
             className={cn(
               "group grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-[11px] border px-2 py-1.5 text-left transition hover:-translate-y-0.5 hover:border-[rgba(91,114,255,0.24)] hover:bg-[rgba(91,114,255,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.34)]",
               is_active
@@ -281,7 +289,7 @@ function StageEventBeatList({
             <span className="min-w-0">
               <span className="flex min-w-0 items-center gap-1.5">
                 <span className="truncate text-[10px] font-black text-(--text-strong)">
-                  {profile.action_label} · {item.tool_name ?? item.title}
+                  {profile.action_label} · {event_title}
                 </span>
                 <span className={cn(
                   "shrink-0 rounded-full px-1.5 py-px text-[8px] font-black",
@@ -361,13 +369,14 @@ export function StageOperationRunway({
               const is_active = item.id === active_event_id;
               const tone = episode_tone(episode.state);
               const is_settled = tone === "settled";
+              const event_title = display_stage_event_title(item, profile.action_label);
               return (
                 <button
-                  aria-label={`聚焦工作台航线 ${episode.index + 1}：${profile.action_label} ${item.tool_name ?? item.title}`}
+                  aria-label={`聚焦工作台航线 ${episode.index + 1}：${profile.action_label} ${event_title}`}
                   className="min-w-0 rounded-[12px] text-center transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.34)]"
                   key={item.id}
                   onClick={() => on_focus_event?.(item)}
-                  title={`${episode.index + 1}. ${profile.action_label} · ${item.tool_name ?? item.title}`}
+                  title={`${episode.index + 1}. ${profile.action_label} · ${event_title}`}
                   type="button"
                 >
                   <div className={cn(
@@ -397,7 +406,7 @@ export function StageOperationRunway({
                     {episode.state_label}
                   </p>
                   <p className="truncate text-[8px] font-semibold text-(--text-soft)">
-                    {item.tool_name ?? SURFACE_LABEL[item.surface]}
+                    {event_title}
                   </p>
                 </button>
               );

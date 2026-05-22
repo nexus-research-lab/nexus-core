@@ -34,7 +34,29 @@ export function fallback_stage_event_target_label(
   surface_label?: string,
 ): string {
   if (event.kind === "round_summary" || event.surface === "summary") {
-    return `${surface_label ?? "交接"}交接`;
+    return surface_label === "交接" ? "完成交接" : `${surface_label ?? "执行"}交接`;
   }
   return "等待工具输入";
+}
+
+export function display_stage_event_title(
+  event: NexusOperationEvent,
+  surface_label?: string,
+): string {
+  const candidate = event.tool_name ?? event.title;
+  if (event.kind === "round_summary" || is_low_signal_stage_label(candidate)) {
+    return fallback_stage_event_object_label(event, surface_label);
+  }
+  return candidate;
+}
+
+export function display_stage_event_target(
+  event: NexusOperationEvent,
+  surface_label?: string,
+): string {
+  const candidate = event.target ?? event.summary ?? event.title;
+  if (event.kind === "round_summary" || is_low_signal_stage_label(candidate)) {
+    return fallback_stage_event_target_label(event, surface_label);
+  }
+  return candidate;
 }

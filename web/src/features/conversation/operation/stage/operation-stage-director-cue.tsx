@@ -9,6 +9,10 @@ import { cn } from "@/lib/utils";
 
 import type { StageWindowState } from "../operation-desktop-types";
 import { build_operation_event_io_summary } from "../operation-event-io";
+import {
+  display_stage_event_target,
+  display_stage_event_title,
+} from "../operation-stage-labels";
 import type { NexusOperationEvent } from "../operation-types";
 import type { StageEpisodeMap } from "./operation-stage-episodes";
 import { icon_for_operation_kind } from "./operation-stage-helpers";
@@ -46,9 +50,10 @@ export function StageDirectorCue({
         : "当前工具接管";
   const window_label = active_window
     ? active_window.title
-    : active_event.target ?? SURFACE_LABEL[active_event.surface];
+    : display_stage_event_target(active_event, SURFACE_LABEL[active_event.surface]);
   const output_label = io_summary.output_label ?? "等待输出";
-  const target_label = active_episode?.target ?? active_event.target ?? active_event.summary ?? active_event.title;
+  const event_title = display_stage_event_title(active_event, SURFACE_LABEL[active_event.surface]);
+  const target_label = active_episode?.target ?? display_stage_event_target(active_event, SURFACE_LABEL[active_event.surface]);
 
   return (
     <div
@@ -66,7 +71,7 @@ export function StageDirectorCue({
                 {cue_title}
               </p>
               <p className="mt-0.5 truncate text-[10px] font-semibold text-(--text-soft)">
-                {active_episode?.act_label ?? "Act"} · {active_event.tool_name ?? active_event.title}
+                {active_episode?.act_label ?? "Act"} · {event_title}
               </p>
             </div>
           </div>
