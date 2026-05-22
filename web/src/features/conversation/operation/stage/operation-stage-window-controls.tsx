@@ -120,16 +120,18 @@ export function StageWindowDock({
   const active_window = windows.find((window) => window.id === active_window_id) ?? windows[0];
   const settled_window_count = windows.filter((window) => window.phase === "closed" || window.phase === "minimized").length;
   const live_window_count = windows.length - settled_window_count;
+  const active_sequence_label = active_window ? event_sequence_label(active_window.payload.event, events) : "当前步";
+  const active_app_label = active_window ? stage_app_label_for_window_kind(active_window.kind) : "工作台";
 
   return (
     <div className="absolute inset-x-4 bottom-4 z-30 flex justify-center max-md:relative max-md:inset-x-auto max-md:bottom-auto max-md:mt-3">
       <div className="flex max-w-full flex-col items-center gap-1.5">
         <div className="hidden max-w-[360px] rounded-full border border-white/60 bg-[rgba(20,28,38,0.72)] px-3 py-1.5 text-center text-white shadow-[0_14px_36px_rgba(18,28,42,0.18)] backdrop-blur-xl md:block">
           <p className="truncate text-[10px] font-bold">
-            {active_window ? `${stage_app_label_for_window_kind(active_window.kind)} · ${active_window.title}` : "Nexus 工作台"}
+            {active_window ? `${active_sequence_label} · ${active_app_label} · ${active_window.title}` : "Nexus 工作台"}
           </p>
           <p className="mt-0.5 truncate text-[8.5px] font-semibold text-white/58">
-            {live_window_count} 个现场 · {settled_window_count} 个沉淀
+            {live_window_count} 个现场窗口 · {settled_window_count} 个已收起/沉淀
           </p>
         </div>
         <div className="operation-window-dock soft-scrollbar flex max-w-full items-end gap-2 overflow-x-auto rounded-[26px] border border-white/70 bg-[rgba(255,255,255,0.60)] px-2.5 py-2 shadow-[0_24px_60px_rgba(18,28,42,0.18),inset_0_1px_0_rgba(255,255,255,0.78)] backdrop-blur-2xl">

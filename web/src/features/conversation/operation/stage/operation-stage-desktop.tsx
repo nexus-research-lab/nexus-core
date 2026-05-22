@@ -30,6 +30,7 @@ import {
   minimum_revealed_window_count,
   order_windows_for_reveal,
   position_for_window,
+  stage_app_label_for_window_kind,
   useRevealedWindowCount,
 } from "./operation-stage-helpers";
 import type {
@@ -319,8 +320,10 @@ export function OperationStageDesktop({
       )}
       {visible_windows.length ? visible_windows.map((window, index) => {
         const is_active = active_window_id === window.id && window.phase !== "minimized";
+        const sequence_label = event_sequence_label(window.payload.event, narrative_events);
         return (
           <OperationStageWindow
+            app_label={stage_app_label_for_window_kind(window.kind)}
             delay_ms={Math.min(index * 70, 280)}
             dimmed={!is_active && window.phase !== "minimized"}
             drag_offset={{
@@ -332,7 +335,7 @@ export function OperationStageDesktop({
               <WindowSettlementBar
                 active={is_active}
                 event={window.payload.event}
-                sequence_label={event_sequence_label(window.payload.event, narrative_events)}
+                sequence_label={sequence_label}
                 tone={window.kind === "terminal" ? "terminal" : "default"}
               />
             )}
@@ -345,6 +348,8 @@ export function OperationStageDesktop({
             on_focus={() => focus_window(window.id)}
             on_minimize={() => minimize_window(window.id)}
             position_class_name={position_for_window(window, narrative.phase)}
+            sequence_label={sequence_label}
+            status_label={window.phase === "focused" || is_active ? "聚焦" : window.phase === "background" ? "后台" : "现场"}
             title={window.title}
             tone={window.kind === "terminal" ? "terminal" : "default"}
             z_index={is_active ? 44 : 8 + index}

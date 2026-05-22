@@ -10,7 +10,10 @@ interface OperationStageWindowProps {
   icon: LucideIcon;
   children: ReactNode;
   position_class_name: string;
+  app_label?: string;
   footer?: ReactNode;
+  sequence_label?: string;
+  status_label?: string;
   delay_ms?: number;
   focus?: boolean;
   minimized?: boolean;
@@ -30,7 +33,10 @@ export function OperationStageWindow({
   icon: Icon,
   children,
   position_class_name,
+  app_label,
   footer,
+  sequence_label,
+  status_label,
   delay_ms = 0,
   focus = false,
   minimized = false,
@@ -246,21 +252,34 @@ export function OperationStageWindow({
             <Square className="h-2 w-2" />
           </button>
         </div>
-        <div className="flex min-w-0 items-center gap-1.5 text-[10px] font-semibold">
+        <div className="flex min-w-0 flex-1 items-center justify-center gap-1.5 px-2 text-[10px] font-semibold">
           <Icon className="h-3 w-3 shrink-0" />
-          <span className="truncate">{title}</span>
+          <span className="min-w-0 truncate">
+            {app_label ? `${app_label} · ${title}` : title}
+          </span>
+          {status_label ? (
+            <span className={cn(
+              "hidden shrink-0 rounded-full px-1.5 py-px text-[8px] font-black md:inline",
+              tone === "terminal" ? "bg-white/[0.06] text-white/42" : "bg-white/56 text-(--text-soft)",
+            )}>
+              {status_label}
+            </span>
+          ) : null}
         </div>
         <span
           aria-hidden="true"
           className={cn(
-            "grid h-5 w-8 shrink-0 place-items-center rounded-full border transition",
+            "grid h-5 min-w-8 shrink-0 place-items-center rounded-full border px-1.5 transition",
             tone === "terminal"
               ? "border-white/10 bg-white/[0.035] text-white/32"
               : "border-white/58 bg-white/44 text-(--icon-muted)",
           )}
-          title="移动窗口"
+          title={sequence_label ? `${sequence_label} · 移动窗口` : "移动窗口"}
         >
-          <GripHorizontal className="h-3.5 w-3.5" />
+          <span className="flex items-center gap-1">
+            <GripHorizontal className="h-3.5 w-3.5" />
+            {sequence_label ? <span className="hidden text-[8px] font-black md:inline">{sequence_label}</span> : null}
+          </span>
         </span>
       </div>
       <div className={cn(
