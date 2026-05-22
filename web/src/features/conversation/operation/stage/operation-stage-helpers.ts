@@ -373,6 +373,30 @@ export function event_sequence_label(event: NexusOperationEvent, events: NexusOp
   return "当前步";
 }
 
+export function is_low_signal_director_value(value: string | null | undefined): value is string {
+  if (!value) {
+    return true;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  return (
+    !normalized ||
+    normalized === "0 turns" ||
+    normalized === "1 turns" ||
+    normalized === "2 turns" ||
+    normalized === "3 turns" ||
+    normalized.endsWith(" turns") ||
+    /^\d+\s+turns?$/.test(normalized) ||
+    /^\d+\s+actions?$/.test(normalized) ||
+    /^\d+\s+turns?$/.test(normalized.replace("回合", "turns")) ||
+    /^\d+\s+步$/.test(normalized) ||
+    normalized === "0s" ||
+    normalized === "1s" ||
+    normalized === "当前目标" ||
+    normalized === "本轮执行收口"
+  );
+}
+
 export function useRevealedWindowCount({
   event_key,
   minimum_count,
