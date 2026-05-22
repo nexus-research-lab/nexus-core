@@ -358,7 +358,9 @@ export function StageOperationRunway({
       <div className="rounded-[15px] border border-white/62 bg-white/42 px-3 py-2 shadow-[0_16px_42px_rgba(18,28,42,0.09)] backdrop-blur-xl">
         <div className="mb-1.5 flex items-center justify-between gap-3 text-[9.5px] font-black uppercase tracking-[0.12em] text-(--text-soft)">
           <span>工作台航线</span>
-          <span className="normal-case tracking-normal">{narrative.label}</span>
+          <span className="normal-case tracking-normal">
+            {active_index + 1}/{runway_events.length} · {narrative.label}
+          </span>
         </div>
         <div className="relative">
           <div className="absolute left-3.5 right-3.5 top-[14px] h-px bg-white/64" />
@@ -372,7 +374,8 @@ export function StageOperationRunway({
               const Icon = icon_for_operation_kind(item.kind);
               const phase_meta = PHASE_STATUS_META[item.phase];
               const is_active = item.id === active_event_id;
-              const is_settled = index < active_index || item.phase === "done" || item.phase === "cancelled";
+              const runway_state = event_beat_state(item, index, active_index);
+              const is_settled = runway_state.tone === "settled";
               return (
                 <button
                   aria-label={`聚焦工作台航线 ${index + 1}：${profile.action_label} ${item.tool_name ?? item.title}`}
@@ -397,6 +400,16 @@ export function StageOperationRunway({
                     is_active ? "text-(--text-strong)" : "text-(--text-soft)",
                   )}>
                     {profile.action_label}
+                  </p>
+                  <p className={cn(
+                    "mx-auto mt-0.5 w-fit max-w-full truncate rounded-full px-1.5 py-px text-[7.5px] font-black",
+                    runway_state.tone === "active"
+                      ? "bg-[rgba(91,114,255,0.12)] text-[color:var(--primary)]"
+                      : runway_state.tone === "settled"
+                        ? "bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]"
+                        : "bg-white/48 text-(--text-soft)",
+                  )}>
+                    {runway_state.label}
                   </p>
                   <p className="truncate text-[8px] font-semibold text-(--text-soft)">
                     {item.tool_name ?? SURFACE_LABEL[item.surface]}
