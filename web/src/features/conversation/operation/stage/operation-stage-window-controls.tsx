@@ -123,11 +123,20 @@ export function StageWindowDock({
 
   return (
     <div className="absolute inset-x-4 bottom-4 z-30 flex justify-center max-md:relative max-md:inset-x-auto max-md:bottom-auto max-md:mt-3">
-      <div className="operation-window-dock soft-scrollbar flex max-w-full items-center gap-1.5 overflow-x-auto rounded-[24px] border border-white/70 bg-[rgba(255,255,255,0.66)] px-2.5 py-2 shadow-[0_24px_60px_rgba(18,28,42,0.18),inset_0_1px_0_rgba(255,255,255,0.76)] backdrop-blur-2xl">
-        <div className="mr-1 hidden min-w-[112px] border-r border-white/56 pr-2 text-right sm:block">
-          <p className="text-[9px] font-black uppercase tracking-[0.16em] text-(--text-soft)">Nexus</p>
-          <p className="mt-0.5 truncate text-[10.5px] font-semibold text-(--text-muted)">工作台现场</p>
+      <div className="flex max-w-full flex-col items-center gap-1.5">
+        <div className="hidden max-w-[360px] rounded-full border border-white/60 bg-[rgba(20,28,38,0.72)] px-3 py-1.5 text-center text-white shadow-[0_14px_36px_rgba(18,28,42,0.18)] backdrop-blur-xl md:block">
+          <p className="truncate text-[10px] font-bold">
+            {active_window ? `${stage_app_label_for_window_kind(active_window.kind)} · ${active_window.title}` : "Nexus 工作台"}
+          </p>
+          <p className="mt-0.5 truncate text-[8.5px] font-semibold text-white/58">
+            {live_window_count} 个现场 · {settled_window_count} 个沉淀
+          </p>
         </div>
+        <div className="operation-window-dock soft-scrollbar flex max-w-full items-end gap-2 overflow-x-auto rounded-[26px] border border-white/70 bg-[rgba(255,255,255,0.60)] px-2.5 py-2 shadow-[0_24px_60px_rgba(18,28,42,0.18),inset_0_1px_0_rgba(255,255,255,0.78)] backdrop-blur-2xl">
+          <div className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-[17px] border border-white/60 bg-[linear-gradient(135deg,rgba(91,114,255,0.18),rgba(255,255,255,0.74),rgba(79,162,159,0.14))] text-[13px] font-black text-(--text-strong) shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+            N
+          </div>
+          <div className="h-9 w-px shrink-0 bg-white/56" />
         {windows.map((window) => {
           const Icon = icon_for_window_kind(window.kind);
           const is_active = active_window_id === window.id && window.phase !== "closed" && window.phase !== "minimized";
@@ -144,12 +153,12 @@ export function StageWindowDock({
             <button
               aria-label={`${state_label}：${window.title}`}
               className={cn(
-                "group relative grid h-[46px] min-w-[46px] shrink-0 grid-cols-[34px_minmax(0,1fr)] items-center gap-1 rounded-[18px] border px-1.5 pr-2 text-left transition duration-200 ease-out hover:-translate-y-1 hover:scale-[1.035] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.42)]",
+                "group relative grid shrink-0 place-items-center rounded-[18px] border text-left transition duration-200 ease-out hover:-translate-y-2 hover:scale-110 focus-visible:-translate-y-2 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.42)]",
                 is_active
-                  ? "w-[148px] border-[rgba(91,114,255,0.32)] bg-[rgba(91,114,255,0.16)] text-[color:var(--primary)] shadow-[0_12px_28px_rgba(91,114,255,0.20)]"
+                  ? "h-[52px] w-[52px] border-[rgba(91,114,255,0.32)] bg-[rgba(91,114,255,0.16)] text-[color:var(--primary)] shadow-[0_16px_32px_rgba(91,114,255,0.22)]"
                   : window.phase === "closed" || window.phase === "minimized"
-                    ? "w-[46px] border-transparent bg-white/28 text-(--icon-muted) opacity-72 hover:w-[132px] hover:bg-white/62 hover:text-(--text-strong) hover:opacity-100 focus-visible:w-[132px]"
-                    : "w-[46px] border-transparent bg-white/42 text-(--icon-muted) hover:w-[132px] hover:bg-white/72 hover:text-(--text-strong) focus-visible:w-[132px]",
+                    ? "h-[44px] w-[44px] border-transparent bg-white/28 text-(--icon-muted) opacity-72 hover:bg-white/62 hover:text-(--text-strong) hover:opacity-100"
+                    : "h-[44px] w-[44px] border-transparent bg-white/42 text-(--icon-muted) hover:bg-white/72 hover:text-(--text-strong)",
               )}
               key={window.id}
               onClick={() => on_restore(window.id)}
@@ -175,40 +184,22 @@ export function StageWindowDock({
                 )} />
               </span>
               <span className={cn(
-                "min-w-0 overflow-hidden transition-opacity duration-150",
-                is_active ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100",
-              )}>
-                <span className="block truncate text-[10.5px] font-black leading-tight text-(--text-strong)">
-                  {app_label}
-                </span>
-                <span className="block truncate text-[9px] font-semibold leading-tight text-(--text-soft)">
-                  {sequence_label} · {state_label}
-                </span>
-              </span>
-              <span className={cn(
-                "absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full transition group-hover:opacity-0 group-focus-visible:opacity-0",
+                "absolute -bottom-2 left-1/2 h-1.5 -translate-x-1/2 rounded-full transition",
                 is_active
-                  ? "opacity-0"
+                  ? "w-5 bg-[color:var(--primary)]"
                   : window.phase === "minimized"
-                    ? "bg-[rgba(223,157,46,0.70)]"
+                    ? "w-2 bg-[rgba(223,157,46,0.70)]"
                     : window.phase === "closed"
-                      ? "bg-[rgba(117,131,149,0.42)]"
-                      : "bg-transparent",
+                      ? "w-2 bg-[rgba(117,131,149,0.42)]"
+                      : "w-2 bg-[rgba(47,184,132,0.54)]",
               )} />
-              <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 hidden max-w-[210px] -translate-x-1/2 whitespace-nowrap rounded-[10px] border border-white/70 bg-[rgba(20,28,38,0.82)] px-2.5 py-1.5 text-[10px] font-semibold text-white shadow-[0_12px_30px_rgba(18,28,42,0.22)] backdrop-blur-xl group-hover:block group-focus-visible:block">
+              <span className="pointer-events-none absolute bottom-[calc(100%+10px)] left-1/2 hidden max-w-[230px] -translate-x-1/2 whitespace-nowrap rounded-[10px] border border-white/70 bg-[rgba(20,28,38,0.82)] px-2.5 py-1.5 text-[10px] font-semibold text-white shadow-[0_12px_30px_rgba(18,28,42,0.22)] backdrop-blur-xl group-hover:block group-focus-visible:block">
                 <span className="block max-w-[160px] truncate">{window.title}</span>
                 <span className="block text-[9px] font-medium text-white/66">{sequence_label} · {app_label} · {state_label}</span>
               </span>
             </button>
           );
         })}
-        <div className="ml-1 hidden min-w-[128px] border-l border-white/56 pl-2 text-left md:block">
-          <p className="truncate text-[10.5px] font-black text-(--text-strong)">
-            {active_window ? stage_app_label_for_window_kind(active_window.kind) : "工作台"}
-          </p>
-          <p className="mt-0.5 truncate text-[9.5px] font-semibold text-(--text-soft)">
-            {live_window_count} 个现场 · {settled_window_count} 个沉淀
-          </p>
         </div>
       </div>
     </div>
