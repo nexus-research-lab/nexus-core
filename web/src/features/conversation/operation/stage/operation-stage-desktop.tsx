@@ -16,8 +16,8 @@ import type {
   NexusOperationEvent,
   NexusOperationSnapshot,
 } from "../operation-types";
+import { StageArchiveShelf } from "./operation-stage-archive-shelf";
 import {
-  StageArchiveShelf,
   StageCompletionLedger,
   StageOutcomeSummary,
 } from "./operation-stage-completion";
