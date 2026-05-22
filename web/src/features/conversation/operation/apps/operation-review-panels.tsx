@@ -1,0 +1,331 @@
+import {
+  AlertTriangle,
+  ArrowRight,
+  CheckCircle2,
+  CircleHelp,
+  ClipboardList,
+  Clock3,
+  FileText,
+  Globe2,
+  Play,
+  RefreshCw,
+  Sparkles,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+import {
+  build_operation_input_rows,
+  PHASE_LABELS,
+  resolve_operation_tool_profile,
+} from "../operation-tool-catalog";
+import { format_operation_time, safe_json_stringify } from "../operation-preview";
+import type {
+  NexusOperationEvent,
+  NexusOperationSnapshot,
+  OperationEvidence,
+} from "../operation-types";
+
+export function PermissionCheckpointPanel({
+  compact = false,
+  event,
+  evidence: payload_evidence,
+  snapshot,
+}: {
+  compact?: boolean;
+  event: NexusOperationEvent;
+  evidence?: OperationEvidence[];
+  snapshot: NexusOperationSnapshot | null;
+}) {
+  const profile = resolve_operation_tool_profile(event.tool_name, event.kind, event.surface);
+  const rows = build_operation_input_rows(event.input_preview, profile.target_keys, compact ? 4 : 8);
+  const evidence = dedupe_evidence([
+    ...(payload_evidence ?? []),
+    ...(event.evidence ?? []),
+    ...(snapshot?.recent_evidence ?? []),
+  ]).slice(0, compact ? 4 : 7);
+  const lead = event.summary ?? event.target ?? event.title ?? event.tool_name ?? "等待用户确认";
+  const request_target = event.target ?? rows[0]?.value ?? event.tool_name ?? "pending request";
+
+  return (
+    <div className="flex h-full min-h-[320px] min-w-0 max-w-full flex-col overflow-hidden rounded-[15px] border border-[rgba(223,157,46,0.24)] bg-[linear-gradient(180deg,rgba(255,255,255,0.90),rgba(255,248,236,0.78))] shadow-[inset_0_1px_0_rgba(255,255,255,0.84)]">
+      <div className="border-b border-[rgba(223,157,46,0.18)] px-4 py-3">
+        <div className="flex min-w-0 items-start justify-between gap-3">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[13px] border border-[rgba(223,157,46,0.26)] bg-[rgba(223,157,46,0.13)] text-[color:var(--warning)]">
+              <CircleHelp className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">
+                execution checkpoint
+              </p>
+              <h3 className="mt-1 truncate text-[15px] font-black tracking-[-0.03em] text-(--text-strong)">
+                等待用户确认
+              </h3>
+              <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-(--text-muted)">
+                {lead}
+              </p>
+            </div>
+          </div>
+          <span className="shrink-0 rounded-full border border-[rgba(223,157,46,0.22)] bg-[rgba(223,157,46,0.12)] px-2.5 py-1 text-[10px] font-black text-[color:var(--warning)]">
+            {PHASE_LABELS[event.phase]}
+          </span>
+        </div>
+      </div>
+
+      <div className="grid min-h-0 min-w-0 flex-1 grid-cols-[minmax(0,1.1fr)_minmax(220px,0.9fr)] max-md:grid-cols-1">
+        <section className="soft-scrollbar min-h-0 min-w-0 overflow-auto p-4">
+          <div className="rounded-[13px] border border-[rgba(18,28,42,0.10)] bg-[#20252c] p-3 text-[#e8edf2] shadow-[0_18px_46px_rgba(18,28,42,0.16)]">
+            <div className="mb-3 flex items-center justify-between gap-3 border-b border-white/10 pb-2">
+              <div className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[#ffbd2e]" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+              </div>
+              <span className="truncate font-mono text-[10px] text-[#9ba7b4]">
+                {profile.action_label} · {profile.title}
+              </span>
+            </div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#9ba7b4]">request</p>
+            <pre className="mt-2 max-h-[112px] overflow-hidden whitespace-pre-wrap break-words font-mono text-[12px] leading-5 text-[#f6f8fb]">
+              {request_target}
+            </pre>
+          </div>
+
+          <div className="mt-3 grid grid-cols-3 gap-2 text-[10px] max-sm:grid-cols-1">
+            {[
+              { label: "暂停点", value: "permission", Icon: Clock3 },
+              { label: "工具", value: profile.title, Icon: Play },
+              { label: "更新", value: format_operation_time(event.updated_at), Icon: RefreshCw },
+            ].map((item) => (
+              <div className="min-w-0 rounded-[11px] border border-white/64 bg-white/62 px-2.5 py-2" key={item.label}>
+                <div className="flex items-center gap-1.5 text-(--text-soft)">
+                  <item.Icon className="h-3.5 w-3.5 shrink-0" />
+                  <span className="font-black">{item.label}</span>
+                </div>
+                <p className="mt-1 truncate font-mono text-[10px] text-(--text-strong)">{item.value}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-stretch gap-2 text-[10px] max-sm:grid-cols-1">
+            <div className="rounded-[11px] border border-[rgba(223,157,46,0.18)] bg-white/62 px-2.5 py-2">
+              <p className="font-black text-(--text-strong)">当前暂停</p>
+              <p className="mt-1 text-(--text-muted)">工具调用已保留现场</p>
+            </div>
+            <div className="flex items-center justify-center text-(--text-soft) max-sm:hidden">
+              <ArrowRight className="h-4 w-4" />
+            </div>
+            <div className="rounded-[11px] border border-[rgba(47,184,132,0.18)] bg-white/62 px-2.5 py-2">
+              <p className="font-black text-(--text-strong)">确认后继续</p>
+              <p className="mt-1 text-(--text-muted)">返回现场并接续执行</p>
+            </div>
+          </div>
+        </section>
+
+        <aside className="soft-scrollbar min-h-0 overflow-auto border-l border-[rgba(223,157,46,0.16)] bg-white/45 p-4 max-md:max-h-[300px] max-md:border-l-0 max-md:border-t">
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">request payload</p>
+          <div className="mt-2 space-y-1.5">
+            {rows.length ? rows.map((row) => (
+              <div className="rounded-[10px] border border-white/62 bg-white/70 px-2.5 py-2 text-[10px]" key={row.key}>
+                <p className="font-black text-(--text-strong)">{row.label}</p>
+                <p className="mt-0.5 break-words font-mono leading-4 text-(--text-muted)">{row.value}</p>
+              </div>
+            )) : (
+              <div className="rounded-[10px] border border-white/62 bg-white/70 px-2.5 py-2 text-[10px] text-(--text-muted)">
+                {event.target ?? event.tool_name ?? "No request payload"}
+              </div>
+            )}
+          </div>
+
+          <p className="mt-3 text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">evidence</p>
+          <div className="mt-2 space-y-1.5">
+            {(evidence.length ? evidence : [{
+              type: "permission",
+              label: "waiting",
+              value: lead,
+            } satisfies OperationEvidence]).map((item, index) => {
+              const Icon = icon_for_evidence(item.type);
+              return (
+                <div
+                  className="flex min-w-0 items-start gap-2 rounded-[10px] border border-white/62 bg-white/68 px-2.5 py-2 text-[10px]"
+                  key={`${item.type}:${item.label}:${item.value ?? ""}:${index}`}
+                >
+                  <span className="grid h-5 w-5 shrink-0 place-items-center rounded-[7px] bg-[rgba(223,157,46,0.12)] text-[color:var(--warning)]">
+                    <Icon className="h-3 w-3" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-black text-(--text-strong)">{item.label}</p>
+                    <p className="mt-0.5 line-clamp-2 break-words text-(--text-muted)">{item.value ?? item.type}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+export function OperationReviewPanel({
+  compact = false,
+  event,
+  evidence: payload_evidence,
+  mode,
+  snapshot,
+}: {
+  compact?: boolean;
+  event: NexusOperationEvent;
+  evidence?: OperationEvidence[];
+  mode: "evidence" | "permission";
+  snapshot: NexusOperationSnapshot | null;
+}) {
+  const profile = resolve_operation_tool_profile(event.tool_name, event.kind, event.surface);
+  const evidence = dedupe_evidence([
+    ...(payload_evidence ?? []),
+    ...(event.evidence ?? []),
+    ...(snapshot?.recent_evidence ?? []),
+  ]).slice(0, compact ? 4 : 8);
+  const rows = build_operation_input_rows(event.input_preview, profile.target_keys, compact ? 3 : 6);
+  const waiting = event.phase === "waiting" || mode === "permission";
+  const lead = event.summary ?? event.title ?? event.target ?? event.tool_name ?? "操作";
+
+  return (
+    <div className="flex h-full min-h-[260px] min-w-0 max-w-full flex-col overflow-hidden rounded-[13px] border border-(--divider-subtle-color) bg-white/76">
+      <div className={cn(
+        "border-b border-(--divider-subtle-color) px-3 py-3",
+        waiting
+          ? "bg-[linear-gradient(135deg,rgba(223,157,46,0.13),rgba(255,255,255,0.76))]"
+          : "bg-[linear-gradient(135deg,rgba(91,114,255,0.10),rgba(255,255,255,0.78))]",
+      )}>
+        <div className="flex min-w-0 items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">
+              {waiting ? "授权检查点" : "证据检查器"}
+            </p>
+            <h3 className="mt-1 truncate text-[14px] font-black tracking-[-0.03em] text-(--text-strong)">
+              {waiting ? "等待用户确认" : "执行证据"}
+            </h3>
+          </div>
+          <span className={cn(
+            "shrink-0 rounded-full px-2 py-1 text-[10px] font-black",
+            waiting
+              ? "bg-[rgba(223,157,46,0.14)] text-[color:var(--warning)]"
+              : "bg-[rgba(47,184,132,0.12)] text-[color:var(--success)]",
+          )}>
+            {PHASE_LABELS[event.phase]}
+          </span>
+        </div>
+        <p className="mt-2 line-clamp-2 text-[11px] leading-4 text-(--text-muted)">{lead}</p>
+      </div>
+
+      <div className="grid min-h-0 min-w-0 flex-1 grid-cols-[minmax(0,1fr)_180px] gap-0 max-md:grid-cols-1">
+        <div className="soft-scrollbar min-h-0 min-w-0 overflow-auto p-3">
+          <div className="space-y-2">
+            {(evidence.length ? evidence : [{
+              type: waiting ? "permission" : "status",
+              label: waiting ? "request" : "status",
+              value: lead,
+            } satisfies OperationEvidence]).map((item, index) => {
+              const Icon = icon_for_evidence(item.type);
+              return (
+                <div
+                  className="flex min-w-0 gap-2 rounded-[11px] border border-(--divider-subtle-color) bg-white/70 px-2.5 py-2 text-[11px]"
+                  key={`${item.type}:${item.label}:${item.value ?? ""}:${index}`}
+                >
+                  <span className={cn(
+                    "mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-[8px]",
+                    item.type === "error" && "bg-[rgba(223,93,98,0.10)] text-[color:var(--destructive)]",
+                    item.type === "permission" && "bg-[rgba(223,157,46,0.12)] text-[color:var(--warning)]",
+                    item.type !== "error" && item.type !== "permission" && "bg-[rgba(91,114,255,0.09)] text-[color:var(--primary)]",
+                  )}>
+                    <Icon className="h-3.5 w-3.5" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="shrink-0 font-black text-(--text-strong)">{item.label}</span>
+                      <span className="min-w-0 flex-1 truncate text-(--text-muted)">{item.value ?? item.type}</span>
+                    </div>
+                    {item.preview != null ? (
+                      <pre className="mt-1 max-h-16 overflow-hidden whitespace-pre-wrap break-words rounded-[8px] bg-[rgba(18,28,42,0.05)] px-2 py-1.5 font-mono text-[10px] leading-4 text-(--text-soft)">
+                        {safe_json_stringify(item.preview)}
+                      </pre>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <aside className="soft-scrollbar min-h-0 overflow-auto border-l border-(--divider-subtle-color) bg-white/45 p-3 max-md:max-h-[220px] max-md:border-l-0 max-md:border-t">
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">request</p>
+          <div className="mt-2 space-y-1.5">
+            {rows.length ? rows.map((row) => (
+              <div className="rounded-[9px] bg-white/70 px-2 py-1.5 text-[10px]" key={row.key}>
+                <p className="font-black text-(--text-strong)">{row.label}</p>
+                <p className="mt-0.5 break-words text-(--text-muted)">{row.value}</p>
+              </div>
+            )) : (
+              <div className="rounded-[9px] bg-white/70 px-2 py-1.5 text-[10px] text-(--text-muted)">
+                {event.target ?? event.tool_name ?? "No request payload"}
+              </div>
+            )}
+          </div>
+          {waiting ? (
+            <div className="mt-2 grid grid-cols-2 gap-1.5 text-[10px] font-black">
+              <span className="rounded-[9px] border border-[rgba(47,184,132,0.20)] bg-[rgba(47,184,132,0.10)] px-2 py-1.5 text-center text-[color:var(--success)]">
+                Allow
+              </span>
+              <span className="rounded-[9px] border border-[rgba(223,93,98,0.18)] bg-[rgba(223,93,98,0.08)] px-2 py-1.5 text-center text-[color:var(--destructive)]">
+                Deny
+              </span>
+            </div>
+          ) : null}
+          <div className="mt-2 rounded-[9px] bg-white/70 px-2 py-1.5 text-[10px] text-(--text-muted)">
+            updated {format_operation_time(event.updated_at)}
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+function dedupe_evidence(items: OperationEvidence[]): OperationEvidence[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const key = `${item.type}:${item.label}:${item.value ?? ""}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+
+function icon_for_evidence(type: OperationEvidence["type"]): LucideIcon {
+  if (type === "file" || type === "diff") {
+    return FileText;
+  }
+  if (type === "terminal") {
+    return Play;
+  }
+  if (type === "url") {
+    return Globe2;
+  }
+  if (type === "task") {
+    return ClipboardList;
+  }
+  if (type === "permission") {
+    return CircleHelp;
+  }
+  if (type === "error") {
+    return AlertTriangle;
+  }
+  if (type === "skill") {
+    return Sparkles;
+  }
+  return CheckCircle2;
+}
