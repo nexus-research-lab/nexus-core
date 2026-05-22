@@ -16,6 +16,7 @@ import type {
   NexusOperationSnapshot,
 } from "../operation-types";
 import { format_operation_time } from "../operation-preview";
+import { resolve_operation_tool_profile } from "../operation-tool-catalog";
 import {
   collect_archive_capsules,
   collect_completion_artifacts,
@@ -108,13 +109,14 @@ export function StageCompletionLedger({
           </div>
           <div className="space-y-1">
             {visible_events.map((item, index) => {
+              const profile = resolve_operation_tool_profile(item.tool_name, item.kind, item.surface);
               const Icon = icon_for_operation_kind(item.kind);
               const phase_meta = PHASE_STATUS_META[item.phase];
               const PhaseIcon = phase_meta.Icon;
               const is_active = item.id === active_event_id;
               return (
                 <button
-                  aria-label={`回看交接记录 ${index + 1}：${item.tool_name ?? item.title}`}
+                  aria-label={`回看交接记录 ${index + 1}：${profile.action_label} ${item.tool_name ?? item.title}`}
                   className={cn(
                     "grid w-full grid-cols-[22px_minmax(0,1fr)_auto] items-center gap-2 rounded-[10px] border px-2 py-1.5 text-left transition hover:-translate-y-0.5 hover:border-[rgba(91,114,255,0.22)] hover:bg-[rgba(91,114,255,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.34)]",
                     is_active
@@ -123,7 +125,7 @@ export function StageCompletionLedger({
                   )}
                   key={item.id}
                   onClick={() => on_focus_event?.(item)}
-                  title={`${item.tool_name ?? item.title} · ${item.target ?? item.summary ?? SURFACE_LABEL[item.surface]}`}
+                  title={`${profile.action_label} · ${item.tool_name ?? item.title} · ${item.target ?? item.summary ?? SURFACE_LABEL[item.surface]}`}
                   type="button"
                 >
                   <span className={cn(
@@ -134,7 +136,7 @@ export function StageCompletionLedger({
                   </span>
                   <span className="min-w-0">
                     <span className="block truncate text-[10.5px] font-black text-(--text-strong)">
-                      {item.tool_name ?? item.title}
+                      {profile.action_label} · {item.tool_name ?? item.title}
                     </span>
                     <span className="block truncate text-[9.5px] text-(--text-soft)">
                       {item.target ?? item.summary ?? SURFACE_LABEL[item.surface]}

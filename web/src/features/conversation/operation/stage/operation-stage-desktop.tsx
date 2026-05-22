@@ -985,11 +985,12 @@ function StageNarrativeRail({
         </div>
         <div className="flex min-w-0 max-w-full gap-1.5 overflow-hidden">
           {events.slice(-7).map((item, index) => {
+            const profile = resolve_operation_tool_profile(item.tool_name, item.kind, item.surface);
             const Icon = icon_for_operation_kind(item.kind);
             const is_active = item.id === active_event_id;
             return (
               <button
-                aria-label={`聚焦执行事件 ${index + 1}：${item.tool_name ?? item.title}`}
+                aria-label={`聚焦执行事件 ${index + 1}：${profile.action_label} ${item.tool_name ?? item.title}`}
                 className={cn(
                   "group relative flex h-9 min-w-0 flex-1 items-center gap-1.5 rounded-[11px] border px-2 text-left transition hover:-translate-y-0.5 hover:border-[rgba(91,114,255,0.22)] hover:bg-[rgba(91,114,255,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.34)]",
                   is_active
@@ -998,14 +999,14 @@ function StageNarrativeRail({
                 )}
                 key={item.id}
                 onClick={() => on_focus_event?.(item)}
-                title={`${index + 1}. ${item.tool_name ?? item.title}`}
+                title={`${index + 1}. ${profile.action_label} · ${item.tool_name ?? item.title}`}
                 type="button"
               >
                 <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white/64">
                   <Icon className="h-3 w-3" />
                 </span>
                 <span className="min-w-0 truncate text-[10px] font-semibold">
-                  {item.tool_name ?? item.title}
+                  {profile.action_label}
                 </span>
               </button>
             );
@@ -1052,17 +1053,18 @@ function StageOperationRunway({
           />
           <div className="relative grid gap-1" style={{ gridTemplateColumns: `repeat(${runway_events.length}, minmax(0, 1fr))` }}>
             {runway_events.map((item, index) => {
+              const profile = resolve_operation_tool_profile(item.tool_name, item.kind, item.surface);
               const Icon = icon_for_operation_kind(item.kind);
               const phase_meta = PHASE_STATUS_META[item.phase];
               const is_active = item.id === active_event_id;
               const is_settled = index < active_index || item.phase === "done" || item.phase === "cancelled";
               return (
                 <button
-                  aria-label={`聚焦工作台航线 ${index + 1}：${item.tool_name ?? item.title}`}
+                  aria-label={`聚焦工作台航线 ${index + 1}：${profile.action_label} ${item.tool_name ?? item.title}`}
                   className="min-w-0 rounded-[12px] text-center transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.34)]"
                   key={item.id}
                   onClick={() => on_focus_event?.(item)}
-                  title={`${index + 1}. ${item.tool_name ?? item.title}`}
+                  title={`${index + 1}. ${profile.action_label} · ${item.tool_name ?? item.title}`}
                   type="button"
                 >
                   <div className={cn(
@@ -1079,10 +1081,10 @@ function StageOperationRunway({
                     "mt-1 truncate text-[9px] font-black",
                     is_active ? "text-(--text-strong)" : "text-(--text-soft)",
                   )}>
-                    {item.tool_name ?? item.title}
+                    {profile.action_label}
                   </p>
                   <p className="truncate text-[8px] font-semibold text-(--text-soft)">
-                    {SURFACE_LABEL[item.surface]}
+                    {item.tool_name ?? SURFACE_LABEL[item.surface]}
                   </p>
                 </button>
               );
