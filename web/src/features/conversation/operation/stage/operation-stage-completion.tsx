@@ -15,22 +15,21 @@ import type {
   NexusOperationSnapshot,
 } from "../operation-types";
 import { format_operation_time } from "../operation-preview";
-import { resolve_operation_tool_profile } from "../operation-tool-catalog";
 import {
   collect_completion_artifacts,
   collect_handoff_checklist,
   collect_handoff_items,
-  icon_for_operation_kind,
 } from "./operation-stage-helpers";
 import { StageHandoffRibbon } from "./operation-stage-handoff-ribbon";
-import { StageArchiveShelf } from "./operation-stage-archive-shelf";
+import { StageEpisodeReel } from "./operation-stage-episode-reel";
+import type { StageEpisodeMap } from "./operation-stage-episodes";
 import type { StageNarrativeState } from "./operation-stage-model";
-import { PHASE_STATUS_META, SURFACE_LABEL } from "./operation-stage-style";
 
 export function StageCompletionLedger({
   active_event_id,
   event,
   events,
+  episodes,
   narrative,
   on_focus_event,
   snapshot,
@@ -38,6 +37,7 @@ export function StageCompletionLedger({
   active_event_id: string;
   event: NexusOperationEvent;
   events: NexusOperationEvent[];
+  episodes: StageEpisodeMap;
   narrative: StageNarrativeState;
   on_focus_event?: (event: NexusOperationEvent) => void;
   snapshot: NexusOperationSnapshot | null;
@@ -48,9 +48,7 @@ export function StageCompletionLedger({
 
   const has_error = event.phase === "error" || events.some((item) => item.phase === "error");
   const artifacts = collect_completion_artifacts(event, snapshot);
-  const completed_count = events.filter((item) => item.phase === "done").length;
   const interrupted_count = events.filter((item) => item.phase === "error" || item.phase === "cancelled").length;
-  const visible_events = events.slice(-5);
   const active_index = events.findIndex((item) => item.id === active_event_id);
   const active_replay_event = active_index >= 0 ? events[active_index] : event;
 
@@ -88,7 +86,7 @@ export function StageCompletionLedger({
           <CompletionLedgerMetric
             label="步骤"
             tone={has_error ? "warning" : "success"}
-            value={`${completed_count}/${events.length}`}
+            value={`${episodes.completed_count}/${episodes.total_count}`}
           />
           <CompletionLedgerMetric
             label="产物"
@@ -107,52 +105,12 @@ export function StageCompletionLedger({
             <span>执行回放轨迹</span>
             <span>{format_operation_time(active_replay_event.updated_at)}</span>
           </div>
-          <div className="space-y-1">
-            {visible_events.map((item, index) => {
-              const profile = resolve_operation_tool_profile(item.tool_name, item.kind, item.surface);
-              const Icon = icon_for_operation_kind(item.kind);
-              const phase_meta = PHASE_STATUS_META[item.phase];
-              const PhaseIcon = phase_meta.Icon;
-              const is_active = item.id === active_event_id;
-              return (
-                <button
-                  aria-label={`回看交接记录 ${index + 1}：${profile.action_label} ${item.tool_name ?? item.title}`}
-                  className={cn(
-                    "grid w-full grid-cols-[22px_minmax(0,1fr)_auto] items-center gap-2 rounded-[10px] border px-2 py-1.5 text-left transition hover:-translate-y-0.5 hover:border-[rgba(91,114,255,0.22)] hover:bg-[rgba(91,114,255,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.34)]",
-                    is_active
-                      ? "border-[rgba(91,114,255,0.26)] bg-[rgba(91,114,255,0.10)]"
-                      : "border-white/46 bg-white/30",
-                  )}
-                  key={item.id}
-                  onClick={() => on_focus_event?.(item)}
-                  title={`${profile.action_label} · ${item.tool_name ?? item.title} · ${item.target ?? item.summary ?? SURFACE_LABEL[item.surface]}`}
-                  type="button"
-                >
-                  <span className={cn(
-                    "grid h-[22px] w-[22px] place-items-center rounded-[8px]",
-                    is_active ? "bg-[rgba(91,114,255,0.14)] text-[color:var(--primary)]" : "bg-white/58 text-(--icon-muted)",
-                  )}>
-                    <Icon className="h-3.5 w-3.5" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-[10.5px] font-black text-(--text-strong)">
-                      {profile.action_label} · {item.tool_name ?? item.title}
-                    </span>
-                    <span className="block truncate text-[9.5px] text-(--text-soft)">
-                      {item.target ?? item.summary ?? SURFACE_LABEL[item.surface]}
-                    </span>
-                  </span>
-                  <span className={cn(
-                    "inline-flex h-5 shrink-0 items-center gap-1 rounded-full border px-1.5 text-[8.5px] font-bold",
-                    phase_meta.class_name,
-                  )}>
-                    <PhaseIcon className={cn("h-3 w-3", item.phase === "running" && "animate-spin")} />
-                    {phase_meta.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          <StageEpisodeReel
+            active_event_id={active_event_id}
+            episodes={episodes}
+            on_focus_event={on_focus_event}
+            title="交接沉淀"
+          />
         </div>
 
         <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-[13px] border border-white/52 bg-white/34 px-2.5 py-2">
@@ -202,11 +160,13 @@ function CompletionLedgerMetric({
 export function StageOutcomeSummary({
   event,
   events,
+  episodes,
   narrative,
   snapshot,
 }: {
   event: NexusOperationEvent;
   events: NexusOperationEvent[];
+  episodes: StageEpisodeMap;
   narrative: StageNarrativeState;
   snapshot: NexusOperationSnapshot | null;
 }) {
@@ -233,7 +193,6 @@ export function StageOutcomeSummary({
   const continuation_brief = useMemo(() => (
     build_operation_continuation_brief(event, events, snapshot)
   ), [event, events, snapshot]);
-  const reel_events = events.slice(-5);
 
   return (
     <div className="absolute right-4 top-4 z-20 w-[min(370px,calc(100%-2rem))] rounded-[16px] border border-white/66 bg-white/60 p-3 shadow-[0_22px_54px_rgba(18,28,42,0.13)] backdrop-blur-xl max-md:relative max-md:right-auto max-md:top-auto max-md:mt-3 max-md:w-full">
@@ -344,42 +303,7 @@ export function StageOutcomeSummary({
       />
 
       <div className="mt-3">
-        <div className="mb-1.5 flex items-center justify-between text-[10px] font-bold text-(--text-soft)">
-          <span>执行胶片</span>
-          <span>{reel_events.length}/{events.length}</span>
-        </div>
-        <div className="space-y-1">
-          {reel_events.map((item, index) => {
-            const Icon = icon_for_operation_kind(item.kind);
-            const phase_meta = PHASE_STATUS_META[item.phase];
-            return (
-              <div
-                className="grid grid-cols-[20px_minmax(0,1fr)_auto] items-center gap-2 rounded-[10px] border border-white/48 bg-white/34 px-2 py-1.5 text-[10px]"
-                key={item.id}
-              >
-                <span className={cn(
-                  "grid h-5 w-5 place-items-center rounded-full border",
-                  item.id === event.id
-                    ? "border-[rgba(91,114,255,0.25)] bg-[rgba(91,114,255,0.12)] text-[color:var(--primary)]"
-                    : "border-white/58 bg-white/52 text-(--icon-muted)",
-                )}>
-                  <Icon className="h-3 w-3" />
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate font-bold text-(--text-strong)">
-                    {index + Math.max(events.length - reel_events.length, 0) + 1}. {item.tool_name ?? item.title}
-                  </span>
-                  <span className="block truncate text-[9.5px] text-(--text-soft)">
-                    {item.target ?? item.summary ?? SURFACE_LABEL[item.surface]}
-                  </span>
-                </span>
-                <span className="shrink-0 rounded-full bg-white/54 px-1.5 py-px font-semibold text-(--text-soft)">
-                  {phase_meta.label}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+        <StageEpisodeReel episodes={episodes} title="执行胶片" />
       </div>
 
       <div className="mt-3">

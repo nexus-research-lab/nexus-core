@@ -5,18 +5,21 @@ import { cn } from "@/lib/utils";
 
 import type { StageWindowState } from "../operation-desktop-types";
 import type { NexusOperationEvent, NexusOperationSnapshot } from "../operation-types";
+import type { StageEpisodeMap } from "./operation-stage-episodes";
 import { collect_archive_capsules } from "./operation-stage-helpers";
 import type { StageNarrativeState } from "./operation-stage-model";
 
 export function StageArchiveShelf({
   event,
   events,
+  episodes,
   narrative,
   snapshot,
   windows,
 }: {
   event: NexusOperationEvent;
   events: NexusOperationEvent[];
+  episodes: StageEpisodeMap;
   narrative: StageNarrativeState;
   snapshot: NexusOperationSnapshot | null;
   windows: StageWindowState[];
@@ -27,9 +30,7 @@ export function StageArchiveShelf({
     snapshot,
     windows,
   }), [event, events, snapshot, windows]);
-  const archived_count = events.filter((item) => (
-    item.phase === "done" || item.phase === "cancelled" || item.phase === "error"
-  )).length;
+  const archived_count = episodes.settled_count || episodes.completed_count;
 
   return (
     <div className="operation-stage-mobile-panel absolute bottom-[82px] left-1/2 z-20 w-[min(520px,calc(100%-2rem))] -translate-x-1/2 max-md:relative max-md:bottom-auto max-md:left-auto max-md:mt-3 max-md:w-full max-md:translate-x-0">
@@ -52,8 +53,14 @@ export function StageArchiveShelf({
             </div>
           </div>
           <span className="shrink-0 rounded-full border border-white/56 bg-white/50 px-2 py-1 text-[9.5px] font-bold text-(--text-soft)">
-            {archived_count}/{events.length} 已归档
+            {archived_count}/{episodes.total_count} 已归档
           </span>
+        </div>
+
+        <div className="mb-2.5 grid grid-cols-3 gap-1.5 text-center">
+          <ArchiveMetric label="已沉淀" value={episodes.settled_count} />
+          <ArchiveMetric label="已完成" value={episodes.completed_count} />
+          <ArchiveMetric label="待接续" value={episodes.upcoming_count} />
         </div>
 
         <div className="grid grid-cols-3 gap-2 max-sm:grid-cols-1">
@@ -100,6 +107,15 @@ export function StageArchiveShelf({
           })}
         </div>
       </div>
+    </div>
+  );
+}
+
+function ArchiveMetric({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="min-w-0 rounded-[10px] border border-white/46 bg-white/34 px-2 py-1.5">
+      <div className="truncate text-[12px] font-black text-(--text-strong)">{value}</div>
+      <div className="mt-0.5 truncate text-[8.5px] font-bold text-(--text-soft)">{label}</div>
     </div>
   );
 }

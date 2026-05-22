@@ -298,6 +298,7 @@ export function OperationStageDesktop({
         <StageCompletionLedger
           active_event_id={active_narrative_event_id}
           event={event}
+          episodes={episodes}
           events={narrative_events}
           narrative={narrative}
           on_focus_event={focus_event_window}
@@ -383,6 +384,7 @@ export function OperationStageDesktop({
         <>
           <StageArchiveShelf
             event={event}
+            episodes={episodes}
             events={narrative_events}
             narrative={narrative}
             snapshot={snapshot}
@@ -397,6 +399,7 @@ export function OperationStageDesktop({
           ) : null}
           <StageOutcomeSummary
             event={event}
+            episodes={episodes}
             events={narrative_events}
             narrative={narrative}
             snapshot={snapshot}
