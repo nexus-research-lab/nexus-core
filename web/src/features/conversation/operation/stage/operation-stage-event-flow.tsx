@@ -5,7 +5,10 @@ import { cn } from "@/lib/utils";
 import type { StageWindowState } from "../operation-desktop-types";
 import { build_operation_live_episode } from "../operation-stage-experience";
 import type { NexusOperationEvent, NexusOperationSnapshot } from "../operation-types";
-import { resolve_operation_tool_profile } from "../operation-tool-catalog";
+import {
+  build_operation_input_rows,
+  resolve_operation_tool_profile,
+} from "../operation-tool-catalog";
 import { icon_for_operation_kind } from "./operation-stage-helpers";
 import type { StageNarrativeState } from "./operation-stage-model";
 import { PHASE_STATUS_META, SURFACE_LABEL } from "./operation-stage-style";
@@ -115,6 +118,9 @@ export function StageNarrativeRail({
             </div>
           </div>
         ) : null}
+        {active_event ? (
+          <StageEventIOTrace active_event={active_event} active_window={active_window} />
+        ) : null}
         <div className="mb-2 flex items-center justify-between gap-3 text-[10px] font-bold text-(--text-soft)">
           <span>事件流</span>
           <span>{events.length} 步 · {Math.min(revealed_window_count, total_window_count)}/{total_window_count}</span>
@@ -156,6 +162,117 @@ export function StageNarrativeRail({
       </div>
     </div>
   );
+}
+
+function StageEventIOTrace({
+  active_event,
+  active_window,
+}: {
+  active_event: NexusOperationEvent;
+  active_window: StageWindowState | null;
+}) {
+  const profile = resolve_operation_tool_profile(active_event.tool_name, active_event.kind, active_event.surface);
+  const input_rows = build_operation_input_rows(active_event.input_preview, profile.target_keys, 2);
+  const input_label = input_rows[0]
+    ? `${input_rows[0].label}: ${input_rows[0].value}`
+    : active_event.target ?? active_event.summary ?? active_event.title;
+  const output_label = resolve_event_output_label(active_event);
+  const window_label = active_window
+    ? `${SURFACE_LABEL[active_event.surface]} -> ${active_window.title}`
+    : `${SURFACE_LABEL[active_event.surface]} -> 等待窗口`;
+
+  return (
+    <div className="mb-2.5 rounded-[12px] border border-white/54 bg-white/36 p-2.5">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <p className="truncate text-[9.5px] font-black uppercase tracking-[0.08em] text-(--text-strong)">
+          执行轨迹
+        </p>
+        <span className="shrink-0 rounded-full bg-white/58 px-2 py-1 text-[8.5px] font-bold text-(--text-soft)">
+          {profile.action_label}
+        </span>
+      </div>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-stretch gap-1.5 text-[9.5px] max-sm:grid-cols-1">
+        <TraceCell label="输入" value={input_label} />
+        <TraceArrow />
+        <TraceCell label="窗口" value={window_label} />
+        <TraceArrow />
+        <TraceCell label="沉淀" value={output_label} />
+      </div>
+      {input_rows.length > 1 ? (
+        <div className="mt-1.5 flex min-w-0 gap-1.5 overflow-hidden text-[8.5px] font-semibold text-(--text-soft)">
+          {input_rows.slice(1).map((row) => (
+            <span className="truncate rounded-full bg-white/42 px-2 py-1" key={row.key}>
+              {row.label}: {row.value}
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function TraceCell({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-[9px] border border-white/48 bg-white/40 px-2 py-1.5">
+      <p className="text-[8px] font-black uppercase tracking-[0.10em] text-(--text-soft)">{label}</p>
+      <p className="mt-0.5 truncate text-[9.5px] font-semibold text-(--text-strong)">{value}</p>
+    </div>
+  );
+}
+
+function TraceArrow() {
+  return (
+    <div className="grid place-items-center text-[10px] font-black text-(--text-soft) max-sm:hidden">
+      -&gt;
+    </div>
+  );
+}
+
+function resolve_event_output_label(event: NexusOperationEvent): string {
+  const evidence = event.evidence?.find((item) => item.value || item.label);
+  const result_label = compact_result_label(event.result_preview);
+  if (event.phase === "running") {
+    return event.surface === "terminal" ? "等待 stdout/stderr" : "等待工具结果";
+  }
+  if (event.phase === "waiting") {
+    return "等待确认";
+  }
+  if (event.phase === "error") {
+    return result_label ?? evidence?.value ?? evidence?.label ?? event.summary ?? "异常证据";
+  }
+  if (event.surface === "terminal") {
+    return result_label ?? evidence?.value ?? evidence?.label ?? event.summary ?? "命令结果";
+  }
+  return evidence?.value ?? evidence?.label ?? event.summary ?? result_label ?? event.title;
+}
+
+function compact_result_label(value: unknown): string | null {
+  if (value == null) {
+    return null;
+  }
+  if (typeof value === "string") {
+    return value.trim().split(/\r?\n/).find(Boolean)?.slice(0, 120) ?? null;
+  }
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => compact_result_label(item)).find(Boolean) ?? null;
+  }
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    for (const key of ["stderr", "stdout", "output", "content", "error", "message", "result", "text"]) {
+      const label = compact_result_label(record[key]);
+      if (label) {
+        return label;
+      }
+    }
+  }
+  try {
+    return JSON.stringify(value).slice(0, 120);
+  } catch {
+    return String(value).slice(0, 120);
+  }
 }
 
 function StageEventBeatList({

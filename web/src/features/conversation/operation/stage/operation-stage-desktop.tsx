@@ -295,7 +295,7 @@ export function OperationStageDesktop({
           on_focus_event={focus_event_window}
           snapshot={snapshot}
         />
-      ) : narrative.phase === "completed" ? null : (
+      ) : narrative.phase === "completed" && !is_replay ? null : (
         <StageNarrativeRail
           active_event_id={active_narrative_event_id}
           active_window={active_window}
