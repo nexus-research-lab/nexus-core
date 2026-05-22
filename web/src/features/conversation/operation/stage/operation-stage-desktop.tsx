@@ -154,6 +154,9 @@ export function OperationStageDesktop({
         if (override?.minimized === false && window.phase === "minimized") {
           return { ...window, phase: "background" };
         }
+        if (focused_window_id === window.id && window.phase !== "closed" && window.phase !== "minimized") {
+          return { ...window, phase: "focused" };
+        }
         return window;
       })
       .slice(0, revealed_window_count)
@@ -361,6 +364,7 @@ export function OperationStageDesktop({
             position_class_name={position_for_window(window, narrative.phase)}
             title={window.title}
             tone={window.kind === "terminal" ? "terminal" : "default"}
+            z_index={is_active ? 44 : 8 + index}
           >
             {is_active ? (
               <StageWindowContent window={window} on_focus_event={focus_event_window} />

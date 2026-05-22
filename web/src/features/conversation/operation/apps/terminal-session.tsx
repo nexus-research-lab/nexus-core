@@ -34,15 +34,22 @@ export function TerminalSession({
   const has_running_entry = entries.some((entry) => entry.phase === "running");
   const session_label = event.agent_id ? `${event.agent_id.slice(0, 6)}@nexus` : "agent@nexus";
   const cwd_label = terminal_cwd_label(event);
+  const shell_title = terminal_shell_title(entries[0]?.command ?? command);
 
   return (
     <div className="flex h-full min-h-[240px] min-w-0 flex-col overflow-hidden bg-[#080d12] font-mono text-[11px] leading-5 text-[#d9ffe5]">
-      <div className="flex min-h-0 items-center justify-between gap-3 border-b border-white/10 bg-[#0f171f] px-3 py-2 text-[10px] text-[#88a19a]">
+      <div className="flex min-h-0 items-center justify-between gap-3 border-b border-white/10 bg-[#111922] px-3 py-2 text-[10px] text-[#88a19a]">
         <div className="flex min-w-0 items-center gap-2">
+          <span className="flex shrink-0 items-center gap-1 pr-1">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f56]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#ffbd2e]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#27c93f]" />
+          </span>
           <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md bg-[#17232c] text-[#8de0ad]">
             {has_running_entry ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
           </span>
-          <span className="truncate">{session_label}</span>
+          <span className="truncate text-[#c8d8d1]">{shell_title}</span>
+          <span className="hidden text-[#536873] sm:inline">{session_label}</span>
           <span className="hidden text-[#536873] sm:inline">{cwd_label}</span>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
@@ -54,25 +61,33 @@ export function TerminalSession({
         {entries.map((entry, entry_index) => (
           <div className={entry_index > 0 ? "mt-4 border-t border-white/8 pt-3" : undefined} key={entry.id}>
             <div className="mb-1.5 flex min-w-0 items-center justify-between gap-3 text-[10px] text-[#60757f]">
-              <span className="truncate">进程 {entry_index + 1}</span>
-              <span className="shrink-0">{entry.duration_label}</span>
+              <span className="truncate">
+                pid {entry.pid_label} · proc {entry_index + 1}
+              </span>
+              <span className="shrink-0">{entry.started_label} · {entry.duration_label}</span>
             </div>
             <TerminalCommandLine command={entry.command} cwd_label={cwd_label} session_label={session_label} />
             {entry.stdout.length || entry.stderr.length || entry.other.length ? (
               <div className="mt-1.5 space-y-0.5">
                 {entry.stdout.map((line, index) => (
-                  <TerminalOutputLine key={`stdout:${index}:${line}`} line={line} stream="stdout" />
+                  <TerminalOutputLine key={`stdout:${index}:${line}`} line={line} line_number={index + 1} stream="stdout" />
                 ))}
                 {entry.stderr.map((line, index) => (
-                  <TerminalOutputLine key={`stderr:${index}:${line}`} line={line} stream="stderr" />
+                  <TerminalOutputLine key={`stderr:${index}:${line}`} line={line} line_number={entry.stdout.length + index + 1} stream="stderr" />
                 ))}
                 {entry.other.map((line, index) => (
-                  <TerminalOutputLine key={`other:${index}:${line}`} line={line} stream="output" />
+                  <TerminalOutputLine
+                    key={`other:${index}:${line}`}
+                    line={line}
+                    line_number={entry.stdout.length + entry.stderr.length + index + 1}
+                    stream="output"
+                  />
                 ))}
               </div>
             ) : (
-              <div className="mt-1.5 text-[#6f827d]">
-                {entry.phase === "running" ? "等待进程输出..." : "命令已结束，无可见输出"}
+              <div className="mt-1.5 flex min-w-0 items-center gap-2 text-[#6f827d]">
+                <span className="w-8 shrink-0 select-none text-right text-[#344852]">~</span>
+                <span>{entry.phase === "running" ? "waiting for stdout/stderr..." : "[process completed with no stdout/stderr]"}</span>
               </div>
             )}
             <TerminalExitLine entry={entry} />
@@ -92,6 +107,8 @@ interface TerminalEntry {
   id: string;
   command: string;
   duration_label: string;
+  pid_label: string;
+  started_label: string;
   exit_label: string;
   exit_tone: "success" | "error" | "running" | "muted";
   phase: OperationPhase;
@@ -120,20 +137,27 @@ function TerminalCommandLine({
 }
 
 function TerminalOutputLine({
+  line_number,
   line,
   stream = "output",
 }: {
+  line_number: number;
   line: string;
   stream?: "stdout" | "stderr" | "output";
 }) {
   if (line === "") {
-    return <div className="h-5" />;
+    return (
+      <div className="flex h-5 min-w-0 items-start gap-2">
+        <span className="w-8 shrink-0 select-none text-right text-[#344852]">{line_number}</span>
+      </div>
+    );
   }
 
   const prompt_match = line.match(/^(\s*[$>]\s?)(.*)$/);
   if (prompt_match) {
     return (
-      <div className="flex min-w-0 items-start">
+      <div className="flex min-w-0 items-start gap-2">
+        <span className="w-8 shrink-0 select-none text-right text-[#344852]">{line_number}</span>
         <span className="select-none text-[#526875]">{prompt_match[1].trim()}</span>
         <span className="ml-2 min-w-0 break-words text-[#d9ffe5]">{prompt_match[2]}</span>
       </div>
@@ -146,6 +170,7 @@ function TerminalOutputLine({
 
   return (
     <div className="flex min-w-0 items-start gap-2">
+      <span className="w-8 shrink-0 select-none text-right text-[#344852]">{line_number}</span>
       {stream_label ? (
         <span className={cn(
           "mt-[2px] w-7 shrink-0 select-none rounded px-1 text-center text-[9px] leading-4",
@@ -178,6 +203,7 @@ function TerminalExitLine({ entry }: { entry: TerminalEntry }) {
       {entry.exit_tone === "running" ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
       {entry.exit_tone === "muted" ? <Clock3 className="h-3 w-3" /> : null}
       <span>{entry.exit_label}</span>
+      <span className="text-current opacity-55">· {entry.duration_label}</span>
     </div>
   );
 }
@@ -226,6 +252,8 @@ function build_terminal_entries({
       id: item.id,
       command: resolved_command,
       duration_label,
+      pid_label: terminal_pid_label(item.id),
+      started_label: format_operation_time(item.started_at ?? item.updated_at),
       exit_label: terminal_exit_label(item, exit_code),
       exit_tone,
       phase: item.phase,
@@ -239,6 +267,8 @@ function build_terminal_entries({
     id: event.id,
     command: command.trim() || event.target || event.title,
     duration_label: format_terminal_duration(event),
+    pid_label: terminal_pid_label(event.id),
+    started_label: format_operation_time(event.started_at ?? event.updated_at),
     exit_label: event.phase === "running" ? "running" : "no output",
     exit_tone: event.phase === "running" ? "running" : "muted",
     phase: event.phase,
@@ -311,7 +341,7 @@ function read_exit_code(value: unknown): number | null {
     return null;
   }
   const record = value as Record<string, unknown>;
-  const raw = record.exit_code ?? record.exitCode ?? record.code ?? record.status;
+  const raw = record.exit_code ?? record.exitCode ?? record.error_code ?? record.errorCode ?? record.code ?? record.status;
   if (typeof raw === "number") {
     return raw;
   }
@@ -339,18 +369,35 @@ function terminal_exit_tone(event: NexusOperationEvent, exit_code: number | null
 
 function terminal_exit_label(event: NexusOperationEvent, exit_code: number | null): string {
   if (event.phase === "running") {
-    return "进程运行中";
+    return "process running";
   }
   if (event.phase === "error") {
-    return exit_code == null ? "进程失败" : `exit ${exit_code}`;
+    return exit_code == null ? "process failed" : `exit ${exit_code}`;
   }
   if (event.phase === "cancelled") {
-    return "进程已中断";
+    return "process cancelled";
   }
   if (exit_code != null) {
     return `exit ${exit_code}`;
   }
   return event.phase === "done" ? "exit 0" : PHASE_LABEL[event.phase];
+}
+
+function terminal_shell_title(command: string): string {
+  const trimmed = command.trim();
+  if (!trimmed) {
+    return "zsh";
+  }
+  const first_token = trimmed.split(/\s+/)[0] ?? "zsh";
+  return `zsh — ${first_token}`;
+}
+
+function terminal_pid_label(id: string): string {
+  let hash = 0;
+  for (let index = 0; index < id.length; index += 1) {
+    hash = (hash * 31 + id.charCodeAt(index)) >>> 0;
+  }
+  return String(1000 + (hash % 89000));
 }
 
 function format_terminal_duration(event: NexusOperationEvent): string {

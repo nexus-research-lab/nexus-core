@@ -17,6 +17,7 @@ interface OperationStageWindowProps {
   dimmed?: boolean;
   drag_offset?: { x: number; y: number };
   mobile_hidden?: boolean;
+  z_index?: number;
   tone?: "default" | "terminal";
   on_close?: () => void;
   on_drag?: (offset: { x: number; y: number }) => void;
@@ -36,6 +37,7 @@ export function OperationStageWindow({
   dimmed = false,
   drag_offset = { x: 0, y: 0 },
   mobile_hidden = false,
+  z_index,
   tone = "default",
   on_close,
   on_drag,
@@ -185,6 +187,7 @@ export function OperationStageWindow({
         "--operation-delay": `${delay_ms}ms`,
         "--operation-window-drag-x": `${drag_offset.x}px`,
         "--operation-window-drag-y": `${drag_offset.y}px`,
+        zIndex: z_index,
         translate: `${drag_offset.x}px ${drag_offset.y}px`,
       } as CSSProperties}
       tabIndex={0}
