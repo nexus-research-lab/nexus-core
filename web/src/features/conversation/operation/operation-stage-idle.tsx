@@ -50,12 +50,16 @@ const STAGE_STORY_ITEMS: Array<{
 export function EmptyStage({
   active_event = null,
   exiting = false,
+  previous_event = null,
+  round_event_count = 0,
   snapshot,
   subtitle,
   transition_intent = "summary",
 }: {
   active_event?: NexusOperationEvent | null;
   exiting?: boolean;
+  previous_event?: NexusOperationEvent | null;
+  round_event_count?: number;
   snapshot: NexusOperationSnapshot | null;
   subtitle: string;
   transition_intent?: StageTransitionIntent;
@@ -107,6 +111,8 @@ export function EmptyStage({
         <StageBootSignal
           event={active_event}
           intent={transition_intent}
+          previous_event={previous_event}
+          round_event_count={round_event_count}
         />
       ) : null}
     </div>
@@ -173,13 +179,36 @@ function IdleWorkstationStatus({
               {launch_target}
             </p>
           </div>
-        ) : null}
+        ) : (
+          <IdleStandbyRoute />
+        )}
         <div className="mt-3 grid grid-cols-3 gap-1.5 text-center">
           <IdleStatusMetric label="状态" value={exiting ? "唤醒" : "就绪"} />
           <IdleStatusMetric label="现场" value={event_count ? `${event_count}` : "空"} />
           <IdleStatusMetric label="证据" value={artifact_count + evidence_count ? `${artifact_count + evidence_count}` : "0"} />
         </div>
       </div>
+    </div>
+  );
+}
+
+function IdleStandbyRoute() {
+  return (
+    <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 text-[8.5px] font-bold text-(--text-soft)">
+      <IdleRouteCell label="入口" value="字符场" />
+      <span className="text-center">-&gt;</span>
+      <IdleRouteCell label="唤醒" value="运行接入" />
+      <span className="text-center">-&gt;</span>
+      <IdleRouteCell label="显影" value="工具窗口" />
+    </div>
+  );
+}
+
+function IdleRouteCell({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-[9px] border border-white/42 bg-white/30 px-2 py-1.5 text-center">
+      <p className="truncate text-[8px] font-black text-(--text-soft)">{label}</p>
+      <p className="mt-0.5 truncate text-[9px] font-black text-(--text-strong)">{value}</p>
     </div>
   );
 }

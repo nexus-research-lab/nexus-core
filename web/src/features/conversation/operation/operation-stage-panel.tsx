@@ -178,6 +178,8 @@ function StageSurface({
                     active_event={active_event}
                     exiting
                     key={`idle-exit-${stage_transition.sequence}`}
+                    previous_event={previous_round_event}
+                    round_event_count={round_event_count}
                     snapshot={snapshot}
                     subtitle={subtitle}
                     transition_intent={stage_transition.intent}

@@ -17,9 +17,13 @@ import type { StageTransitionIntent } from "./operation-stage-transition";
 export function StageBootSignal({
   event,
   intent,
+  previous_event = null,
+  round_event_count = 1,
 }: {
   event: NexusOperationEvent;
   intent: StageTransitionIntent;
+  previous_event?: NexusOperationEvent | null;
+  round_event_count?: number;
 }) {
   const meta = surface_meta_for_transition(event, intent);
   const Icon = meta.Icon;
@@ -28,6 +32,7 @@ export function StageBootSignal({
   const window_label = stage_transition_window_label(intent);
   const tool_label = event.tool_name ?? event.title;
   const target_label = event.target ?? event.summary ?? event.title;
+  const launch_copy = build_boot_signal_copy(event, round_event_count, previous_event);
 
   return (
     <div className="operation-boot-signal pointer-events-none absolute left-1/2 top-1/2 z-20 w-[min(460px,calc(100%-2.5rem))] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[18px] border border-white/72 bg-white/68 p-3 shadow-[0_28px_70px_rgba(18,28,42,0.16)] backdrop-blur-2xl">
@@ -42,7 +47,7 @@ export function StageBootSignal({
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-2">
             <span className="truncate text-[13px] font-black tracking-[-0.025em] text-(--text-strong)">
-              第一个工具接入 · {meta.label}
+              {launch_copy.title} · {meta.label}
             </span>
             <span className={cn(
               "inline-flex shrink-0 items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold",
@@ -60,8 +65,8 @@ export function StageBootSignal({
 
       <StageLaunchRoute
         steps={[
-          { label: "字符场锁定", value: "nexus", tone: "success" },
-          { label: "工具分类", value: meta.label, tone: "active" },
+          { label: launch_copy.origin_label, value: launch_copy.origin_value, tone: "success" },
+          { label: launch_copy.middle_label, value: meta.label, tone: "active" },
           { label: "窗口显影", value: window_label, tone: "pending" },
         ]}
       />
@@ -70,7 +75,7 @@ export function StageBootSignal({
         <div className="operation-boot-line h-1.5 rounded-full bg-[linear-gradient(90deg,rgba(91,114,255,0.68),rgba(79,162,159,0.62),rgba(47,184,132,0.58))]" />
       </div>
       <div className="mt-2 flex items-center justify-between text-[9.5px] font-semibold text-(--text-soft)">
-        <span>nexus 字符场</span>
+        <span>{launch_copy.footnote}</span>
         <span>真实工具窗口</span>
       </div>
     </div>
@@ -232,6 +237,44 @@ function StageLaunchRoute({
       ))}
     </div>
   );
+}
+
+function build_boot_signal_copy(
+  event: NexusOperationEvent,
+  round_event_count: number,
+  previous_event: NexusOperationEvent | null,
+): {
+  footnote: string;
+  middle_label: string;
+  origin_label: string;
+  origin_value: string;
+  title: string;
+} {
+  if (event.kind === "round_summary" || event.surface === "summary") {
+    return {
+      footnote: "执行现场",
+      middle_label: "交接整理",
+      origin_label: "窗口归档",
+      origin_value: previous_event?.tool_name ?? previous_event?.title ?? "已沉淀",
+      title: "交接现场恢复",
+    };
+  }
+  if (round_event_count > 1) {
+    return {
+      footnote: "上一现场已沉淀",
+      middle_label: "工具分类",
+      origin_label: "上一工具",
+      origin_value: previous_event?.tool_name ?? previous_event?.title ?? `${round_event_count - 1} 已沉淀`,
+      title: `第 ${round_event_count} 个工具接入`,
+    };
+  }
+  return {
+    footnote: "nexus 字符场",
+    middle_label: "工具分类",
+    origin_label: "字符场锁定",
+    origin_value: "nexus",
+    title: "首个工具接入",
+  };
 }
 
 function StageSignalMetric({
