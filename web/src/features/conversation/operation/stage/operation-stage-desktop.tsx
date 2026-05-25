@@ -116,7 +116,7 @@ export function OperationStageDesktop({
         if (override?.minimized) {
           return { ...window, phase: "minimized" };
         }
-        if (override?.minimized === false && window.phase === "minimized") {
+        if (override?.minimized === false && override.restore_token && window.phase === "minimized") {
           return { ...window, phase: "background" };
         }
         if (focused_window_id === window.id && window.phase !== "closed" && window.phase !== "minimized") {

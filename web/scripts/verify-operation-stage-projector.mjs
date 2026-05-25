@@ -51,6 +51,7 @@ copyFileSync(join(operation_dir, "operation-types.js"), join(operation_dir, "ope
 copyFileSync(join(operation_dir, "operation-desktop-types.js"), join(operation_dir, "operation-desktop-types"));
 copyFileSync(join(operation_dir, "operation-preview.js"), join(operation_dir, "operation-preview"));
 copyFileSync(join(operation_dir, "operation-scene-planner-helpers.js"), join(operation_dir, "operation-scene-planner-helpers"));
+copyFileSync(join(operation_dir, "operation-scene-window-policy.js"), join(operation_dir, "operation-scene-window-policy"));
 copyFileSync(join(operation_dir, "operation-stage-labels.js"), join(operation_dir, "operation-stage-labels"));
 copyFileSync(join(operation_dir, "operation-stage-experience.js"), join(operation_dir, "operation-stage-experience"));
 copyFileSync(join(operation_dir, "operation-terminal-lines.js"), join(operation_dir, "operation-terminal-lines"));
@@ -601,7 +602,14 @@ function verify_workspace_live_stays_in_tool_round(now) {
   assert(continuation_brief.status_label === "可继续", `completed stage continuation brief should be ready, got ${continuation_brief.status_label}`);
   assert(continuation_brief.primary_artifact === "gomoku.html", `completed stage continuation brief should point to current artifact, got ${continuation_brief.primary_artifact}`);
   assert(continuation_brief.resume_prompt.includes("gomoku.html"), "completed stage continuation prompt should point to current artifact");
-  assert(desktop.windows.some((window) => window.kind === "browser"), "html artifact should remain open beside the run manifest");
+  const browser_window = desktop.windows.find((window) => window.kind === "browser");
+  assert(browser_window?.phase === "background", `html artifact should remain open beside the run manifest, got ${browser_window?.phase}`);
+  const terminal_window = desktop.windows.find((window) => window.kind === "terminal");
+  if (terminal_window) {
+    assert(terminal_window.phase === "minimized", `completed terminal should return to Dock, got ${terminal_window.phase}`);
+  }
+  const code_window = desktop.windows.find((window) => window.kind === "code_editor");
+  assert(code_window?.phase === "minimized", `completed source editor should return to Dock when Safari shows the artifact, got ${code_window?.phase}`);
   assert(!desktop.windows.some((window) => window.target === "stale-session.md"), "completed stage should not render stale workspace windows");
   const write_event = snapshot.events.find((event) => event.tool_use_id === "tool-write");
   assert(write_event, "write tool event should be projected");

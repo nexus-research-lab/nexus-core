@@ -159,7 +159,11 @@ export function StageWindowDock({
         {dock_apps.map(({ app_label, count, is_active, is_running, kind, window }) => {
           const Icon = icon_for_window_kind(window?.kind ?? kind);
           const window_title = window ? display_window_title(window) : "等待工具调用";
-          const state_label = is_active ? "当前" : is_running ? "后台" : window ? "可重新打开" : "未打开";
+          const state_label = is_active
+            ? "当前"
+            : window?.phase === "minimized"
+              ? "已最小化"
+              : is_running ? "后台" : window ? "可重新打开" : "未打开";
           const title = !window
             ? `${app_label} · 未打开`
             : count > 1

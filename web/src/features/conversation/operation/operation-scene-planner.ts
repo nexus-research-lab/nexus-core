@@ -30,6 +30,13 @@ import {
   read_terminal_command,
 } from "./operation-terminal-lines";
 import {
+  is_desktop_tool_activity_event,
+  is_round_review_event,
+  should_open_finder_window,
+  should_open_html_browser_window,
+  supporting_window_phase,
+} from "./operation-scene-window-policy";
+import {
   fallback_stage_event_object_label,
   fallback_stage_event_target_label,
   is_low_signal_stage_label,
@@ -108,6 +115,7 @@ function build_windows(
   const tool_activity_events = round_events.filter(is_desktop_tool_activity_event);
   const file_context = collect_operation_file_context(event, snapshot, round_events);
   const html_artifact = find_operation_html_artifact(snapshot, round_events);
+  const is_review_event = is_round_review_event(event);
   const focus_target = resolve_focus_target(event, {
     has_file: Boolean(file_context.latest_file_target),
     has_html_artifact: Boolean(html_artifact),
@@ -136,7 +144,10 @@ function build_windows(
       kind: "finder",
       title: "工作区",
       layout: "secondary",
-      phase: focus_target === "finder" ? "focused" : "background",
+      phase: supporting_window_phase("finder", focus_target === "finder", {
+        has_browser_artifact: Boolean(html_artifact),
+        is_review_event,
+      }),
       z: focus_target === "finder" ? 34 : 14,
       payload: {
         workspace_items: file_context.workspace_items,
@@ -161,7 +172,10 @@ function build_windows(
       kind: document_kind,
       title: document.target,
       layout: "primary",
-      phase: is_focused_document ? "focused" : "background",
+      phase: supporting_window_phase(document_kind, is_focused_document, {
+        has_browser_artifact: Boolean(html_artifact),
+        is_review_event,
+      }),
       z: is_focused_document ? 36 : 20 - index,
       payload: {
         diff_stats: document.workspace_item?.diff_stats ?? null,
@@ -181,7 +195,10 @@ function build_windows(
       kind: "terminal",
       title: terminal_event.target ?? "终端",
       layout: "terminal",
-      phase: focus_target === "terminal" ? "focused" : "background",
+      phase: supporting_window_phase("terminal", focus_target === "terminal", {
+        has_browser_artifact: Boolean(html_artifact),
+        is_review_event,
+      }),
       z: focus_target === "terminal" ? 36 : 18,
       payload: {
         command: read_terminal_command(terminal_event),
@@ -191,7 +208,7 @@ function build_windows(
     }));
   }
 
-  if (web_events.length > 0 || should_open_html_browser_window(event, html_artifact)) {
+  if (web_events.length > 0 || should_open_html_browser_window(event, Boolean(html_artifact))) {
     const web_event = web_events.at(-1) ?? event;
     const query = html_artifact
       ? basename(html_artifact.path)
@@ -202,7 +219,10 @@ function build_windows(
       kind: "browser",
       title: html_artifact ? basename(html_artifact.path) : query,
       layout: "primary",
-      phase: focus_target === "browser" ? "focused" : "background",
+      phase: supporting_window_phase("browser", focus_target === "browser", {
+        has_browser_artifact: Boolean(html_artifact),
+        is_review_event,
+      }),
       z: focus_target === "browser" ? 38 : 22,
       payload: {
         lines,
@@ -222,7 +242,10 @@ function build_windows(
       kind: "markdown_reader",
       title: event.target ?? event.tool_name ?? event.title,
       layout: "primary",
-      phase: focus_target === "document" ? "focused" : "background",
+      phase: supporting_window_phase("markdown_reader", focus_target === "document", {
+        has_browser_artifact: Boolean(html_artifact),
+        is_review_event,
+      }),
       z: focus_target === "document" ? 36 : 20,
       payload: {
         preview: event.result_preview ?? event.input_preview ?? event.summary,
@@ -240,7 +263,10 @@ function build_windows(
       kind: "task_board",
       title: task_event.target ?? task_event.tool_name ?? "Task",
       layout: "primary",
-      phase: focus_target === "task" ? "focused" : "background",
+      phase: supporting_window_phase("task_board", focus_target === "task", {
+        has_browser_artifact: Boolean(html_artifact),
+        is_review_event,
+      }),
       z: focus_target === "task" ? 36 : 17,
       payload: {
         lines: preview_lines(task_event.result_preview ?? task_event.input_preview ?? task_event.summary, 8),
@@ -364,42 +390,6 @@ function build_handoff_summary(
   snapshot: NexusOperationSnapshot | null,
 ): StageHandoffSummary {
   return build_operation_continuation_brief(event, events, snapshot);
-}
-
-function should_open_finder_window(
-  event: NexusOperationEvent,
-  context: {
-    file_document_count: number;
-    workspace_item_count: number;
-  },
-): boolean {
-  if (event.surface === "workspace") {
-    return event.kind === "workspace_inspect" || event.kind === "workspace_search" || context.file_document_count === 0;
-  }
-  if (event.kind === "round_summary" || event.surface === "summary") {
-    return context.workspace_item_count > 0;
-  }
-  return false;
-}
-
-function should_open_html_browser_window(
-  event: NexusOperationEvent,
-  html_artifact: ReturnType<typeof find_operation_html_artifact>,
-): boolean {
-  if (!html_artifact) {
-    return false;
-  }
-  return event.surface === "web"
-    || event.surface === "terminal"
-    || event.surface === "summary"
-    || event.kind === "round_summary";
-}
-
-function is_desktop_tool_activity_event(event: NexusOperationEvent): boolean {
-  return event.surface !== "conversation"
-    && event.surface !== "summary"
-    && event.surface !== "fallback"
-    && event.kind !== "round_summary";
 }
 
 function resolve_focus_target(

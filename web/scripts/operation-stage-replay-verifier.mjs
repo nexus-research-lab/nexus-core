@@ -84,6 +84,10 @@ export function verify_completed_round_replay_uses_event_slice({
   });
   assert(final_desktop.active_window_id?.includes(":run-manifest"), `completed desktop should focus manifest, got ${final_desktop.active_window_id}`);
   assert(final_desktop.windows.some((window) => window.kind === "run_manifest"), "completed desktop should include manifest handoff");
+  const completed_terminal_window = final_desktop.windows.find((window) => window.kind === "terminal");
+  assert(completed_terminal_window?.phase === "minimized", `completed desktop should return terminal to Dock, got ${completed_terminal_window?.phase}`);
+  const completed_browser_window = final_desktop.windows.find((window) => window.kind === "browser");
+  assert(completed_browser_window?.phase === "background", `completed desktop should leave browser artifact open, got ${completed_browser_window?.phase}`);
 
   const bash_event = snapshot.events.find((event) => event.tool_use_id === "tool-bash");
   assert(bash_event, "replay fixture should project Bash event");
