@@ -1,6 +1,6 @@
 import type { CSSProperties, MouseEvent, PointerEvent, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import { GripHorizontal, Minus, Square, X } from "lucide-react";
+import { Minus, Square, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -12,7 +12,6 @@ interface OperationStageWindowProps {
   position_class_name: string;
   app_label?: string;
   footer?: ReactNode;
-  sequence_label?: string;
   status_label?: string;
   delay_ms?: number;
   focus?: boolean;
@@ -36,7 +35,6 @@ export function OperationStageWindow({
   position_class_name,
   app_label,
   footer,
-  sequence_label,
   status_label,
   delay_ms = 0,
   focus = false,
@@ -268,21 +266,7 @@ export function OperationStageWindow({
             </span>
           ) : null}
         </div>
-        <span
-          aria-hidden="true"
-          className={cn(
-            "grid h-5 min-w-8 shrink-0 place-items-center rounded-full border px-1.5 transition",
-            tone === "terminal"
-              ? "border-white/10 bg-white/[0.035] text-white/32"
-              : "border-white/58 bg-white/44 text-(--icon-muted)",
-          )}
-          title={sequence_label ? `${sequence_label} · 移动窗口` : "移动窗口"}
-        >
-          <span className="flex items-center gap-1">
-            <GripHorizontal className="h-3.5 w-3.5" />
-            {sequence_label ? <span className="hidden text-[8px] font-black md:inline">{sequence_label}</span> : null}
-          </span>
-        </span>
+        <span aria-hidden="true" className="h-4 w-[52px] shrink-0" />
       </div>
       <div className={cn(
         "soft-scrollbar relative min-h-0 flex-1",

@@ -28,10 +28,7 @@ export function RuntimeHandoffSurface({
     <div className="flex h-full min-h-[280px] min-w-0 flex-col overflow-hidden rounded-[14px] border border-[#1d2936] bg-[#101820] text-[#dce8ee] shadow-[0_18px_48px_rgba(18,28,42,0.18)]">
       <div className="flex min-w-0 items-center justify-between gap-3 border-b border-white/10 bg-[#151f29] px-3 py-2">
         <div className="flex min-w-0 items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#ff6b6b]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#f7c948]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#4fd1a5]" />
-          <span className="ml-2 truncate text-[11px] font-bold text-[#e7eef5]">agent-runtime</span>
+          <span className="truncate text-[11px] font-bold text-[#e7eef5]">agent-runtime</span>
         </div>
         <span className="shrink-0 rounded bg-white/[0.06] px-1.5 py-px text-[9px] font-bold text-[#8aa0ad]">
           {is_retrying ? "RETRYING" : is_stalled ? "WAITING" : "CONNECTING"}

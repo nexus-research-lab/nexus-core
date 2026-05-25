@@ -38,11 +38,6 @@ export function TerminalSession({
     <div className="flex h-full min-h-[240px] min-w-0 flex-col overflow-hidden bg-[#080d12] font-mono text-[11px] leading-5 text-[#d9ffe5]">
       <div className="flex min-h-0 items-center justify-between gap-3 border-b border-white/10 bg-[#111922] px-3 py-2 text-[10px] text-[#88a19a]">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="flex shrink-0 items-center gap-1 pr-1">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f56]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#ffbd2e]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#27c93f]" />
-          </span>
           <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md bg-[#17232c] text-[#8de0ad]">
             {has_running_entry ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
           </span>

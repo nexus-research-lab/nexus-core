@@ -297,7 +297,6 @@ export function OperationStageDesktop({
             on_focus={() => focus_window(window.id)}
             on_minimize={() => minimize_window(window.id)}
             position_class_name={position_for_window(window, narrative.phase)}
-            sequence_label={sequence_label}
             status_label={window.phase === "focused" || is_active ? "当前" : window.phase === "background" ? "后台" : "活动"}
             title={window.title}
             tone={window.kind === "terminal" ? "terminal" : "default"}
