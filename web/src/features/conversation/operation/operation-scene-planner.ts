@@ -18,6 +18,7 @@ import {
 } from "./operation-file-documents";
 import { find_operation_html_artifact } from "./operation-html-artifacts";
 import { build_operation_continuation_brief } from "./operation-stage-experience";
+import { generic_tool_window_config } from "./operation-scene-generic-tool-window";
 import {
   basename,
   collect_round_events,
@@ -43,17 +44,15 @@ import {
   is_low_signal_stage_label,
 } from "./operation-stage-labels";
 
-interface PlanOperationDesktopParams {
-  event: NexusOperationEvent;
-  snapshot: NexusOperationSnapshot | null;
-}
-
 export function plan_operation_desktop({
   event,
   snapshot,
-}: PlanOperationDesktopParams): OperationDesktopState {
+}: {
+  event: NexusOperationEvent;
+  snapshot: NexusOperationSnapshot | null;
+}): OperationDesktopState {
   const windows = build_windows(event, snapshot);
-  const active_window = windows.find((window) => window.phase === "focused") ?? windows[0] ?? null;
+  const active_window = resolve_active_window(windows);
 
   return {
     active_window_id: active_window?.id ?? null,
@@ -63,6 +62,14 @@ export function plan_operation_desktop({
     minimized: windows.filter((window) => window.phase === "minimized"),
     artifacts: windows.filter((window) => window.layout === "artifact"),
   };
+}
+
+function resolve_active_window(windows: StageWindowState[]): StageWindowState | null {
+  const focused_windows = windows.filter((window) => window.phase === "focused");
+  if (!focused_windows.length) {
+    return windows[0] ?? null;
+  }
+  return [...focused_windows].sort((left, right) => right.z - left.z)[0] ?? null;
 }
 
 export function resolve_operation_event_window_id(
@@ -319,23 +326,20 @@ function build_windows(
     }
   }
 
-  if (windows.length === 0 && tool_activity_events.length > 0) {
+  if (
+    is_desktop_tool_activity_event(event) &&
+    !windows.some((window) => window.payload.event.id === event.id)
+  ) {
+    windows.push(window_state(event, snapshot, generic_tool_window_config(event, tool_activity_events, {
+      phase: "focused",
+      z: 40,
+    })));
+  } else if (windows.length === 0 && tool_activity_events.length > 0) {
     const generic_event = tool_activity_events.at(-1) ?? event;
-    windows.push(window_state(generic_event, snapshot, {
-      id: `tool:${normalize_window_id(generic_event.tool_name ?? generic_event.kind ?? generic_event.id)}`,
-      kind: "generic_tool",
-      title: generic_event.tool_name ?? generic_event.title ?? "工具调用",
-      layout: "primary",
+    windows.push(window_state(generic_event, snapshot, generic_tool_window_config(generic_event, tool_activity_events, {
       phase: "focused",
       z: 36,
-      payload: {
-        evidence: generic_event.evidence,
-        preview: generic_event.result_preview ?? generic_event.input_preview ?? generic_event.summary,
-        related_events: tool_activity_events,
-        summary: generic_event.summary,
-        target: generic_event.target ?? generic_event.tool_name ?? generic_event.kind,
-      },
-    }));
+    })));
   }
 
   return windows;

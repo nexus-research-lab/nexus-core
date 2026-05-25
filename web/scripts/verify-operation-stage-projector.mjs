@@ -50,6 +50,7 @@ copyFileSync(join(operation_dir, "operation-projection-timeline.js"), join(opera
 copyFileSync(join(operation_dir, "operation-types.js"), join(operation_dir, "operation-types"));
 copyFileSync(join(operation_dir, "operation-desktop-types.js"), join(operation_dir, "operation-desktop-types"));
 copyFileSync(join(operation_dir, "operation-preview.js"), join(operation_dir, "operation-preview"));
+copyFileSync(join(operation_dir, "operation-scene-generic-tool-window.js"), join(operation_dir, "operation-scene-generic-tool-window"));
 copyFileSync(join(operation_dir, "operation-scene-planner-helpers.js"), join(operation_dir, "operation-scene-planner-helpers"));
 copyFileSync(join(operation_dir, "operation-scene-window-policy.js"), join(operation_dir, "operation-scene-window-policy"));
 copyFileSync(join(operation_dir, "operation-stage-labels.js"), join(operation_dir, "operation-stage-labels"));
@@ -161,6 +162,7 @@ verify_agent_cursor_tracks_active_mac_app();
 verify_initial_window_reveal_avoids_desktop_clutter_flash();
 verify_hidden_stage_uses_desktop_state_instead_of_mission_control();
 verify_unclassified_tool_activity_opens_nexus_app_window(now);
+verify_current_unclassified_tool_opens_beside_existing_app_window(now);
 verify_generic_tool_uses_nexus_tool_surface();
 verify_nexus_tool_app_has_own_desktop_identity();
 verify_window_focus_moves_to_next_visible_window();
@@ -368,6 +370,61 @@ function verify_unclassified_tool_activity_opens_nexus_app_window(now) {
   assert(desktop.windows[0].kind === "generic_tool", `Unclassified tool activity should open a Nexus app window, got ${desktop.windows[0].kind}`);
   assert(desktop.active_window_id === desktop.windows[0].id, "Unclassified tool app window should become the active desktop window");
   assert(desktop.windows[0].payload.related_events?.[0]?.tool_name === "TodoWrite", "Generic app window should keep original tool identity");
+}
+
+function verify_current_unclassified_tool_opens_beside_existing_app_window(now) {
+  const read_event = {
+    id: "tool-read",
+    session_key: "session:stage",
+    round_id: "round-mixed-tools",
+    agent_id: "agent-stage",
+    tool_use_id: "tool-read",
+    tool_name: "Read",
+    kind: "workspace_read",
+    surface: "workspace",
+    phase: "done",
+    title: "读取文件",
+    target: "/workspace/app.ts",
+    input_preview: {
+      file_path: "/workspace/app.ts",
+    },
+    result_preview: "export const app = true;",
+    updated_at: now - 10,
+  };
+  const plan_event = {
+    id: "tool-plan-update",
+    session_key: "session:stage",
+    round_id: "round-mixed-tools",
+    agent_id: "agent-stage",
+    tool_use_id: "tool-plan",
+    tool_name: "TodoWrite",
+    kind: "plan_update",
+    surface: "summary",
+    phase: "running",
+    title: "更新计划",
+    target: "todos",
+    input_preview: {
+      todos: [{ content: "打开 Safari 预览", status: "pending" }],
+    },
+    updated_at: now,
+  };
+  const desktop = plan_operation_desktop({
+    event: plan_event,
+    snapshot: {
+      key: "session:stage",
+      session_key: "session:stage",
+      active_event: plan_event,
+      events: [read_event, plan_event],
+      recent_evidence: [],
+      workspace_events: [],
+      updated_at: now,
+    },
+  });
+  const generic_window = desktop.windows.find((window) => window.kind === "generic_tool");
+  assert(generic_window, "Current unclassified tool should open its own Nexus app window even when prior app windows exist");
+  assert(generic_window.payload.event.id === plan_event.id, "Nexus app window should belong to the current unclassified tool");
+  assert(desktop.active_window_id === generic_window.id, "Current unclassified tool window should become the focused app window");
+  assert(desktop.windows.some((window) => window.kind === "code_editor"), "Existing document app window should remain on the desktop");
 }
 
 function verify_generic_tool_uses_nexus_tool_surface() {

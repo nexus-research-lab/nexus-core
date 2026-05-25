@@ -60,7 +60,6 @@ export function supporting_window_phase(
 
 export function is_desktop_tool_activity_event(event: NexusOperationEvent): boolean {
   return event.surface !== "conversation"
-    && event.surface !== "fallback"
     && event.kind !== "round_summary";
 }
 
