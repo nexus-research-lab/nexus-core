@@ -1,4 +1,5 @@
 import {
+  ChevronDown,
   ChevronRight,
   Columns3,
   FileCode2,
@@ -19,6 +20,8 @@ import { cn } from "@/lib/utils";
 import type { StageWindowState } from "../operation-desktop-types";
 import type { NexusOperationEvent } from "../operation-types";
 import { PHASE_LABELS } from "../operation-tool-catalog";
+
+type WorkspaceItemStatus = NonNullable<NonNullable<StageWindowState["payload"]["workspace_items"]>[number]["status"]>;
 
 export function WorkspaceFinder({
   active_path,
@@ -42,6 +45,7 @@ export function WorkspaceFinder({
       event_type: "file_write_end" as const,
     }];
   const changed_count = display_items.filter((item) => item.status === "updated" || item.status === "writing").length;
+  const selected_path = active_path ?? event.target ?? display_items[0]?.path ?? "workspace";
 
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden bg-[#f8fafc]">
@@ -84,7 +88,7 @@ export function WorkspaceFinder({
             {PHASE_LABELS[event.phase]}
           </span>
         </div>
-        <div className="grid min-h-0 grid-cols-[minmax(0,1fr)_minmax(160px,0.36fr)] max-md:grid-cols-1">
+        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(160px,0.36fr)] max-md:grid-cols-1">
           <div className="soft-scrollbar min-h-0 overflow-auto p-2">
             <div className="grid grid-cols-[minmax(0,1fr)_72px_86px] gap-2 px-2 pb-1 text-[9px] font-bold uppercase tracking-[0.12em] text-(--text-soft)">
               <span>Name</span>
@@ -107,18 +111,23 @@ export function WorkspaceFinder({
             <p className="text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">Preview</p>
             <div className="mt-3 grid h-16 w-16 place-items-center rounded-[16px] border border-(--divider-subtle-color) bg-white/74 text-(--icon-default)">
               {(() => {
-                const Icon = icon_for_workspace_path(active_path ?? event.target ?? display_items[0]?.path ?? "");
+                const Icon = icon_for_workspace_path(selected_path);
                 return <Icon className="h-7 w-7" />;
               })()}
             </div>
             <p className="mt-3 line-clamp-2 text-[12px] font-black text-(--text-strong)">
-              {basename(active_path ?? event.target ?? display_items[0]?.path ?? "workspace")}
+              {basename(selected_path)}
             </p>
             <p className="truncate text-[10px] text-(--text-soft)">
               {changed_count ? `${changed_count} 个变更待查看` : "没有新的文件变更"}
             </p>
           </aside>
         </div>
+        <FinderPathBar
+          changed_count={changed_count}
+          item_count={display_items.length}
+          path={selected_path}
+        />
       </div>
     </div>
   );
@@ -197,7 +206,7 @@ function WorkspaceTreeRow({
     >
       <span style={{ width: depth * 12 }} className="shrink-0" />
       {type === "folder" ? (
-        <ChevronRight className="h-3 w-3 shrink-0 text-(--icon-muted)" />
+        <ChevronDown className="h-3 w-3 shrink-0 text-(--icon-muted)" />
       ) : (
         <span className="h-3 w-3 shrink-0" />
       )}
@@ -213,11 +222,40 @@ function WorkspaceTreeRow({
           status === "deleted" && "bg-[rgba(223,93,98,0.10)] text-[color:var(--destructive)]",
           status === "idle" && "bg-white/70 text-(--text-soft)",
         )}>
-          {status}
+          {workspace_status_label(status)}
         </span>
       ) : <span />}
       <span className="truncate text-[9px] text-(--text-soft)">
         {item ? format_workspace_time(item.updated_at) : "--"}
+      </span>
+    </div>
+  );
+}
+
+function FinderPathBar({
+  changed_count,
+  item_count,
+  path,
+}: {
+  changed_count: number;
+  item_count: number;
+  path: string;
+}) {
+  const parts = path.split("/").filter(Boolean);
+  return (
+    <div className="flex min-h-8 items-center justify-between gap-3 border-t border-(--divider-subtle-color) bg-white/58 px-3 py-1.5 text-[10px] text-(--text-soft)">
+      <div className="flex min-w-0 items-center gap-1.5">
+        <FolderOpen className="h-3.5 w-3.5 shrink-0 text-(--icon-muted)" />
+        <span className="shrink-0 font-semibold text-(--text-strong)">workspace</span>
+        {parts.map((part, index) => (
+          <span className="flex min-w-0 items-center gap-1.5" key={`${index}:${part}`}>
+            <ChevronRight className="h-3 w-3 shrink-0 text-(--icon-muted)" />
+            <span className="max-w-[120px] truncate">{part}</span>
+          </span>
+        ))}
+      </div>
+      <span className="shrink-0">
+        {item_count} 个项目 · {changed_count ? `${changed_count} 个变更` : "没有变更"}
       </span>
     </div>
   );
@@ -255,6 +293,19 @@ function workspace_tree_rows(paths: string[]): Array<{
     }
     return left.path.localeCompare(right.path);
   });
+}
+
+function workspace_status_label(status: WorkspaceItemStatus): string {
+  if (status === "writing") {
+    return "写入中";
+  }
+  if (status === "updated") {
+    return "已更新";
+  }
+  if (status === "deleted") {
+    return "已删除";
+  }
+  return "未变更";
 }
 
 function basename(path: string): string {
