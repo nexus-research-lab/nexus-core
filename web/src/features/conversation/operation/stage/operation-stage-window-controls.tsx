@@ -13,6 +13,10 @@ import {
   is_low_signal_director_value,
   stage_app_label_for_window_kind,
 } from "./operation-stage-helpers";
+import {
+  build_dock_app_slots,
+  group_dock_windows_by_app,
+} from "./operation-stage-dock-model";
 
 const PINNED_DOCK_APPS: Array<{ app_label: string; kind: StageWindowKind }> = [
   { app_label: "访达", kind: "finder" },
@@ -135,7 +139,10 @@ export function StageWindowDock({
     window.phase !== "closed" && window.phase !== "minimized"
   ));
   const minimized_windows = windows.filter((window) => window.phase === "minimized");
-  const dock_apps = build_dock_app_slots(group_dock_windows_by_app(windows, active_window_id));
+  const dock_apps = build_dock_app_slots(
+    group_dock_windows_by_app(windows, active_window_id, stage_app_label_for_window_kind),
+    PINNED_DOCK_APPS,
+  );
   const active_window = running_windows.find((window) => window.id === active_window_id)
     ?? running_windows[0]
     ?? minimized_windows[0]
@@ -255,84 +262,6 @@ export function StageWindowDock({
       </div>
     </div>
   );
-}
-
-interface DockAppGroup {
-  app_label: string;
-  count: number;
-  is_active: boolean;
-  is_running: boolean;
-  window: StageWindowState;
-}
-
-interface DockAppSlot {
-  app_label: string;
-  count: number;
-  is_active: boolean;
-  is_running: boolean;
-  kind: StageWindowKind;
-  window: StageWindowState | null;
-}
-
-function build_dock_app_slots(app_groups: DockAppGroup[]): DockAppSlot[] {
-  const groups_by_label = new Map(app_groups.map((app) => [app.app_label, app]));
-  const pinned_labels = new Set(PINNED_DOCK_APPS.map((app) => app.app_label));
-  const pinned_slots = PINNED_DOCK_APPS.map((app): DockAppSlot => {
-    const group = groups_by_label.get(app.app_label);
-    return {
-      app_label: app.app_label,
-      count: group?.count ?? 0,
-      is_active: Boolean(group?.is_active),
-      is_running: Boolean(group?.is_running),
-      kind: group?.window.kind ?? app.kind,
-      window: group?.window ?? null,
-    };
-  });
-  const extra_slots = app_groups
-    .filter((app) => !pinned_labels.has(app.app_label))
-    .map((app): DockAppSlot => ({
-      app_label: app.app_label,
-      count: app.count,
-      is_active: app.is_active,
-      is_running: app.is_running,
-      kind: app.window.kind,
-      window: app.window,
-    }));
-
-  return [...pinned_slots, ...extra_slots];
-}
-
-function group_dock_windows_by_app(
-  windows: StageWindowState[],
-  active_window_id: string | null,
-): DockAppGroup[] {
-  const groups = new Map<string, DockAppGroup>();
-
-  for (const window of windows) {
-    const app_label = stage_app_label_for_window_kind(window.kind);
-    const existing = groups.get(app_label);
-    const is_active = window.id === active_window_id;
-    const is_running = window.phase !== "closed";
-    if (!existing) {
-      groups.set(app_label, {
-        app_label,
-        count: is_running ? 1 : 0,
-        is_active,
-        is_running,
-        window,
-      });
-      continue;
-    }
-    const had_running_window = existing.is_running;
-    existing.count += is_running ? 1 : 0;
-    existing.is_active = existing.is_active || is_active;
-    existing.is_running = existing.is_running || is_running;
-    if (is_active || (!had_running_window && is_running)) {
-      existing.window = window;
-    }
-  }
-
-  return [...groups.values()];
 }
 
 function display_window_title(window: StageWindowState): string {

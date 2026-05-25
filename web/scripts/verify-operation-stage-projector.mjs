@@ -59,6 +59,7 @@ copyFileSync(join(operation_dir, "operation-summary-events.js"), join(operation_
 copyFileSync(join(operation_dir, "operation-event-io.js"), join(operation_dir, "operation-event-io"));
 mkdirSync(join(operation_dir, "stage"), { recursive: true });
 copyFileSync(join(operation_dir, "stage/operation-stage-window-kinds.js"), join(operation_dir, "stage/operation-stage-window-kinds"));
+copyFileSync(join(operation_dir, "stage/operation-stage-dock-model.js"), join(operation_dir, "stage/operation-stage-dock-model"));
 mkdirSync(join(operation_dir, "apps"), { recursive: true });
 copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
 copyFileSync(join(operation_dir, "apps/file-preview-value.js"), join(operation_dir, "apps/file-preview-value"));
@@ -88,6 +89,10 @@ const {
   window_content_mode_for_kind,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-window-kinds.js")));
 const {
+  build_dock_app_slots,
+  group_dock_windows_by_app,
+} = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-dock-model.js")));
+const {
   build_terminal_entries,
 } = await import(pathToFileURL(join(operation_dir, "apps/terminal-session-model.js")));
 const {
@@ -113,6 +118,7 @@ const {
 const now = Date.now();
 
 verify_desktop_window_kind_contract();
+verify_dock_model_groups_windows_by_mac_app();
 verify_stage_experience_state_machine(now);
 verify_live_episode_narrates_running_round(now);
 verify_api_retry_runtime_projection(now);
@@ -172,6 +178,69 @@ function verify_desktop_window_kind_contract() {
     assert(window_content_mode_for_kind(kind) === "flush", `${kind} should fill its app window content area`);
   }
   assert(window_content_mode_for_kind("permission_wait") === "inset", "permission wait should keep inset content as a system prompt");
+}
+
+function verify_dock_model_groups_windows_by_mac_app() {
+  const app_label_for_kind = (kind) => ({
+    browser: "Safari",
+    code_editor: "Code",
+    finder: "访达",
+    markdown_reader: "预览",
+    terminal: "终端",
+  })[kind] ?? "Nexus";
+  const windows = [
+    mock_stage_window({ id: "browser:a", kind: "browser", phase: "background" }),
+    mock_stage_window({ id: "browser:b", kind: "browser", phase: "focused" }),
+    mock_stage_window({ id: "code:a", kind: "code_editor", phase: "closed" }),
+    mock_stage_window({ id: "preview:a", kind: "markdown_reader", phase: "minimized" }),
+  ];
+  const groups = group_dock_windows_by_app(windows, "browser:b", app_label_for_kind);
+  const safari_group = groups.find((group) => group.app_label === "Safari");
+  assert(safari_group?.count === 2, `Dock should group Safari windows, got ${safari_group?.count}`);
+  assert(safari_group?.is_active, "Dock Safari group should be active when one Safari window is focused");
+  assert(safari_group?.window.id === "browser:b", `Dock should keep the focused Safari window, got ${safari_group?.window.id}`);
+  const code_group = groups.find((group) => group.app_label === "Code");
+  assert(code_group?.count === 0, `Dock should not count closed Code windows as running, got ${code_group?.count}`);
+  assert(!code_group?.is_running, "Dock should mark closed Code window as not running");
+
+  const slots = build_dock_app_slots(groups, [
+    { app_label: "访达", kind: "finder" },
+    { app_label: "Safari", kind: "browser" },
+    { app_label: "Code", kind: "code_editor" },
+  ]);
+  assert(slots[0].app_label === "访达", `Dock should preserve pinned app order, got ${slots[0].app_label}`);
+  assert(slots[1].app_label === "Safari" && slots[1].count === 2, "Dock Safari slot should reflect grouped running windows");
+  assert(slots[2].app_label === "Code" && slots[2].window?.id === "code:a", "Dock Code slot should keep recoverable closed window");
+  assert(slots.at(-1)?.app_label === "预览", `Dock should append unpinned running apps, got ${slots.at(-1)?.app_label}`);
+}
+
+function mock_stage_window({
+  id,
+  kind,
+  phase,
+}) {
+  return {
+    id,
+    kind,
+    layout: "primary",
+    payload: {
+      event: {
+        id: `${id}:event`,
+        session_key: "session:dock",
+        round_id: "round:dock",
+        agent_id: "agent-stage",
+        message_id: "msg-dock",
+        kind: "unknown",
+        surface: "fallback",
+        phase,
+        updated_at: 1,
+      },
+      snapshot: null,
+    },
+    phase,
+    title: id,
+    z: 1,
+  };
 }
 
 function verify_stage_experience_state_machine(now) {
