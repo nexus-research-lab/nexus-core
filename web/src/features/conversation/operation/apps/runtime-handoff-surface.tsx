@@ -55,6 +55,7 @@ export function RuntimeHandoffSurface({
         <RuntimeLine tone="ok" value="mounted ~/workspace" />
         <RuntimeLine tone="ok" value="loaded conversation context" />
         <RuntimeLine tone="ok" value="waiting for LaunchServices to open the first app" />
+        <RuntimeLine tone="muted" value={`open -a Nexus --session ${event.session_key}`} />
         <RuntimeLine
           tone={is_stalled || is_retrying ? "warn" : "active"}
           value={is_retrying
@@ -66,9 +67,9 @@ export function RuntimeHandoffSurface({
         {is_stalled || is_retrying ? (
           <RuntimeLine tone="muted" value="desktop will keep this shell open until the next app appears" />
         ) : null}
-        <div className="mt-4 rounded-[10px] border border-white/10 bg-white/[0.04] p-3 font-sans">
-          <p className="mb-1 text-[10px] font-black uppercase tracking-[0.12em] text-[#8aa0ad]">request</p>
-          <p className="line-clamp-5 text-[12px] leading-5 text-[#dce8ee]">{prompt}</p>
+        <div className="mt-4 border-l border-[#8ca0ff]/38 pl-3">
+          <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[#8aa0ad]">INTENT</p>
+          <p className="line-clamp-5 font-sans text-[12px] leading-5 text-[#dce8ee]">{prompt}</p>
         </div>
       </div>
       {(is_stalled || is_retrying) ? (
