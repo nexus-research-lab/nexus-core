@@ -69,6 +69,7 @@ export function StageWindowDock({
   const dock_windows = windows.filter((window) => window.phase !== "closed");
   const running_windows = dock_windows.filter((window) => window.phase !== "minimized");
   const minimized_windows = dock_windows.filter((window) => window.phase === "minimized");
+  const running_apps = group_running_windows_by_app(running_windows, active_window_id);
   const active_window = running_windows.find((window) => window.id === active_window_id)
     ?? running_windows[0]
     ?? minimized_windows[0]
@@ -89,24 +90,25 @@ export function StageWindowDock({
             N
           </div>
           <div className="h-9 w-px shrink-0 bg-white/56" />
-        {running_windows.map((window) => {
+        {running_apps.map(({ app_label, count, is_active, window }) => {
           const Icon = icon_for_window_kind(window.kind);
-          const is_active = active_window_id === window.id;
-          const app_label = stage_app_label_for_window_kind(window.kind);
           const window_title = display_window_title(window);
           const state_label = is_active ? "当前" : "后台";
+          const title = count > 1
+            ? `${app_label} · ${count} 个窗口 · ${state_label}`
+            : `${app_label} · ${window_title} · ${state_label}`;
           return (
             <button
-              aria-label={`${state_label}：${window_title}`}
+              aria-label={`${state_label}：${app_label}`}
               className={cn(
                 "group relative grid shrink-0 place-items-center rounded-[18px] border text-left transition duration-200 ease-out hover:-translate-y-2 hover:scale-110 focus-visible:-translate-y-2 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.42)]",
                 is_active
                   ? "h-[52px] w-[52px] border-[rgba(91,114,255,0.32)] bg-[rgba(91,114,255,0.16)] text-[color:var(--primary)] shadow-[0_16px_32px_rgba(91,114,255,0.22)]"
                   : "h-[44px] w-[44px] border-transparent bg-white/42 text-(--icon-muted) hover:bg-white/72 hover:text-(--text-strong)",
               )}
-              key={window.id}
+              key={app_label}
               onClick={() => on_restore(window.id)}
-              title={`${state_label}：${window_title}`}
+              title={title}
               type="button"
             >
               <span className={cn(
@@ -122,6 +124,11 @@ export function StageWindowDock({
                     ? "bg-[color:var(--primary)]"
                     : "bg-[rgba(47,184,132,0.72)]",
                 )} />
+                {count > 1 ? (
+                  <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full border border-white/80 bg-[rgba(20,28,38,0.72)] px-1 text-[8px] font-black leading-none text-white shadow-[0_4px_10px_rgba(18,28,42,0.18)]">
+                    {count}
+                  </span>
+                ) : null}
               </span>
               <span className={cn(
                   "absolute -bottom-2 left-1/2 h-1.5 -translate-x-1/2 rounded-full transition",
@@ -130,8 +137,10 @@ export function StageWindowDock({
                     : "w-2 bg-[rgba(47,184,132,0.54)]",
               )} />
               <span className="pointer-events-none absolute bottom-[calc(100%+10px)] left-1/2 hidden max-w-[230px] -translate-x-1/2 whitespace-nowrap rounded-[10px] border border-white/70 bg-[rgba(20,28,38,0.82)] px-2.5 py-1.5 text-[10px] font-semibold text-white shadow-[0_12px_30px_rgba(18,28,42,0.22)] backdrop-blur-xl group-hover:block group-focus-visible:block">
-                <span className="block max-w-[160px] truncate">{window_title}</span>
-                <span className="block text-[9px] font-medium text-white/66">{app_label} · {state_label}</span>
+                <span className="block max-w-[160px] truncate">{app_label}</span>
+                <span className="block text-[9px] font-medium text-white/66">
+                  {count > 1 ? `${count} 个窗口` : window_title} · {state_label}
+                </span>
               </span>
             </button>
           );
@@ -168,6 +177,42 @@ export function StageWindowDock({
       </div>
     </div>
   );
+}
+
+interface DockAppGroup {
+  app_label: string;
+  count: number;
+  is_active: boolean;
+  window: StageWindowState;
+}
+
+function group_running_windows_by_app(
+  windows: StageWindowState[],
+  active_window_id: string | null,
+): DockAppGroup[] {
+  const groups = new Map<string, DockAppGroup>();
+
+  for (const window of windows) {
+    const app_label = stage_app_label_for_window_kind(window.kind);
+    const existing = groups.get(app_label);
+    const is_active = window.id === active_window_id;
+    if (!existing) {
+      groups.set(app_label, {
+        app_label,
+        count: 1,
+        is_active,
+        window,
+      });
+      continue;
+    }
+    existing.count += 1;
+    existing.is_active = existing.is_active || is_active;
+    if (is_active) {
+      existing.window = window;
+    }
+  }
+
+  return [...groups.values()];
 }
 
 function display_window_title(window: StageWindowState): string {
