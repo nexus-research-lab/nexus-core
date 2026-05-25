@@ -77,11 +77,11 @@ export function verify_handoff_spotlight_model({
   assert(is_low_signal_stage_label(low_signal_summary.target), "turn-count summary target should be treated as low signal");
   assert(is_low_signal_stage_label(low_signal_summary.title), "round summary title should be treated as low signal");
   assert(
-    fallback_stage_event_object_label(low_signal_summary, "交接") === "交接面板",
-    "round summary should fall back to a workbench handoff object label",
+    fallback_stage_event_object_label(low_signal_summary, "Console") === "Console窗口",
+    "round summary should fall back to a Console object label",
   );
   assert(
-    fallback_stage_event_target_label(low_signal_summary, "交接") === "完成交接",
-    "round summary target should fall back to handoff target label",
+    fallback_stage_event_target_label(low_signal_summary, "Console") === "Run Summary",
+    "round summary target should fall back to Console summary label",
   );
 }

@@ -226,7 +226,7 @@ export function OperationReviewPanel({
   ]).slice(0, compact ? 4 : 8);
   const rows = build_operation_input_rows(event.input_preview, profile.target_keys, compact ? 3 : 6);
   const waiting = event.phase === "waiting" || mode === "permission";
-  const lead = event.summary ?? event.title ?? event.target ?? event.tool_name ?? "操作";
+  const lead = event.summary ?? event.title ?? event.target ?? event.tool_name ?? "Diagnostics";
 
   return (
     <div className="flex h-full min-h-[260px] min-w-0 max-w-full flex-col overflow-hidden rounded-[13px] border border-(--divider-subtle-color) bg-white/76">
@@ -239,10 +239,10 @@ export function OperationReviewPanel({
         <div className="flex min-w-0 items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">
-              {waiting ? "授权检查点" : "证据检查器"}
+              {waiting ? "Security Prompt" : "Diagnostics"}
             </p>
             <h3 className="mt-1 truncate text-[14px] font-black tracking-[-0.03em] text-(--text-strong)">
-              {waiting ? "等待用户确认" : "执行证据"}
+              {waiting ? "Waiting for Approval" : "System Log"}
             </h3>
           </div>
           <span className={cn(
@@ -297,7 +297,7 @@ export function OperationReviewPanel({
         </div>
 
         <aside className="soft-scrollbar min-h-0 overflow-auto border-l border-(--divider-subtle-color) bg-white/45 p-3 max-md:max-h-[220px] max-md:border-l-0 max-md:border-t">
-          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">request</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">Details</p>
           <div className="mt-2 space-y-1.5">
             {rows.length ? rows.map((row) => (
               <div className="rounded-[9px] bg-white/70 px-2 py-1.5 text-[10px]" key={row.key}>

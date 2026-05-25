@@ -24,9 +24,9 @@ export function fallback_stage_event_object_label(
     return "等待第一个工具事件";
   }
   if (event.kind === "round_summary" || event.surface === "summary") {
-    return `${surface_label ?? "交接"}面板`;
+    return `${surface_label ?? "Console"}窗口`;
   }
-  return event.tool_name ?? `${surface_label ?? "工具"}窗口`;
+  return event.tool_name ?? `${surface_label ?? "Nexus"}窗口`;
 }
 
 export function fallback_stage_event_target_label(
@@ -34,9 +34,9 @@ export function fallback_stage_event_target_label(
   surface_label?: string,
 ): string {
   if (event.kind === "round_summary" || event.surface === "summary") {
-    return surface_label === "交接" ? "完成交接" : `${surface_label ?? "执行"}交接`;
+    return surface_label === "Console" ? "Run Summary" : `${surface_label ?? "Console"} Summary`;
   }
-  return "等待工具输入";
+  return "等待应用输入";
 }
 
 export function display_stage_event_title(

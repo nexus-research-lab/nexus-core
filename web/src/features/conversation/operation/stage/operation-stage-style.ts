@@ -18,8 +18,8 @@ export const SURFACE_LABEL: Record<OperationSurface, string> = {
   knowledge: "知识库",
   task: "任务",
   conversation: "运行时",
-  summary: "交接",
-  fallback: "操作",
+  summary: "Console",
+  fallback: "Nexus",
 };
 
 export const PHASE_STATUS_META: Record<OperationPhase, {
