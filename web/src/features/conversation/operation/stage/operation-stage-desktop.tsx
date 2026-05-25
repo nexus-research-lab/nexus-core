@@ -317,6 +317,7 @@ function window_content_mode(kind: StageWindowKind): "flush" | "inset" {
     kind === "pdf_reader" ||
     kind === "runtime_handoff" ||
     kind === "spreadsheet" ||
+    kind === "task_board" ||
     kind === "terminal" ||
     kind === "word_reader"
   ) {

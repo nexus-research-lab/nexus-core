@@ -103,14 +103,11 @@ export function StageWindowContent({
 
   if (window.kind === "task_board") {
     return (
-      <div className="flex h-full min-h-[320px] min-w-0 max-w-full flex-col gap-3">
-        <ToolActionHeader event={event} profile={profile} target={event.target ?? event.tool_name} />
-        <TaskBoardSurface
-          event={event}
-          lines={window.payload.lines ?? []}
-          snapshot={snapshot}
-        />
-      </div>
+      <TaskBoardSurface
+        event={event}
+        lines={window.payload.lines ?? []}
+        snapshot={snapshot}
+      />
     );
   }
 
@@ -312,35 +309,30 @@ function TaskBoardSurface({
   const running_count = task_events.filter((item) => item.phase === "running" || item.phase === "waiting").length;
 
   return (
-    <div className="grid min-h-0 min-w-0 max-w-full flex-1 grid-cols-[minmax(190px,0.44fr)_minmax(0,1fr)] gap-3 max-md:grid-cols-1">
-      <section className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[13px] border border-(--divider-subtle-color) bg-white/74">
+    <div className="flex h-full min-h-[320px] min-w-0 max-w-full overflow-hidden bg-[#f7f9fb] max-md:flex-col">
+      <section className="flex min-h-0 w-[260px] shrink-0 flex-col overflow-hidden border-r border-(--divider-subtle-color) bg-white/62 max-md:w-full max-md:border-b max-md:border-r-0">
         <div className="border-b border-(--divider-subtle-color) px-3 py-2.5">
-          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">Subtask control</p>
-          <div className="mt-2 flex min-w-0 items-center justify-between gap-2">
-            <span className="truncate text-[13px] font-black tracking-[-0.025em] text-(--text-strong)">
-              {event.target ?? event.tool_name ?? "Task"}
-            </span>
-            <span className="shrink-0 rounded-full bg-[rgba(91,114,255,0.10)] px-2 py-1 text-[10px] font-bold text-[color:var(--primary)]">
-              {finished_count}/{Math.max(task_events.length, 1)}
-            </span>
-          </div>
+          <p className="truncate text-[12px] font-black text-(--text-strong)">Activity Monitor</p>
+          <p className="mt-0.5 truncate text-[10px] text-(--text-soft)">
+            {running_count ? `${running_count} running` : `${finished_count}/${Math.max(task_events.length, 1)} complete`}
+          </p>
         </div>
-        <div className="soft-scrollbar min-h-0 flex-1 overflow-auto p-2">
+        <div className="soft-scrollbar min-h-0 flex-1 overflow-auto p-1.5">
           {steps.map((step, index) => {
             const Icon = icon_for_task_phase(step.event.phase);
             const active = index === active_index;
             return (
               <div
                 className={cn(
-                  "mb-1.5 flex min-w-0 gap-2 rounded-[11px] border px-2.5 py-2 text-[11px]",
+                  "mb-1 grid min-w-0 grid-cols-[22px_minmax(0,1fr)_auto] items-center gap-2 rounded-[9px] px-2 py-1.5 text-[11px]",
                   active
-                    ? "border-[rgba(91,114,255,0.26)] bg-[rgba(91,114,255,0.10)] text-(--text-strong)"
-                    : "border-transparent bg-white/42 text-(--text-muted)",
+                    ? "bg-[rgba(91,114,255,0.10)] text-(--text-strong)"
+                    : "text-(--text-muted) hover:bg-white/64",
                 )}
                 key={step.event.id}
               >
                 <span className={cn(
-                  "mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full",
+                  "grid h-5 w-5 shrink-0 place-items-center rounded-[7px]",
                   step.event.phase === "done" && "bg-[rgba(47,184,132,0.12)] text-[color:var(--success)]",
                   step.event.phase === "running" && "bg-[rgba(91,114,255,0.12)] text-[color:var(--primary)]",
                   step.event.phase === "waiting" && "bg-[rgba(223,157,46,0.12)] text-[color:var(--warning)]",
@@ -352,19 +344,20 @@ function TaskBoardSurface({
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-bold">{step.label}</p>
                   <p className="mt-0.5 truncate text-[10px] text-(--text-soft)">
-                    {step.status} · {format_operation_time(step.event.updated_at)}
+                    {format_operation_time(step.event.updated_at)}
                   </p>
                 </div>
+                <span className="shrink-0 font-mono text-[9px] text-(--text-soft)">{step.status}</span>
               </div>
             );
           })}
         </div>
-        <div className="grid grid-cols-2 gap-1.5 border-t border-(--divider-subtle-color) bg-white/52 p-2 text-[10px] text-(--text-muted)">
-          <span className="rounded-[8px] bg-white/68 px-2 py-1.5">running {running_count}</span>
-          <span className="rounded-[8px] bg-white/68 px-2 py-1.5">round {event.round_id}</span>
+        <div className="grid grid-cols-2 gap-1 border-t border-(--divider-subtle-color) bg-white/54 p-2 text-[10px] text-(--text-muted)">
+          <span className="truncate rounded-[8px] bg-white/64 px-2 py-1.5">CPU {running_count ? "active" : "idle"}</span>
+          <span className="truncate rounded-[8px] bg-white/64 px-2 py-1.5">Rows {task_events.length}</span>
         </div>
       </section>
-      <section className="min-h-0 min-w-0">
+      <section className="min-h-0 min-w-0 flex-1">
         <DocumentPreview
           summary={event.summary ?? event.title}
           target="task-output.md"
