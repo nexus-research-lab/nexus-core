@@ -165,6 +165,10 @@ export function OperationStageMotionStyles() {
           animation: nexus-operation-window-restore 360ms cubic-bezier(.2,.9,.18,1) both;
         }
 
+        .operation-stage-agent-cursor {
+          animation: nexus-operation-materializing-signal 520ms cubic-bezier(.16,.84,.24,1) both;
+        }
+
         .operation-window-traffic-icon {
           opacity: 0;
           transform: scale(.72);
@@ -352,6 +356,7 @@ export function OperationStageMotionStyles() {
           .operation-event-signal,
           .operation-materializing-signal,
           .operation-materializing-line,
+          .operation-stage-agent-cursor,
           .operation-window-traffic-icon {
             animation: none !important;
             transition: none !important;

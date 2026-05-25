@@ -61,6 +61,7 @@ mkdirSync(join(operation_dir, "stage"), { recursive: true });
 copyFileSync(join(operation_dir, "stage/operation-stage-window-kinds.js"), join(operation_dir, "stage/operation-stage-window-kinds"));
 copyFileSync(join(operation_dir, "stage/operation-stage-dock-model.js"), join(operation_dir, "stage/operation-stage-dock-model"));
 copyFileSync(join(operation_dir, "stage/operation-stage-window-actions.js"), join(operation_dir, "stage/operation-stage-window-actions"));
+copyFileSync(join(operation_dir, "stage/operation-stage-agent-cursor.js"), join(operation_dir, "stage/operation-stage-agent-cursor"));
 mkdirSync(join(operation_dir, "apps"), { recursive: true });
 copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
 copyFileSync(join(operation_dir, "apps/file-preview-value.js"), join(operation_dir, "apps/file-preview-value"));
@@ -97,6 +98,11 @@ const {
   resolve_operation_window_keyboard_action,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-window-actions.js")));
 const {
+  agent_cursor_action_label,
+  agent_cursor_anchor_class,
+  agent_cursor_intent_for_window_kind,
+} = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-agent-cursor.js")));
+const {
   build_terminal_entries,
 } = await import(pathToFileURL(join(operation_dir, "apps/terminal-session-model.js")));
 const {
@@ -124,6 +130,7 @@ const now = Date.now();
 verify_desktop_window_kind_contract();
 verify_dock_model_groups_windows_by_mac_app();
 verify_window_keyboard_actions_match_mac_window_controls();
+verify_agent_cursor_tracks_active_mac_app();
 verify_stage_experience_state_machine(now);
 verify_live_episode_narrates_running_round(now);
 verify_api_retry_runtime_projection(now);
@@ -229,6 +236,23 @@ function verify_window_keyboard_actions_match_mac_window_controls() {
   assert(resolve_operation_window_keyboard_action({ key: "Enter", metaKey: true }) === "zoom", "Cmd+Enter should zoom the focused window");
   assert(resolve_operation_window_keyboard_action({ key: "w", metaKey: true, shiftKey: true }) === null, "Modified Cmd+W should not trigger the simple close action");
   assert(resolve_operation_window_keyboard_action({ key: "a", metaKey: true }) === null, "Unrelated shortcuts should stay with the app content");
+}
+
+function verify_agent_cursor_tracks_active_mac_app() {
+  assert(agent_cursor_intent_for_window_kind("browser") === "browse", "Safari windows should show a browsing cursor intent");
+  assert(agent_cursor_action_label("browse") === "正在浏览", "Browsing cursor intent should use a user-facing browsing label");
+  assert(agent_cursor_intent_for_window_kind("terminal") === "run", "Terminal windows should show a running cursor intent");
+  assert(agent_cursor_intent_for_window_kind("code_editor") === "type", "Code windows should show an editing cursor intent");
+  assert(agent_cursor_intent_for_window_kind("permission_wait") === "approve", "Permission windows should show an approval cursor intent");
+
+  const browser_anchor = agent_cursor_anchor_class(mock_stage_window({ id: "cursor:browser", kind: "browser", phase: "focused" }));
+  const terminal_anchor = agent_cursor_anchor_class({
+    ...mock_stage_window({ id: "cursor:terminal", kind: "terminal", phase: "focused" }),
+    layout: "terminal",
+  });
+  assert(browser_anchor.includes("right-"), `Browser cursor should anchor near the browser window, got ${browser_anchor}`);
+  assert(terminal_anchor.includes("left-"), `Terminal cursor should anchor near the terminal window, got ${terminal_anchor}`);
+  assert(browser_anchor !== terminal_anchor, "Cursor anchors should move between app windows instead of staying static");
 }
 
 function mock_stage_window({

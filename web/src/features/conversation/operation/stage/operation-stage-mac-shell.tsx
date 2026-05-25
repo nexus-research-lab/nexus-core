@@ -3,6 +3,7 @@ import {
   Apple,
   Battery,
   Command,
+  MousePointer2,
   Search,
   Wifi,
 } from "lucide-react";
@@ -16,6 +17,11 @@ import {
   icon_for_window_kind,
   stage_app_label_for_window_kind,
 } from "./operation-stage-window-meta";
+import {
+  agent_cursor_action_label,
+  agent_cursor_anchor_class,
+  agent_cursor_intent_for_window_kind,
+} from "./operation-stage-agent-cursor";
 
 export function StageMacMenuBar({
   active_window,
@@ -155,6 +161,35 @@ export function StageDesktopIcons({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+export function StageAgentCursor({
+  active_window,
+}: {
+  active_window: StageWindowState | null;
+}) {
+  if (!active_window) {
+    return null;
+  }
+  const intent = agent_cursor_intent_for_window_kind(active_window.kind);
+  const action_label = agent_cursor_action_label(intent);
+  const app_label = stage_app_label_for_window_kind(active_window.kind);
+
+  return (
+    <div
+      aria-label={`Nexus ${action_label} ${app_label}`}
+      className={cn(
+        "operation-stage-agent-cursor pointer-events-none absolute z-50 hidden -translate-x-2 -translate-y-2 items-start gap-2 md:flex",
+        agent_cursor_anchor_class(active_window),
+      )}
+      data-agent-cursor-intent={intent}
+    >
+      <MousePointer2 className="h-5 w-5 fill-[rgba(32,43,58,0.88)] text-[rgba(32,43,58,0.88)] drop-shadow-[0_8px_14px_rgba(18,28,42,0.22)]" />
+      <div className="mt-4 rounded-full border border-white/72 bg-[rgba(255,255,255,0.78)] px-2.5 py-1 text-[10px] font-bold text-(--text-strong) shadow-[0_12px_30px_rgba(18,28,42,0.14)] backdrop-blur-2xl">
+        {action_label} · {app_label}
+      </div>
     </div>
   );
 }
