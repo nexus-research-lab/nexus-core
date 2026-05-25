@@ -65,7 +65,7 @@ export function RunManifestSurface({
             {failed_count ? <AlertTriangle className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
           </span>
           <div className="min-w-0">
-            <p className="truncate text-[11px] font-black text-(--text-strong)">Run Console</p>
+            <p className="truncate text-[11px] font-black text-(--text-strong)">控制台</p>
             <p className="truncate text-[9.5px] text-(--text-soft)">round {event.round_id}</p>
           </div>
         </div>
@@ -73,13 +73,13 @@ export function RunManifestSurface({
         <ManifestActionMap events={events} />
 
         <div className="mt-2 space-y-1 rounded-[10px] bg-white/58 p-1.5 text-[10px]">
-          <ManifestSidebarRow label="Events" value={events.length} />
-          <ManifestSidebarRow label="Done" value={`${completed_count}/${events.length}`} />
-          <ManifestSidebarRow label="Commands" value={terminal_events.length} />
-          <ManifestSidebarRow label="Duration" value={duration} />
+          <ManifestSidebarRow label="事件" value={events.length} />
+          <ManifestSidebarRow label="完成" value={`${completed_count}/${events.length}`} />
+          <ManifestSidebarRow label="命令" value={terminal_events.length} />
+          <ManifestSidebarRow label="耗时" value={duration} />
         </div>
 
-        <div className="mt-3 px-1 text-[9px] font-black uppercase tracking-[0.12em] text-(--text-soft)">Artifacts</div>
+        <div className="mt-3 px-1 text-[9px] font-black uppercase tracking-[0.12em] text-(--text-soft)">产物</div>
         <div className="mt-1.5 space-y-1.5">
             {(artifacts.length ? artifacts : [{
               id: "context-only",
@@ -119,7 +119,7 @@ export function RunManifestSurface({
             </ConsoleToolbarButton>
             <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-[8px] border border-(--divider-subtle-color) bg-white/74 px-2 py-1 text-[10px] text-(--text-soft)">
               <Search className="h-3 w-3 shrink-0" />
-              <span className="truncate">Search all messages</span>
+              <span className="truncate">搜索所有消息</span>
             </div>
             <ConsoleToolbarButton label="清空显示">
               <Trash2 className="h-3.5 w-3.5" />
@@ -127,9 +127,9 @@ export function RunManifestSurface({
           </div>
           <div className="flex min-w-0 items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="truncate text-[12px] font-black text-(--text-strong)">All Messages</p>
+            <p className="truncate text-[12px] font-black text-(--text-strong)">所有消息</p>
             <p className="truncate text-[10px] text-(--text-soft)">
-              {result_text || event.summary || handoff_summary?.resume_prompt || "Execution log retained for replay."}
+              {result_text || event.summary || handoff_summary?.resume_prompt || "执行日志已保留，可用于回放。"}
             </p>
           </div>
           <span className="shrink-0 font-mono text-[10px] text-(--text-soft)">{PHASE_LABEL[event.phase]}</span>
@@ -138,11 +138,11 @@ export function RunManifestSurface({
         <div className="soft-scrollbar min-h-0 flex-1 overflow-auto p-3">
           <div className="overflow-hidden rounded-[12px] border border-(--divider-subtle-color) bg-white/52">
             <div className="grid grid-cols-[76px_72px_92px_minmax(0,1fr)_72px] gap-2 border-b border-(--divider-subtle-color) bg-white/64 px-3 py-2 text-[9px] font-black uppercase tracking-[0.12em] text-(--text-soft) max-md:grid-cols-[70px_70px_minmax(0,1fr)_64px]">
-              <span>Time</span>
-              <span>Level</span>
-              <span className="max-md:hidden">Subsystem</span>
-              <span>Message</span>
-              <span>Status</span>
+              <span>时间</span>
+              <span>级别</span>
+              <span className="max-md:hidden">子系统</span>
+              <span>消息</span>
+              <span>状态</span>
             </div>
             {events.map((item, index) => {
               const profile = resolve_operation_tool_profile(item.tool_name, item.kind, item.surface);
@@ -213,8 +213,8 @@ export function RunManifestSurface({
         </div>
 
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-(--divider-subtle-color) bg-white/62 px-3 py-2 text-[10px] text-(--text-soft)">
-          <span className="truncate">{handoff_summary?.status_detail ?? `${evidence.length} evidence records`}</span>
-          <span className="shrink-0 font-mono">{events.length} events</span>
+          <span className="truncate">{handoff_summary?.status_detail ?? `${evidence.length} 条证据记录`}</span>
+          <span className="shrink-0 font-mono">{events.length} 事件</span>
         </div>
       </section>
     </div>
@@ -253,7 +253,7 @@ function ManifestActionMap({ events }: { events: NexusOperationEvent[] }) {
   return (
     <section className="rounded-[10px] bg-white/58 p-1.5">
       <div className="mb-1 flex items-center justify-between gap-2 px-1 text-[9px] font-black uppercase tracking-[0.12em] text-(--text-soft)">
-        <span>Sources</span>
+        <span>来源</span>
         <span>{groups.length}</span>
       </div>
       <div className="space-y-1">
