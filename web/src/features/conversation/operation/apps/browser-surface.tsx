@@ -7,7 +7,10 @@ import {
   ExternalLink,
   Globe2,
   Loader2,
+  PanelLeft,
+  Plus,
   RefreshCw,
+  Share2,
   ShieldCheck,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -94,54 +97,83 @@ function BrowserChromeHeader({
   target?: string | null;
 }) {
   return (
-    <div className="border-b border-(--divider-subtle-color) bg-white/82">
+    <div className="border-b border-(--divider-subtle-color) bg-[rgba(248,250,253,0.88)]">
       <div className="flex min-w-0 items-end gap-1.5 px-3 pt-2">
-        <div className="flex min-w-0 max-w-[52%] items-center gap-1.5 rounded-t-[10px] border border-b-0 border-(--divider-subtle-color) bg-[#f7f9fc] px-3 py-1.5 text-[10px] font-bold text-(--text-strong)">
+        <div className="flex min-w-0 max-w-[52%] items-center gap-1.5 rounded-t-[10px] border border-b-0 border-(--divider-subtle-color) bg-white/72 px-3 py-1.5 text-[10px] font-bold text-(--text-strong)">
           <Globe2 className="h-3.5 w-3.5 shrink-0 text-(--icon-muted)" />
           <span className="truncate">{target ?? event.target ?? event.tool_name ?? "preview"}</span>
-        </div>
-        <div className="hidden rounded-t-[10px] border border-b-0 border-transparent px-3 py-1.5 text-[10px] font-semibold text-(--text-soft) sm:block">
-          Console
         </div>
       </div>
       <div className="flex min-w-0 items-center gap-2 px-3 py-2">
         <div className="flex shrink-0 items-center gap-1 text-(--icon-muted)">
-          <ChromeButton><ArrowLeft className="h-3.5 w-3.5" /></ChromeButton>
-          <ChromeButton><ArrowRight className="h-3.5 w-3.5" /></ChromeButton>
-          <ChromeButton>
+          <SafariToolbarButton label="显示边栏">
+            <PanelLeft className="h-3.5 w-3.5" />
+          </SafariToolbarButton>
+          <SafariToolbarButton label="后退">
+            <ArrowLeft className="h-3.5 w-3.5" />
+          </SafariToolbarButton>
+          <SafariToolbarButton label="前进">
+            <ArrowRight className="h-3.5 w-3.5" />
+          </SafariToolbarButton>
+          <SafariToolbarButton label={event.phase === "running" ? "正在加载" : "重新载入"}>
             {event.phase === "running"
               ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
               : <RefreshCw className="h-3.5 w-3.5" />}
-          </ChromeButton>
+          </SafariToolbarButton>
         </div>
-        <div className="flex min-w-0 flex-1 items-center gap-2 rounded-[9px] border border-(--divider-subtle-color) bg-white px-2.5 py-1.5 text-[11px] text-(--text-default)">
+        <div className="flex min-w-0 flex-1 items-center gap-2 rounded-[9px] border border-(--divider-subtle-color) bg-white/88 px-2.5 py-1.5 text-[11px] text-(--text-default) shadow-[inset_0_1px_0_rgba(255,255,255,0.76)]">
           <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-[color:var(--success)]" />
           <span className="min-w-0 flex-1 truncate font-medium">{display_url}</span>
-          <span className={cn(
-            "inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-px text-[9px] font-bold",
-            status.tone === "loading" && "bg-[rgba(91,114,255,0.10)] text-[color:var(--primary)]",
-            status.tone === "ready" && "bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]",
-            status.tone === "error" && "bg-[rgba(223,93,98,0.10)] text-[color:var(--destructive)]",
-            status.tone === "idle" && "bg-[rgba(117,131,149,0.10)] text-(--text-soft)",
-          )}>
-            {status.tone === "loading" ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : null}
-            {status.tone === "ready" ? <CheckCircle2 className="h-2.5 w-2.5" /> : null}
-            {status.tone === "error" ? <AlertTriangle className="h-2.5 w-2.5" /> : null}
-            {status.tone === "idle" ? <Clock3 className="h-2.5 w-2.5" /> : null}
-            <span className="hidden sm:inline">{status.label}</span>
-            <span className="uppercase">{source_label}</span>
-          </span>
         </div>
-        <ChromeButton><ExternalLink className="h-3.5 w-3.5" /></ChromeButton>
+        <SafariPageStatus source_label={source_label} status={status} />
+        <SafariToolbarButton label="共享">
+          <Share2 className="h-3.5 w-3.5" />
+        </SafariToolbarButton>
+        <SafariToolbarButton label="新建标签页">
+          <Plus className="h-3.5 w-3.5" />
+        </SafariToolbarButton>
+        <SafariToolbarButton label="在浏览器中打开">
+          <ExternalLink className="h-3.5 w-3.5" />
+        </SafariToolbarButton>
       </div>
     </div>
   );
 }
 
-function ChromeButton({ children }: { children: ReactNode }) {
+function SafariToolbarButton({ children, label }: { children: ReactNode; label: string }) {
   return (
-    <span className="grid h-6 w-6 place-items-center rounded-md border border-(--divider-subtle-color) bg-white/64">
+    <button
+      aria-label={label}
+      className="grid h-6 w-6 place-items-center rounded-md border border-(--divider-subtle-color) bg-white/64 transition hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.32)]"
+      title={label}
+      type="button"
+    >
       {children}
+    </button>
+  );
+}
+
+function SafariPageStatus({
+  source_label,
+  status,
+}: {
+  source_label: string;
+  status: { label: string; tone: "loading" | "ready" | "error" | "idle" };
+}) {
+  return (
+    <span className={cn(
+      "hidden shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-[9px] font-bold sm:inline-flex",
+      status.tone === "loading" && "bg-[rgba(91,114,255,0.10)] text-[color:var(--primary)]",
+      status.tone === "ready" && "bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]",
+      status.tone === "error" && "bg-[rgba(223,93,98,0.10)] text-[color:var(--destructive)]",
+      status.tone === "idle" && "bg-[rgba(117,131,149,0.10)] text-(--text-soft)",
+    )}>
+      {status.tone === "loading" ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : null}
+      {status.tone === "ready" ? <CheckCircle2 className="h-2.5 w-2.5" /> : null}
+      {status.tone === "error" ? <AlertTriangle className="h-2.5 w-2.5" /> : null}
+      {status.tone === "idle" ? <Clock3 className="h-2.5 w-2.5" /> : null}
+      <span>{status.label}</span>
+      <span className="uppercase text-current/62">{source_label}</span>
     </span>
   );
 }
