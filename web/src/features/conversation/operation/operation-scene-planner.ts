@@ -318,6 +318,25 @@ function build_windows(
     }
   }
 
+  if (windows.length === 0 && tool_activity_events.length > 0) {
+    const generic_event = tool_activity_events.at(-1) ?? event;
+    windows.push(window_state(generic_event, snapshot, {
+      id: `tool:${normalize_window_id(generic_event.tool_name ?? generic_event.kind ?? generic_event.id)}`,
+      kind: "generic_tool",
+      title: generic_event.tool_name ?? generic_event.title ?? "工具调用",
+      layout: "primary",
+      phase: "focused",
+      z: 36,
+      payload: {
+        evidence: generic_event.evidence,
+        preview: generic_event.result_preview ?? generic_event.input_preview ?? generic_event.summary,
+        related_events: tool_activity_events,
+        summary: generic_event.summary,
+        target: generic_event.target ?? generic_event.tool_name ?? generic_event.kind,
+      },
+    }));
+  }
+
   return windows;
 }
 

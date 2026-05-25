@@ -141,6 +141,7 @@ verify_window_keyboard_actions_match_mac_window_controls();
 verify_agent_cursor_tracks_active_mac_app();
 verify_initial_window_reveal_avoids_desktop_clutter_flash();
 verify_hidden_stage_uses_desktop_state_instead_of_mission_control();
+verify_unclassified_tool_activity_opens_nexus_app_window(now);
 verify_stage_experience_state_machine(now);
 verify_live_episode_narrates_running_round(now);
 verify_api_retry_runtime_projection(now);
@@ -302,6 +303,42 @@ function verify_hidden_stage_uses_desktop_state_instead_of_mission_control() {
   ]);
   assert(mixed_summary.label === "1 个在 Dock · 1 个已关闭", `Mixed hidden desktop should avoid Mission Control language, got ${mixed_summary.label}`);
   assert(!mixed_summary.label.toLowerCase().includes("mission"), "Hidden desktop summary should not use Mission Control panel language");
+}
+
+function verify_unclassified_tool_activity_opens_nexus_app_window(now) {
+  const event = {
+    id: "tool-plan-update",
+    session_key: "session:stage",
+    round_id: "round-generic-tool",
+    agent_id: "agent-stage",
+    tool_use_id: "tool-plan",
+    tool_name: "TodoWrite",
+    kind: "plan_update",
+    surface: "summary",
+    phase: "running",
+    title: "更新计划",
+    target: "todos",
+    input_preview: {
+      todos: [{ content: "打开 Safari 预览", status: "pending" }],
+    },
+    updated_at: now,
+  };
+  const desktop = plan_operation_desktop({
+    event,
+    snapshot: {
+      key: "session:stage",
+      session_key: "session:stage",
+      active_event: event,
+      events: [event],
+      recent_evidence: [],
+      workspace_events: [],
+      updated_at: now,
+    },
+  });
+  assert(desktop.windows.length === 1, `Unclassified tool activity should still open one app window, got ${desktop.windows.length}`);
+  assert(desktop.windows[0].kind === "generic_tool", `Unclassified tool activity should open a Nexus app window, got ${desktop.windows[0].kind}`);
+  assert(desktop.active_window_id === desktop.windows[0].id, "Unclassified tool app window should become the active desktop window");
+  assert(desktop.windows[0].payload.related_events?.[0]?.tool_name === "TodoWrite", "Generic app window should keep original tool identity");
 }
 
 function mock_stage_window({
