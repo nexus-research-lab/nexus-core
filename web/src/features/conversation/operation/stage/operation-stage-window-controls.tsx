@@ -29,11 +29,11 @@ export function StageWindowsHiddenState({
     ? `${minimized_count} 个窗口仍在 Dock 中，可以恢复到桌面。`
     : minimized_count > 0
       ? `${minimized_count} 个窗口仍在 Dock 中，${closed_count} 个窗口已关闭。`
-    : "应用已被关闭，可以从 Dock 或桌面重新打开。";
+    : "应用已被关闭，可以从桌面重新打开。";
 
   return (
-    <div className="absolute inset-0 z-10 grid place-items-center px-6 text-center max-md:relative max-md:min-h-[260px]">
-      <div className="max-w-[300px] rounded-[18px] border border-white/70 bg-white/70 p-5 shadow-[0_24px_64px_rgba(18,28,42,0.12)] backdrop-blur-xl">
+    <div className="pointer-events-none absolute inset-0 z-[9] grid place-items-center px-6 text-center max-md:relative max-md:min-h-[260px]">
+      <div className="pointer-events-auto max-w-[300px] rounded-[18px] border border-white/70 bg-white/70 p-5 shadow-[0_24px_64px_rgba(18,28,42,0.12)] backdrop-blur-xl">
         <div className="mx-auto mb-4 grid h-11 w-11 place-items-center rounded-[13px] border border-(--divider-subtle-color) bg-white/72 text-(--icon-muted)">
           <PauseCircle className="h-5 w-5" />
         </div>

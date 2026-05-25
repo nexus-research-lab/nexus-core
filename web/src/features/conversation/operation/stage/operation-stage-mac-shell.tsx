@@ -9,6 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 
 import type { StageWindowState } from "../operation-desktop-types";
+import { basename } from "../operation-scene-planner-helpers";
 import type { NexusOperationEvent } from "../operation-types";
 import {
   icon_for_window_kind,
@@ -58,7 +59,7 @@ export function StageDesktopIcons({
   windows: StageWindowState[];
 }) {
   const desktop_items = windows
-    .filter((window) => window.kind !== "runtime_handoff" && window.kind !== "evidence" && window.phase !== "closed")
+    .filter((window) => window.kind !== "runtime_handoff" && window.kind !== "evidence")
     .slice(0, 4);
 
   if (!desktop_items.length) {
@@ -70,28 +71,54 @@ export function StageDesktopIcons({
       {desktop_items.map((window) => {
         const Icon = icon_for_window_kind(window.kind);
         const app_label = stage_app_label_for_window_kind(window.kind);
+        const display_name = desktop_icon_label(window);
+        const state_label = window.phase === "closed"
+          ? "已关闭"
+          : window.phase === "minimized"
+            ? "已最小化"
+            : window.phase === "focused"
+              ? "正在使用"
+              : "已打开";
         return (
           <button
-            aria-label={`打开 ${app_label}：${window.title}`}
+            aria-label={`${window.phase === "closed" ? "重新打开" : "打开"} ${app_label}：${display_name}`}
             className="group flex w-[92px] flex-col items-center gap-1.5 text-center outline-none"
             key={window.id}
             onClick={() => on_restore(window.id)}
-            title={`${app_label} · ${window.title}`}
+            title={`${app_label} · ${display_name} · ${state_label}`}
             type="button"
           >
             <div className={cn(
-              "grid h-12 w-12 place-items-center rounded-[15px] border border-white/62 bg-white/48 text-(--icon-default) shadow-[0_12px_30px_rgba(18,28,42,0.09)] backdrop-blur-xl transition group-hover:-translate-y-0.5 group-hover:bg-white/70 group-focus-visible:ring-2 group-focus-visible:ring-[rgba(91,114,255,0.38)]",
+              "relative grid h-12 w-12 place-items-center rounded-[15px] border border-white/62 bg-white/48 text-(--icon-default) shadow-[0_12px_30px_rgba(18,28,42,0.09)] backdrop-blur-xl transition group-hover:-translate-y-0.5 group-hover:bg-white/70 group-focus-visible:ring-2 group-focus-visible:ring-[rgba(91,114,255,0.38)]",
               window.phase === "focused" && "bg-[rgba(91,114,255,0.14)] text-[color:var(--primary)]",
-              window.phase === "minimized" && "opacity-70",
+              window.phase === "minimized" && "opacity-78",
+              window.phase === "closed" && "opacity-62 grayscale-[0.22]",
             )}>
               <Icon className="h-5 w-5" />
+              <span className={cn(
+                "absolute -bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full border border-white/72",
+                window.phase === "closed"
+                  ? "bg-[rgba(117,131,149,0.55)]"
+                  : window.phase === "minimized"
+                    ? "bg-[rgba(223,157,46,0.82)]"
+                    : "bg-[rgba(47,184,132,0.72)]",
+              )} />
             </div>
-            <p className="line-clamp-2 text-[10px] font-semibold leading-4 text-(--text-strong)">
-              {window.title}
+            <p className="line-clamp-2 rounded-[6px] px-1 text-[10px] font-semibold leading-4 text-(--text-strong) group-hover:bg-white/48">
+              {display_name}
             </p>
+            <span className="sr-only">{state_label}</span>
           </button>
         );
       })}
     </div>
   );
+}
+
+function desktop_icon_label(window: StageWindowState): string {
+  const target_label = basename(window.target ?? window.payload.target);
+  if (target_label && target_label !== "preview") {
+    return target_label;
+  }
+  return window.title;
 }
