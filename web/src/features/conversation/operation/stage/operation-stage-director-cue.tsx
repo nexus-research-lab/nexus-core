@@ -71,7 +71,7 @@ export function StageDirectorCue({
                 {cue_title}
               </p>
               <p className="mt-0.5 truncate text-[10px] font-semibold text-(--text-soft)">
-                {active_episode?.act_label ?? "Act"} · {event_title}
+                {active_episode?.act_label ?? "当前步骤"} · {event_title}
               </p>
             </div>
           </div>

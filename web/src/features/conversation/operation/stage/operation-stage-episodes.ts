@@ -57,7 +57,7 @@ export function build_stage_episodes({
       event,
       index,
       state,
-      act_label: `Act ${index + 1}`,
+      act_label: `第 ${index + 1} 步`,
       action_label: profile.action_label,
       title,
       target,
@@ -161,7 +161,7 @@ function build_episode_detail(
     if (workspace_match?.diff_stats) {
       return `已落盘 +${workspace_match.diff_stats.additions} -${workspace_match.diff_stats.deletions}`;
     }
-    return event.phase === "error" ? "错误证据已保留" : "输出已进入回看现场";
+    return event.phase === "error" ? "错误证据已保留" : "输出已进入回放记录";
   }
   if (state === "entered") {
     return "窗口已显影，等待输出沉淀";

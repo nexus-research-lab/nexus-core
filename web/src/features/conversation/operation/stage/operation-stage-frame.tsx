@@ -24,7 +24,7 @@ export function StageReplayReturn({
         <div className="flex min-w-0 items-center justify-between gap-2">
           <div className="min-w-0">
             <p className="truncate text-[10px] font-black uppercase tracking-[0.10em] text-(--text-strong)">
-              Mission Control
+              调度中心
             </p>
             <p className="mt-0.5 truncate text-[10px] font-semibold text-(--text-soft)">
               {display_stage_event_title(current_event)}

@@ -66,7 +66,7 @@ export function StageCompletionLedger({
               {has_error ? <AlertTriangle className="h-4.5 w-4.5" /> : <ListChecks className="h-4.5 w-4.5" />}
             </span>
             <div className="min-w-0">
-              <p className="truncate text-[12.5px] font-black text-(--text-strong)">工作台交接账本</p>
+              <p className="truncate text-[12.5px] font-black text-(--text-strong)">工作台记录</p>
               <p className="mt-0.5 truncate text-[10.5px] text-(--text-soft)">
                 {has_error ? "保留异常证据，等待回看处理" : "现场已转成可追溯记录，可以继续对话"}
               </p>
@@ -102,14 +102,14 @@ export function StageCompletionLedger({
 
         <div className="mt-3 rounded-[13px] border border-white/52 bg-white/36 p-2">
           <div className="mb-2 flex items-center justify-between gap-2 text-[10px] font-bold text-(--text-soft)">
-            <span>执行回放轨迹</span>
+            <span>回放轨迹</span>
             <span>{format_operation_time(active_replay_event.updated_at)}</span>
           </div>
           <StageEpisodeReel
             active_event_id={active_event_id}
             episodes={episodes}
             on_focus_event={on_focus_event}
-            title="交接沉淀"
+            title="现场记录"
           />
         </div>
 
@@ -303,7 +303,7 @@ export function StageOutcomeSummary({
       />
 
       <div className="mt-3">
-        <StageEpisodeReel episodes={episodes} title="执行胶片" />
+        <StageEpisodeReel episodes={episodes} title="执行记录" />
       </div>
 
       <div className="mt-3">
@@ -354,7 +354,7 @@ export function StageOutcomeSummary({
         <div className="mb-1.5 flex items-center justify-between gap-2 text-[10px] font-bold text-(--text-soft)">
           <span className="inline-flex min-w-0 items-center gap-1.5">
             <ListChecks className="h-3.5 w-3.5 shrink-0" />
-            <span>交接清单</span>
+            <span>继续清单</span>
           </span>
           <span>{checklist_items.length} 项</span>
         </div>
