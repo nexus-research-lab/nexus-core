@@ -43,6 +43,10 @@ import {
   resolve_cycled_window_focus,
   resolve_next_window_focus,
 } from "./operation-stage-window-focus";
+import {
+  is_meaningful_stage_window_drag,
+  normalize_stage_window_drag_offset,
+} from "./operation-stage-window-drag";
 
 export function OperationStageDesktop({
   event,
@@ -204,15 +208,16 @@ export function OperationStageDesktop({
   };
 
   const move_window = (window_id: string, offset: { x: number; y: number }) => {
+    const normalized_offset = normalize_stage_window_drag_offset(offset);
     set_focused_window_id(window_id);
     set_window_overrides((current) => ({
       ...current,
       [window_id]: {
         ...current[window_id],
-        maximized: false,
+        maximized: is_meaningful_stage_window_drag(normalized_offset) ? false : current[window_id]?.maximized,
         minimized: false,
-        offset_x: Math.round(offset.x),
-        offset_y: Math.round(offset.y),
+        offset_x: normalized_offset.x,
+        offset_y: normalized_offset.y,
       },
     }));
   };

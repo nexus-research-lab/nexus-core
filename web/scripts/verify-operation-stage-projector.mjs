@@ -72,6 +72,7 @@ copyFileSync(join(operation_dir, "stage/operation-stage-menu-model.js"), join(op
 copyFileSync(join(operation_dir, "stage/operation-stage-window-titlebar.js"), join(operation_dir, "stage/operation-stage-window-titlebar"));
 copyFileSync(join(operation_dir, "stage/operation-stage-desktop-icons.js"), join(operation_dir, "stage/operation-stage-desktop-icons"));
 copyFileSync(join(operation_dir, "stage/operation-stage-minimized-window.js"), join(operation_dir, "stage/operation-stage-minimized-window"));
+copyFileSync(join(operation_dir, "stage/operation-stage-window-drag.js"), join(operation_dir, "stage/operation-stage-window-drag"));
 mkdirSync(join(operation_dir, "apps"), { recursive: true });
 copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
 copyFileSync(join(operation_dir, "apps/operation-app-surface-policy.js"), join(operation_dir, "apps/operation-app-surface-policy"));
@@ -148,6 +149,10 @@ const {
   build_stage_minimized_window_tile,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-minimized-window.js")));
 const {
+  is_meaningful_stage_window_drag,
+  normalize_stage_window_drag_offset,
+} = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-window-drag.js")));
+const {
   build_terminal_entries,
 } = await import(pathToFileURL(join(operation_dir, "apps/terminal-session-model.js")));
 const {
@@ -201,6 +206,7 @@ verify_stage_menu_status_tracks_desktop_windows();
 verify_stage_window_titlebar_state();
 verify_stage_desktop_icon_items();
 verify_stage_minimized_window_tile();
+verify_stage_window_drag_model();
 verify_stage_experience_state_machine(now);
 verify_live_episode_narrates_running_round(now);
 verify_api_retry_runtime_projection(now);
@@ -694,6 +700,16 @@ function mock_stage_window({
     title: id,
     z,
   };
+}
+
+function verify_stage_window_drag_model() {
+  const clamped = normalize_stage_window_drag_offset({ x: 9999, y: -9999 });
+  assert(clamped.x === 520, `Window drag x should be clamped, got ${clamped.x}`);
+  assert(clamped.y === -260, `Window drag y should be clamped, got ${clamped.y}`);
+  assert(!is_meaningful_stage_window_drag({ x: 1, y: -1 }), "Sub-pixel window drag should not leave maximized mode");
+  assert(is_meaningful_stage_window_drag({ x: 12, y: 0 }), "Visible window drag should be meaningful");
+  const invalid = normalize_stage_window_drag_offset({ x: Number.NaN, y: Infinity });
+  assert(invalid.x === 0 && invalid.y === 0, `Invalid drag offsets should reset to zero, got ${invalid.x}, ${invalid.y}`);
 }
 
 function verify_stage_experience_state_machine(now) {
