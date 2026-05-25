@@ -66,6 +66,7 @@ copyFileSync(join(operation_dir, "stage/operation-stage-window-reveal.js"), join
 copyFileSync(join(operation_dir, "stage/operation-stage-hidden-windows.js"), join(operation_dir, "stage/operation-stage-hidden-windows"));
 mkdirSync(join(operation_dir, "apps"), { recursive: true });
 copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
+copyFileSync(join(operation_dir, "apps/operation-app-surface-policy.js"), join(operation_dir, "apps/operation-app-surface-policy"));
 copyFileSync(join(operation_dir, "apps/file-preview-value.js"), join(operation_dir, "apps/file-preview-value"));
 copyFileSync(join(operation_dir, "apps/browser-result-items.js"), join(operation_dir, "apps/browser-result-items"));
 copyFileSync(join(operation_dir, "apps/finder-item-details.js"), join(operation_dir, "apps/finder-item-details"));
@@ -114,6 +115,9 @@ const {
   build_terminal_entries,
 } = await import(pathToFileURL(join(operation_dir, "apps/terminal-session-model.js")));
 const {
+  app_surface_for_window_kind,
+} = await import(pathToFileURL(join(operation_dir, "apps/operation-app-surface-policy.js")));
+const {
   resolve_file_preview_value,
 } = await import(pathToFileURL(join(operation_dir, "apps/file-preview-value.js")));
 const {
@@ -142,6 +146,7 @@ verify_agent_cursor_tracks_active_mac_app();
 verify_initial_window_reveal_avoids_desktop_clutter_flash();
 verify_hidden_stage_uses_desktop_state_instead_of_mission_control();
 verify_unclassified_tool_activity_opens_nexus_app_window(now);
+verify_generic_tool_uses_nexus_tool_surface();
 verify_stage_experience_state_machine(now);
 verify_live_episode_narrates_running_round(now);
 verify_api_retry_runtime_projection(now);
@@ -339,6 +344,12 @@ function verify_unclassified_tool_activity_opens_nexus_app_window(now) {
   assert(desktop.windows[0].kind === "generic_tool", `Unclassified tool activity should open a Nexus app window, got ${desktop.windows[0].kind}`);
   assert(desktop.active_window_id === desktop.windows[0].id, "Unclassified tool app window should become the active desktop window");
   assert(desktop.windows[0].payload.related_events?.[0]?.tool_name === "TodoWrite", "Generic app window should keep original tool identity");
+}
+
+function verify_generic_tool_uses_nexus_tool_surface() {
+  assert(app_surface_for_window_kind("generic_tool") === "nexus_tool", "Generic tool windows should render as the Nexus tool app");
+  assert(app_surface_for_window_kind("code_editor") === "document", "Code windows should keep document preview rendering");
+  assert(app_surface_for_window_kind("browser") === "specialized", "Browser windows should keep specialized app rendering");
 }
 
 function mock_stage_window({

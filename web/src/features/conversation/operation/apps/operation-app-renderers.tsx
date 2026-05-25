@@ -17,10 +17,12 @@ import {
   get_preview_lines,
 } from "../operation-preview";
 import { ACTION_ICON, ACTION_TONE_CLASS } from "./operation-action-style";
+import { app_surface_for_window_kind } from "./operation-app-surface-policy";
 import { ActivityMonitorSurface } from "./activity-monitor-surface";
 import { BrowserSurface } from "./browser-surface";
 import { DocumentPreview } from "./document-preview-surface";
 import { resolve_file_preview_value } from "./file-preview-value";
+import { NexusToolSurface } from "./nexus-tool-surface";
 import { OperationReviewPanel, PermissionCheckpointPanel } from "./operation-review-panels";
 import { RunManifestSurface } from "./run-manifest-surface";
 import { TerminalSession } from "./terminal-session";
@@ -142,7 +144,18 @@ export function StageWindowContent({
     );
   }
 
-  if (is_file_app_window(window.kind)) {
+  if (app_surface_for_window_kind(window.kind) === "nexus_tool") {
+    return (
+      <NexusToolSurface
+        event={event}
+        preview={window.payload.preview}
+        related_events={window.payload.related_events ?? []}
+        target={window.payload.target ?? window.target ?? event.target}
+      />
+    );
+  }
+
+  if (app_surface_for_window_kind(window.kind) === "document") {
     return (
       <DocumentPreview
         diff_stats={window.payload.diff_stats}
@@ -172,16 +185,6 @@ export function StageWindowContent({
       </div>
     </div>
   );
-}
-
-function is_file_app_window(kind: StageWindowState["kind"]): boolean {
-  return kind === "code_editor"
-    || kind === "markdown_reader"
-    || kind === "word_reader"
-    || kind === "pdf_reader"
-    || kind === "spreadsheet"
-    || kind === "image_viewer"
-    || kind === "generic_tool";
 }
 
 function ToolActionHeader({
