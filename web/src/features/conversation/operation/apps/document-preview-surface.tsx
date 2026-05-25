@@ -1,8 +1,12 @@
 import {
+  Braces,
   FileSpreadsheet,
   FileText,
   ImageIcon,
+  Search,
+  SplitSquareHorizontal,
 } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -151,22 +155,40 @@ function EditorSurface({
   lines: string[];
 }) {
   const extension = title.includes(".") ? title.slice(title.lastIndexOf(".") + 1).toUpperCase() : "TEXT";
+  const is_code = extension !== "TEXT";
   return (
     <div className="flex h-full min-h-[240px] flex-col overflow-hidden bg-[#101820] text-[#dce8ee]">
-      <div className="flex min-w-0 items-center justify-between gap-3 border-b border-white/10 bg-[#151f29] px-3 py-2">
-        <div className="flex min-w-0 items-center gap-1.5">
-          <span className="truncate text-[11px] font-bold text-[#e7eef5]">{title}</span>
+      <div className="border-b border-white/10 bg-[#151f29]">
+        <div className="flex min-w-0 items-center justify-between gap-3 px-3 py-1.5">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <EditorToolbarButton label="切换侧边栏">
+              <SplitSquareHorizontal className="h-3.5 w-3.5" />
+            </EditorToolbarButton>
+            <EditorToolbarButton label="搜索">
+              <Search className="h-3.5 w-3.5" />
+            </EditorToolbarButton>
+          </div>
+          <div className="min-w-0 text-center">
+            <p className="truncate text-[11px] font-bold text-[#e7eef5]">{title}</p>
+            <p className="truncate text-[9px] text-[#7f94a3]">{phase_label}</p>
+          </div>
+          <span className="shrink-0 rounded bg-white/[0.06] px-1.5 py-px text-[9px] font-bold text-[#8aa0ad]">
+            {extension}
+          </span>
         </div>
-        <span className="shrink-0 rounded bg-white/[0.06] px-1.5 py-px text-[9px] font-bold text-[#8aa0ad]">
-          {extension}
-        </span>
+        <div className="flex min-w-0 items-end gap-1.5 px-3">
+          <div className="flex min-w-0 max-w-[62%] items-center gap-1.5 rounded-t-[9px] border border-b-0 border-white/10 bg-[#101820] px-3 py-1.5 text-[10px] font-semibold text-[#dce8ee]">
+            {is_code ? <Braces className="h-3 w-3 shrink-0 text-[#8de0ad]" /> : <FileText className="h-3 w-3 shrink-0 text-[#8aa0ad]" />}
+            <span className="truncate">{title}</span>
+          </div>
+        </div>
       </div>
       <div className="flex min-h-0 flex-1">
-        <div className="hidden w-[132px] shrink-0 border-r border-white/10 bg-[#0c141c] p-2 text-[10px] text-[#7f94a3] sm:block">
-          <div className="mb-2 truncate rounded-md bg-white/[0.06] px-2 py-1.5 font-bold text-[#dce8ee]">{title}</div>
+        <div className="hidden w-[148px] shrink-0 border-r border-white/10 bg-[#0c141c] p-2 text-[10px] text-[#7f94a3] sm:block">
+          <div className="mb-2 truncate rounded-md bg-white/[0.06] px-2 py-1.5 font-bold text-[#dce8ee]">Explorer</div>
           <div className="space-y-1">
-            <div className="truncate rounded px-2 py-1">Outline</div>
-            <div className="truncate rounded px-2 py-1">Problems</div>
+            <div className="truncate rounded bg-white/[0.06] px-2 py-1 text-[#dce8ee]">{title}</div>
+            <div className="truncate rounded px-2 py-1">Source Control</div>
             <div className="truncate rounded px-2 py-1">Timeline</div>
           </div>
         </div>
@@ -194,10 +216,23 @@ function EditorSurface({
         </div>
       </div>
       <div className="flex min-w-0 items-center justify-between gap-3 border-t border-white/10 bg-[#0c141c] px-3 py-1.5 text-[10px] text-[#7f94a3]">
-        <span className="truncate">UTF-8 · Spaces: 2</span>
+        <span className="truncate">UTF-8 · Spaces: 2 · {is_code ? extension.toLowerCase() : "plain text"}</span>
         <span className="shrink-0">Ln {Math.max(lines.length, 1)}, Col 1</span>
       </div>
     </div>
+  );
+}
+
+function EditorToolbarButton({ children, label }: { children: ReactNode; label: string }) {
+  return (
+    <button
+      aria-label={label}
+      className="grid h-6 w-6 place-items-center rounded-md border border-white/8 bg-white/[0.035] text-[#8aa0ad] transition hover:bg-white/[0.07] hover:text-[#dce8ee] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8de0ad]/30"
+      title={label}
+      type="button"
+    >
+      {children}
+    </button>
   );
 }
 
