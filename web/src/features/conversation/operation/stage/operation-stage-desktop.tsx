@@ -1,3 +1,4 @@
+import type { KeyboardEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 import { StageWindowContent } from "../apps/operation-app-renderers";
@@ -29,6 +30,10 @@ import type {
 import { StageAgentCursor, StageMacMenuBar, StageDesktopIcons } from "./operation-stage-mac-shell";
 import { DynamicStageFrame } from "./operation-stage-frame";
 import { OperationStageWindow } from "./operation-stage-window";
+import {
+  resolve_operation_window_keyboard_action,
+  should_handle_stage_desktop_keyboard_action,
+} from "./operation-stage-window-actions";
 import {
   StageWindowDock,
   StageWindowsHiddenState,
@@ -238,6 +243,29 @@ export function OperationStageDesktop({
     }));
   };
 
+  const handle_desktop_key_down = (keyboard_event: KeyboardEvent<HTMLDivElement>) => {
+    if (is_text_entry_keyboard_target(keyboard_event.target)) {
+      return;
+    }
+    const action = resolve_operation_window_keyboard_action(keyboard_event);
+    if (!action || !should_handle_stage_desktop_keyboard_action(action)) {
+      return;
+    }
+    keyboard_event.preventDefault();
+    keyboard_event.stopPropagation();
+    if (action === "cycle_next") {
+      cycle_window_focus("next");
+    } else if (action === "cycle_previous") {
+      cycle_window_focus("previous");
+    } else if (active_window_id && action === "close") {
+      close_window(active_window_id);
+    } else if (active_window_id && action === "minimize") {
+      minimize_window(active_window_id);
+    } else if (active_window_id && action === "zoom") {
+      toggle_zoom_window(active_window_id);
+    }
+  };
+
   const restore_window = (window_id: string) => {
     set_focused_window_id(window_id);
     const restore_token = Date.now();
@@ -286,7 +314,11 @@ export function OperationStageDesktop({
   }
 
   return (
-    <DynamicStageFrame event={event} narrative={narrative}>
+    <DynamicStageFrame
+      event={event}
+      narrative={narrative}
+      on_key_down_capture={handle_desktop_key_down}
+    >
       <StageMacMenuBar
         active_window={active_window}
       />
@@ -342,4 +374,14 @@ export function OperationStageDesktop({
       />
     </DynamicStageFrame>
   );
+}
+
+function is_text_entry_keyboard_target(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+  if (target.isContentEditable) {
+    return true;
+  }
+  return Boolean(target.closest("input, textarea, select, [contenteditable='true']"));
 }

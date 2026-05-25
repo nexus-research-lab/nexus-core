@@ -101,6 +101,7 @@ const {
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-dock-model.js")));
 const {
   resolve_operation_window_keyboard_action,
+  should_handle_stage_desktop_keyboard_action,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-window-actions.js")));
 const {
   agent_cursor_action_label,
@@ -267,6 +268,9 @@ function verify_window_keyboard_actions_match_mac_window_controls() {
   assert(resolve_operation_window_keyboard_action({ key: "`", metaKey: true, shiftKey: true }) === "cycle_previous", "Cmd+Shift+` should cycle to the previous desktop window");
   assert(resolve_operation_window_keyboard_action({ key: "w", metaKey: true, shiftKey: true }) === null, "Modified Cmd+W should not trigger the simple close action");
   assert(resolve_operation_window_keyboard_action({ key: "a", metaKey: true }) === null, "Unrelated shortcuts should stay with the app content");
+  assert(!should_handle_stage_desktop_keyboard_action("focus"), "Desktop-level shortcuts should not hijack Enter or Space focus behavior");
+  assert(should_handle_stage_desktop_keyboard_action("cycle_next"), "Desktop-level shortcuts should handle window cycling");
+  assert(should_handle_stage_desktop_keyboard_action("close"), "Desktop-level shortcuts should handle active window closing");
 }
 
 function verify_agent_cursor_tracks_active_mac_app() {

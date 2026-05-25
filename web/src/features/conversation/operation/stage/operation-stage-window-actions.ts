@@ -53,6 +53,12 @@ export function resolve_operation_window_keyboard_action(
   return null;
 }
 
+export function should_handle_stage_desktop_keyboard_action(
+  action: OperationStageWindowKeyboardAction,
+): boolean {
+  return action !== "focus";
+}
+
 function is_cycle_window_key(key: string): boolean {
   return key === "`" || key === "~" || key === "Backquote";
 }
