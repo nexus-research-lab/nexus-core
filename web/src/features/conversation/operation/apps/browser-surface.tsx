@@ -25,6 +25,7 @@ import type {
   OperationPhase,
 } from "../operation-types";
 import { build_browser_result_items } from "./browser-result-items";
+import { build_browser_session_view } from "./browser-session";
 
 const PHASE_LABEL: Record<OperationPhase, string> = {
   queued: "排队中",
@@ -48,35 +49,28 @@ export function BrowserSurface({
   query: string;
   target?: string | null;
 }) {
-  const srcdoc = typeof preview === "string" && looks_like_html(preview) ? preview : null;
-  const raw_url = build_workspace_raw_url(event.agent_id, target ?? event.target);
-  const url = looks_like_url(query) ? query : null;
-  const iframe_url = srcdoc ? null : raw_url ?? url;
-  const has_live_view = Boolean(srcdoc || iframe_url);
-  const status = browser_status_for_event(event, has_live_view);
-  const display_url = browser_display_url({ iframe_url, query, srcdoc, target });
-  const source_label = srcdoc
-    ? "内嵌页面"
-    : iframe_url?.startsWith("/nexus/")
-      ? "工作区"
-        : looks_like_url(display_url)
-          ? "网页"
-          : "摘要";
+  const session = build_browser_session_view({
+    event,
+    preview,
+    query,
+    raw_url_builder: get_workspace_file_raw_url,
+    target,
+  });
 
   return (
     <div className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden bg-[#f7f9fc] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]">
       <BrowserChromeHeader
-        display_url={display_url}
+        display_url={session.display_url}
         event={event}
-        source_label={source_label}
-        status={status}
+        source_label={session.source_label}
+        status={session.status}
         target={target}
       />
 
       <BrowserViewport
-        iframe_url={iframe_url}
+        iframe_url={session.iframe_url}
         query={query}
-        srcdoc={srcdoc}
+        srcdoc={session.srcdoc}
         target={target}
         event={event}
         lines={lines}
@@ -284,79 +278,10 @@ function SafariSidebarItem({ active = false, label }: { active?: boolean; label:
   );
 }
 
-function browser_status_for_event(
-  event: NexusOperationEvent,
-  has_live_view: boolean,
-): { label: string; tone: "loading" | "ready" | "error" | "idle" } {
-  if (event.phase === "running") {
-    return { label: has_live_view ? "页面运行中" : "正在加载", tone: "loading" };
-  }
-  if (event.phase === "error") {
-    return { label: "加载失败", tone: "error" };
-  }
-  if (event.phase === "done") {
-    return { label: has_live_view ? "页面已就绪" : "已生成摘要", tone: "ready" };
-  }
-  return { label: PHASE_LABEL[event.phase], tone: "idle" };
-}
-
-function browser_display_url({
-  iframe_url,
-  query,
-  srcdoc,
-  target,
-}: {
-  iframe_url: string | null;
-  query: string;
-  srcdoc: string | null;
-  target?: string | null;
-}): string {
-  if (iframe_url) {
-    return iframe_url;
-  }
-  if (srcdoc) {
-    return target ?? query;
-  }
-  return query;
-}
-
-function looks_like_html(value: string): boolean {
-  return /<!doctype html|<html[\s>]|<body[\s>]|<script[\s>]/i.test(value);
-}
-
-function looks_like_url(value: string): boolean {
-  return /^https?:\/\//i.test(value);
-}
-
 function format_browser_origin(value: string): string {
   try {
     return new URL(value).hostname;
   } catch {
     return "工作区预览";
   }
-}
-
-function build_workspace_raw_url(agent_id: string, target?: string | null): string | null {
-  const path = normalize_workspace_relative_path(target);
-  if (!path || !/\.(html?|xhtml)$/i.test(path)) {
-    return null;
-  }
-  return get_workspace_file_raw_url(agent_id, path);
-}
-
-function normalize_workspace_relative_path(target?: string | null): string | null {
-  const path = target?.trim();
-  if (!path || looks_like_url(path) || path.startsWith("/") || path.includes("..")) {
-    return null;
-  }
-  const normalized = path.replace(/^\.\/+/, "");
-  if (
-    !normalized ||
-    normalized.startsWith(".agents/") ||
-    normalized.startsWith(".claude/") ||
-    normalized.startsWith(".git/")
-  ) {
-    return null;
-  }
-  return normalized;
 }

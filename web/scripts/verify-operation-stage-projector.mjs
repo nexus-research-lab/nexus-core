@@ -78,6 +78,7 @@ copyFileSync(join(operation_dir, "apps/operation-app-surface-policy.js"), join(o
 copyFileSync(join(operation_dir, "apps/nexus-tool-session.js"), join(operation_dir, "apps/nexus-tool-session"));
 copyFileSync(join(operation_dir, "apps/file-preview-value.js"), join(operation_dir, "apps/file-preview-value"));
 copyFileSync(join(operation_dir, "apps/browser-result-items.js"), join(operation_dir, "apps/browser-result-items"));
+copyFileSync(join(operation_dir, "apps/browser-session.js"), join(operation_dir, "apps/browser-session"));
 copyFileSync(join(operation_dir, "apps/finder-item-details.js"), join(operation_dir, "apps/finder-item-details"));
 copyFileSync(join(operation_dir, "apps/run-manifest-console.js"), join(operation_dir, "apps/run-manifest-console"));
 copyFileSync(join(operation_dir, "apps/run-manifest-sources.js"), join(operation_dir, "apps/run-manifest-sources"));
@@ -162,6 +163,9 @@ const {
   build_browser_result_items,
 } = await import(pathToFileURL(join(operation_dir, "apps/browser-result-items.js")));
 const {
+  build_browser_session_view,
+} = await import(pathToFileURL(join(operation_dir, "apps/browser-session.js")));
+const {
   finder_file_kind_label,
   finder_preview_lines,
   resolve_finder_selected_item,
@@ -209,6 +213,7 @@ verify_extensionless_workspace_file_opens_code_app(now);
 verify_terminal_result_envelope(now);
 verify_terminal_entries_render_real_command_result(now);
 verify_browser_fallback_builds_search_results(now);
+verify_browser_session_view(now);
 verify_finder_details_reflect_selected_workspace_item(now);
 verify_console_events_use_mac_app_subsystems(now);
 verify_activity_monitor_process_metrics();
@@ -1468,6 +1473,50 @@ function verify_browser_fallback_builds_search_results(now) {
   assert(items[1].url === "https://nexus.example.com/desktop", `markdown link result should preserve URL, got ${items[1].url}`);
   assert(items[2].url.startsWith("nexus-search://"), `plain text result should become a local search row, got ${items[2].url}`);
   assert(items[2].snippet === "Local summary without a URL", `plain text result should preserve snippet, got ${items[2].snippet}`);
+}
+
+function verify_browser_session_view(now) {
+  const base_event = {
+    id: "browser-session",
+    session_key: "session:stage",
+    round_id: "round-browser-session",
+    agent_id: "agent-stage",
+    message_id: "msg-browser-session",
+    kind: "web_research",
+    surface: "web",
+    phase: "done",
+    tool_name: "web_fetch",
+    target: "gomoku.html",
+    updated_at: now,
+  };
+  const srcdoc_view = build_browser_session_view({
+    event: base_event,
+    preview: "<html><body>board</body></html>",
+    query: "gomoku.html",
+    target: "gomoku.html",
+  });
+  assert(srcdoc_view.srcdoc?.includes("board"), "Browser session should preserve inline html preview");
+  assert(srcdoc_view.iframe_url === null, `Inline html should not use iframe URL, got ${srcdoc_view.iframe_url}`);
+  assert(srcdoc_view.display_url === "gomoku.html", `Inline html should show artifact path, got ${srcdoc_view.display_url}`);
+  assert(srcdoc_view.source_label === "内嵌页面", `Inline html source should be embedded page, got ${srcdoc_view.source_label}`);
+
+  const workspace_view = build_browser_session_view({
+    event: base_event,
+    preview: null,
+    query: "gomoku.html",
+    target: "gomoku.html",
+  });
+  assert(workspace_view.iframe_url?.includes("/nexus/v1/agents/agent-stage/workspace/file/raw"), `Workspace html should build raw iframe url, got ${workspace_view.iframe_url}`);
+  assert(workspace_view.source_label === "工作区", `Workspace html source should be workspace, got ${workspace_view.source_label}`);
+
+  const remote_view = build_browser_session_view({
+    event: { ...base_event, phase: "running", target: "https://example.com" },
+    preview: null,
+    query: "https://example.com",
+  });
+  assert(remote_view.iframe_url === "https://example.com", `Remote URL should be iframe URL, got ${remote_view.iframe_url}`);
+  assert(remote_view.source_label === "网页", `Remote URL source should be web, got ${remote_view.source_label}`);
+  assert(remote_view.status.label === "页面运行中", `Running URL should report loading live page, got ${remote_view.status.label}`);
 }
 
 function verify_finder_details_reflect_selected_workspace_item(now) {
