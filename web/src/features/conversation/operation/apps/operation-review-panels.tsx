@@ -1,6 +1,5 @@
 import {
   AlertTriangle,
-  ArrowRight,
   CheckCircle2,
   CircleHelp,
   ClipboardList,
@@ -49,46 +48,50 @@ export function PermissionCheckpointPanel({
   const request_target = event.target ?? rows[0]?.value ?? event.tool_name ?? "pending request";
 
   return (
-    <div className="flex h-full min-h-[320px] min-w-0 max-w-full flex-col overflow-hidden rounded-[15px] border border-[rgba(223,157,46,0.24)] bg-[linear-gradient(180deg,rgba(255,255,255,0.90),rgba(255,248,236,0.78))] shadow-[inset_0_1px_0_rgba(255,255,255,0.84)]">
-      <div className="border-b border-[rgba(223,157,46,0.18)] px-4 py-3">
+    <div className="flex h-full min-h-[320px] min-w-0 max-w-full flex-col overflow-hidden bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(248,250,252,0.88))]">
+      <div className="border-b border-(--divider-subtle-color) px-4 py-3">
         <div className="flex min-w-0 items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[13px] border border-[rgba(223,157,46,0.26)] bg-[rgba(223,157,46,0.13)] text-[color:var(--warning)]">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[13px] bg-[rgba(223,157,46,0.13)] text-[color:var(--warning)]">
               <CircleHelp className="h-5 w-5" />
             </span>
             <div className="min-w-0">
-              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">
-                execution checkpoint
-              </p>
               <h3 className="mt-1 truncate text-[15px] font-black tracking-[-0.03em] text-(--text-strong)">
-                等待用户确认
+                Security & Privacy
               </h3>
               <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-(--text-muted)">
                 {lead}
               </p>
             </div>
           </div>
-          <span className="shrink-0 rounded-full border border-[rgba(223,157,46,0.22)] bg-[rgba(223,157,46,0.12)] px-2.5 py-1 text-[10px] font-black text-[color:var(--warning)]">
+          <span className="shrink-0 rounded-full bg-[rgba(223,157,46,0.12)] px-2.5 py-1 text-[10px] font-black text-[color:var(--warning)]">
             {PHASE_LABELS[event.phase]}
           </span>
         </div>
       </div>
 
-      <div className="grid min-h-0 min-w-0 flex-1 grid-cols-[minmax(0,1.1fr)_minmax(220px,0.9fr)] max-md:grid-cols-1">
-        <section className="soft-scrollbar min-h-0 min-w-0 overflow-auto p-4">
-          <div className="rounded-[13px] border border-[rgba(18,28,42,0.10)] bg-[#20252c] p-3 text-[#e8edf2] shadow-[0_18px_46px_rgba(18,28,42,0.16)]">
-            <div className="mb-3 flex items-center justify-between gap-3 border-b border-white/10 pb-2">
-              <div className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                <span className="h-2.5 w-2.5 rounded-full bg-[#ffbd2e]" />
-                <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-              </div>
-              <span className="truncate font-mono text-[10px] text-[#9ba7b4]">
-                {profile.action_label} · {profile.title}
-              </span>
+      <div className="grid min-h-0 min-w-0 flex-1 grid-cols-[170px_minmax(0,1fr)] max-md:grid-cols-1">
+        <aside className="border-r border-(--divider-subtle-color) bg-white/46 p-2.5 max-md:border-b max-md:border-r-0">
+          {["Privacy", "Automation", "Files", "Network"].map((item, index) => (
+            <div
+              className={cn(
+                "mb-1 rounded-[9px] px-2.5 py-2 text-[11px] font-bold",
+                index === 1 ? "bg-white/82 text-(--text-strong)" : "text-(--text-soft)",
+              )}
+              key={item}
+            >
+              {item}
             </div>
-            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#9ba7b4]">request</p>
-            <pre className="mt-2 max-h-[112px] overflow-hidden whitespace-pre-wrap break-words font-mono text-[12px] leading-5 text-[#f6f8fb]">
+          ))}
+        </aside>
+
+        <section className="soft-scrollbar min-h-0 min-w-0 overflow-auto p-4">
+          <div className="rounded-[14px] border border-(--divider-subtle-color) bg-white/76 p-4">
+            <p className="text-[13px] font-black text-(--text-strong)">{profile.title}</p>
+            <p className="mt-1 text-[11px] leading-5 text-(--text-muted)">
+              Nexus wants to continue this tool call. Review the request before allowing the desktop session to proceed.
+            </p>
+            <pre className="mt-3 max-h-[128px] overflow-auto whitespace-pre-wrap break-words rounded-[10px] bg-[rgba(18,28,42,0.05)] px-3 py-2 font-mono text-[11px] leading-5 text-(--text-strong)">
               {request_target}
             </pre>
           </div>
@@ -109,23 +112,7 @@ export function PermissionCheckpointPanel({
             ))}
           </div>
 
-          <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-stretch gap-2 text-[10px] max-sm:grid-cols-1">
-            <div className="rounded-[11px] border border-[rgba(223,157,46,0.18)] bg-white/62 px-2.5 py-2">
-              <p className="font-black text-(--text-strong)">当前暂停</p>
-              <p className="mt-1 text-(--text-muted)">工具调用已保留现场</p>
-            </div>
-            <div className="flex items-center justify-center text-(--text-soft) max-sm:hidden">
-              <ArrowRight className="h-4 w-4" />
-            </div>
-            <div className="rounded-[11px] border border-[rgba(47,184,132,0.18)] bg-white/62 px-2.5 py-2">
-              <p className="font-black text-(--text-strong)">确认后继续</p>
-              <p className="mt-1 text-(--text-muted)">返回现场并接续执行</p>
-            </div>
-          </div>
-        </section>
-
-        <aside className="soft-scrollbar min-h-0 overflow-auto border-l border-[rgba(223,157,46,0.16)] bg-white/45 p-4 max-md:max-h-[300px] max-md:border-l-0 max-md:border-t">
-          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">request payload</p>
+          <p className="mt-4 text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">request payload</p>
           <div className="mt-2 space-y-1.5">
             {rows.length ? rows.map((row) => (
               <div className="rounded-[10px] border border-white/62 bg-white/70 px-2.5 py-2 text-[10px]" key={row.key}>
@@ -163,7 +150,7 @@ export function PermissionCheckpointPanel({
               );
             })}
           </div>
-        </aside>
+        </section>
       </div>
     </div>
   );

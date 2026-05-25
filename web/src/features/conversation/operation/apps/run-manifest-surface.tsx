@@ -1,11 +1,7 @@
 import {
   AlertTriangle,
-  ArrowRight,
   CheckCircle2,
-  ClipboardList,
-  Terminal,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -53,114 +49,34 @@ export function RunManifestSurface({
   const completed_count = events.filter((item) => item.phase === "done").length;
   const duration = format_manifest_duration(events);
   const result_text = extract_manifest_result_text(event);
-  const status_label = event.phase === "error"
-    ? "需要回看"
-    : event.phase === "cancelled"
-      ? "已中断"
-      : "已归档";
 
   return (
-    <div className="grid h-full min-h-[330px] min-w-0 grid-cols-[minmax(220px,0.38fr)_minmax(0,1fr)] gap-3 max-md:grid-cols-1">
-      <section className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[14px] border border-[rgba(47,184,132,0.20)] bg-[rgba(255,255,255,0.70)] shadow-[inset_0_1px_0_rgba(255,255,255,0.58)]">
-        <div className="border-b border-white/54 px-3 py-3">
-          <div className="flex min-w-0 items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-2">
-              <span className={cn(
-                "grid h-8 w-8 shrink-0 place-items-center rounded-[11px] border",
-                failed_count
-                  ? "border-[rgba(223,93,98,0.24)] bg-[rgba(223,93,98,0.10)] text-[color:var(--destructive)]"
-                  : "border-[rgba(47,184,132,0.24)] bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]",
-              )}>
-                {failed_count ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-              </span>
-              <div className="min-w-0">
-                <p className="truncate text-[13px] font-black text-(--text-strong)">执行清单</p>
-                <p className="truncate text-[10.5px] text-(--text-soft)">run-manifest.md</p>
-              </div>
-            </div>
-            <span className={cn(
-              "shrink-0 rounded-full border px-2 py-1 text-[9px] font-black",
-              failed_count
-                ? "border-[rgba(223,93,98,0.22)] bg-[rgba(223,93,98,0.09)] text-[color:var(--destructive)]"
-                : "border-[rgba(47,184,132,0.22)] bg-[rgba(47,184,132,0.09)] text-[color:var(--success)]",
-            )}>
-              {status_label}
-            </span>
+    <div className="flex h-full min-h-[330px] min-w-0 overflow-hidden bg-[#f6f8fb] text-(--text-default) max-md:flex-col">
+      <aside className="soft-scrollbar flex w-[210px] shrink-0 flex-col overflow-auto border-r border-(--divider-subtle-color) bg-white/58 p-2.5 max-md:w-full max-md:border-b max-md:border-r-0">
+        <div className="mb-2 flex items-center gap-2 px-1.5 py-1">
+          <span className={cn(
+            "grid h-7 w-7 shrink-0 place-items-center rounded-[9px]",
+            failed_count ? "bg-[rgba(223,93,98,0.10)] text-[color:var(--destructive)]" : "bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]",
+          )}>
+            {failed_count ? <AlertTriangle className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-[11px] font-black text-(--text-strong)">Run Console</p>
+            <p className="truncate text-[9.5px] text-(--text-soft)">round {event.round_id}</p>
           </div>
-          <p className="mt-2 line-clamp-2 text-[11px] leading-5 text-(--text-muted)">
-            {result_text || event.summary || event.target || "本轮执行已归档为可回看的工作现场。"}
-          </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-1.5 border-b border-white/52 p-2 text-[10px]">
-          <ManifestMetric label="步骤" value={events.length} />
-          <ManifestMetric label="完成" value={`${completed_count}/${events.length}`} />
-          <ManifestMetric label="产物" value={artifacts.length} />
-          <ManifestMetric label="耗时" value={duration} />
+        <ManifestActionMap events={events} />
+
+        <div className="mt-2 space-y-1 rounded-[10px] bg-white/58 p-1.5 text-[10px]">
+          <ManifestSidebarRow label="Events" value={events.length} />
+          <ManifestSidebarRow label="Done" value={`${completed_count}/${events.length}`} />
+          <ManifestSidebarRow label="Commands" value={terminal_events.length} />
+          <ManifestSidebarRow label="Duration" value={duration} />
         </div>
 
-        <div className="soft-scrollbar min-h-0 flex-1 overflow-auto p-3">
-          <ManifestActionMap events={events} />
-
-          {handoff_summary ? (
-            <section className={cn(
-              "mb-3 overflow-hidden rounded-[13px] border p-2.5",
-              failed_count
-                ? "border-[rgba(223,157,46,0.22)] bg-[rgba(223,157,46,0.08)]"
-                : "border-[rgba(91,114,255,0.18)] bg-[rgba(91,114,255,0.07)]",
-            )}>
-              <div className="flex min-w-0 items-start gap-2">
-                <span className={cn(
-                  "grid h-7 w-7 shrink-0 place-items-center rounded-[10px] border",
-                  failed_count
-                    ? "border-[rgba(223,157,46,0.24)] bg-[rgba(223,157,46,0.10)] text-[color:var(--warning)]"
-                    : "border-[rgba(91,114,255,0.22)] bg-[rgba(91,114,255,0.10)] text-[color:var(--primary)]",
-                )}>
-                  {failed_count ? <AlertTriangle className="h-3.5 w-3.5" /> : <ArrowRight className="h-3.5 w-3.5" />}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex min-w-0 items-center justify-between gap-2">
-                    <p className="truncate text-[10.5px] font-black uppercase tracking-[0.08em] text-(--text-strong)">
-                      {handoff_summary.status_label}
-                    </p>
-                    <span className="shrink-0 rounded-full bg-white/58 px-1.5 py-px text-[8.5px] font-bold text-(--text-soft)">
-                      交接
-                    </span>
-                  </div>
-                  <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-(--text-muted)">
-                    {handoff_summary.status_detail}
-                  </p>
-                  <p className="mt-2 rounded-[9px] border border-white/46 bg-white/40 px-2 py-1.5 text-[10px] font-semibold leading-4 text-(--text-strong)">
-                    {handoff_summary.resume_prompt}
-                  </p>
-                </div>
-              </div>
-              <div className="mt-2 grid grid-cols-4 gap-1.5 max-sm:grid-cols-2">
-                {handoff_summary.checkpoints.map((checkpoint) => (
-                  <div
-                    className={cn(
-                      "min-w-0 rounded-[9px] border px-1.5 py-1.5",
-                      checkpoint.tone === "warning"
-                        ? "border-[rgba(223,157,46,0.18)] bg-[rgba(223,157,46,0.08)]"
-                        : checkpoint.tone === "success"
-                          ? "border-[rgba(47,184,132,0.17)] bg-[rgba(47,184,132,0.08)]"
-                          : "border-white/44 bg-white/34",
-                    )}
-                    key={checkpoint.label}
-                  >
-                    <p className="truncate text-[8.5px] font-bold text-(--text-soft)">{checkpoint.label}</p>
-                    <p className="mt-0.5 truncate text-[10px] font-black text-(--text-strong)">{checkpoint.value}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          ) : null}
-
-          <div className="mb-2 flex items-center justify-between text-[10px] font-black uppercase tracking-[0.12em] text-(--text-soft)">
-            <span>交付物</span>
-            <span>{artifacts.length}</span>
-          </div>
-          <div className="space-y-1.5">
+        <div className="mt-3 px-1 text-[9px] font-black uppercase tracking-[0.12em] text-(--text-soft)">Artifacts</div>
+        <div className="mt-1.5 space-y-1.5">
             {(artifacts.length ? artifacts : [{
               id: "context-only",
               label: "上下文记录",
@@ -188,19 +104,18 @@ export function RunManifestSurface({
                 </div>
               );
             })}
-          </div>
         </div>
-      </section>
+      </aside>
 
-      <section className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-[14px] border border-(--divider-subtle-color) bg-white/72">
-        <div className="flex min-w-0 items-center justify-between gap-3 border-b border-(--divider-subtle-color) px-3 py-2.5">
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-white/74">
+        <div className="flex min-w-0 items-center justify-between gap-3 border-b border-(--divider-subtle-color) bg-white/70 px-3 py-2.5">
           <div className="min-w-0">
-            <p className="truncate text-[12px] font-black text-(--text-strong)">执行回放</p>
-            <p className="truncate text-[10px] text-(--text-soft)">工具调用、证据和结果按时间沉淀</p>
+            <p className="truncate text-[12px] font-black text-(--text-strong)">All Messages</p>
+            <p className="truncate text-[10px] text-(--text-soft)">
+              {result_text || event.summary || handoff_summary?.resume_prompt || "Execution log retained for replay."}
+            </p>
           </div>
-          <span className="shrink-0 rounded-full bg-white/62 px-2 py-1 text-[9.5px] font-bold text-(--text-soft)">
-            round {event.round_id}
-          </span>
+          <span className="shrink-0 font-mono text-[10px] text-(--text-soft)">{PHASE_LABEL[event.phase]}</span>
         </div>
         <div className="soft-scrollbar min-h-0 flex-1 overflow-auto p-3">
           <div className="space-y-2">
@@ -268,17 +183,9 @@ export function RunManifestSurface({
           </div>
         </div>
 
-        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2 border-t border-(--divider-subtle-color) bg-white/48 p-2 max-sm:grid-cols-1">
-          <ManifestFooterPanel
-            Icon={Terminal}
-            label="终端"
-            value={terminal_events.length ? `${terminal_events.length} 条命令` : "无命令"}
-          />
-          <ManifestFooterPanel
-            Icon={ClipboardList}
-            label="证据"
-            value={evidence.length ? `${evidence.length} 条证据` : "窗口状态"}
-          />
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-(--divider-subtle-color) bg-white/62 px-3 py-2 text-[10px] text-(--text-soft)">
+          <span className="truncate">{handoff_summary?.status_detail ?? `${evidence.length} evidence records`}</span>
+          <span className="shrink-0 font-mono">{events.length} events</span>
         </div>
       </section>
     </div>
@@ -302,18 +209,18 @@ function ManifestActionMap({ events }: { events: NexusOperationEvent[] }) {
   }
 
   return (
-    <section className="mb-3 rounded-[13px] border border-white/52 bg-white/34 p-2.5">
-      <div className="mb-2 flex items-center justify-between gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-(--text-soft)">
-        <span>工具类型</span>
+    <section className="rounded-[10px] bg-white/58 p-1.5">
+      <div className="mb-1 flex items-center justify-between gap-2 px-1 text-[9px] font-black uppercase tracking-[0.12em] text-(--text-soft)">
+        <span>Sources</span>
         <span>{groups.length}</span>
       </div>
-      <div className="grid grid-cols-2 gap-1.5">
+      <div className="space-y-1">
         {groups.map((group) => {
           const Icon = ACTION_ICON[group.action];
           return (
             <div
               className={cn(
-                "min-w-0 rounded-[10px] border px-2 py-1.5",
+                "min-w-0 rounded-[8px] border px-2 py-1.5",
                 ACTION_TONE_CLASS[group.action],
               )}
               key={group.action}
@@ -326,7 +233,6 @@ function ManifestActionMap({ events }: { events: NexusOperationEvent[] }) {
                 </span>
                 <span className="shrink-0 text-[10px] font-black">{group.count}</span>
               </div>
-              <p className="mt-0.5 truncate text-[8.5px] font-semibold opacity-75">{group.title}</p>
             </div>
           );
         })}
@@ -361,33 +267,11 @@ function collect_manifest_action_groups(events: NexusOperationEvent[]) {
   return [...groups.values()].sort((left, right) => right.count - left.count || left.label.localeCompare(right.label));
 }
 
-function ManifestMetric({ label, value }: { label: string; value: string | number }) {
+function ManifestSidebarRow({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="min-w-0 rounded-[10px] border border-white/48 bg-white/42 px-2 py-1.5">
-      <p className="truncate text-[9px] font-bold uppercase tracking-[0.1em] text-(--text-soft)">{label}</p>
-      <p className="mt-0.5 truncate text-[12px] font-black text-(--text-strong)">{value}</p>
-    </div>
-  );
-}
-
-function ManifestFooterPanel({
-  Icon,
-  label,
-  value,
-}: {
-  Icon: LucideIcon;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex min-w-0 items-center gap-2 rounded-[11px] border border-white/50 bg-white/42 px-2.5 py-2">
-      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[10px] bg-white/62 text-(--icon-muted)">
-        <Icon className="h-3.5 w-3.5" />
-      </span>
-      <span className="min-w-0">
-        <span className="block truncate text-[10px] font-black text-(--text-strong)">{label}</span>
-        <span className="block truncate text-[9.5px] text-(--text-soft)">{value}</span>
-      </span>
+    <div className="flex min-w-0 items-center justify-between gap-2 rounded-[8px] px-2 py-1.5">
+      <span className="truncate font-semibold text-(--text-soft)">{label}</span>
+      <span className="shrink-0 font-mono font-black text-(--text-strong)">{value}</span>
     </div>
   );
 }
