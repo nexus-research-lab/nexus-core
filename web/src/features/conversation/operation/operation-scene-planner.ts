@@ -1,7 +1,6 @@
 import type {
   NexusOperationEvent,
   NexusOperationSnapshot,
-  OperationEvidence,
 } from "./operation-types";
 import type {
   OperationDesktopState,
@@ -106,6 +105,7 @@ function build_windows(
   const terminal_events = round_events.filter((item) => item.surface === "terminal");
   const web_events = round_events.filter((item) => item.surface === "web");
   const task_events = round_events.filter((item) => item.surface === "task");
+  const tool_activity_events = round_events.filter(is_desktop_tool_activity_event);
   const file_context = collect_operation_file_context(event, snapshot, round_events);
   const html_artifact = find_operation_html_artifact(snapshot, round_events);
   const focus_target = resolve_focus_target(event, {
@@ -117,10 +117,19 @@ function build_windows(
   });
   const windows: StageWindowState[] = [];
 
+  if (event.surface === "conversation" && tool_activity_events.length === 0) {
+    return [];
+  }
+
   if (
-    file_context.workspace_items.length > 0 ||
-    file_context.file_documents.length > 0 ||
-    file_context.latest_file_target
+    should_open_finder_window(event, {
+      file_document_count: file_context.file_documents.length,
+      workspace_item_count: file_context.workspace_items.length,
+    }) && (
+      file_context.workspace_items.length > 0 ||
+      file_context.file_documents.length > 0 ||
+      file_context.latest_file_target
+    )
   ) {
     windows.push(window_state(file_context.latest_file_event ?? event, snapshot, {
       id: "finder",
@@ -182,7 +191,7 @@ function build_windows(
     }));
   }
 
-  if (web_events.length > 0 || html_artifact) {
+  if (web_events.length > 0 || should_open_html_browser_window(event, html_artifact)) {
     const web_event = web_events.at(-1) ?? event;
     const query = html_artifact
       ? basename(html_artifact.path)
@@ -259,21 +268,6 @@ function build_windows(
         target: "permission-checkpoint.md",
       },
     }));
-  } else if (event.surface === "conversation" && event.phase === "running") {
-    windows.push(window_state(event, snapshot, {
-      id: "runtime-handoff",
-      kind: "runtime_handoff",
-      title: event.title,
-      layout: "primary",
-      phase: focus_target === "summary" ? "focused" : "background",
-      z: focus_target === "summary" ? 36 : 18,
-      payload: {
-        preview: event.input_preview ?? event.summary ?? event.target,
-        related_events: round_events,
-        summary: event.summary,
-        target: "runtime-handoff.md",
-      },
-    }));
   } else if (event.surface === "summary" || event.surface === "fallback" || event.surface === "conversation") {
     if (event.kind === "round_summary" || event.phase === "done" || event.phase === "error" || event.phase === "cancelled") {
       windows.push(window_state(event, snapshot, {
@@ -296,41 +290,6 @@ function build_windows(
         },
       }));
     }
-    windows.push(window_state(event, snapshot, {
-      id: "summary",
-      kind: "summary",
-      title: event.title,
-      layout: "artifact",
-      phase: focus_target === "summary" ? "focused" : "background",
-      z: focus_target === "summary" ? 36 : 12,
-      payload: {
-        preview: event.result_preview ?? event.summary ?? event.target,
-        related_events: round_events,
-        summary: event.summary,
-        target: "run-summary.md",
-      },
-    }));
-  }
-
-  if (event.phase !== "waiting") {
-    windows.push(evidence_window(event, snapshot, 16));
-  }
-
-  if (windows.length === 1) {
-    windows.unshift(window_state(event, snapshot, {
-      id: "summary",
-      kind: "summary",
-      title: event.title,
-      layout: "primary",
-      phase: "focused",
-      z: 30,
-      payload: {
-        preview: event.result_preview ?? event.input_preview ?? event.summary ?? event.target,
-        related_events: round_events,
-        summary: event.summary,
-        target: "operation.md",
-      },
-    }));
   }
 
   return windows;
@@ -399,35 +358,48 @@ function normalize_stage_window_target(
   return fallback_stage_event_target_label(event);
 }
 
-function evidence_window(
-  event: NexusOperationEvent,
-  snapshot: NexusOperationSnapshot | null,
-  z: number,
-): StageWindowState {
-  const evidence: OperationEvidence[] = [
-    ...(event.evidence ?? []),
-    ...(snapshot?.recent_evidence ?? []),
-  ].slice(0, 5);
-  return window_state(event, snapshot, {
-    id: "evidence",
-    kind: event.phase === "waiting" ? "permission_wait" : "evidence",
-    title: event.phase === "waiting" ? "Security Prompt" : "Diagnostics",
-    layout: "inspector",
-    phase: event.phase === "done" ? "minimized" : "background",
-    z,
-    payload: {
-      evidence,
-      summary: event.summary,
-    },
-  });
-}
-
 function build_handoff_summary(
   event: NexusOperationEvent,
   events: NexusOperationEvent[],
   snapshot: NexusOperationSnapshot | null,
 ): StageHandoffSummary {
   return build_operation_continuation_brief(event, events, snapshot);
+}
+
+function should_open_finder_window(
+  event: NexusOperationEvent,
+  context: {
+    file_document_count: number;
+    workspace_item_count: number;
+  },
+): boolean {
+  if (event.surface === "workspace") {
+    return event.kind === "workspace_inspect" || event.kind === "workspace_search" || context.file_document_count === 0;
+  }
+  if (event.kind === "round_summary" || event.surface === "summary") {
+    return context.workspace_item_count > 0;
+  }
+  return false;
+}
+
+function should_open_html_browser_window(
+  event: NexusOperationEvent,
+  html_artifact: ReturnType<typeof find_operation_html_artifact>,
+): boolean {
+  if (!html_artifact) {
+    return false;
+  }
+  return event.surface === "web"
+    || event.surface === "terminal"
+    || event.surface === "summary"
+    || event.kind === "round_summary";
+}
+
+function is_desktop_tool_activity_event(event: NexusOperationEvent): boolean {
+  return event.surface !== "conversation"
+    && event.surface !== "summary"
+    && event.surface !== "fallback"
+    && event.kind !== "round_summary";
 }
 
 function resolve_focus_target(
@@ -492,7 +464,7 @@ function preferred_window_kind_for_event(event: NexusOperationEvent): StageWindo
     return ["task_board"];
   }
   if (event.surface === "conversation") {
-    return ["runtime_handoff"];
+    return ["terminal", "finder", "browser"];
   }
   if (event.surface === "summary" || event.kind === "round_summary") {
     return ["run_manifest", "summary"];

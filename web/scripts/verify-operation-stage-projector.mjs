@@ -120,7 +120,6 @@ function verify_desktop_window_kind_contract() {
     "pdf_reader",
     "permission_wait",
     "run_manifest",
-    "runtime_handoff",
     "spreadsheet",
     "task_board",
     "terminal",
@@ -129,7 +128,7 @@ function verify_desktop_window_kind_contract() {
   for (const kind of expected_desktop_apps) {
     assert(is_stage_desktop_window_kind(kind), `${kind} should be rendered as a desktop app window`);
   }
-  for (const kind of ["evidence", "summary"]) {
+  for (const kind of ["evidence", "runtime_handoff", "summary"]) {
     assert(!is_stage_desktop_window_kind(kind), `${kind} should not render as a standalone desktop app window`);
   }
   for (const kind of expected_desktop_apps.filter((kind) => kind !== "permission_wait")) {
@@ -935,8 +934,8 @@ function verify_live_round_placeholder(now) {
     event: snapshot.active_event,
     snapshot,
   });
-  assert(desktop.active_window_id?.includes(":runtime-handoff"), `live round should focus runtime handoff window, got ${desktop.active_window_id}`);
-  assert(desktop.windows.some((window) => window.kind === "runtime_handoff"), "live round should render a runtime handoff window");
+  assert(desktop.active_window_id === null, `live round should keep the desktop idle before tools, got ${desktop.active_window_id}`);
+  assert(desktop.windows.length === 0, `live round should not open app windows before tools, got ${desktop.windows.length}`);
   assert(!desktop.windows.some((window) => window.kind === "summary"), "live round should not reuse summary window before tools exist");
 }
 
