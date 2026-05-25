@@ -11,13 +11,12 @@ import {
 import { cn } from "@/lib/utils";
 
 import type { StageWindowState } from "../operation-desktop-types";
-import { basename } from "../operation-scene-planner-helpers";
 import {
   icon_for_artifact_path,
-  icon_for_window_kind,
   stage_app_label_for_window_kind,
 } from "./operation-stage-window-meta";
 import { stage_menu_items_for_window_kind } from "./operation-stage-app-identity";
+import { build_stage_desktop_icon_items } from "./operation-stage-desktop-icons";
 import { build_stage_menu_status } from "./operation-stage-menu-model";
 import {
   agent_cursor_action_label,
@@ -87,9 +86,7 @@ export function StageDesktopIcons({
   on_restore: (window_id: string) => void;
   windows: StageWindowState[];
 }) {
-  const desktop_items = windows
-    .filter(is_desktop_artifact_window)
-    .slice(0, 5);
+  const desktop_items = build_stage_desktop_icon_items(windows);
 
   if (!desktop_items.length) {
     return null;
@@ -98,43 +95,39 @@ export function StageDesktopIcons({
   return (
     <div className="absolute right-6 top-16 z-10 hidden grid-cols-1 gap-4 md:grid">
       {desktop_items.map((window) => {
-        const target = window.target ?? window.payload.target ?? "";
-        const Icon = icon_for_artifact_path(target);
-        const display_name = desktop_icon_label(window);
-        const file_kind_label = desktop_file_kind_label(window);
-        const state_label = desktop_file_state_label(window);
+        const Icon = icon_for_artifact_path(window.target);
         return (
           <button
-            aria-label={`打开文件：${display_name}`}
+            aria-label={window.aria_label}
             className="group flex w-[92px] flex-col items-center gap-1.5 text-center outline-none"
-            key={window.id}
-            onClick={() => on_restore(window.id)}
-            title={`${display_name} · ${file_kind_label} · ${state_label}`}
+            key={window.window.id}
+            onClick={() => on_restore(window.window.id)}
+            title={window.title}
             type="button"
           >
             <div className={cn(
               "relative grid h-12 w-12 place-items-center rounded-[15px] border border-white/62 bg-white/48 text-(--icon-default) shadow-[0_12px_30px_rgba(18,28,42,0.09)] backdrop-blur-xl transition group-hover:-translate-y-0.5 group-hover:bg-white/70 group-focus-visible:ring-2 group-focus-visible:ring-[rgba(91,114,255,0.38)]",
-              window.phase === "focused" && "bg-[rgba(91,114,255,0.14)] text-[color:var(--primary)]",
-              window.phase === "minimized" && "opacity-78",
-              window.phase === "closed" && "opacity-62 grayscale-[0.22]",
+              window.window.phase === "focused" && "bg-[rgba(91,114,255,0.14)] text-[color:var(--primary)]",
+              window.window.phase === "minimized" && "opacity-78",
+              window.window.phase === "closed" && "opacity-62 grayscale-[0.22]",
             )}>
               <Icon className="h-5 w-5" />
               <span className={cn(
                 "absolute -bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full border border-white/72",
-                window.phase === "closed"
+                window.window.phase === "closed"
                   ? "bg-[rgba(117,131,149,0.55)]"
-                  : window.phase === "minimized"
+                  : window.window.phase === "minimized"
                     ? "bg-[rgba(223,157,46,0.82)]"
                     : "bg-[rgba(47,184,132,0.72)]",
               )} />
             </div>
             <p className="line-clamp-2 rounded-[6px] px-1 text-[10px] font-semibold leading-4 text-(--text-strong) group-hover:bg-white/48">
-              {display_name}
+              {window.label}
             </p>
             <span className="text-[9px] font-semibold leading-none text-(--text-soft) opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
-              {file_kind_label}
+              {window.file_kind_label}
             </span>
-            <span className="sr-only">{state_label}</span>
+            <span className="sr-only">{window.state_label}</span>
           </button>
         );
       })}
@@ -169,60 +162,4 @@ export function StageAgentCursor({
       </div>
     </div>
   );
-}
-
-function is_desktop_artifact_window(window: StageWindowState): boolean {
-  const target = window.target ?? window.payload.target;
-  if (!target || basename(target) === "preview") {
-    return false;
-  }
-  return (
-    window.kind === "code_editor" ||
-    window.kind === "markdown_reader" ||
-    window.kind === "word_reader" ||
-    window.kind === "pdf_reader" ||
-    window.kind === "spreadsheet" ||
-    window.kind === "image_viewer"
-  );
-}
-
-function desktop_icon_label(window: StageWindowState): string {
-  const target_label = basename(window.target ?? window.payload.target);
-  if (target_label && target_label !== "preview") {
-    return target_label;
-  }
-  return window.title;
-}
-
-function desktop_file_kind_label(window: StageWindowState): string {
-  const target = window.target ?? window.payload.target ?? "";
-  if (/\.(html?|tsx?|jsx?|css|json|ya?ml|toml)$/i.test(target)) {
-    return "代码文件";
-  }
-  if (/\.(md|mdx|txt)$/i.test(target)) {
-    return "文稿";
-  }
-  if (/\.(png|jpe?g|webp|gif|svg)$/i.test(target)) {
-    return "图像";
-  }
-  if (/\.(csv|xlsx?|ods)$/i.test(target)) {
-    return "表格";
-  }
-  if (/\.pdf$/i.test(target)) {
-    return "PDF";
-  }
-  return "文件";
-}
-
-function desktop_file_state_label(window: StageWindowState): string {
-  if (window.phase === "closed") {
-    return "窗口已关闭";
-  }
-  if (window.phase === "minimized") {
-    return "窗口已最小化";
-  }
-  if (window.phase === "focused") {
-    return "正在前台查看";
-  }
-  return "窗口已打开";
 }

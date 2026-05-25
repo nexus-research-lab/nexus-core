@@ -70,6 +70,7 @@ copyFileSync(join(operation_dir, "stage/operation-stage-window-focus.js"), join(
 copyFileSync(join(operation_dir, "stage/operation-stage-keyboard-target.js"), join(operation_dir, "stage/operation-stage-keyboard-target"));
 copyFileSync(join(operation_dir, "stage/operation-stage-menu-model.js"), join(operation_dir, "stage/operation-stage-menu-model"));
 copyFileSync(join(operation_dir, "stage/operation-stage-window-titlebar.js"), join(operation_dir, "stage/operation-stage-window-titlebar"));
+copyFileSync(join(operation_dir, "stage/operation-stage-desktop-icons.js"), join(operation_dir, "stage/operation-stage-desktop-icons"));
 mkdirSync(join(operation_dir, "apps"), { recursive: true });
 copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
 copyFileSync(join(operation_dir, "apps/operation-app-surface-policy.js"), join(operation_dir, "apps/operation-app-surface-policy"));
@@ -138,6 +139,9 @@ const {
   build_stage_window_titlebar_state,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-window-titlebar.js")));
 const {
+  build_stage_desktop_icon_items,
+} = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-desktop-icons.js")));
+const {
   build_terminal_entries,
 } = await import(pathToFileURL(join(operation_dir, "apps/terminal-session-model.js")));
 const {
@@ -182,6 +186,7 @@ verify_window_focus_moves_to_next_visible_window();
 verify_desktop_keyboard_target_policy();
 verify_stage_menu_status_tracks_desktop_windows();
 verify_stage_window_titlebar_state();
+verify_stage_desktop_icon_items();
 verify_stage_experience_state_machine(now);
 verify_live_episode_narrates_running_round(now);
 verify_api_retry_runtime_projection(now);
@@ -572,10 +577,30 @@ function verify_stage_window_titlebar_state() {
   assert(minimized.status_label === "已最小化", `Minimized titlebar should report minimized status, got ${minimized.status_label}`);
 }
 
+function verify_stage_desktop_icon_items() {
+  const windows = [
+    mock_stage_window({ id: "html", kind: "code_editor", phase: "focused", target: "/workspace/gomoku.html" }),
+    mock_stage_window({ id: "md", kind: "markdown_reader", phase: "minimized", target: "/workspace/notes.md" }),
+    mock_stage_window({ id: "terminal", kind: "terminal", phase: "focused", target: "pnpm dev" }),
+    mock_stage_window({ id: "preview", kind: "code_editor", phase: "background", target: "preview" }),
+    mock_stage_window({ id: "png", kind: "image_viewer", phase: "closed", target: "/workspace/screen.png" }),
+  ];
+  const icons = build_stage_desktop_icon_items(windows);
+  assert(icons.length === 3, `Desktop should expose only artifact file windows, got ${icons.length}`);
+  assert(icons[0].label === "gomoku.html", `Desktop icon should use basename label, got ${icons[0].label}`);
+  assert(icons[0].file_kind_label === "代码文件", `Desktop html icon should be code file, got ${icons[0].file_kind_label}`);
+  assert(icons[0].aria_label === "查看文件窗口：gomoku.html", `Focused desktop icon should be a view action, got ${icons[0].aria_label}`);
+  assert(icons[1].state_label === "窗口已最小化", `Minimized desktop icon should expose minimized state, got ${icons[1].state_label}`);
+  assert(icons[1].aria_label === "恢复文件窗口：notes.md", `Minimized desktop icon should be a restore action, got ${icons[1].aria_label}`);
+  assert(icons[2].file_kind_label === "图像", `Image desktop icon should expose image kind, got ${icons[2].file_kind_label}`);
+  assert(!icons.some((item) => item.label === "preview"), "Desktop should not render synthetic preview artifact icons");
+}
+
 function mock_stage_window({
   id,
   kind,
   phase,
+  target = id,
   z = 1,
 }) {
   return {
@@ -597,6 +622,7 @@ function mock_stage_window({
       snapshot: null,
     },
     phase,
+    target,
     title: id,
     z,
   };
