@@ -64,6 +64,7 @@ copyFileSync(join(operation_dir, "stage/operation-stage-window-actions.js"), joi
 copyFileSync(join(operation_dir, "stage/operation-stage-agent-cursor.js"), join(operation_dir, "stage/operation-stage-agent-cursor"));
 copyFileSync(join(operation_dir, "stage/operation-stage-window-reveal.js"), join(operation_dir, "stage/operation-stage-window-reveal"));
 copyFileSync(join(operation_dir, "stage/operation-stage-hidden-windows.js"), join(operation_dir, "stage/operation-stage-hidden-windows"));
+copyFileSync(join(operation_dir, "stage/operation-stage-app-identity.js"), join(operation_dir, "stage/operation-stage-app-identity"));
 mkdirSync(join(operation_dir, "apps"), { recursive: true });
 copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
 copyFileSync(join(operation_dir, "apps/operation-app-surface-policy.js"), join(operation_dir, "apps/operation-app-surface-policy"));
@@ -112,6 +113,10 @@ const {
   summarize_hidden_stage_windows,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-hidden-windows.js")));
 const {
+  dock_icon_skin_for_kind,
+  stage_menu_items_for_window_kind,
+} = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-app-identity.js")));
+const {
   build_terminal_entries,
 } = await import(pathToFileURL(join(operation_dir, "apps/terminal-session-model.js")));
 const {
@@ -147,6 +152,7 @@ verify_initial_window_reveal_avoids_desktop_clutter_flash();
 verify_hidden_stage_uses_desktop_state_instead_of_mission_control();
 verify_unclassified_tool_activity_opens_nexus_app_window(now);
 verify_generic_tool_uses_nexus_tool_surface();
+verify_nexus_tool_app_has_own_desktop_identity();
 verify_stage_experience_state_machine(now);
 verify_live_episode_narrates_running_round(now);
 verify_api_retry_runtime_projection(now);
@@ -350,6 +356,15 @@ function verify_generic_tool_uses_nexus_tool_surface() {
   assert(app_surface_for_window_kind("generic_tool") === "nexus_tool", "Generic tool windows should render as the Nexus tool app");
   assert(app_surface_for_window_kind("code_editor") === "document", "Code windows should keep document preview rendering");
   assert(app_surface_for_window_kind("browser") === "specialized", "Browser windows should keep specialized app rendering");
+}
+
+function verify_nexus_tool_app_has_own_desktop_identity() {
+  const nexus_menu = stage_menu_items_for_window_kind("generic_tool");
+  assert(nexus_menu.includes("工具"), `Nexus tool app menu should expose tool actions, got ${nexus_menu.join(",")}`);
+  assert(!nexus_menu.includes("终端"), `Nexus tool app menu should not reuse Code terminal menus, got ${nexus_menu.join(",")}`);
+  const nexus_skin = dock_icon_skin_for_kind("generic_tool");
+  assert(nexus_skin.includes("91,114,255"), `Nexus tool Dock skin should use the Nexus app identity, got ${nexus_skin}`);
+  assert(dock_icon_skin_for_kind("code_editor") !== nexus_skin, "Nexus tool Dock skin should differ from Code");
 }
 
 function mock_stage_window({

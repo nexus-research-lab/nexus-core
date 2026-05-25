@@ -13,6 +13,7 @@ import {
   ListTree,
   Search,
   ShieldQuestion,
+  Sparkles,
   Terminal,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -95,6 +96,9 @@ export function icon_for_window_kind(kind: StageWindowKind): LucideIcon {
   }
   if (kind === "code_editor") {
     return FileCode2;
+  }
+  if (kind === "generic_tool") {
+    return Sparkles;
   }
   return FileText;
 }
