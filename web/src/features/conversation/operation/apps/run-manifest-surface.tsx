@@ -136,7 +136,14 @@ export function RunManifestSurface({
           </div>
         </div>
         <div className="soft-scrollbar min-h-0 flex-1 overflow-auto p-3">
-          <div className="space-y-2">
+          <div className="overflow-hidden rounded-[12px] border border-(--divider-subtle-color) bg-white/52">
+            <div className="grid grid-cols-[76px_72px_92px_minmax(0,1fr)_72px] gap-2 border-b border-(--divider-subtle-color) bg-white/64 px-3 py-2 text-[9px] font-black uppercase tracking-[0.12em] text-(--text-soft) max-md:grid-cols-[70px_70px_minmax(0,1fr)_64px]">
+              <span>Time</span>
+              <span>Level</span>
+              <span className="max-md:hidden">Subsystem</span>
+              <span>Message</span>
+              <span>Status</span>
+            </div>
             {events.map((item, index) => {
               const profile = resolve_operation_tool_profile(item.tool_name, item.kind, item.surface);
               const Icon = ACTION_ICON[profile.action];
@@ -150,26 +157,37 @@ export function RunManifestSurface({
                 <button
                   aria-label={`查看执行步骤 ${index + 1}：${profile.action_label} ${event_title}`}
                   className={cn(
-                    "grid w-full grid-cols-[28px_minmax(0,1fr)_auto] items-start gap-2 rounded-[12px] border px-2.5 py-2 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.36)]",
-                    can_focus_event && "cursor-pointer hover:-translate-y-0.5 hover:border-[rgba(91,114,255,0.22)] hover:bg-[rgba(91,114,255,0.06)]",
+                    "grid w-full grid-cols-[76px_72px_92px_minmax(0,1fr)_72px] items-center gap-2 border-b border-(--divider-subtle-color) px-3 py-2 text-left transition last:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[rgba(91,114,255,0.36)] max-md:grid-cols-[70px_70px_minmax(0,1fr)_64px]",
+                    can_focus_event && "cursor-pointer hover:bg-[rgba(91,114,255,0.045)]",
                     item.id === event.id
-                      ? "border-[rgba(91,114,255,0.24)] bg-[rgba(91,114,255,0.08)]"
-                      : "border-white/50 bg-white/36",
+                      ? "bg-[rgba(91,114,255,0.08)]"
+                      : "bg-transparent",
                   )}
                   key={item.id}
                   onClick={() => on_focus_event?.(item)}
                   title={`${profile.action_label} · ${event_title}`}
                   type="button"
                 >
-                  <span className={cn(
-                    "grid h-7 w-7 place-items-center rounded-[10px] border",
-                    ACTION_TONE_CLASS[profile.action],
-                  )}>
-                    <Icon className="h-3.5 w-3.5" />
+                  <span className="truncate font-mono text-[10px] text-(--text-soft)">
+                    {format_console_time(item.updated_at)}
                   </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-[11px] font-black text-(--text-strong)">
-                      {String(index + 1).padStart(2, "0")} · {profile.action_label} · {event_title}
+                  <span className={cn(
+                    "inline-flex min-w-0 items-center gap-1.5 rounded-[7px] px-1.5 py-1 text-[9.5px] font-black",
+                    item.phase === "error" || item.phase === "cancelled"
+                      ? "bg-[rgba(223,93,98,0.10)] text-[color:var(--destructive)]"
+                      : item.phase === "done"
+                        ? "bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]"
+                        : "bg-[rgba(91,114,255,0.08)] text-[color:var(--primary)]",
+                  )}>
+                    <Icon className="h-3 w-3 shrink-0" />
+                    <span className="truncate">{console_level_label(item.phase)}</span>
+                  </span>
+                  <span className="truncate text-[10px] font-semibold text-(--text-muted) max-md:hidden">
+                    {profile.action_label}
+                  </span>
+                  <span className="min-w-0 text-[10.5px]">
+                    <span className="block truncate font-black text-(--text-strong)">
+                      {String(index + 1).padStart(2, "0")} {event_title}
                     </span>
                     <span className="mt-0.5 block truncate text-[10px] text-(--text-soft)">
                       {event_target}
@@ -185,14 +203,7 @@ export function RunManifestSurface({
                       </span>
                     ) : null}
                   </span>
-                  <span className={cn(
-                    "shrink-0 rounded-full px-1.5 py-px text-[9px] font-bold",
-                    item.phase === "error" || item.phase === "cancelled"
-                      ? "bg-[rgba(223,93,98,0.10)] text-[color:var(--destructive)]"
-                      : item.phase === "done"
-                        ? "bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]"
-                        : "bg-white/60 text-(--text-soft)",
-                  )}>
+                  <span className="shrink-0 truncate rounded-[7px] bg-white/58 px-1.5 py-1 text-center text-[9px] font-bold text-(--text-soft)">
                     {PHASE_LABEL[item.phase]}
                   </span>
                 </button>
@@ -296,6 +307,27 @@ function collect_manifest_action_groups(events: NexusOperationEvent[]) {
   }
 
   return [...groups.values()].sort((left, right) => right.count - left.count || left.label.localeCompare(right.label));
+}
+
+function console_level_label(phase: NexusOperationEvent["phase"]): string {
+  if (phase === "error" || phase === "cancelled") {
+    return "ERROR";
+  }
+  if (phase === "running") {
+    return "INFO";
+  }
+  if (phase === "waiting" || phase === "queued") {
+    return "NOTICE";
+  }
+  return "DEFAULT";
+}
+
+function format_console_time(timestamp: number): string {
+  return new Intl.DateTimeFormat("zh-CN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(new Date(timestamp < 1_000_000_000_000 ? timestamp * 1000 : timestamp));
 }
 
 function ManifestSidebarRow({ label, value }: { label: string; value: string | number }) {
