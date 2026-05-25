@@ -107,7 +107,11 @@ const open_event: NexusOperationEvent = {
   input_preview: {
     command: "open gomoku.html",
   },
-  result_preview: "gomoku.html opened in browser preview",
+  result_preview: {
+    content: "Opening gomoku.html\nSafari preview launched\n",
+    exit_code: 0,
+    is_error: false,
+  },
   summary: "在本地浏览器窗口打开生成的页面。",
   updated_at: now - 5_000,
 };

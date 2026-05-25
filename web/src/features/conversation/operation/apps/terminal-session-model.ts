@@ -128,9 +128,22 @@ function extract_terminal_streams(value: unknown): { stdout: string[]; stderr: s
   const record = value as Record<string, unknown>;
   const stdout = extract_terminal_text_fields(record, ["stdout", "out"]);
   const stderr = extract_terminal_text_fields(record, ["stderr", "err", "error"]);
-  const other = extract_terminal_text_fields(record, ["output", "text", "content", "result", "message"]);
+  const content_lines = extract_terminal_text_fields(record, ["content"]);
+  const content_is_error = record.is_error === true || record.subtype === "error";
+  const other = extract_terminal_text_fields(record, ["output", "text", "result", "message"]);
   if (stdout.length || stderr.length || other.length) {
-    return { stdout: stdout.slice(0, 24), stderr: stderr.slice(0, 24), other: other.slice(0, 24) };
+    return {
+      stdout: [...stdout, ...(content_is_error ? [] : content_lines)].slice(0, 24),
+      stderr: [...stderr, ...(content_is_error ? content_lines : [])].slice(0, 24),
+      other: other.slice(0, 24),
+    };
+  }
+  if (content_lines.length) {
+    return {
+      stdout: content_is_error ? [] : content_lines.slice(0, 24),
+      stderr: content_is_error ? content_lines.slice(0, 24) : [],
+      other: [],
+    };
   }
   return { stdout: [], stderr: [], other: split_terminal_text(safe_json_stringify(value)).slice(0, 24) };
 }
@@ -161,7 +174,16 @@ function read_exit_code(value: unknown): number | null {
     return null;
   }
   const record = value as Record<string, unknown>;
-  const raw = record.exit_code ?? record.exitCode ?? record.error_code ?? record.errorCode ?? record.code ?? record.status;
+  const raw = record.exit_code
+    ?? record.exitCode
+    ?? record.exit_status
+    ?? record.exitStatus
+    ?? record.return_code
+    ?? record.returnCode
+    ?? record.error_code
+    ?? record.errorCode
+    ?? record.code
+    ?? record.status;
   if (typeof raw === "number") {
     return raw;
   }
@@ -246,7 +268,11 @@ function split_terminal_text(value: string): string[] {
   if (!normalized.trim()) {
     return [];
   }
-  return normalized.split("\n").map((line) => line.trimEnd());
+  const lines = normalized.split("\n").map((line) => line.trimEnd());
+  while (lines.at(-1) === "") {
+    lines.pop();
+  }
+  return lines;
 }
 
 function extract_terminal_input_string(

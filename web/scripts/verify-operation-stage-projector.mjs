@@ -58,6 +58,8 @@ copyFileSync(join(operation_dir, "operation-terminal-lines.js"), join(operation_
 copyFileSync(join(operation_dir, "operation-summary-events.js"), join(operation_dir, "operation-summary-events"));
 mkdirSync(join(operation_dir, "stage"), { recursive: true });
 copyFileSync(join(operation_dir, "stage/operation-stage-window-kinds.js"), join(operation_dir, "stage/operation-stage-window-kinds"));
+mkdirSync(join(operation_dir, "apps"), { recursive: true });
+copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
 
 const { project_operation_snapshot } = await import(pathToFileURL(join(operation_dir, "operation-projector.js")));
 const {
@@ -79,6 +81,9 @@ const {
   is_stage_desktop_window_kind,
   window_content_mode_for_kind,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-window-kinds.js")));
+const {
+  build_terminal_entries,
+} = await import(pathToFileURL(join(operation_dir, "apps/terminal-session-model.js")));
 const now = Date.now();
 
 verify_desktop_window_kind_contract();
@@ -91,6 +96,7 @@ verify_stage_restore_merge_preserves_round_context(now);
 verify_workspace_live_stays_in_tool_round(now);
 verify_multi_file_windows_keep_event_identity(now);
 verify_terminal_result_envelope(now);
+verify_terminal_entries_render_real_command_result(now);
 verify_completed_manifest_keeps_terminal_window_identity(now);
 verify_completed_round_replay_uses_event_slice({
   assert,
@@ -769,6 +775,69 @@ function verify_terminal_result_envelope(now) {
   assert(terminal_event.surface === "terminal", `terminal surface should be terminal, got ${terminal_event.surface}`);
   assert(terminal_event.result_preview?.content === "1\n2\n", "terminal output content should be preserved");
   assert(terminal_event.result_preview?.is_error === false, "terminal success state should be preserved");
+}
+
+function verify_terminal_entries_render_real_command_result(now) {
+  const success_event = {
+    id: "terminal-success",
+    session_key: "session:stage",
+    round_id: "round-terminal",
+    agent_id: "agent-stage",
+    message_id: "msg-terminal",
+    kind: "command_run",
+    surface: "terminal",
+    phase: "done",
+    tool_name: "Bash",
+    target: "printf \"1\\n2\\n\"",
+    input_preview: {
+      command: "printf \"1\\n2\\n\"",
+      cwd: "/Users/berhand/.nexus/workspace/Miles",
+    },
+    result_preview: {
+      content: "1\n2\n",
+      is_error: false,
+      exit_code: 0,
+    },
+    updated_at: now,
+  };
+  const error_event = {
+    ...success_event,
+    id: "terminal-error",
+    phase: "error",
+    target: "cat missing.txt",
+    input_preview: {
+      command: "cat missing.txt",
+      cwd: "/Users/berhand/.nexus/workspace/Miles",
+    },
+    result_preview: {
+      content: "cat: missing.txt: No such file or directory\n",
+      is_error: true,
+      exit_status: 1,
+    },
+  };
+
+  const [success_entry] = build_terminal_entries({
+    command: "",
+    event: success_event,
+    fallback_lines: [],
+    related_events: [],
+  });
+  const [error_entry] = build_terminal_entries({
+    command: "",
+    event: error_event,
+    fallback_lines: [],
+    related_events: [],
+  });
+
+  assert(success_entry.command === "printf \"1\\n2\\n\"", `terminal entry should preserve command, got ${success_entry.command}`);
+  assert(success_entry.stdout.join("\n") === "1\n2", `terminal success content should become stdout, got ${success_entry.stdout.join("\\n")}`);
+  assert(success_entry.stderr.length === 0, `terminal success should not populate stderr, got ${success_entry.stderr.length}`);
+  assert(success_entry.exit_label === "退出 0", `terminal success should show exit 0, got ${success_entry.exit_label}`);
+  assert(success_entry.exit_tone === "success", `terminal success should use success tone, got ${success_entry.exit_tone}`);
+  assert(error_entry.stderr.join("\n").includes("missing.txt"), `terminal error content should become stderr, got ${error_entry.stderr.join("\\n")}`);
+  assert(error_entry.stdout.length === 0, `terminal error should not populate stdout, got ${error_entry.stdout.length}`);
+  assert(error_entry.exit_label === "退出 1", `terminal error should show exit 1, got ${error_entry.exit_label}`);
+  assert(error_entry.exit_tone === "error", `terminal error should use error tone, got ${error_entry.exit_tone}`);
 }
 
 function verify_completed_manifest_keeps_terminal_window_identity(now) {
