@@ -20,7 +20,6 @@ import { ACTION_ICON, ACTION_TONE_CLASS } from "./operation-action-style";
 import { ActivityMonitorSurface } from "./activity-monitor-surface";
 import { BrowserSurface } from "./browser-surface";
 import { DocumentPreview } from "./document-preview-surface";
-import { RuntimeHandoffSurface } from "./runtime-handoff-surface";
 import { OperationReviewPanel, PermissionCheckpointPanel } from "./operation-review-panels";
 import { RunManifestSurface } from "./run-manifest-surface";
 import { TerminalSession } from "./terminal-session";
@@ -88,16 +87,6 @@ export function StageWindowContent({
         event={event}
         lines={window.payload.lines ?? []}
         snapshot={snapshot}
-      />
-    );
-  }
-
-  if (window.kind === "runtime_handoff") {
-    return (
-      <RuntimeHandoffSurface
-        event={event}
-        related_events={window.payload.related_events ?? []}
-        summary={window.payload.summary}
       />
     );
   }

@@ -64,7 +64,7 @@ function menu_items_for_window_kind(kind: StageWindowKind | null): string[] {
   if (kind === "browser") {
     return ["文件", "编辑", "显示", "历史记录", "书签", "窗口", "帮助"];
   }
-  if (kind === "terminal" || kind === "runtime_handoff") {
+  if (kind === "terminal") {
     return ["Shell", "编辑", "显示", "窗口", "帮助"];
   }
   if (kind === "finder") {

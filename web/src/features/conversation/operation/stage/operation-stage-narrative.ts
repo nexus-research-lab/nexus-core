@@ -32,7 +32,7 @@ function window_reveal_rank(window: StageWindowState, active_window_id: string |
   if (window.kind === "terminal" || window.kind === "browser" || window.kind === "code_editor") {
     return 1;
   }
-  if (window.kind === "runtime_handoff" || window.kind === "run_manifest") {
+  if (window.kind === "run_manifest") {
     return 1;
   }
   if (window.kind === "finder" || window.layout === "artifact") {

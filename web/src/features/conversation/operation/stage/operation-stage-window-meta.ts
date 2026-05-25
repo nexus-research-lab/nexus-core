@@ -11,7 +11,6 @@ import {
   ImageIcon,
   ListChecks,
   ListTree,
-  RadioTower,
   Search,
   ShieldQuestion,
   Terminal,
@@ -79,9 +78,6 @@ export function icon_for_window_kind(kind: StageWindowKind): LucideIcon {
   if (kind === "task_board") {
     return Activity;
   }
-  if (kind === "runtime_handoff") {
-    return RadioTower;
-  }
   if (kind === "run_manifest") {
     return ListChecks;
   }
@@ -115,9 +111,6 @@ export function stage_app_label_for_window_kind(kind: StageWindowKind): string {
   }
   if (kind === "task_board") {
     return "活动监视器";
-  }
-  if (kind === "runtime_handoff") {
-    return "Nexus 终端";
   }
   if (kind === "run_manifest") {
     return "控制台";
@@ -183,9 +176,6 @@ export function position_for_window(window: StageWindowState, narrative_phase: S
   }
   if (window.kind === "task_board") {
     return is_review_layout ? "left-[25%] top-[15%] h-[50%] w-[40%]" : "left-[27%] top-[15%] h-[50%] w-[42%]";
-  }
-  if (window.kind === "runtime_handoff") {
-    return "left-[24%] top-[18%] h-[52%] w-[46%]";
   }
   if (window.kind === "run_manifest") {
     return is_review_layout ? "left-[23%] top-[13%] h-[59%] w-[45%]" : "left-[27%] top-[14%] h-[56%] w-[43%]";

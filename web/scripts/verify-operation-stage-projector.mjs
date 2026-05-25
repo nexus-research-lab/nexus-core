@@ -129,7 +129,7 @@ function verify_desktop_window_kind_contract() {
   for (const kind of expected_desktop_apps) {
     assert(is_stage_desktop_window_kind(kind), `${kind} should be rendered as a desktop app window`);
   }
-  for (const kind of ["evidence", "runtime_handoff", "summary"]) {
+  for (const kind of ["evidence", "summary"]) {
     assert(!is_stage_desktop_window_kind(kind), `${kind} should not render as a standalone desktop app window`);
   }
   for (const kind of expected_desktop_apps.filter((kind) => kind !== "permission_wait")) {

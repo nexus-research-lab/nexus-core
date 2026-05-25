@@ -349,7 +349,7 @@ function dock_icon_skin_for_kind(kind: StageWindowKind): string {
   if (kind === "browser") {
     return "border-[rgba(72,152,224,0.36)] bg-[radial-gradient(circle_at_50%_50%,#ffffff_0_24%,#5ac8fa_25%_52%,#2f6dff_53%_70%,#f45b69_71%_100%)] text-white";
   }
-  if (kind === "terminal" || kind === "runtime_handoff") {
+  if (kind === "terminal") {
     return "border-[rgba(141,224,173,0.32)] bg-[linear-gradient(135deg,#111827,#05080d)] text-[#8de0ad]";
   }
   if (kind === "code_editor") {

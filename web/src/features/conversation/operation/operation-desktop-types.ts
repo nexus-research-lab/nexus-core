@@ -19,7 +19,6 @@ export type StageWindowKind =
   | "browser"
   | "terminal"
   | "task_board"
-  | "runtime_handoff"
   | "run_manifest"
   | "evidence"
   | "summary"
