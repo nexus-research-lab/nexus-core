@@ -60,6 +60,7 @@ mkdirSync(join(operation_dir, "stage"), { recursive: true });
 copyFileSync(join(operation_dir, "stage/operation-stage-window-kinds.js"), join(operation_dir, "stage/operation-stage-window-kinds"));
 mkdirSync(join(operation_dir, "apps"), { recursive: true });
 copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
+copyFileSync(join(operation_dir, "apps/file-preview-value.js"), join(operation_dir, "apps/file-preview-value"));
 
 const { project_operation_snapshot } = await import(pathToFileURL(join(operation_dir, "operation-projector.js")));
 const {
@@ -84,6 +85,9 @@ const {
 const {
   build_terminal_entries,
 } = await import(pathToFileURL(join(operation_dir, "apps/terminal-session-model.js")));
+const {
+  resolve_file_preview_value,
+} = await import(pathToFileURL(join(operation_dir, "apps/file-preview-value.js")));
 const now = Date.now();
 
 verify_desktop_window_kind_contract();
@@ -725,6 +729,18 @@ function verify_multi_file_windows_keep_event_identity(now) {
   const css_window_id = resolve_operation_event_window_id(css_event, desktop.windows);
   assert(html_window_id?.includes(":document:gomoku.html"), `html event should focus gomoku window, got ${html_window_id}`);
   assert(css_window_id?.includes(":document:style.css"), `css event should focus style window, got ${css_window_id}`);
+  assert(
+    resolve_file_preview_value(html_event, null) === "<html><body>board</body></html>",
+    "html write window should render file content before tool result text",
+  );
+  assert(
+    resolve_file_preview_value(css_event, null) === "body { margin: 0; }",
+    "css write window should render file content before tool result text",
+  );
+  assert(
+    resolve_file_preview_value(html_event, "<html><body>live board</body></html>") === "<html><body>live board</body></html>",
+    "workspace live content should override stale write input in Code window",
+  );
   const active_css_desktop = plan_operation_desktop({
     event: css_event,
     snapshot,

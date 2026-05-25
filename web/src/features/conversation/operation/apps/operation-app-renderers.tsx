@@ -20,6 +20,7 @@ import { ACTION_ICON, ACTION_TONE_CLASS } from "./operation-action-style";
 import { ActivityMonitorSurface } from "./activity-monitor-surface";
 import { BrowserSurface } from "./browser-surface";
 import { DocumentPreview } from "./document-preview-surface";
+import { resolve_file_preview_value } from "./file-preview-value";
 import { OperationReviewPanel, PermissionCheckpointPanel } from "./operation-review-panels";
 import { RunManifestSurface } from "./run-manifest-surface";
 import { TerminalSession } from "./terminal-session";
@@ -148,7 +149,7 @@ export function StageWindowContent({
         fallback_lines={build_editor_preview_lines(event, get_preview_lines(window.payload.preview, 12))}
         summary={window.payload.summary ?? event.summary ?? event.title}
         target={window.payload.target ?? window.target ?? event.target}
-        value={window.payload.preview ?? event.result_preview ?? event.input_preview ?? event.summary}
+        value={resolve_file_preview_value(event, window.payload.preview)}
       />
     );
   }
@@ -166,7 +167,7 @@ export function StageWindowContent({
           fallback_lines={build_editor_preview_lines(event, get_preview_lines(window.payload.preview, 12))}
           summary={window.payload.summary ?? event.summary ?? event.title}
           target={window.payload.target ?? window.target ?? event.target}
-          value={window.payload.preview ?? event.result_preview ?? event.input_preview ?? event.summary}
+          value={resolve_file_preview_value(event, window.payload.preview)}
         />
       </div>
     </div>
