@@ -210,27 +210,27 @@ function looks_like_file_artifact(value: string): boolean {
 
 function evidence_type_label(type: OperationEvidence["type"]): string {
   if (type === "file" || type === "diff") {
-    return "File Record";
+    return "文件记录";
   }
   if (type === "terminal") {
-    return "Terminal Output";
+    return "终端输出";
   }
   if (type === "url") {
-    return "Browser Log";
+    return "浏览器记录";
   }
   if (type === "artifact") {
-    return "Artifact";
+    return "产物";
   }
   if (type === "task") {
-    return "Activity Log";
+    return "活动记录";
   }
   if (type === "permission") {
-    return "Security Log";
+    return "安全记录";
   }
   if (type === "error") {
-    return "Error Report";
+    return "错误报告";
   }
-  return "Execution Log";
+  return "执行记录";
 }
 
 function icon_for_file_path(value: string): LucideIcon {

@@ -31,7 +31,7 @@ function StagePhasePath({ narrative }: { narrative: StageNarrativeState }) {
     <div className="mt-3 rounded-[13px] border border-white/50 bg-white/34 px-2.5 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.46)]">
       <div className="mb-2 flex min-w-0 items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[8.5px] font-black uppercase tracking-[0.14em] text-(--text-soft)">episode path</p>
+          <p className="text-[8.5px] font-black uppercase tracking-[0.14em] text-(--text-soft)">工作路径</p>
           <p className="mt-0.5 truncate text-[10.5px] font-bold text-(--text-strong)">{narrative.detail}</p>
         </div>
         <span className="shrink-0 rounded-full border border-white/54 bg-white/46 px-2 py-1 text-[8.5px] font-black text-(--text-soft)">
@@ -244,7 +244,7 @@ function build_stage_director_cues({
       : event.phase === "waiting"
         ? "确认权限后，舞台会回到当前工具窗口继续执行。"
         : event.surface === "terminal"
-          ? "观察 stdout、stderr 和退出码，确认命令是否收束。"
+          ? "观察终端输出和退出码，确认命令是否收束。"
           : "等待下一个真实工具事件进入工作台。";
 
   return [

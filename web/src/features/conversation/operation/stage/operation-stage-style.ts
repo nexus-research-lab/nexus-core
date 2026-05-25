@@ -18,7 +18,7 @@ export const SURFACE_LABEL: Record<OperationSurface, string> = {
   knowledge: "知识库",
   task: "任务",
   conversation: "运行时",
-  summary: "Console",
+  summary: "控制台",
   fallback: "Nexus",
 };
 

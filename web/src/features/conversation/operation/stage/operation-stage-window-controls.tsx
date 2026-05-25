@@ -15,12 +15,12 @@ import {
 } from "./operation-stage-helpers";
 
 const PINNED_DOCK_APPS: Array<{ app_label: string; kind: StageWindowKind }> = [
-  { app_label: "Finder", kind: "finder" },
+  { app_label: "访达", kind: "finder" },
   { app_label: "Safari", kind: "browser" },
-  { app_label: "Terminal", kind: "terminal" },
+  { app_label: "终端", kind: "terminal" },
   { app_label: "Code", kind: "code_editor" },
-  { app_label: "Console", kind: "run_manifest" },
-  { app_label: "Preview", kind: "image_viewer" },
+  { app_label: "控制台", kind: "run_manifest" },
+  { app_label: "预览", kind: "image_viewer" },
 ];
 
 export function StageWindowsHiddenState({
@@ -183,10 +183,9 @@ export function StageWindowDock({
               type="button"
             >
               <span className={cn(
-                "relative grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[14px] border shadow-[inset_0_1px_0_rgba(255,255,255,0.62)]",
-                is_active
-                  ? "border-[rgba(91,114,255,0.28)] bg-white/58"
-                  : "border-white/52 bg-white/44",
+                "relative grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[14px] border shadow-[inset_0_1px_0_rgba(255,255,255,0.62),0_8px_18px_rgba(18,28,42,0.10)]",
+                dock_icon_skin_for_kind(window?.kind ?? kind),
+                is_active ? "ring-2 ring-[rgba(91,114,255,0.24)]" : "ring-0",
               )}>
                 <Icon className="h-[18px] w-[18px]" />
                 {is_running ? (
@@ -337,4 +336,35 @@ function display_window_title(window: StageWindowState): string {
     return window.title;
   }
   return display_stage_event_title(window.payload.event, stage_app_label_for_window_kind(window.kind));
+}
+
+function dock_icon_skin_for_kind(kind: StageWindowKind): string {
+  if (kind === "finder") {
+    return "border-[rgba(72,152,224,0.42)] bg-[linear-gradient(135deg,#5ac8fa_0%,#e8f5ff_48%,#ffffff_49%,#7dd3fc_100%)] text-[#14517a]";
+  }
+  if (kind === "browser") {
+    return "border-[rgba(72,152,224,0.36)] bg-[radial-gradient(circle_at_50%_50%,#ffffff_0_24%,#5ac8fa_25%_52%,#2f6dff_53%_70%,#f45b69_71%_100%)] text-white";
+  }
+  if (kind === "terminal" || kind === "runtime_handoff") {
+    return "border-[rgba(141,224,173,0.32)] bg-[linear-gradient(135deg,#111827,#05080d)] text-[#8de0ad]";
+  }
+  if (kind === "code_editor") {
+    return "border-[rgba(91,114,255,0.36)] bg-[linear-gradient(135deg,#243b74,#4f6fff)] text-white";
+  }
+  if (kind === "run_manifest" || kind === "evidence") {
+    return "border-[rgba(117,131,149,0.30)] bg-[linear-gradient(135deg,#f8fafc,#cbd5e1)] text-[#334155]";
+  }
+  if (kind === "image_viewer" || kind === "markdown_reader" || kind === "pdf_reader" || kind === "word_reader") {
+    return "border-[rgba(47,184,132,0.32)] bg-[linear-gradient(135deg,#ffffff,#a7f3d0_52%,#60a5fa)] text-[#17644f]";
+  }
+  if (kind === "permission_wait") {
+    return "border-[rgba(117,131,149,0.34)] bg-[linear-gradient(135deg,#f8fafc,#e2e8f0)] text-[#475569]";
+  }
+  if (kind === "task_board") {
+    return "border-[rgba(47,184,132,0.34)] bg-[linear-gradient(135deg,#08111f,#123f3a)] text-[#8de0ad]";
+  }
+  if (kind === "spreadsheet") {
+    return "border-[rgba(47,184,132,0.34)] bg-[linear-gradient(135deg,#f0fdf4,#34d399)] text-[#064e3b]";
+  }
+  return "border-white/52 bg-white/44 text-(--icon-muted)";
 }

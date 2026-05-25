@@ -91,9 +91,9 @@ export function WorkspaceFinder({
         <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(160px,0.36fr)] max-md:grid-cols-1">
           <div className="soft-scrollbar min-h-0 overflow-auto p-2">
             <div className="grid grid-cols-[minmax(0,1fr)_72px_86px] gap-2 px-2 pb-1 text-[9px] font-bold uppercase tracking-[0.12em] text-(--text-soft)">
-              <span>Name</span>
-              <span>Status</span>
-              <span>Modified</span>
+              <span>名称</span>
+              <span>状态</span>
+              <span>修改时间</span>
             </div>
             {workspace_tree_rows(display_items.map((item) => item.path)).map((row) => (
               <WorkspaceTreeRow
@@ -108,7 +108,7 @@ export function WorkspaceFinder({
             ))}
           </div>
           <aside className="hidden min-h-0 border-l border-(--divider-subtle-color) bg-white/54 p-3 md:block">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">Preview</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">预览</p>
             <div className="mt-3 grid h-16 w-16 place-items-center rounded-[16px] border border-(--divider-subtle-color) bg-white/74 text-(--icon-default)">
               {(() => {
                 const Icon = icon_for_workspace_path(selected_path);
