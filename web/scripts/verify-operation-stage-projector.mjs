@@ -75,6 +75,7 @@ copyFileSync(join(operation_dir, "stage/operation-stage-minimized-window.js"), j
 mkdirSync(join(operation_dir, "apps"), { recursive: true });
 copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
 copyFileSync(join(operation_dir, "apps/operation-app-surface-policy.js"), join(operation_dir, "apps/operation-app-surface-policy"));
+copyFileSync(join(operation_dir, "apps/nexus-tool-session.js"), join(operation_dir, "apps/nexus-tool-session"));
 copyFileSync(join(operation_dir, "apps/file-preview-value.js"), join(operation_dir, "apps/file-preview-value"));
 copyFileSync(join(operation_dir, "apps/browser-result-items.js"), join(operation_dir, "apps/browser-result-items"));
 copyFileSync(join(operation_dir, "apps/finder-item-details.js"), join(operation_dir, "apps/finder-item-details"));
@@ -152,6 +153,9 @@ const {
   app_surface_for_window_kind,
 } = await import(pathToFileURL(join(operation_dir, "apps/operation-app-surface-policy.js")));
 const {
+  build_nexus_tool_session_view,
+} = await import(pathToFileURL(join(operation_dir, "apps/nexus-tool-session.js")));
+const {
   resolve_file_preview_value,
 } = await import(pathToFileURL(join(operation_dir, "apps/file-preview-value.js")));
 const {
@@ -185,6 +189,7 @@ verify_hidden_stage_uses_desktop_state_instead_of_mission_control();
 verify_unclassified_tool_activity_opens_nexus_app_window(now);
 verify_current_unclassified_tool_opens_beside_existing_app_window(now);
 verify_generic_tool_uses_nexus_tool_surface();
+verify_nexus_tool_session_view(now);
 verify_nexus_tool_app_has_own_desktop_identity();
 verify_window_focus_moves_to_next_visible_window();
 verify_desktop_keyboard_target_policy();
@@ -469,6 +474,50 @@ function verify_generic_tool_uses_nexus_tool_surface() {
   assert(app_surface_for_window_kind("generic_tool") === "nexus_tool", "Generic tool windows should render as the Nexus tool app");
   assert(app_surface_for_window_kind("code_editor") === "document", "Code windows should keep document preview rendering");
   assert(app_surface_for_window_kind("browser") === "specialized", "Browser windows should keep specialized app rendering");
+}
+
+function verify_nexus_tool_session_view(now) {
+  const event = {
+    id: "tool-plan",
+    session_key: "session:stage",
+    round_id: "round-tool-app",
+    agent_id: "agent-stage",
+    tool_use_id: "tool-plan",
+    tool_name: "TodoWrite",
+    kind: "plan_update",
+    surface: "summary",
+    phase: "running",
+    title: "更新计划",
+    target: "todos",
+    input_preview: {
+      todos: [{ content: "打开 Safari 预览", status: "pending" }],
+    },
+    result_preview: null,
+    updated_at: now,
+  };
+  const done_event = {
+    ...event,
+    id: "tool-read",
+    tool_name: "Read",
+    kind: "workspace_read",
+    surface: "workspace",
+    phase: "done",
+    title: "读取文件",
+    target: "app.ts",
+  };
+  const view = build_nexus_tool_session_view({
+    event,
+    preview: { ok: true },
+    related_events: [done_event, event],
+    target: "todos",
+  });
+  assert(view.tool_name === "TodoWrite", `Nexus tool app should keep tool name, got ${view.tool_name}`);
+  assert(view.display_target === "todos", `Nexus tool app should expose target, got ${view.display_target}`);
+  assert(view.sidebar_items.length === 4, `Nexus tool app should expose sidebar status rows, got ${view.sidebar_items.length}`);
+  assert(view.input_rows.some((row) => row.key === "todos"), "Nexus tool app should expose tool input rows");
+  assert(view.output_text.includes("\"ok\": true"), `Nexus tool app should render structured output, got ${view.output_text}`);
+  assert(view.timeline.length === 2, `Nexus tool app should keep recent tool trace, got ${view.timeline.length}`);
+  assert(view.timeline.at(-1)?.phase_label === "执行中", `Nexus tool app should label active phase, got ${view.timeline.at(-1)?.phase_label}`);
 }
 
 function verify_nexus_tool_app_has_own_desktop_identity() {
