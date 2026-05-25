@@ -301,7 +301,7 @@ export function OperationStageDesktop({
         );
       }) : desktop_windows.length ? (
         <StageWindowsHiddenState
-          window_count={desktop_windows.length}
+          windows={window_states}
           on_restore_all={restore_all_windows}
         />
       ) : null}

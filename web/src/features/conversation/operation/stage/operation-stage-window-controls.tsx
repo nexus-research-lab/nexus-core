@@ -15,21 +15,31 @@ import {
 } from "./operation-stage-helpers";
 
 export function StageWindowsHiddenState({
-  window_count,
+  windows,
   on_restore_all,
 }: {
-  window_count: number;
+  windows: StageWindowState[];
   on_restore_all: () => void;
 }) {
+  const minimized_count = windows.filter((window) => window.phase === "minimized").length;
+  const closed_count = windows.filter((window) => window.phase === "closed").length;
+  const has_only_minimized_windows = minimized_count > 0 && closed_count === 0;
+  const title = has_only_minimized_windows ? "所有窗口已最小化" : "桌面没有打开的窗口";
+  const detail = has_only_minimized_windows
+    ? `${minimized_count} 个窗口仍在 Dock 中，可以恢复到桌面。`
+    : minimized_count > 0
+      ? `${minimized_count} 个窗口仍在 Dock 中，${closed_count} 个窗口已关闭。`
+    : "应用已被关闭，可以从 Dock 或桌面重新打开。";
+
   return (
     <div className="absolute inset-0 z-10 grid place-items-center px-6 text-center max-md:relative max-md:min-h-[260px]">
       <div className="max-w-[300px] rounded-[18px] border border-white/70 bg-white/70 p-5 shadow-[0_24px_64px_rgba(18,28,42,0.12)] backdrop-blur-xl">
         <div className="mx-auto mb-4 grid h-11 w-11 place-items-center rounded-[13px] border border-(--divider-subtle-color) bg-white/72 text-(--icon-muted)">
           <PauseCircle className="h-5 w-5" />
         </div>
-        <p className="text-[15px] font-black tracking-[-0.025em] text-(--text-strong)">所有窗口已最小化</p>
+        <p className="text-[15px] font-black tracking-[-0.025em] text-(--text-strong)">{title}</p>
         <p className="mt-2 text-[11px] leading-5 text-(--text-soft)">
-          {window_count} 个应用仍在 Dock 中，可以恢复到桌面。
+          {detail}
         </p>
         <button
           className="mt-4 inline-flex h-8 items-center justify-center rounded-full border border-[rgba(91,114,255,0.22)] bg-[rgba(91,114,255,0.10)] px-3 text-[11px] font-bold text-[color:var(--primary)] transition hover:bg-[rgba(91,114,255,0.16)]"
@@ -56,8 +66,17 @@ export function StageWindowDock({
     return null;
   }
 
-  const active_window = windows.find((window) => window.id === active_window_id) ?? windows[0];
+  const dock_windows = windows.filter((window) => window.phase !== "closed");
+  const running_windows = dock_windows.filter((window) => window.phase !== "minimized");
+  const minimized_windows = dock_windows.filter((window) => window.phase === "minimized");
+  const active_window = running_windows.find((window) => window.id === active_window_id)
+    ?? running_windows[0]
+    ?? minimized_windows[0]
+    ?? null;
   const active_app_label = active_window ? stage_app_label_for_window_kind(active_window.kind) : "Nexus";
+  if (!dock_windows.length) {
+    return null;
+  }
 
   return (
     <div className="absolute inset-x-4 bottom-4 z-30 flex justify-center max-md:relative max-md:inset-x-auto max-md:bottom-auto max-md:mt-3">
@@ -70,18 +89,12 @@ export function StageWindowDock({
             N
           </div>
           <div className="h-9 w-px shrink-0 bg-white/56" />
-        {windows.map((window) => {
+        {running_windows.map((window) => {
           const Icon = icon_for_window_kind(window.kind);
-          const is_active = active_window_id === window.id && window.phase !== "closed" && window.phase !== "minimized";
+          const is_active = active_window_id === window.id;
           const app_label = stage_app_label_for_window_kind(window.kind);
           const window_title = display_window_title(window);
-          const state_label = window.phase === "closed"
-            ? "已关闭"
-            : window.phase === "minimized"
-              ? "已最小化"
-              : is_active
-                ? "当前"
-                : "后台";
+          const state_label = is_active ? "当前" : "后台";
           return (
             <button
               aria-label={`${state_label}：${window_title}`}
@@ -89,9 +102,7 @@ export function StageWindowDock({
                 "group relative grid shrink-0 place-items-center rounded-[18px] border text-left transition duration-200 ease-out hover:-translate-y-2 hover:scale-110 focus-visible:-translate-y-2 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.42)]",
                 is_active
                   ? "h-[52px] w-[52px] border-[rgba(91,114,255,0.32)] bg-[rgba(91,114,255,0.16)] text-[color:var(--primary)] shadow-[0_16px_32px_rgba(91,114,255,0.22)]"
-                  : window.phase === "closed" || window.phase === "minimized"
-                    ? "h-[44px] w-[44px] border-transparent bg-white/28 text-(--icon-muted) opacity-72 hover:bg-white/62 hover:text-(--text-strong) hover:opacity-100"
-                    : "h-[44px] w-[44px] border-transparent bg-white/42 text-(--icon-muted) hover:bg-white/72 hover:text-(--text-strong)",
+                  : "h-[44px] w-[44px] border-transparent bg-white/42 text-(--icon-muted) hover:bg-white/72 hover:text-(--text-strong)",
               )}
               key={window.id}
               onClick={() => on_restore(window.id)}
@@ -109,22 +120,14 @@ export function StageWindowDock({
                   "absolute -bottom-0.5 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full border border-white/72 transition",
                   is_active
                     ? "bg-[color:var(--primary)]"
-                    : window.phase === "minimized"
-                      ? "bg-[rgba(223,157,46,0.82)]"
-                      : window.phase === "closed"
-                        ? "bg-[rgba(117,131,149,0.58)]"
-                        : "bg-[rgba(47,184,132,0.72)]",
+                    : "bg-[rgba(47,184,132,0.72)]",
                 )} />
               </span>
               <span className={cn(
-                "absolute -bottom-2 left-1/2 h-1.5 -translate-x-1/2 rounded-full transition",
-                is_active
-                  ? "w-5 bg-[color:var(--primary)]"
-                  : window.phase === "minimized"
-                    ? "w-2 bg-[rgba(223,157,46,0.70)]"
-                    : window.phase === "closed"
-                      ? "w-2 bg-[rgba(117,131,149,0.42)]"
-                      : "w-2 bg-[rgba(47,184,132,0.54)]",
+                  "absolute -bottom-2 left-1/2 h-1.5 -translate-x-1/2 rounded-full transition",
+                  is_active
+                    ? "w-5 bg-[color:var(--primary)]"
+                    : "w-2 bg-[rgba(47,184,132,0.54)]",
               )} />
               <span className="pointer-events-none absolute bottom-[calc(100%+10px)] left-1/2 hidden max-w-[230px] -translate-x-1/2 whitespace-nowrap rounded-[10px] border border-white/70 bg-[rgba(20,28,38,0.82)] px-2.5 py-1.5 text-[10px] font-semibold text-white shadow-[0_12px_30px_rgba(18,28,42,0.22)] backdrop-blur-xl group-hover:block group-focus-visible:block">
                 <span className="block max-w-[160px] truncate">{window_title}</span>
@@ -133,6 +136,34 @@ export function StageWindowDock({
             </button>
           );
         })}
+        {minimized_windows.length ? (
+          <>
+            <div className="h-9 w-px shrink-0 bg-white/56" />
+            {minimized_windows.map((window) => {
+              const Icon = icon_for_window_kind(window.kind);
+              const app_label = stage_app_label_for_window_kind(window.kind);
+              const window_title = display_window_title(window);
+              return (
+                <button
+                  aria-label={`恢复：${window_title}`}
+                  className="group relative grid h-[42px] w-[58px] shrink-0 place-items-center overflow-hidden rounded-[12px] border border-white/58 bg-white/40 text-(--icon-muted) shadow-[inset_0_1px_0_rgba(255,255,255,0.70)] transition duration-200 ease-out hover:-translate-y-2 hover:bg-white/70 hover:text-(--text-strong) focus-visible:-translate-y-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.42)]"
+                  key={window.id}
+                  onClick={() => on_restore(window.id)}
+                  title={`已最小化：${window_title}`}
+                  type="button"
+                >
+                  <div className="absolute inset-x-1 top-1 h-3 rounded-[8px] border border-white/54 bg-white/48" />
+                  <Icon className="relative z-10 h-[17px] w-[17px]" />
+                  <span className="absolute bottom-1 left-1/2 h-1.5 w-2 -translate-x-1/2 rounded-full bg-[rgba(223,157,46,0.78)]" />
+                  <span className="pointer-events-none absolute bottom-[calc(100%+10px)] left-1/2 hidden max-w-[230px] -translate-x-1/2 whitespace-nowrap rounded-[10px] border border-white/70 bg-[rgba(20,28,38,0.82)] px-2.5 py-1.5 text-[10px] font-semibold text-white shadow-[0_12px_30px_rgba(18,28,42,0.22)] backdrop-blur-xl group-hover:block group-focus-visible:block">
+                    <span className="block max-w-[160px] truncate">{window_title}</span>
+                    <span className="block text-[9px] font-medium text-white/66">{app_label} · 已最小化</span>
+                  </span>
+                </button>
+              );
+            })}
+          </>
+        ) : null}
         </div>
       </div>
     </div>
