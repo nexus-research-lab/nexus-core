@@ -20,6 +20,7 @@ interface OperationStageWindowProps {
   dimmed?: boolean;
   drag_offset?: { x: number; y: number };
   mobile_hidden?: boolean;
+  content_mode?: "flush" | "inset";
   z_index?: number;
   tone?: "default" | "terminal";
   on_close?: () => void;
@@ -43,6 +44,7 @@ export function OperationStageWindow({
   dimmed = false,
   drag_offset = { x: 0, y: 0 },
   mobile_hidden = false,
+  content_mode = "inset",
   z_index,
   tone = "default",
   on_close,
@@ -284,10 +286,14 @@ export function OperationStageWindow({
       </div>
       <div className={cn(
         "soft-scrollbar relative min-h-0 flex-1",
-        tone === "terminal" ? "overflow-hidden bg-[#090e14] p-0" : "overflow-auto p-4",
+        tone === "terminal"
+          ? "overflow-hidden bg-[#090e14] p-0"
+          : content_mode === "flush"
+            ? "overflow-hidden p-0"
+            : "overflow-auto p-4",
         minimized && "hidden",
       )}>
-        {tone !== "terminal" ? (
+        {tone !== "terminal" && content_mode !== "flush" ? (
           <div className="pointer-events-none absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-[10px] border border-(--divider-subtle-color) bg-white/72 text-(--icon-muted) opacity-30">
             <Icon className="h-3.5 w-3.5" />
           </div>

@@ -289,6 +289,7 @@ export function OperationStageDesktop({
             )}
             icon={icon_for_window_kind(window.kind)}
             key={window.id}
+            content_mode={window_content_mode(window.kind)}
             mobile_hidden={!is_active}
             minimized={window.phase === "minimized"}
             on_close={() => close_window(window.id)}
@@ -326,4 +327,11 @@ export function OperationStageDesktop({
       />
     </DynamicStageFrame>
   );
+}
+
+function window_content_mode(kind: StageWindowKind): "flush" | "inset" {
+  if (kind === "browser" || kind === "finder" || kind === "terminal" || kind === "runtime_handoff") {
+    return "flush";
+  }
+  return "inset";
 }

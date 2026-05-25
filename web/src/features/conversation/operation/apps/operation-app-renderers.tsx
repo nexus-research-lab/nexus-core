@@ -58,8 +58,7 @@ export function StageWindowContent({
   if (window.kind === "finder") {
     const workspace_items = window.payload.workspace_items ?? [];
     return (
-      <div className="flex h-full min-h-[240px] flex-col gap-3">
-        <ToolActionHeader event={event} profile={profile} target={window.payload.target ?? event.target} />
+      <div className="flex h-full min-h-[240px] flex-col">
         <WorkspaceFinder
           active_path={window.payload.target ?? event.target}
           event={event}
@@ -90,8 +89,7 @@ export function StageWindowContent({
     const query = window.payload.query ?? event.target ?? "web";
     const lines = window.payload.lines ?? get_preview_lines(event.result_preview ?? event.summary, 7);
     return (
-      <div className="flex h-full min-h-[280px] min-w-0 max-w-full flex-col gap-3">
-        <ToolActionHeader event={event} profile={profile} target={query} />
+      <div className="flex h-full min-h-[280px] min-w-0 max-w-full flex-col">
         <BrowserSurface
           event={event}
           lines={lines}
