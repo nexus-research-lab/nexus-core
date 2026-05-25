@@ -116,7 +116,7 @@ export function StageDesktopIcons({
     <div className="absolute right-6 top-16 z-10 hidden grid-cols-1 gap-4 md:grid">
       {desktop_items.map((window) => {
         const target = window.target ?? window.payload.target ?? "";
-        const Icon = window.kind === "browser" ? icon_for_window_kind(window.kind) : icon_for_artifact_path(target);
+        const Icon = icon_for_artifact_path(target);
         const app_label = stage_app_label_for_window_kind(window.kind);
         const display_name = desktop_icon_label(window);
         const state_label = window.phase === "closed"
@@ -167,11 +167,7 @@ function is_desktop_artifact_window(window: StageWindowState): boolean {
   if (!target || basename(target) === "preview") {
     return false;
   }
-  if (window.kind === "browser") {
-    return true;
-  }
   return (
-    window.kind === "finder" ||
     window.kind === "code_editor" ||
     window.kind === "markdown_reader" ||
     window.kind === "word_reader" ||
