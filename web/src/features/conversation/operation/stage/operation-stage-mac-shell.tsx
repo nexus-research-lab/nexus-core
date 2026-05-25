@@ -117,22 +117,16 @@ export function StageDesktopIcons({
       {desktop_items.map((window) => {
         const target = window.target ?? window.payload.target ?? "";
         const Icon = icon_for_artifact_path(target);
-        const app_label = stage_app_label_for_window_kind(window.kind);
         const display_name = desktop_icon_label(window);
-        const state_label = window.phase === "closed"
-          ? "已关闭"
-          : window.phase === "minimized"
-            ? "已最小化"
-            : window.phase === "focused"
-              ? "正在使用"
-              : "已打开";
+        const file_kind_label = desktop_file_kind_label(window);
+        const state_label = desktop_file_state_label(window);
         return (
           <button
-            aria-label={`${window.phase === "closed" ? "重新打开" : "打开"} ${app_label}：${display_name}`}
+            aria-label={`打开文件：${display_name}`}
             className="group flex w-[92px] flex-col items-center gap-1.5 text-center outline-none"
             key={window.id}
             onClick={() => on_restore(window.id)}
-            title={`${display_name} · 用 ${app_label} 打开 · ${state_label}`}
+            title={`${display_name} · ${file_kind_label} · ${state_label}`}
             type="button"
           >
             <div className={cn(
@@ -154,6 +148,9 @@ export function StageDesktopIcons({
             <p className="line-clamp-2 rounded-[6px] px-1 text-[10px] font-semibold leading-4 text-(--text-strong) group-hover:bg-white/48">
               {display_name}
             </p>
+            <span className="text-[9px] font-semibold leading-none text-(--text-soft) opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
+              {file_kind_label}
+            </span>
             <span className="sr-only">{state_label}</span>
           </button>
         );
@@ -183,4 +180,37 @@ function desktop_icon_label(window: StageWindowState): string {
     return target_label;
   }
   return window.title;
+}
+
+function desktop_file_kind_label(window: StageWindowState): string {
+  const target = window.target ?? window.payload.target ?? "";
+  if (/\.(html?|tsx?|jsx?|css|json|ya?ml|toml)$/i.test(target)) {
+    return "代码文件";
+  }
+  if (/\.(md|mdx|txt)$/i.test(target)) {
+    return "文稿";
+  }
+  if (/\.(png|jpe?g|webp|gif|svg)$/i.test(target)) {
+    return "图像";
+  }
+  if (/\.(csv|xlsx?|ods)$/i.test(target)) {
+    return "表格";
+  }
+  if (/\.pdf$/i.test(target)) {
+    return "PDF";
+  }
+  return "文件";
+}
+
+function desktop_file_state_label(window: StageWindowState): string {
+  if (window.phase === "closed") {
+    return "窗口已关闭";
+  }
+  if (window.phase === "minimized") {
+    return "窗口已最小化";
+  }
+  if (window.phase === "focused") {
+    return "正在前台查看";
+  }
+  return "窗口已打开";
 }

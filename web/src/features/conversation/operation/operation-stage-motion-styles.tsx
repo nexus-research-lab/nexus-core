@@ -141,10 +141,8 @@ export function OperationStageMotionStyles() {
         }
 
         .operation-stage-window {
-          animation:
-            nexus-operation-window-enter 420ms cubic-bezier(.18,.88,.24,1) both,
-            nexus-operation-window-float 7.5s ease-in-out infinite;
-          animation-delay: var(--operation-delay, 0ms), calc(var(--operation-delay, 0ms) + 420ms);
+          animation: nexus-operation-window-enter 420ms cubic-bezier(.18,.88,.24,1) both;
+          animation-delay: var(--operation-delay, 0ms);
           transform-origin: 50% 60%;
         }
 
@@ -164,9 +162,7 @@ export function OperationStageMotionStyles() {
         }
 
         .operation-stage-window-restoring {
-          animation:
-            nexus-operation-window-restore 360ms cubic-bezier(.2,.9,.18,1) both,
-            nexus-operation-window-float 7.5s ease-in-out infinite;
+          animation: nexus-operation-window-restore 360ms cubic-bezier(.2,.9,.18,1) both;
         }
 
         .operation-window-traffic-icon {
@@ -181,11 +177,6 @@ export function OperationStageMotionStyles() {
         .operation-window-traffic-button:focus-visible .operation-window-traffic-icon {
           opacity: 1;
           transform: scale(1);
-        }
-
-        .operation-stage-narrative-settling .operation-stage-window,
-        .operation-stage-narrative-completed .operation-stage-window {
-          animation-duration: 420ms, 11s;
         }
 
         .operation-preview-line {
