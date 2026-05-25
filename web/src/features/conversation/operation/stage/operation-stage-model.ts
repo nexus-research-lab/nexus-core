@@ -5,6 +5,7 @@ import type { OperationEvidence } from "../operation-types";
 
 export interface StageWindowOverride {
   closed?: boolean;
+  maximized?: boolean;
   minimized?: boolean;
   offset_x?: number;
   offset_y?: number;

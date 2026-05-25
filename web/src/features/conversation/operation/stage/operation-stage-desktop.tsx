@@ -191,11 +191,31 @@ export function OperationStageDesktop({
       ...current,
       [window_id]: {
         ...current[window_id],
+        maximized: false,
         minimized: false,
         offset_x: Math.round(offset.x),
         offset_y: Math.round(offset.y),
       },
     }));
+  };
+
+  const toggle_zoom_window = (window_id: string) => {
+    set_focused_window_id(window_id);
+    set_window_overrides((current) => {
+      const current_override = current[window_id];
+      const next_maximized = !current_override?.maximized;
+      return {
+        ...current,
+        [window_id]: {
+          ...current_override,
+          closed: false,
+          maximized: next_maximized,
+          minimized: false,
+          offset_x: next_maximized ? 0 : current_override?.offset_x,
+          offset_y: next_maximized ? 0 : current_override?.offset_y,
+        },
+      };
+    });
   };
 
   const restore_window = (window_id: string) => {
@@ -247,12 +267,13 @@ export function OperationStageDesktop({
       <StageDesktopIcons windows={window_states} on_restore={restore_window} />
       {visible_windows.length ? visible_windows.map((window, index) => {
         const is_active = active_window_id === window.id && window.phase !== "minimized";
+        const is_maximized = Boolean(window_overrides[window.id]?.maximized);
         return (
           <OperationStageWindow
             app_label={stage_app_label_for_window_kind(window.kind)}
             delay_ms={Math.min(index * 70, 280)}
             dimmed={!is_active && window.phase !== "minimized"}
-            drag_offset={{
+            drag_offset={is_maximized ? { x: 0, y: 0 } : {
               x: window_overrides[window.id]?.offset_x ?? 0,
               y: window_overrides[window.id]?.offset_y ?? 0,
             }}
@@ -260,13 +281,17 @@ export function OperationStageDesktop({
             icon={icon_for_window_kind(window.kind)}
             key={window.id}
             content_mode={window_content_mode_for_kind(window.kind)}
+            maximized={is_maximized}
             mobile_hidden={!is_active}
             minimized={window.phase === "minimized"}
             on_close={() => close_window(window.id)}
             on_drag={(offset) => move_window(window.id, offset)}
             on_focus={() => focus_window(window.id)}
             on_minimize={() => minimize_window(window.id)}
-            position_class_name={position_for_window(window, narrative.phase)}
+            on_zoom={() => toggle_zoom_window(window.id)}
+            position_class_name={is_maximized
+              ? "left-[4%] top-[8%] h-[78%] w-[92%]"
+              : position_for_window(window, narrative.phase)}
             title={window.title}
             tone={window.kind === "terminal" ? "terminal" : "default"}
             z_index={is_active ? 44 : 8 + index}

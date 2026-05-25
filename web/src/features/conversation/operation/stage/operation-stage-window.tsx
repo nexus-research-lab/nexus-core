@@ -1,6 +1,6 @@
 import type { CSSProperties, MouseEvent, PointerEvent, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import { Minus, Square, X } from "lucide-react";
+import { Maximize2, Minimize2, Minus, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -13,6 +13,7 @@ interface OperationStageWindowProps {
   app_label?: string;
   delay_ms?: number;
   focus?: boolean;
+  maximized?: boolean;
   minimized?: boolean;
   dimmed?: boolean;
   drag_offset?: { x: number; y: number };
@@ -24,6 +25,7 @@ interface OperationStageWindowProps {
   on_drag?: (offset: { x: number; y: number }) => void;
   on_focus?: () => void;
   on_minimize?: () => void;
+  on_zoom?: () => void;
 }
 
 export function OperationStageWindow({
@@ -34,6 +36,7 @@ export function OperationStageWindow({
   app_label,
   delay_ms = 0,
   focus = false,
+  maximized = false,
   minimized = false,
   dimmed = false,
   drag_offset = { x: 0, y: 0 },
@@ -45,6 +48,7 @@ export function OperationStageWindow({
   on_drag,
   on_focus,
   on_minimize,
+  on_zoom,
 }: OperationStageWindowProps) {
   const drag_state_ref = useRef<{
     pointer_id: number;
@@ -159,11 +163,12 @@ export function OperationStageWindow({
     <div
       aria-label={title}
       className={cn(
-        "operation-stage-window absolute flex min-h-0 min-w-0 cursor-default flex-col overflow-hidden rounded-[14px] border backdrop-blur-xl outline-none transition-[opacity,filter,box-shadow] focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.42)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent max-md:!relative max-md:!inset-auto max-md:!h-auto max-md:!min-h-[180px] max-md:!w-full max-md:max-w-full",
+        "operation-stage-window absolute flex min-h-0 min-w-0 cursor-default flex-col overflow-hidden rounded-[14px] border backdrop-blur-xl outline-none transition-[left,top,width,height,opacity,filter,box-shadow,border-radius] duration-300 ease-[cubic-bezier(.2,.82,.2,1)] focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.42)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent max-md:!relative max-md:!inset-auto max-md:!h-auto max-md:!min-h-[180px] max-md:!w-full max-md:max-w-full",
         tone === "terminal"
           ? "border-white/14 bg-[#0d151e]/95 text-[#d8e8e2] shadow-[0_30px_76px_rgba(0,8,16,0.34)]"
           : "border-white/60 bg-[rgba(250,252,253,0.96)] text-(--text-strong) shadow-[0_28px_72px_rgba(18,28,42,0.24)]",
         focus && "operation-stage-window-focus",
+        maximized && "operation-stage-window-maximized rounded-[18px]",
         dimmed && "opacity-[0.62] saturate-[0.82]",
         is_dragging && "operation-stage-window-dragging select-none",
         minimized && "min-h-0",
@@ -202,6 +207,11 @@ export function OperationStageWindow({
             : "border-(--divider-subtle-color) bg-white/62 text-(--text-soft)",
         )}
         onPointerCancel={end_drag}
+        onDoubleClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          on_zoom?.();
+        }}
         onMouseDown={start_mouse_drag}
         onPointerDown={start_pointer_drag}
         onPointerMove={move_drag}
@@ -235,17 +245,21 @@ export function OperationStageWindow({
             <Minus className="h-2.5 w-2.5" />
           </button>
           <button
-            aria-label={`聚焦 ${title}`}
+            aria-label={`${maximized ? "还原" : "缩放"} ${title}`}
             className="grid h-4 w-4 place-items-center rounded-full border border-[rgba(47,184,132,0.22)] bg-[rgba(47,184,132,0.11)] transition hover:bg-[rgba(47,184,132,0.22)]"
             onMouseDown={(event) => event.stopPropagation()}
             onClick={(event) => {
               event.stopPropagation();
-              on_focus?.();
+              on_zoom?.();
             }}
-            title="聚焦窗口"
+            title={maximized ? "还原窗口" : "缩放窗口"}
             type="button"
           >
-            <Square className="h-2 w-2" />
+            {maximized ? (
+              <Minimize2 className="h-2.5 w-2.5" />
+            ) : (
+              <Maximize2 className="h-2.5 w-2.5" />
+            )}
           </button>
         </div>
         <div className="flex min-w-0 flex-1 items-center justify-center gap-1.5 px-2 text-[10px] font-semibold">
