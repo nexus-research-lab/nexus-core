@@ -1,7 +1,6 @@
 import {
   PauseCircle,
 } from "lucide-react";
-import { memo } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -9,13 +8,11 @@ import type { StageWindowState } from "../operation-desktop-types";
 import {
   display_stage_event_title,
 } from "../operation-stage-labels";
-import type { NexusOperationEvent } from "../operation-types";
 import {
   icon_for_window_kind,
   is_low_signal_director_value,
   stage_app_label_for_window_kind,
 } from "./operation-stage-helpers";
-import { PHASE_STATUS_META, SURFACE_LABEL } from "./operation-stage-style";
 
 export function StageWindowsHiddenState({
   window_count,
@@ -141,102 +138,6 @@ export function StageWindowDock({
     </div>
   );
 }
-
-export function WindowSettlementBar({
-  active,
-  event,
-  sequence_label,
-  tone,
-}: {
-  active: boolean;
-  event: NexusOperationEvent;
-  sequence_label: string;
-  tone: "default" | "terminal";
-}) {
-  const phase_meta = PHASE_STATUS_META[event.phase];
-  const PhaseIcon = phase_meta.Icon;
-  const target_candidate = event.target ?? event.summary ?? event.title;
-  const target = is_low_signal_director_value(target_candidate)
-    ? display_stage_event_title(event)
-    : target_candidate;
-
-  return (
-    <div className={cn(
-      "grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2 text-[9.5px]",
-      tone === "terminal" ? "text-[#88a19a]" : "text-(--text-soft)",
-    )}>
-      <span className={cn(
-        "inline-flex h-5 items-center gap-1 rounded-full border px-1.5 font-bold",
-        tone === "terminal"
-          ? event.phase === "done"
-            ? "border-[#24463a] bg-[#14241d] text-[#8de0ad]"
-            : "border-[#243545] bg-[#111b24] text-[#8bb7ff]"
-          : phase_meta.class_name,
-      )}>
-        <PhaseIcon className={cn("h-3 w-3", event.phase === "running" && "animate-spin")} />
-        {phase_meta.label}
-      </span>
-      <span className="min-w-0 truncate font-semibold">{target}</span>
-      <span className={cn(
-        "shrink-0 rounded-full px-1.5 py-px font-bold",
-        active
-          ? tone === "terminal"
-            ? "bg-[#17232c] text-[#b7cbc5]"
-            : "bg-[rgba(91,114,255,0.10)] text-[color:var(--primary)]"
-          : tone === "terminal"
-            ? "bg-[#111b24] text-[#60757f]"
-            : "bg-white/56 text-(--text-soft)",
-      )}>
-        {sequence_label} · {SURFACE_LABEL[event.surface]}
-      </span>
-    </div>
-  );
-}
-
-export const BackgroundWindowSummary = memo(function BackgroundWindowSummary({
-  sequence_label,
-  window,
-}: {
-  sequence_label: string;
-  window: StageWindowState;
-}) {
-  const event = window.payload.event;
-  const preview_candidate = window.payload.summary
-    ?? event.summary
-    ?? window.payload.target
-    ?? window.target
-    ?? event.target
-    ?? event.title;
-  const preview_text = is_low_signal_director_value(String(preview_candidate ?? ""))
-    ? display_stage_event_title(event)
-    : preview_candidate;
-  const target_candidate = window.target ?? event.target ?? window.title;
-  const target = is_low_signal_director_value(target_candidate) ? display_window_title(window) : target_candidate;
-
-  return (
-    <div className="flex h-full min-h-0 flex-col justify-between gap-3 rounded-[12px] border border-(--divider-subtle-color) bg-white/46 p-3">
-      <div className="min-w-0">
-        <p className="truncate text-[12px] font-black tracking-[-0.02em] text-(--text-strong)">
-          {sequence_label} · {display_stage_event_title(event)}
-        </p>
-        <p className="mt-1 line-clamp-3 text-[11px] leading-5 text-(--text-soft)">
-          {String(preview_text ?? "等待窗口内容")}
-        </p>
-      </div>
-      <div className="flex items-center justify-between gap-2 text-[10px] text-(--text-soft)">
-        <span className="truncate">{target}</span>
-        <span className={cn(
-          "shrink-0 rounded-full px-1.5 py-px font-semibold",
-          event.phase === "running"
-            ? "bg-[rgba(47,184,132,0.11)] text-[color:var(--success)]"
-            : "bg-white/72 text-(--text-muted)",
-        )}>
-          {event.phase === "running" ? "执行中" : PHASE_STATUS_META[event.phase].label}
-        </span>
-      </div>
-    </div>
-  );
-});
 
 function display_window_title(window: StageWindowState): string {
   if (!is_low_signal_director_value(window.title)) {

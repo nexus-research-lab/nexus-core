@@ -53,12 +53,14 @@ export function StageMacMenuBar({
 }
 
 export function StageDesktopIcons({
+  on_restore,
   windows,
 }: {
+  on_restore: (window_id: string) => void;
   windows: StageWindowState[];
 }) {
   const desktop_items = windows
-    .filter((window) => window.kind !== "runtime_handoff" && window.kind !== "evidence")
+    .filter((window) => window.kind !== "runtime_handoff" && window.kind !== "evidence" && window.phase !== "closed")
     .slice(0, 4);
 
   if (!desktop_items.length) {
@@ -66,21 +68,30 @@ export function StageDesktopIcons({
   }
 
   return (
-    <div className="pointer-events-none absolute right-6 top-16 z-10 hidden grid-cols-1 gap-4 md:grid">
+    <div className="absolute right-6 top-16 z-10 hidden grid-cols-1 gap-4 md:grid">
       {desktop_items.map((window) => {
         const Icon = icon_for_window_kind(window.kind);
+        const app_label = stage_app_label_for_window_kind(window.kind);
         return (
-          <div className="flex w-[92px] flex-col items-center gap-1.5 text-center" key={window.id}>
+          <button
+            aria-label={`打开 ${app_label}：${window.title}`}
+            className="group flex w-[92px] flex-col items-center gap-1.5 text-center outline-none"
+            key={window.id}
+            onClick={() => on_restore(window.id)}
+            title={`${app_label} · ${window.title}`}
+            type="button"
+          >
             <div className={cn(
-              "grid h-12 w-12 place-items-center rounded-[15px] border border-white/62 bg-white/48 text-(--icon-default) shadow-[0_12px_30px_rgba(18,28,42,0.09)] backdrop-blur-xl",
+              "grid h-12 w-12 place-items-center rounded-[15px] border border-white/62 bg-white/48 text-(--icon-default) shadow-[0_12px_30px_rgba(18,28,42,0.09)] backdrop-blur-xl transition group-hover:-translate-y-0.5 group-hover:bg-white/70 group-focus-visible:ring-2 group-focus-visible:ring-[rgba(91,114,255,0.38)]",
               window.phase === "focused" && "bg-[rgba(91,114,255,0.14)] text-[color:var(--primary)]",
+              window.phase === "minimized" && "opacity-70",
             )}>
               <Icon className="h-5 w-5" />
             </div>
             <p className="line-clamp-2 text-[10px] font-semibold leading-4 text-(--text-strong)">
               {window.title}
             </p>
-          </div>
+          </button>
         );
       })}
     </div>

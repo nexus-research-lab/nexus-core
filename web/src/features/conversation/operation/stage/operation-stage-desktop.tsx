@@ -17,7 +17,6 @@ import { EmptyStage } from "../operation-stage-idle";
 import {
   build_stage_narrative,
   collect_narrative_events,
-  event_sequence_label,
   icon_for_window_kind,
   minimum_revealed_window_count,
   order_windows_for_reveal,
@@ -32,10 +31,8 @@ import { StageMacMenuBar, StageDesktopIcons } from "./operation-stage-mac-shell"
 import { DynamicStageFrame } from "./operation-stage-frame";
 import { OperationStageWindow } from "./operation-stage-window";
 import {
-  BackgroundWindowSummary,
   StageWindowDock,
   StageWindowsHiddenState,
-  WindowSettlementBar,
 } from "./operation-stage-window-controls";
 
 const STAGE_DESKTOP_WINDOW_KINDS = new Set<StageWindowKind>([
@@ -265,10 +262,9 @@ export function OperationStageDesktop({
         event={active_narrative_event}
         narrative={narrative}
       />
-      <StageDesktopIcons windows={window_states} />
+      <StageDesktopIcons windows={window_states} on_restore={restore_window} />
       {visible_windows.length ? visible_windows.map((window, index) => {
         const is_active = active_window_id === window.id && window.phase !== "minimized";
-        const sequence_label = event_sequence_label(window.payload.event, narrative_events);
         return (
           <OperationStageWindow
             app_label={stage_app_label_for_window_kind(window.kind)}
@@ -279,14 +275,6 @@ export function OperationStageDesktop({
               y: window_overrides[window.id]?.offset_y ?? 0,
             }}
             focus={is_active}
-            footer={(
-              <WindowSettlementBar
-                active={is_active}
-                event={window.payload.event}
-                sequence_label={sequence_label}
-                tone={window.kind === "terminal" ? "terminal" : "default"}
-              />
-            )}
             icon={icon_for_window_kind(window.kind)}
             key={window.id}
             content_mode={window_content_mode(window.kind)}
@@ -302,14 +290,7 @@ export function OperationStageDesktop({
             tone={window.kind === "terminal" ? "terminal" : "default"}
             z_index={is_active ? 44 : 8 + index}
           >
-            {is_active ? (
-              <StageWindowContent window={window} on_focus_event={focus_event_window} />
-            ) : (
-              <BackgroundWindowSummary
-                sequence_label={event_sequence_label(window.payload.event, narrative_events)}
-                window={window}
-              />
-            )}
+            <StageWindowContent window={window} on_focus_event={is_active ? focus_event_window : undefined} />
           </OperationStageWindow>
         );
       }) : desktop_windows.length ? (
