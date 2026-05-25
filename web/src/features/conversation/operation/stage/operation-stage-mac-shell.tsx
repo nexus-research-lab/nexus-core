@@ -10,7 +10,6 @@ import { cn } from "@/lib/utils";
 
 import type { StageWindowState } from "../operation-desktop-types";
 import type { NexusOperationEvent } from "../operation-types";
-import type { StageNarrativeState } from "./operation-stage-model";
 import {
   icon_for_window_kind,
   stage_app_label_for_window_kind,
@@ -19,11 +18,9 @@ import {
 export function StageMacMenuBar({
   active_window,
   event,
-  narrative,
 }: {
   active_window: StageWindowState | null;
   event: NexusOperationEvent;
-  narrative: StageNarrativeState;
 }) {
   const app_name = active_window ? stage_app_label_for_window_kind(active_window.kind) : "Nexus";
   const time_label = new Intl.DateTimeFormat("zh-CN", {
@@ -39,7 +36,8 @@ export function StageMacMenuBar({
         <span className="text-(--text-soft)">文件</span>
         <span className="text-(--text-soft)">编辑</span>
         <span className="text-(--text-soft)">显示</span>
-        <span className="truncate text-(--text-soft)">{narrative.label}</span>
+        <span className="text-(--text-soft)">窗口</span>
+        <span className="text-(--text-soft)">帮助</span>
       </div>
       <div className="flex shrink-0 items-center gap-3 text-(--text-soft)">
         <Search className="h-3.5 w-3.5" />

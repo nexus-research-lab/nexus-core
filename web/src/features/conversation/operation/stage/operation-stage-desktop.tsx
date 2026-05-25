@@ -260,7 +260,6 @@ export function OperationStageDesktop({
       <StageMacMenuBar
         active_window={active_window}
         event={active_narrative_event}
-        narrative={narrative}
       />
       <StageDesktopIcons windows={window_states} on_restore={restore_window} />
       {visible_windows.length ? visible_windows.map((window, index) => {
@@ -285,7 +284,6 @@ export function OperationStageDesktop({
             on_focus={() => focus_window(window.id)}
             on_minimize={() => minimize_window(window.id)}
             position_class_name={position_for_window(window, narrative.phase)}
-            status_label={window.phase === "focused" || is_active ? "当前" : window.phase === "background" ? "后台" : "活动"}
             title={window.title}
             tone={window.kind === "terminal" ? "terminal" : "default"}
             z_index={is_active ? 44 : 8 + index}
