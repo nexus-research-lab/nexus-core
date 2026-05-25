@@ -1,5 +1,5 @@
 import {
-  PauseCircle,
+  LayoutGrid,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -24,29 +24,33 @@ export function StageWindowsHiddenState({
   const minimized_count = windows.filter((window) => window.phase === "minimized").length;
   const closed_count = windows.filter((window) => window.phase === "closed").length;
   const has_only_minimized_windows = minimized_count > 0 && closed_count === 0;
-  const title = has_only_minimized_windows ? "所有窗口已最小化" : "桌面没有打开的窗口";
+  const title = has_only_minimized_windows ? "Desktop" : "Mission Control";
   const detail = has_only_minimized_windows
-    ? `${minimized_count} 个窗口仍在 Dock 中，可以恢复到桌面。`
+    ? `${minimized_count} 个窗口已最小化到 Dock。`
     : minimized_count > 0
-      ? `${minimized_count} 个窗口仍在 Dock 中，${closed_count} 个窗口已关闭。`
-    : "应用已被关闭，可以从桌面重新打开。";
+      ? `${minimized_count} 个窗口在 Dock，${closed_count} 个窗口已关闭。`
+    : "没有打开的应用窗口。";
 
   return (
     <div className="pointer-events-none absolute inset-0 z-[9] grid place-items-center px-6 text-center max-md:relative max-md:min-h-[260px]">
-      <div className="pointer-events-auto max-w-[300px] rounded-[18px] border border-white/70 bg-white/70 p-5 shadow-[0_24px_64px_rgba(18,28,42,0.12)] backdrop-blur-xl">
-        <div className="mx-auto mb-4 grid h-11 w-11 place-items-center rounded-[13px] border border-(--divider-subtle-color) bg-white/72 text-(--icon-muted)">
-          <PauseCircle className="h-5 w-5" />
+      <div className="pointer-events-auto max-w-[360px] rounded-[22px] border border-white/58 bg-white/34 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.62)] backdrop-blur-2xl">
+        <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-[16px] border border-white/62 bg-white/42 text-(--icon-muted) shadow-[0_16px_42px_rgba(18,28,42,0.08)]">
+          <LayoutGrid className="h-5 w-5" />
         </div>
         <p className="text-[15px] font-black tracking-[-0.025em] text-(--text-strong)">{title}</p>
         <p className="mt-2 text-[11px] leading-5 text-(--text-soft)">
           {detail}
         </p>
+        <div className="mx-auto mt-3 grid max-w-[260px] grid-cols-2 gap-2 text-[10px] font-semibold text-(--text-soft)">
+          <span className="rounded-[10px] bg-white/42 px-2 py-1.5">{minimized_count} minimized</span>
+          <span className="rounded-[10px] bg-white/42 px-2 py-1.5">{closed_count} closed</span>
+        </div>
         <button
-          className="mt-4 inline-flex h-8 items-center justify-center rounded-full border border-[rgba(91,114,255,0.22)] bg-[rgba(91,114,255,0.10)] px-3 text-[11px] font-bold text-[color:var(--primary)] transition hover:bg-[rgba(91,114,255,0.16)]"
+          className="mt-4 inline-flex h-8 items-center justify-center rounded-full border border-white/64 bg-white/58 px-3 text-[11px] font-bold text-(--text-strong) shadow-[0_8px_24px_rgba(18,28,42,0.08)] transition hover:bg-white/78 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.32)]"
           onClick={on_restore_all}
           type="button"
         >
-          恢复全部
+          Restore Windows
         </button>
       </div>
     </div>
