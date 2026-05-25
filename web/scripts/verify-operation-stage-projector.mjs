@@ -71,6 +71,7 @@ copyFileSync(join(operation_dir, "stage/operation-stage-keyboard-target.js"), jo
 copyFileSync(join(operation_dir, "stage/operation-stage-menu-model.js"), join(operation_dir, "stage/operation-stage-menu-model"));
 copyFileSync(join(operation_dir, "stage/operation-stage-window-titlebar.js"), join(operation_dir, "stage/operation-stage-window-titlebar"));
 copyFileSync(join(operation_dir, "stage/operation-stage-desktop-icons.js"), join(operation_dir, "stage/operation-stage-desktop-icons"));
+copyFileSync(join(operation_dir, "stage/operation-stage-minimized-window.js"), join(operation_dir, "stage/operation-stage-minimized-window"));
 mkdirSync(join(operation_dir, "apps"), { recursive: true });
 copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
 copyFileSync(join(operation_dir, "apps/operation-app-surface-policy.js"), join(operation_dir, "apps/operation-app-surface-policy"));
@@ -142,6 +143,9 @@ const {
   build_stage_desktop_icon_items,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-desktop-icons.js")));
 const {
+  build_stage_minimized_window_tile,
+} = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-minimized-window.js")));
+const {
   build_terminal_entries,
 } = await import(pathToFileURL(join(operation_dir, "apps/terminal-session-model.js")));
 const {
@@ -187,6 +191,7 @@ verify_desktop_keyboard_target_policy();
 verify_stage_menu_status_tracks_desktop_windows();
 verify_stage_window_titlebar_state();
 verify_stage_desktop_icon_items();
+verify_stage_minimized_window_tile();
 verify_stage_experience_state_machine(now);
 verify_live_episode_narrates_running_round(now);
 verify_api_retry_runtime_projection(now);
@@ -594,6 +599,15 @@ function verify_stage_desktop_icon_items() {
   assert(icons[1].aria_label === "恢复文件窗口：notes.md", `Minimized desktop icon should be a restore action, got ${icons[1].aria_label}`);
   assert(icons[2].file_kind_label === "图像", `Image desktop icon should expose image kind, got ${icons[2].file_kind_label}`);
   assert(!icons.some((item) => item.label === "preview"), "Desktop should not render synthetic preview artifact icons");
+}
+
+function verify_stage_minimized_window_tile() {
+  const tile = build_stage_minimized_window_tile({
+    app_label: "Safari",
+    title: "gomoku.html",
+  });
+  assert(tile.aria_label === "从 Dock 恢复：gomoku.html", `Minimized Dock tile should expose restore action, got ${tile.aria_label}`);
+  assert(tile.title === "Safari · gomoku.html · 已最小化", `Minimized Dock tile title should include app and state, got ${tile.title}`);
 }
 
 function mock_stage_window({

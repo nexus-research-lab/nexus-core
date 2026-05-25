@@ -9,6 +9,7 @@ import {
   is_low_signal_director_value,
   stage_app_label_for_window_kind,
 } from "./operation-stage-helpers";
+import { build_stage_minimized_window_tile } from "./operation-stage-minimized-window";
 import {
   build_dock_app_slots,
   group_dock_windows_by_app,
@@ -169,13 +170,17 @@ export function StageWindowDock({
               const Icon = icon_for_window_kind(window.kind);
               const app_label = stage_app_label_for_window_kind(window.kind);
               const window_title = display_window_title(window);
+              const tile = build_stage_minimized_window_tile({
+                app_label,
+                title: window_title,
+              });
               return (
                 <button
-                  aria-label={`恢复：${window_title}`}
-                  className="group relative grid h-[42px] w-[58px] shrink-0 place-items-center overflow-hidden rounded-[12px] border border-white/58 bg-white/40 text-(--icon-muted) shadow-[inset_0_1px_0_rgba(255,255,255,0.70)] transition duration-200 ease-out hover:-translate-y-2 hover:bg-white/70 hover:text-(--text-strong) focus-visible:-translate-y-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.42)]"
+                  aria-label={tile.aria_label}
+                  className="operation-window-dock-minimized group relative grid h-[42px] w-[58px] shrink-0 place-items-center overflow-hidden rounded-[12px] border border-white/58 bg-white/40 text-(--icon-muted) shadow-[inset_0_1px_0_rgba(255,255,255,0.70)] transition duration-200 ease-out hover:-translate-y-2 hover:bg-white/70 hover:text-(--text-strong) focus-visible:-translate-y-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.42)]"
                   key={window.id}
                   onClick={() => on_restore(window.id)}
-                  title={`已最小化：${window_title}`}
+                  title={tile.title}
                   type="button"
                 >
                   <div className="absolute inset-x-1 top-1 h-3 rounded-[8px] border border-white/54 bg-white/48" />

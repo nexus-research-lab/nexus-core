@@ -135,9 +135,15 @@ export function OperationStageMotionStyles() {
         }
 
         @keyframes nexus-operation-window-restore {
-          0% { filter: saturate(.9) brightness(1.03); transform: translate3d(0, 14px, 0) scale(.965); }
-          58% { filter: saturate(1.04) brightness(1.01); transform: translate3d(0, -3px, 0) scale(1.012); }
+          0% { opacity: .72; filter: saturate(.9) brightness(1.03); transform: translate3d(0, 54px, 0) scale(.86); }
+          58% { opacity: 1; filter: saturate(1.04) brightness(1.01); transform: translate3d(0, -4px, 0) scale(1.012); }
           100% { filter: saturate(1) brightness(1); transform: translate3d(0, 0, 0) scale(1); }
+        }
+
+        @keyframes nexus-operation-dock-tile-enter {
+          0% { opacity: 0; transform: translate3d(0, -18px, 0) scale(.82); filter: blur(2px); }
+          62% { opacity: 1; transform: translate3d(0, 3px, 0) scale(1.06); filter: blur(0); }
+          100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
         }
 
         .operation-stage-window {
@@ -163,6 +169,12 @@ export function OperationStageMotionStyles() {
 
         .operation-stage-window-restoring {
           animation: nexus-operation-window-restore 360ms cubic-bezier(.2,.9,.18,1) both;
+          transform-origin: 50% 100%;
+        }
+
+        .operation-window-dock-minimized {
+          animation: nexus-operation-dock-tile-enter 260ms cubic-bezier(.18,.88,.22,1) both;
+          transform-origin: 50% 0%;
         }
 
         .operation-stage-agent-cursor {
