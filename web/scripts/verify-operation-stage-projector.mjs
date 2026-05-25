@@ -119,6 +119,7 @@ const {
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-app-identity.js")));
 const {
   resolve_next_window_focus,
+  resolve_cycled_window_focus,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-window-focus.js")));
 const {
   build_terminal_entries,
@@ -262,6 +263,8 @@ function verify_window_keyboard_actions_match_mac_window_controls() {
   assert(resolve_operation_window_keyboard_action({ key: "M", metaKey: true }) === "minimize", "Cmd+M should minimize the focused window");
   assert(resolve_operation_window_keyboard_action({ key: "f", metaKey: true, ctrlKey: true }) === "zoom", "Ctrl+Cmd+F should zoom the focused window");
   assert(resolve_operation_window_keyboard_action({ key: "Enter", metaKey: true }) === "zoom", "Cmd+Enter should zoom the focused window");
+  assert(resolve_operation_window_keyboard_action({ key: "`", metaKey: true }) === "cycle_next", "Cmd+` should cycle to the next desktop window");
+  assert(resolve_operation_window_keyboard_action({ key: "`", metaKey: true, shiftKey: true }) === "cycle_previous", "Cmd+Shift+` should cycle to the previous desktop window");
   assert(resolve_operation_window_keyboard_action({ key: "w", metaKey: true, shiftKey: true }) === null, "Modified Cmd+W should not trigger the simple close action");
   assert(resolve_operation_window_keyboard_action({ key: "a", metaKey: true }) === null, "Unrelated shortcuts should stay with the app content");
 }
@@ -395,6 +398,21 @@ function verify_window_focus_moves_to_next_visible_window() {
     hidden_window_id: "terminal",
     windows: windows.map((window) => window.id === "browser" ? { ...window, phase: "minimized" } : window),
   }) === "finder", "Focus fallback should skip minimized windows");
+  assert(resolve_cycled_window_focus({
+    current_focus_id: "browser",
+    direction: "next",
+    windows,
+  }) === "terminal", "Window cycle should move to the next visible window by z order");
+  assert(resolve_cycled_window_focus({
+    current_focus_id: "browser",
+    direction: "previous",
+    windows,
+  }) === "finder", "Reverse window cycle should wrap to the previous visible window by z order");
+  assert(resolve_cycled_window_focus({
+    current_focus_id: null,
+    direction: "next",
+    windows,
+  }) === "browser", "Window cycle should start from the topmost visible window when focus is empty");
 }
 
 function mock_stage_window({

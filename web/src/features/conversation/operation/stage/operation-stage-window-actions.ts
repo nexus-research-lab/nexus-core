@@ -1,4 +1,10 @@
-export type OperationStageWindowKeyboardAction = "focus" | "close" | "minimize" | "zoom";
+export type OperationStageWindowKeyboardAction =
+  | "cycle_next"
+  | "cycle_previous"
+  | "focus"
+  | "close"
+  | "minimize"
+  | "zoom";
 
 export interface OperationStageWindowKeyboardInput {
   key: string;
@@ -11,7 +17,13 @@ export interface OperationStageWindowKeyboardInput {
 export function resolve_operation_window_keyboard_action(
   input: OperationStageWindowKeyboardInput,
 ): OperationStageWindowKeyboardAction | null {
-  if (input.altKey || input.shiftKey) {
+  if (input.altKey) {
+    return null;
+  }
+  if (input.metaKey && !input.ctrlKey && is_cycle_window_key(input.key)) {
+    return input.shiftKey || input.key === "~" ? "cycle_previous" : "cycle_next";
+  }
+  if (input.shiftKey) {
     return null;
   }
   if (!input.metaKey && !input.ctrlKey) {
@@ -39,4 +51,8 @@ export function resolve_operation_window_keyboard_action(
     return "zoom";
   }
   return null;
+}
+
+function is_cycle_window_key(key: string): boolean {
+  return key === "`" || key === "~" || key === "Backquote";
 }

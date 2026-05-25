@@ -28,6 +28,7 @@ interface OperationStageWindowProps {
   on_focus?: () => void;
   on_minimize?: () => void;
   on_zoom?: () => void;
+  on_cycle_focus?: (direction: "next" | "previous") => void;
 }
 
 export function OperationStageWindow({
@@ -52,6 +53,7 @@ export function OperationStageWindow({
   on_focus,
   on_minimize,
   on_zoom,
+  on_cycle_focus,
 }: OperationStageWindowProps) {
   const drag_state_ref = useRef<{
     pointer_id: number;
@@ -205,6 +207,10 @@ export function OperationStageWindow({
           on_close?.();
         } else if (action === "minimize") {
           on_minimize?.();
+        } else if (action === "cycle_next") {
+          on_cycle_focus?.("next");
+        } else if (action === "cycle_previous") {
+          on_cycle_focus?.("previous");
         } else {
           on_zoom?.();
         }

@@ -33,7 +33,10 @@ import {
   StageWindowDock,
   StageWindowsHiddenState,
 } from "./operation-stage-window-controls";
-import { resolve_next_window_focus } from "./operation-stage-window-focus";
+import {
+  resolve_cycled_window_focus,
+  resolve_next_window_focus,
+} from "./operation-stage-window-focus";
 
 export function OperationStageDesktop({
   event,
@@ -227,6 +230,14 @@ export function OperationStageDesktop({
     });
   };
 
+  const cycle_window_focus = (direction: "next" | "previous") => {
+    set_focused_window_id((current) => resolve_cycled_window_focus({
+      current_focus_id: current ?? active_window_id,
+      direction,
+      windows: window_states,
+    }));
+  };
+
   const restore_window = (window_id: string) => {
     set_focused_window_id(window_id);
     const restore_token = Date.now();
@@ -305,6 +316,7 @@ export function OperationStageDesktop({
             on_focus={() => focus_window(window.id)}
             on_minimize={() => minimize_window(window.id)}
             on_zoom={() => toggle_zoom_window(window.id)}
+            on_cycle_focus={cycle_window_focus}
             position_class_name={is_maximized
               ? "left-[4%] top-[8%] h-[78%] w-[92%]"
               : position_for_window(window, narrative.phase)}
