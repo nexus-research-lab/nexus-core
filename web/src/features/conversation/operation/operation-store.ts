@@ -3,7 +3,10 @@ import { persist } from "zustand/middleware";
 
 import { get_session_key_identity } from "@/lib/conversation/session-key";
 import { create_browser_json_storage } from "@/lib/storage/browser-storage";
-import type { AgentConversationIdentity } from "@/types/agent/agent-conversation";
+import {
+  get_agent_conversation_identity_key,
+  type AgentConversationIdentity,
+} from "@/types/agent/agent-conversation";
 
 import type { NexusOperationSnapshot } from "./operation-types";
 
@@ -23,6 +26,11 @@ export function build_operation_stage_key(
 ): string | null {
   if (!identity) {
     return null;
+  }
+
+  const identity_key = get_agent_conversation_identity_key(identity);
+  if (identity_key) {
+    return identity_key;
   }
 
   const conversation_id = identity.conversation_id?.trim();
