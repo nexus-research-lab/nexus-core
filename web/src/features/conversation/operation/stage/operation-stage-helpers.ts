@@ -1,9 +1,5 @@
 export {
-  collect_archive_capsules,
-  collect_completion_artifacts,
   collect_completion_workspace_artifacts,
-  collect_handoff_checklist,
-  collect_handoff_items,
 } from "./operation-stage-artifacts";
 export {
   build_stage_narrative,

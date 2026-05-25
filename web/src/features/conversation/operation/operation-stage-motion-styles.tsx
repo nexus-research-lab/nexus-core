@@ -134,18 +134,6 @@ export function OperationStageMotionStyles() {
           100% { transform: scaleX(1); opacity: .78; }
         }
 
-        @keyframes nexus-operation-director-cue {
-          0% { opacity: 0; transform: translate3d(10px, 12px, 0) scale(.982); filter: blur(3px); }
-          34% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
-          100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
-        }
-
-        @keyframes nexus-operation-handoff-spotlight {
-          0% { opacity: 0; transform: translate3d(0, 16px, 0) scale(.986); filter: blur(4px); }
-          42% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
-          100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
-        }
-
         @keyframes nexus-operation-window-restore {
           0% { filter: saturate(.9) brightness(1.03); transform: translate3d(0, 14px, 0) scale(.965); }
           58% { filter: saturate(1.04) brightness(1.01); transform: translate3d(0, -3px, 0) scale(1.012); }
@@ -344,14 +332,6 @@ export function OperationStageMotionStyles() {
           transform-origin: left center;
         }
 
-        .operation-stage-director-cue {
-          animation: nexus-operation-director-cue 520ms cubic-bezier(.16,.84,.24,1) both;
-        }
-
-        .operation-stage-handoff-spotlight {
-          animation: nexus-operation-handoff-spotlight 640ms cubic-bezier(.16,.84,.24,1) both;
-        }
-
         @media (max-width: 767px) {
           .operation-stage-mobile-panel {
             left: auto !important;
@@ -381,8 +361,6 @@ export function OperationStageMotionStyles() {
           .operation-event-signal,
           .operation-materializing-signal,
           .operation-materializing-line,
-          .operation-stage-director-cue,
-          .operation-stage-handoff-spotlight,
           .operation-window-traffic-icon {
             animation: none !important;
             transition: none !important;

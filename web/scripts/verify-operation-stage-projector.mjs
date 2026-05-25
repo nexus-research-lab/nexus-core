@@ -6,7 +6,6 @@ import { tmpdir } from "node:os";
 
 import { verify_completed_round_replay_uses_event_slice } from "./operation-stage-replay-verifier.mjs";
 import { verify_html_artifact_opens_browser_srcdoc } from "./operation-stage-browser-verifier.mjs";
-import { verify_handoff_spotlight_model } from "./operation-stage-handoff-verifier.mjs";
 
 const script_dir = dirname(fileURLToPath(import.meta.url));
 const web_root = dirname(script_dir);
@@ -54,7 +53,6 @@ copyFileSync(join(operation_dir, "operation-preview.js"), join(operation_dir, "o
 copyFileSync(join(operation_dir, "operation-scene-planner-helpers.js"), join(operation_dir, "operation-scene-planner-helpers"));
 copyFileSync(join(operation_dir, "operation-stage-labels.js"), join(operation_dir, "operation-stage-labels"));
 copyFileSync(join(operation_dir, "operation-stage-experience.js"), join(operation_dir, "operation-stage-experience"));
-copyFileSync(join(operation_dir, "operation-stage-handoff-spotlight-model.js"), join(operation_dir, "operation-stage-handoff-spotlight-model"));
 copyFileSync(join(operation_dir, "operation-terminal-lines.js"), join(operation_dir, "operation-terminal-lines"));
 copyFileSync(join(operation_dir, "operation-summary-events.js"), join(operation_dir, "operation-summary-events"));
 mkdirSync(join(operation_dir, "stage"), { recursive: true });
@@ -72,9 +70,6 @@ const {
   merge_operation_stage_snapshots_for_restore,
 } = await import(pathToFileURL(join(operation_dir, "operation-stage-experience.js")));
 const {
-  build_operation_stage_handoff_spotlight_model,
-} = await import(pathToFileURL(join(operation_dir, "operation-stage-handoff-spotlight-model.js")));
-const {
   fallback_stage_event_object_label,
   fallback_stage_event_target_label,
   is_low_signal_stage_label,
@@ -87,14 +82,6 @@ const now = Date.now();
 
 verify_desktop_window_kind_contract();
 verify_stage_experience_state_machine(now);
-verify_handoff_spotlight_model({
-  assert,
-  build_operation_stage_handoff_spotlight_model,
-  fallback_stage_event_object_label,
-  fallback_stage_event_target_label,
-  is_low_signal_stage_label,
-  now,
-});
 verify_live_episode_narrates_running_round(now);
 verify_api_retry_runtime_projection(now);
 verify_active_event_stays_with_latest_round(now);
