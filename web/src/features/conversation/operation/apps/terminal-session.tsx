@@ -70,23 +70,21 @@ export function TerminalSession({
             {entry.stdout.length || entry.stderr.length || entry.other.length ? (
               <div className="mt-1.5 space-y-0.5">
                 {entry.stdout.map((line, index) => (
-                  <TerminalOutputLine key={`stdout:${index}:${line}`} line={line} line_number={index + 1} stream="stdout" />
+                  <TerminalOutputLine key={`stdout:${index}:${line}`} line={line} stream="stdout" />
                 ))}
                 {entry.stderr.map((line, index) => (
-                  <TerminalOutputLine key={`stderr:${index}:${line}`} line={line} line_number={entry.stdout.length + index + 1} stream="stderr" />
+                  <TerminalOutputLine key={`stderr:${index}:${line}`} line={line} stream="stderr" />
                 ))}
                 {entry.other.map((line, index) => (
                   <TerminalOutputLine
                     key={`other:${index}:${line}`}
                     line={line}
-                    line_number={entry.stdout.length + entry.stderr.length + index + 1}
                     stream="output"
                   />
                 ))}
               </div>
             ) : (
-              <div className="mt-1.5 flex min-w-0 items-center gap-2 text-[#6f827d]">
-                <span className="w-8 shrink-0 select-none text-right text-[#344852]">~</span>
+              <div className="mt-1.5 flex min-w-0 items-center gap-2 pl-5 text-[#6f827d]">
                 <span>{entry.phase === "running" ? "waiting for stdout/stderr..." : "[process completed with no stdout/stderr]"}</span>
               </div>
             )}
@@ -235,27 +233,20 @@ function TerminalMiniBadge({
 }
 
 function TerminalOutputLine({
-  line_number,
   line,
   stream = "output",
 }: {
-  line_number: number;
   line: string;
   stream?: "stdout" | "stderr" | "output";
 }) {
   if (line === "") {
-    return (
-      <div className="flex h-5 min-w-0 items-start gap-2">
-        <span className="w-8 shrink-0 select-none text-right text-[#344852]">{line_number}</span>
-      </div>
-    );
+    return <div className="h-5" />;
   }
 
   const prompt_match = line.match(/^(\s*[$>]\s?)(.*)$/);
   if (prompt_match) {
     return (
-      <div className="flex min-w-0 items-start gap-2">
-        <span className="w-8 shrink-0 select-none text-right text-[#344852]">{line_number}</span>
+      <div className="flex min-w-0 items-start gap-2 pl-5">
         <span className="select-none text-[#526875]">{prompt_match[1].trim()}</span>
         <span className="ml-2 min-w-0 break-words text-[#d9ffe5]">{prompt_match[2]}</span>
       </div>
@@ -264,19 +255,9 @@ function TerminalOutputLine({
 
   const is_error = /\b(error|failed|panic|exception|denied)\b/i.test(line);
   const is_success = /^(✓|done|success|passed)\b/i.test(line);
-  const stream_label = stream === "stderr" ? "err" : stream === "stdout" ? "out" : "";
 
   return (
-    <div className="flex min-w-0 items-start gap-2">
-      <span className="w-8 shrink-0 select-none text-right text-[#344852]">{line_number}</span>
-      {stream_label ? (
-        <span className={cn(
-          "mt-[2px] w-7 shrink-0 select-none rounded px-1 text-center text-[9px] leading-4",
-          stream === "stderr" ? "bg-[#3b1b20] text-[#ff9d9d]" : "bg-[#10272b] text-[#80cbc4]",
-        )}>
-          {stream_label}
-        </span>
-      ) : null}
+    <div className="flex min-w-0 items-start pl-5">
       <span className={cn(
         "min-w-0 break-words whitespace-pre-wrap",
         stream === "stderr" || is_error ? "text-[#ff8f8f]" : is_success ? "text-[#8de0ad]" : "text-[#b7cbc5]",
