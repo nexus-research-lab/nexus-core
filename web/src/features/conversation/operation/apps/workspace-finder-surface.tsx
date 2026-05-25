@@ -1,11 +1,18 @@
 import {
   ChevronRight,
+  Columns3,
+  FileCode2,
+  FileImage,
+  FileSpreadsheet,
   FileText,
   FolderOpen,
   HardDrive,
   List,
   Search,
+  SquareStack,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -37,7 +44,7 @@ export function WorkspaceFinder({
   const changed_count = display_items.filter((item) => item.status === "updated" || item.status === "writing").length;
 
   return (
-    <div className="flex min-h-0 flex-1 overflow-hidden rounded-[13px] border border-(--divider-subtle-color) bg-[#f8fafc]">
+    <div className="flex min-h-0 flex-1 overflow-hidden bg-[#f8fafc]">
       <div className="hidden w-36 shrink-0 border-r border-(--divider-subtle-color) bg-[#eef3f8]/88 p-2 text-[11px] font-semibold text-(--text-soft) sm:block">
         <FinderSidebarItem active icon={FolderOpen} label="工作区" />
         <FinderSidebarItem icon={Search} label="搜索" />
@@ -48,7 +55,12 @@ export function WorkspaceFinder({
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-center justify-between gap-3 border-b border-(--divider-subtle-color) bg-white/64 px-3 py-2">
           <div className="flex min-w-0 items-center gap-2">
-            <List className="h-3.5 w-3.5 shrink-0 text-(--icon-muted)" />
+            <FinderToolbarButton label="列表视图" active>
+              <List className="h-3.5 w-3.5" />
+            </FinderToolbarButton>
+            <FinderToolbarButton label="分栏视图">
+              <Columns3 className="h-3.5 w-3.5" />
+            </FinderToolbarButton>
             <div className="min-w-0">
               <p className="truncate text-[11px] font-black text-(--text-strong)">工作区</p>
               <p className="truncate text-[10px] text-(--text-soft)">
@@ -60,6 +72,9 @@ export function WorkspaceFinder({
             <Search className="mr-1.5 h-3 w-3 shrink-0" />
             <span className="truncate">{active_path ?? event.target ?? "搜索工作区"}</span>
           </div>
+          <FinderToolbarButton label="分组">
+            <SquareStack className="h-3.5 w-3.5" />
+          </FinderToolbarButton>
           <span className={cn(
             "shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold",
             event.phase === "running"
@@ -71,6 +86,11 @@ export function WorkspaceFinder({
         </div>
         <div className="grid min-h-0 grid-cols-[minmax(0,1fr)_minmax(160px,0.36fr)] max-md:grid-cols-1">
           <div className="soft-scrollbar min-h-0 overflow-auto p-2">
+            <div className="grid grid-cols-[minmax(0,1fr)_72px_86px] gap-2 px-2 pb-1 text-[9px] font-bold uppercase tracking-[0.12em] text-(--text-soft)">
+              <span>Name</span>
+              <span>Status</span>
+              <span>Modified</span>
+            </div>
             {workspace_tree_rows(display_items.map((item) => item.path)).map((row) => (
               <WorkspaceTreeRow
                 active={row.path === active_path}
@@ -86,7 +106,10 @@ export function WorkspaceFinder({
           <aside className="hidden min-h-0 border-l border-(--divider-subtle-color) bg-white/54 p-3 md:block">
             <p className="text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">Preview</p>
             <div className="mt-3 grid h-16 w-16 place-items-center rounded-[16px] border border-(--divider-subtle-color) bg-white/74 text-(--icon-default)">
-              <FileText className="h-7 w-7" />
+              {(() => {
+                const Icon = icon_for_workspace_path(active_path ?? event.target ?? display_items[0]?.path ?? "");
+                return <Icon className="h-7 w-7" />;
+              })()}
             </div>
             <p className="mt-3 line-clamp-2 text-[12px] font-black text-(--text-strong)">
               {basename(active_path ?? event.target ?? display_items[0]?.path ?? "workspace")}
@@ -101,13 +124,39 @@ export function WorkspaceFinder({
   );
 }
 
+function FinderToolbarButton({
+  active = false,
+  children,
+  label,
+}: {
+  active?: boolean;
+  children: ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      aria-label={label}
+      className={cn(
+        "grid h-7 w-7 shrink-0 place-items-center rounded-[8px] border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.32)]",
+        active
+          ? "border-(--divider-subtle-color) bg-white text-(--text-strong)"
+          : "border-transparent bg-white/42 text-(--icon-muted) hover:bg-white/76 hover:text-(--text-strong)",
+      )}
+      title={label}
+      type="button"
+    >
+      {children}
+    </button>
+  );
+}
+
 function FinderSidebarItem({
   active = false,
   icon: Icon,
   label,
 }: {
   active?: boolean;
-  icon: typeof FolderOpen;
+  icon: LucideIcon;
   label: string;
 }) {
   return (
@@ -137,26 +186,22 @@ function WorkspaceTreeRow({
   type: "folder" | "file";
 }) {
   const status = item?.status;
+  const Icon = type === "folder" ? FolderOpen : icon_for_workspace_path(path);
   return (
     <div
       className={cn(
-        "flex min-w-0 items-center gap-2 rounded-[9px] px-2 py-1.5 text-[11px]",
+        "grid grid-cols-[auto_auto_minmax(0,1fr)_72px_86px] items-center gap-2 rounded-[9px] px-2 py-1.5 text-[11px]",
         active ? "bg-[rgba(91,114,255,0.12)] text-[color:var(--primary)]" : "text-(--text-muted) hover:bg-white/70",
       )}
       title={path}
     >
       <span style={{ width: depth * 12 }} className="shrink-0" />
       {type === "folder" ? (
-        <>
-          <ChevronRight className="h-3 w-3 shrink-0 text-(--icon-muted)" />
-          <FolderOpen className="h-3.5 w-3.5 shrink-0" />
-        </>
+        <ChevronRight className="h-3 w-3 shrink-0 text-(--icon-muted)" />
       ) : (
-        <>
-          <span className="h-3 w-3 shrink-0" />
-          <FileText className="h-3.5 w-3.5 shrink-0" />
-        </>
+        <span className="h-3 w-3 shrink-0" />
       )}
+      <Icon className="h-3.5 w-3.5 shrink-0" />
       <span className={cn("min-w-0 flex-1 truncate", type === "folder" && "font-bold text-(--text-strong)")}>
         {label}
       </span>
@@ -170,7 +215,10 @@ function WorkspaceTreeRow({
         )}>
           {status}
         </span>
-      ) : null}
+      ) : <span />}
+      <span className="truncate text-[9px] text-(--text-soft)">
+        {item ? format_workspace_time(item.updated_at) : "--"}
+      </span>
     </div>
   );
 }
@@ -211,4 +259,24 @@ function workspace_tree_rows(paths: string[]): Array<{
 
 function basename(path: string): string {
   return path.split("/").filter(Boolean).at(-1) ?? path;
+}
+
+function icon_for_workspace_path(path: string): LucideIcon {
+  if (/\.(tsx?|jsx?|json|ya?ml|toml|css|scss|html?)$/i.test(path)) {
+    return FileCode2;
+  }
+  if (/\.(csv|xlsx?|ods)$/i.test(path)) {
+    return FileSpreadsheet;
+  }
+  if (/\.(png|jpe?g|webp|gif|svg)$/i.test(path)) {
+    return FileImage;
+  }
+  return FileText;
+}
+
+function format_workspace_time(timestamp: number): string {
+  return new Intl.DateTimeFormat("zh-CN", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(timestamp < 1_000_000_000_000 ? timestamp * 1000 : timestamp));
 }
