@@ -24,7 +24,7 @@ export function RuntimeHandoffSurface({
   const is_retrying = is_runtime_retry_event(event);
   const prompt = read_prompt_from_preview(event.input_preview) ?? summary ?? event.target ?? "等待运行时接入";
 
-  const connection_label = is_retrying ? "RETRYING" : is_stalled ? "WAITING" : "CONNECTING";
+  const connection_label = is_retrying ? "重试中" : is_stalled ? "等待中" : "连接中";
 
   return (
     <div className="flex h-full min-h-[280px] min-w-0 flex-col overflow-hidden bg-[#101820] text-[#dce8ee]">
@@ -34,7 +34,7 @@ export function RuntimeHandoffSurface({
             <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-[#17232c] text-[#8de0ad]">
               {event.phase === "running" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Terminal className="h-3.5 w-3.5" />}
             </span>
-            <span className="truncate text-[11px] font-bold text-[#e7eef5]">Nexus Shell</span>
+            <span className="truncate text-[11px] font-bold text-[#e7eef5]">Nexus 终端</span>
           </div>
           <span className="inline-flex shrink-0 items-center gap-1 rounded bg-white/[0.06] px-1.5 py-px text-[9px] font-bold text-[#8aa0ad]">
             <Wifi className="h-2.5 w-2.5" />
@@ -44,31 +44,31 @@ export function RuntimeHandoffSurface({
         <div className="flex min-w-0 items-end gap-1.5 px-3">
           <div className="flex min-w-0 max-w-[70%] items-center gap-1.5 rounded-t-[9px] border border-b-0 border-white/10 bg-[#101820] px-3 py-1.5 text-[10px] font-semibold text-[#dce8ee]">
             <RadioTower className="h-3 w-3 shrink-0 text-[#8ca0ff]" />
-            <span className="truncate">{event.agent_id || "agent"} · runtime login</span>
+            <span className="truncate">{event.agent_id || "agent"} · 桌面接入</span>
           </div>
         </div>
       </div>
       <div className="soft-scrollbar min-h-0 flex-1 overflow-auto p-4 font-mono text-[11px] leading-5">
-        <RuntimeLine tone="muted" value={`last login ${format_operation_time(handoff_started_at)}`} />
-        <RuntimeLine tone="muted" value={`session ${event.session_key}`} />
-        <RuntimeLine tone="ok" value="login accepted for nexus desktop" />
-        <RuntimeLine tone="ok" value="mounted ~/workspace" />
-        <RuntimeLine tone="ok" value="loaded conversation context" />
-        <RuntimeLine tone="ok" value="waiting for LaunchServices to open the first app" />
+        <RuntimeLine tone="muted" value={`上次登录 ${format_operation_time(handoff_started_at)}`} />
+        <RuntimeLine tone="muted" value={`会话 ${event.session_key}`} />
+        <RuntimeLine tone="ok" value="已登录 Nexus 桌面" />
+        <RuntimeLine tone="ok" value="已挂载 ~/workspace" />
+        <RuntimeLine tone="ok" value="已载入对话上下文" />
+        <RuntimeLine tone="ok" value="正在等待启动服务打开首个应用" />
         <RuntimeLine tone="muted" value={`open -a Nexus --session ${event.session_key}`} />
         <RuntimeLine
           tone={is_stalled || is_retrying ? "warn" : "active"}
           value={is_retrying
-            ? "retrying model request before opening the first app..."
+            ? "模型请求重试中，首个应用稍后打开..."
             : is_stalled
-              ? `waiting for first app window after ${format_handoff_elapsed(elapsed_ms)}`
-              : "waiting for first tool to open an app window..."}
+              ? `已等待 ${format_handoff_elapsed(elapsed_ms)}，首个应用窗口尚未出现`
+              : "等待第一个工具打开应用窗口..."}
         />
         {is_stalled || is_retrying ? (
-          <RuntimeLine tone="muted" value="desktop will keep this shell open until the next app appears" />
+          <RuntimeLine tone="muted" value="桌面会保留这个终端，直到下一个应用出现" />
         ) : null}
         <div className="mt-4 border-l border-[#8ca0ff]/38 pl-3">
-          <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[#8aa0ad]">INTENT</p>
+          <p className="mb-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[#8aa0ad]">意图</p>
           <p className="line-clamp-5 font-sans text-[12px] leading-5 text-[#dce8ee]">{prompt}</p>
         </div>
       </div>

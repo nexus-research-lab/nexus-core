@@ -43,7 +43,7 @@ export function ActivityMonitorSurface({
   const task_events = collect_task_events(event, snapshot);
   const steps = task_events.map((item, index) => ({
     event: item,
-    label: item.target ?? item.summary ?? item.tool_name ?? `step ${index + 1}`,
+    label: item.target ?? item.summary ?? item.tool_name ?? `进程 ${index + 1}`,
     status: PHASE_LABEL[item.phase],
   }));
   const active_index = Math.max(0, steps.findIndex((step) => step.event.id === event.id));
@@ -58,9 +58,9 @@ export function ActivityMonitorSurface({
         <div className="border-b border-(--divider-subtle-color) bg-white/72 px-3 py-2.5">
           <div className="flex min-w-0 items-center justify-between gap-2">
             <div className="min-w-0">
-              <p className="truncate text-[12px] font-black text-(--text-strong)">Activity Monitor</p>
+              <p className="truncate text-[12px] font-black text-(--text-strong)">活动监视器</p>
               <p className="mt-0.5 truncate text-[10px] text-(--text-soft)">
-                {running_count ? `${running_count} running` : `${finished_count}/${Math.max(task_events.length, 1)} complete`}
+                {running_count ? `${running_count} 个进程活跃` : `${finished_count}/${Math.max(task_events.length, 1)} 已完成`}
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-1">
@@ -74,11 +74,11 @@ export function ActivityMonitorSurface({
           </div>
           <div className="mt-2 flex min-w-0 items-center gap-1.5 rounded-[8px] border border-(--divider-subtle-color) bg-white/72 px-2 py-1 text-[10px] text-(--text-soft)">
             <Search className="h-3 w-3 shrink-0" />
-            <span className="truncate">Filter processes</span>
+            <span className="truncate">过滤进程</span>
           </div>
           <div className="mt-2 grid grid-cols-[minmax(0,1fr)_42px_38px] gap-2 px-1 text-[9px] font-bold uppercase tracking-[0.10em] text-(--text-soft)">
-            <span>Process Name</span>
-            <span>PID</span>
+            <span>进程名称</span>
+            <span>进程 ID</span>
             <span>%CPU</span>
           </div>
         </div>
@@ -129,8 +129,8 @@ export function ActivityMonitorSurface({
         </div>
         <div className="border-t border-(--divider-subtle-color) bg-white/58 p-2 text-[10px] text-(--text-muted)">
           <div className="mb-1 flex items-center justify-between gap-2">
-            <span className="font-black text-(--text-strong)">CPU Load</span>
-            <span className="font-mono">{running_count ? "Active" : "Idle"}</span>
+            <span className="font-black text-(--text-strong)">CPU 负载</span>
+            <span className="font-mono">{running_count ? "活跃" : "空闲"}</span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-[rgba(117,131,149,0.14)]">
             <span
@@ -139,9 +139,9 @@ export function ActivityMonitorSurface({
             />
           </div>
           <div className="mt-2 grid grid-cols-3 gap-1">
-            <ActivityMetric label="System" value={`${cpu_load.system}%`} />
-            <ActivityMetric label="User" value={`${cpu_load.user}%`} />
-            <ActivityMetric label="Proc" value={task_events.length} />
+            <ActivityMetric label="系统" value={`${cpu_load.system}%`} />
+            <ActivityMetric label="用户" value={`${cpu_load.user}%`} />
+            <ActivityMetric label="进程" value={task_events.length} />
           </div>
         </div>
       </section>
