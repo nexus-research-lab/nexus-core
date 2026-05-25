@@ -38,9 +38,9 @@ export function StageWindowsHiddenState({
     window.phase === "minimized" || window.phase === "closed"
   ));
   const has_only_minimized_windows = minimized_count > 0 && closed_count === 0;
-  const title = has_only_minimized_windows ? "Desktop" : "Mission Control";
+  const title = has_only_minimized_windows ? "桌面" : "调度中心";
   const detail = has_only_minimized_windows
-    ? `${minimized_count} 个窗口已最小化到 Dock。`
+    ? `${minimized_count} 个窗口已收进 Dock。`
     : minimized_count > 0
       ? `${minimized_count} 个窗口在 Dock，${closed_count} 个窗口已关闭。`
     : "没有打开的应用窗口。";
@@ -69,7 +69,7 @@ export function StageWindowsHiddenState({
           onClick={on_restore_all}
           type="button"
         >
-          Restore Windows
+          恢复所有窗口
         </button>
       </div>
     </div>
