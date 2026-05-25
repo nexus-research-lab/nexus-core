@@ -1,7 +1,3 @@
-import {
-  LayoutGrid,
-} from "lucide-react";
-
 import { cn } from "@/lib/utils";
 
 import type { StageWindowKind, StageWindowState } from "../operation-desktop-types";
@@ -17,6 +13,7 @@ import {
   build_dock_app_slots,
   group_dock_windows_by_app,
 } from "./operation-stage-dock-model";
+import { summarize_hidden_stage_windows } from "./operation-stage-hidden-windows";
 
 const PINNED_DOCK_APPS: Array<{ app_label: string; kind: StageWindowKind }> = [
   { app_label: "访达", kind: "finder" },
@@ -28,95 +25,30 @@ const PINNED_DOCK_APPS: Array<{ app_label: string; kind: StageWindowKind }> = [
 ];
 
 export function StageWindowsHiddenState({
-  on_restore,
   windows,
   on_restore_all,
 }: {
-  on_restore: (window_id: string) => void;
   windows: StageWindowState[];
   on_restore_all: () => void;
 }) {
-  const minimized_count = windows.filter((window) => window.phase === "minimized").length;
-  const closed_count = windows.filter((window) => window.phase === "closed").length;
-  const recoverable_windows = windows.filter((window) => (
-    window.phase === "minimized" || window.phase === "closed"
-  ));
-  const has_only_minimized_windows = minimized_count > 0 && closed_count === 0;
-  const title = has_only_minimized_windows ? "桌面" : "Mission Control";
-  const detail = has_only_minimized_windows
-    ? `${minimized_count} 个窗口已收进 Dock。`
-    : minimized_count > 0
-      ? `${minimized_count} 个窗口在 Dock，${closed_count} 个窗口已关闭。`
-    : "没有打开的应用窗口。";
+  const summary = summarize_hidden_stage_windows(windows);
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-[9] flex items-center justify-center px-8 pb-24 pt-14 text-center max-md:relative max-md:min-h-[260px] max-md:p-5">
-      <div className="pointer-events-auto w-full max-w-[760px]">
-        <div className="mb-4 flex items-center justify-center gap-2 text-(--text-soft)">
-          <LayoutGrid className="h-4 w-4" />
-          <div className="text-left">
-            <p className="text-[13px] font-black tracking-[-0.02em] text-(--text-strong)">{title}</p>
-            <p className="text-[10px] leading-4">{detail}</p>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          {recoverable_windows.slice(0, 6).map((window) => (
-            <MissionControlTile
-              key={window.id}
-              on_restore={on_restore}
-              window={window}
-            />
-          ))}
-        </div>
+    <div className="pointer-events-none absolute inset-0 z-[9] px-6 pb-24 pt-12 max-md:relative max-md:min-h-[220px] max-md:p-5">
+      <div className="pointer-events-auto absolute bottom-24 left-6 max-w-[260px] rounded-[14px] border border-white/58 bg-white/36 px-3 py-2 text-left text-(--text-soft) shadow-[0_12px_34px_rgba(18,28,42,0.08)] backdrop-blur-xl max-md:static max-md:mx-auto max-md:mt-20">
+        <p className="text-[11px] font-black text-(--text-strong)">桌面已清空</p>
+        <p className="mt-0.5 text-[10px] font-semibold leading-4">
+          {summary.label}
+        </p>
         <button
-          className="mt-4 inline-flex h-8 items-center justify-center rounded-full border border-white/64 bg-white/58 px-3 text-[11px] font-bold text-(--text-strong) shadow-[0_8px_24px_rgba(18,28,42,0.08)] transition hover:bg-white/78 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.32)]"
+          className="mt-2 inline-flex h-7 items-center justify-center rounded-full border border-white/64 bg-white/50 px-2.5 text-[10px] font-bold text-(--text-strong) transition hover:bg-white/76 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.32)]"
           onClick={on_restore_all}
           type="button"
         >
-          恢复所有窗口
+          从 Dock 恢复全部
         </button>
       </div>
     </div>
-  );
-}
-
-function MissionControlTile({
-  on_restore,
-  window,
-}: {
-  on_restore: (window_id: string) => void;
-  window: StageWindowState;
-}) {
-  const Icon = icon_for_window_kind(window.kind);
-  const app_label = stage_app_label_for_window_kind(window.kind);
-  const title = display_window_title(window);
-  const state_label = window.phase === "closed" ? "已关闭" : "已最小化";
-
-  return (
-    <button
-      aria-label={`恢复 ${app_label}：${title}`}
-      className="group min-w-0 rounded-[16px] border border-white/54 bg-white/36 p-2 text-left shadow-[0_20px_50px_rgba(18,28,42,0.10),inset_0_1px_0_rgba(255,255,255,0.62)] backdrop-blur-xl transition hover:-translate-y-1 hover:bg-white/58 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.38)]"
-      onClick={() => on_restore(window.id)}
-      type="button"
-    >
-      <div className="relative h-24 overflow-hidden rounded-[10px] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(231,238,247,0.70))]">
-        <div className="flex h-5 items-center gap-1 border-b border-white/52 bg-white/50 px-2">
-          <span className="h-1.5 w-1.5 rounded-full bg-[rgba(223,93,98,0.68)]" />
-          <span className="h-1.5 w-1.5 rounded-full bg-[rgba(223,157,46,0.72)]" />
-          <span className="h-1.5 w-1.5 rounded-full bg-[rgba(47,184,132,0.68)]" />
-        </div>
-        <div className="grid h-[calc(100%-1.25rem)] place-items-center text-(--icon-muted)">
-          <Icon className="h-7 w-7 transition group-hover:scale-105" />
-        </div>
-        <span className="absolute bottom-2 right-2 rounded-full bg-white/70 px-2 py-0.5 text-[9px] font-bold text-(--text-soft)">
-          {state_label}
-        </span>
-      </div>
-      <div className="mt-2 min-w-0 px-0.5">
-        <p className="truncate text-[11px] font-black text-(--text-strong)">{title}</p>
-        <p className="truncate text-[10px] font-semibold text-(--text-soft)">{app_label}</p>
-      </div>
-    </button>
   );
 }
 

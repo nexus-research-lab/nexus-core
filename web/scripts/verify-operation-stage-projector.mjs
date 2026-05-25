@@ -63,6 +63,7 @@ copyFileSync(join(operation_dir, "stage/operation-stage-dock-model.js"), join(op
 copyFileSync(join(operation_dir, "stage/operation-stage-window-actions.js"), join(operation_dir, "stage/operation-stage-window-actions"));
 copyFileSync(join(operation_dir, "stage/operation-stage-agent-cursor.js"), join(operation_dir, "stage/operation-stage-agent-cursor"));
 copyFileSync(join(operation_dir, "stage/operation-stage-window-reveal.js"), join(operation_dir, "stage/operation-stage-window-reveal"));
+copyFileSync(join(operation_dir, "stage/operation-stage-hidden-windows.js"), join(operation_dir, "stage/operation-stage-hidden-windows"));
 mkdirSync(join(operation_dir, "apps"), { recursive: true });
 copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
 copyFileSync(join(operation_dir, "apps/file-preview-value.js"), join(operation_dir, "apps/file-preview-value"));
@@ -107,6 +108,9 @@ const {
   initial_revealed_window_count,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-window-reveal.js")));
 const {
+  summarize_hidden_stage_windows,
+} = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-hidden-windows.js")));
+const {
   build_terminal_entries,
 } = await import(pathToFileURL(join(operation_dir, "apps/terminal-session-model.js")));
 const {
@@ -136,6 +140,7 @@ verify_dock_model_groups_windows_by_mac_app();
 verify_window_keyboard_actions_match_mac_window_controls();
 verify_agent_cursor_tracks_active_mac_app();
 verify_initial_window_reveal_avoids_desktop_clutter_flash();
+verify_hidden_stage_uses_desktop_state_instead_of_mission_control();
 verify_stage_experience_state_machine(now);
 verify_live_episode_narrates_running_round(now);
 verify_api_retry_runtime_projection(now);
@@ -281,6 +286,22 @@ function verify_initial_window_reveal_avoids_desktop_clutter_flash() {
     phase: "running",
     window_count: 0,
   }) === 0, "Empty desktop should stay empty on the first paint");
+}
+
+function verify_hidden_stage_uses_desktop_state_instead_of_mission_control() {
+  const minimized_summary = summarize_hidden_stage_windows([
+    mock_stage_window({ id: "hidden:terminal", kind: "terminal", phase: "minimized" }),
+    mock_stage_window({ id: "hidden:browser", kind: "browser", phase: "minimized" }),
+  ]);
+  assert(minimized_summary.hidden_count === 2, `Hidden summary should count hidden windows, got ${minimized_summary.hidden_count}`);
+  assert(minimized_summary.label === "2 个窗口在 Dock", `Minimized desktop should point users to Dock, got ${minimized_summary.label}`);
+
+  const mixed_summary = summarize_hidden_stage_windows([
+    mock_stage_window({ id: "hidden:terminal", kind: "terminal", phase: "minimized" }),
+    mock_stage_window({ id: "hidden:browser", kind: "browser", phase: "closed" }),
+  ]);
+  assert(mixed_summary.label === "1 个在 Dock · 1 个已关闭", `Mixed hidden desktop should avoid Mission Control language, got ${mixed_summary.label}`);
+  assert(!mixed_summary.label.toLowerCase().includes("mission"), "Hidden desktop summary should not use Mission Control panel language");
 }
 
 function mock_stage_window({
