@@ -67,7 +67,7 @@ export const SURFACE_META: Record<OperationSurface, SurfaceMeta> = {
     accent_class_name: "from-[rgba(91,114,255,0.2)] via-[rgba(255,255,255,0.08)] to-transparent",
   },
   summary: {
-    label: "交接",
+    label: "收口",
     Icon: CheckCircle2,
     accent_class_name: "from-[rgba(47,184,132,0.2)] via-[rgba(79,162,159,0.1)] to-transparent",
   },

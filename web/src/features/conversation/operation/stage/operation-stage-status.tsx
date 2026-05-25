@@ -89,7 +89,7 @@ const STAGE_PHASE_COMPASS_ITEMS: Array<{
   { id: "awakening", label: "唤醒", Icon: RadioTower },
   { id: "running", label: "执行", Icon: Activity },
   { id: "settling", label: "落盘", Icon: ListTree },
-  { id: "completed", label: "交接", Icon: CheckCircle2 },
+  { id: "completed", label: "归档", Icon: CheckCircle2 },
 ];
 
 function stage_phase_compass_active_index(phase: StageNarrativePhase): number {
@@ -240,7 +240,7 @@ function build_stage_director_cues({
   const next_step = error_count
     ? "先回看异常窗口、输入参数和证据，再决定重试或改写任务。"
     : narrative.phase === "completed" || narrative.phase === "settling"
-      ? "从交接清单继续，打开关键产物或回放任一步骤。"
+      ? "从执行记录继续，打开关键产物或回放任一步骤。"
       : event.phase === "waiting"
         ? "确认权限后，舞台会回到当前工具窗口继续执行。"
         : event.surface === "terminal"
@@ -280,8 +280,8 @@ function stage_status_display_title(
   }
   if (event.kind === "round_summary" || event.surface === "summary") {
     return narrative.phase === "completed" || narrative.phase === "settling"
-      ? "交接面板"
-      : "执行交接";
+      ? "执行记录"
+      : "执行收口";
   }
   return active_window?.title ?? narrative.label;
 }

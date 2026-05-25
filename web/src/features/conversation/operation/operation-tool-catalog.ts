@@ -323,8 +323,8 @@ export function resolve_operation_tool_profile(
   if (kind === "round_summary") {
     return {
       action: "summary",
-      action_label: "交接",
-      title: "执行交接",
+      action_label: "收口",
+      title: "执行收口",
       kind: "round_summary",
       surface: "summary",
       target_keys: DEFAULT_TARGET_KEYS,

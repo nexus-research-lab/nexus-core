@@ -77,8 +77,8 @@ export function infer_operation_tool_profile(
   if (matches_any(normalized, ["summary", "final", "respond"])) {
     return {
       action: "summary",
-      action_label: "交接",
-      title: "执行交接",
+      action_label: "收口",
+      title: "执行收口",
       kind: "round_summary",
       surface: "summary",
       target_keys: default_target_keys,

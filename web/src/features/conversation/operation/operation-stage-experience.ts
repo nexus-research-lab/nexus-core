@@ -109,7 +109,7 @@ export function build_operation_continuation_brief(
         : "本轮工具轨迹、窗口现场和关键产物已经沉淀。",
     resume_prompt: failed_count
       ? `继续排查本轮失败：回看 ${primary_artifact} 的执行现场和错误证据。`
-      : `基于本轮产物继续：打开 ${primary_artifact}，按交接记录继续迭代或验证。`,
+      : `基于本轮产物继续：打开 ${primary_artifact}，按执行记录继续迭代或验证。`,
     primary_artifact,
     checkpoints: [
       {
