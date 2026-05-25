@@ -12,9 +12,11 @@ const PHASE_LABEL: Record<OperationPhase, string> = {
 export interface BrowserSessionView {
   display_url: string;
   iframe_url: string | null;
+  page_kind: "embedded" | "workspace" | "web" | "search";
   source_label: string;
   srcdoc: string | null;
   status: { label: string; tone: "loading" | "ready" | "error" | "idle" };
+  tab_title: string;
   url: string | null;
 }
 
@@ -37,13 +39,22 @@ export function build_browser_session_view({
   const iframe_url = srcdoc ? null : raw_url ?? url;
   const has_live_view = Boolean(srcdoc || iframe_url);
   const display_url = browser_display_url({ iframe_url, query, srcdoc, target });
+  const page_kind = browser_page_kind({ display_url, iframe_url, srcdoc });
 
   return {
     display_url,
     iframe_url,
-    source_label: browser_source_label({ display_url, iframe_url, srcdoc }),
+    page_kind,
+    source_label: browser_source_label(page_kind),
     srcdoc,
     status: browser_status_for_event(event, has_live_view),
+    tab_title: browser_tab_title({
+      display_url,
+      page_kind,
+      query,
+      srcdoc,
+      target,
+    }),
     url,
   };
 }
@@ -84,7 +95,7 @@ function browser_display_url({
   return query;
 }
 
-function browser_source_label({
+function browser_page_kind({
   display_url,
   iframe_url,
   srcdoc,
@@ -92,17 +103,86 @@ function browser_source_label({
   display_url: string;
   iframe_url: string | null;
   srcdoc: string | null;
-}): string {
+}): BrowserSessionView["page_kind"] {
   if (srcdoc) {
-    return "内嵌页面";
+    return "embedded";
   }
   if (iframe_url?.startsWith("/nexus/")) {
-    return "工作区";
+    return "workspace";
   }
   if (looks_like_url(display_url)) {
+    return "web";
+  }
+  return "search";
+}
+
+function browser_source_label(page_kind: BrowserSessionView["page_kind"]): string {
+  if (page_kind === "embedded") {
+    return "内嵌页面";
+  }
+  if (page_kind === "workspace") {
+    return "工作区";
+  }
+  if (page_kind === "web") {
     return "网页";
   }
   return "摘要";
+}
+
+function browser_tab_title({
+  display_url,
+  page_kind,
+  query,
+  srcdoc,
+  target,
+}: {
+  display_url: string;
+  page_kind: BrowserSessionView["page_kind"];
+  query: string;
+  srcdoc: string | null;
+  target?: string | null;
+}): string {
+  const html_title = srcdoc ? extract_html_title(srcdoc) : null;
+  const fallback = html_title
+    ?? basename(target)
+    ?? readable_url_title(display_url)
+    ?? query
+    ?? "起始页";
+  if (page_kind === "search") {
+    return `搜索：${compact_title(fallback)}`;
+  }
+  return compact_title(fallback);
+}
+
+function extract_html_title(value: string): string | null {
+  const match = value.match(/<title[^>]*>(.*?)<\/title>/is);
+  const title = match?.[1]?.replace(/\s+/g, " ").trim();
+  return title || null;
+}
+
+function readable_url_title(value: string): string | null {
+  if (!looks_like_url(value)) {
+    return null;
+  }
+  try {
+    const parsed = new URL(value);
+    return parsed.hostname || value;
+  } catch {
+    return value;
+  }
+}
+
+function basename(value?: string | null): string | null {
+  const trimmed = value?.trim();
+  if (!trimmed || looks_like_url(trimmed)) {
+    return null;
+  }
+  return trimmed.split(/[\\/]/).filter(Boolean).at(-1) ?? trimmed;
+}
+
+function compact_title(value: string): string {
+  const normalized = value.trim() || "起始页";
+  return normalized.length > 24 ? `${normalized.slice(0, 23)}…` : normalized;
 }
 
 function looks_like_html(value: string): boolean {

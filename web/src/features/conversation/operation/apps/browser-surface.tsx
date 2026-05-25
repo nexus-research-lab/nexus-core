@@ -64,7 +64,7 @@ export function BrowserSurface({
         event={event}
         source_label={session.source_label}
         status={session.status}
-        target={target}
+        tab_title={session.tab_title}
       />
 
       <BrowserViewport
@@ -84,20 +84,20 @@ function BrowserChromeHeader({
   event,
   source_label,
   status,
-  target,
+  tab_title,
 }: {
   display_url: string;
   event: NexusOperationEvent;
   source_label: string;
   status: { label: string; tone: "loading" | "ready" | "error" | "idle" };
-  target?: string | null;
+  tab_title: string;
 }) {
   return (
     <div className="border-b border-(--divider-subtle-color) bg-[rgba(248,250,253,0.88)]">
       <div className="flex min-w-0 items-end gap-1.5 px-3 pt-2">
         <div className="flex min-w-0 max-w-[52%] items-center gap-1.5 rounded-t-[10px] border border-b-0 border-(--divider-subtle-color) bg-white/72 px-3 py-1.5 text-[10px] font-bold text-(--text-strong)">
           <Globe2 className="h-3.5 w-3.5 shrink-0 text-(--icon-muted)" />
-          <span className="truncate">{target ?? event.target ?? event.tool_name ?? "起始页"}</span>
+          <span className="truncate">{tab_title}</span>
         </div>
       </div>
       <div className="flex min-w-0 items-center gap-2 px-3 py-2">

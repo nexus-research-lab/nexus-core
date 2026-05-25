@@ -1544,14 +1544,16 @@ function verify_browser_session_view(now) {
   };
   const srcdoc_view = build_browser_session_view({
     event: base_event,
-    preview: "<html><body>board</body></html>",
+    preview: "<html><head><title>Gomoku Board</title></head><body>board</body></html>",
     query: "gomoku.html",
     target: "gomoku.html",
   });
   assert(srcdoc_view.srcdoc?.includes("board"), "Browser session should preserve inline html preview");
   assert(srcdoc_view.iframe_url === null, `Inline html should not use iframe URL, got ${srcdoc_view.iframe_url}`);
   assert(srcdoc_view.display_url === "gomoku.html", `Inline html should show artifact path, got ${srcdoc_view.display_url}`);
+  assert(srcdoc_view.page_kind === "embedded", `Inline html should be embedded page kind, got ${srcdoc_view.page_kind}`);
   assert(srcdoc_view.source_label === "内嵌页面", `Inline html source should be embedded page, got ${srcdoc_view.source_label}`);
+  assert(srcdoc_view.tab_title === "Gomoku Board", `Inline html tab should use document title, got ${srcdoc_view.tab_title}`);
 
   const workspace_view = build_browser_session_view({
     event: base_event,
@@ -1560,7 +1562,9 @@ function verify_browser_session_view(now) {
     target: "gomoku.html",
   });
   assert(workspace_view.iframe_url?.includes("/nexus/v1/agents/agent-stage/workspace/file/raw"), `Workspace html should build raw iframe url, got ${workspace_view.iframe_url}`);
+  assert(workspace_view.page_kind === "workspace", `Workspace html should be workspace page kind, got ${workspace_view.page_kind}`);
   assert(workspace_view.source_label === "工作区", `Workspace html source should be workspace, got ${workspace_view.source_label}`);
+  assert(workspace_view.tab_title === "gomoku.html", `Workspace html tab should use basename, got ${workspace_view.tab_title}`);
 
   const remote_view = build_browser_session_view({
     event: { ...base_event, phase: "running", target: "https://example.com" },
@@ -1568,8 +1572,18 @@ function verify_browser_session_view(now) {
     query: "https://example.com",
   });
   assert(remote_view.iframe_url === "https://example.com", `Remote URL should be iframe URL, got ${remote_view.iframe_url}`);
+  assert(remote_view.page_kind === "web", `Remote URL should be web page kind, got ${remote_view.page_kind}`);
   assert(remote_view.source_label === "网页", `Remote URL source should be web, got ${remote_view.source_label}`);
   assert(remote_view.status.label === "页面运行中", `Running URL should report loading live page, got ${remote_view.status.label}`);
+  assert(remote_view.tab_title === "example.com", `Remote URL tab should use hostname, got ${remote_view.tab_title}`);
+
+  const search_view = build_browser_session_view({
+    event: { ...base_event, target: "nexus mac stage" },
+    preview: null,
+    query: "nexus mac stage",
+  });
+  assert(search_view.page_kind === "search", `Search fallback should be search page kind, got ${search_view.page_kind}`);
+  assert(search_view.tab_title === "搜索：nexus mac stage", `Search fallback tab should expose search intent, got ${search_view.tab_title}`);
 }
 
 function verify_finder_details_reflect_selected_workspace_item(now) {
