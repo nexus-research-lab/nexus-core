@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { StageWindowContent } from "../apps/operation-app-renderers";
-import type {
-  StageWindowKind,
-  StageWindowState,
-} from "../operation-desktop-types";
+import type { StageWindowState } from "../operation-desktop-types";
 import {
   plan_operation_desktop,
   resolve_operation_event_window_id,
@@ -18,11 +15,13 @@ import {
   build_stage_narrative,
   collect_narrative_events,
   icon_for_window_kind,
+  is_stage_desktop_window_kind,
   minimum_revealed_window_count,
   order_windows_for_reveal,
   position_for_window,
   stage_app_label_for_window_kind,
   useRevealedWindowCount,
+  window_content_mode_for_kind,
 } from "./operation-stage-helpers";
 import type {
   StageWindowOverride,
@@ -34,23 +33,6 @@ import {
   StageWindowDock,
   StageWindowsHiddenState,
 } from "./operation-stage-window-controls";
-
-const STAGE_DESKTOP_WINDOW_KINDS = new Set<StageWindowKind>([
-  "browser",
-  "code_editor",
-  "finder",
-  "generic_tool",
-  "image_viewer",
-  "markdown_reader",
-  "pdf_reader",
-  "permission_wait",
-  "run_manifest",
-  "runtime_handoff",
-  "spreadsheet",
-  "task_board",
-  "terminal",
-  "word_reader",
-]);
 
 export function OperationStageDesktop({
   event,
@@ -76,7 +58,7 @@ export function OperationStageDesktop({
     plan_operation_desktop({ event: active_narrative_event, snapshot })
   ), [active_narrative_event, snapshot]);
   const desktop_windows = useMemo(() => (
-    desktop.windows.filter((window) => STAGE_DESKTOP_WINDOW_KINDS.has(window.kind))
+    desktop.windows.filter((window) => is_stage_desktop_window_kind(window.kind))
   ), [desktop.windows]);
   const desktop_active_window_id = useMemo(() => (
     desktop_windows.some((window) => window.id === desktop.active_window_id)
@@ -277,7 +259,7 @@ export function OperationStageDesktop({
             focus={is_active}
             icon={icon_for_window_kind(window.kind)}
             key={window.id}
-            content_mode={window_content_mode(window.kind)}
+            content_mode={window_content_mode_for_kind(window.kind)}
             mobile_hidden={!is_active}
             minimized={window.phase === "minimized"}
             on_close={() => close_window(window.id)}
@@ -305,25 +287,4 @@ export function OperationStageDesktop({
       />
     </DynamicStageFrame>
   );
-}
-
-function window_content_mode(kind: StageWindowKind): "flush" | "inset" {
-  if (
-    kind === "browser" ||
-    kind === "code_editor" ||
-    kind === "finder" ||
-    kind === "generic_tool" ||
-    kind === "image_viewer" ||
-    kind === "markdown_reader" ||
-    kind === "pdf_reader" ||
-    kind === "run_manifest" ||
-    kind === "runtime_handoff" ||
-    kind === "spreadsheet" ||
-    kind === "task_board" ||
-    kind === "terminal" ||
-    kind === "word_reader"
-  ) {
-    return "flush";
-  }
-  return "inset";
 }

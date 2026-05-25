@@ -21,3 +21,7 @@ export {
   position_for_window,
   stage_app_label_for_window_kind,
 } from "./operation-stage-window-meta";
+export {
+  is_stage_desktop_window_kind,
+  window_content_mode_for_kind,
+} from "./operation-stage-window-kinds";

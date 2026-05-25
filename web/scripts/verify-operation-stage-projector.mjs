@@ -57,6 +57,8 @@ copyFileSync(join(operation_dir, "operation-stage-experience.js"), join(operatio
 copyFileSync(join(operation_dir, "operation-stage-handoff-spotlight-model.js"), join(operation_dir, "operation-stage-handoff-spotlight-model"));
 copyFileSync(join(operation_dir, "operation-terminal-lines.js"), join(operation_dir, "operation-terminal-lines"));
 copyFileSync(join(operation_dir, "operation-summary-events.js"), join(operation_dir, "operation-summary-events"));
+mkdirSync(join(operation_dir, "stage"), { recursive: true });
+copyFileSync(join(operation_dir, "stage/operation-stage-window-kinds.js"), join(operation_dir, "stage/operation-stage-window-kinds"));
 
 const { project_operation_snapshot } = await import(pathToFileURL(join(operation_dir, "operation-projector.js")));
 const {
@@ -77,8 +79,13 @@ const {
   fallback_stage_event_target_label,
   is_low_signal_stage_label,
 } = await import(pathToFileURL(join(operation_dir, "operation-stage-labels.js")));
+const {
+  is_stage_desktop_window_kind,
+  window_content_mode_for_kind,
+} = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-window-kinds.js")));
 const now = Date.now();
 
+verify_desktop_window_kind_contract();
 verify_stage_experience_state_machine(now);
 verify_handoff_spotlight_model({
   assert,
@@ -114,6 +121,35 @@ verify_live_round_placeholder(now);
 verify_synthetic_error_summary(now);
 
 console.log("operation-stage projector verification passed");
+
+function verify_desktop_window_kind_contract() {
+  const expected_desktop_apps = [
+    "browser",
+    "code_editor",
+    "finder",
+    "generic_tool",
+    "image_viewer",
+    "markdown_reader",
+    "pdf_reader",
+    "permission_wait",
+    "run_manifest",
+    "runtime_handoff",
+    "spreadsheet",
+    "task_board",
+    "terminal",
+    "word_reader",
+  ];
+  for (const kind of expected_desktop_apps) {
+    assert(is_stage_desktop_window_kind(kind), `${kind} should be rendered as a desktop app window`);
+  }
+  for (const kind of ["evidence", "summary"]) {
+    assert(!is_stage_desktop_window_kind(kind), `${kind} should not render as a standalone desktop app window`);
+  }
+  for (const kind of expected_desktop_apps.filter((kind) => kind !== "permission_wait")) {
+    assert(window_content_mode_for_kind(kind) === "flush", `${kind} should fill its app window content area`);
+  }
+  assert(window_content_mode_for_kind("permission_wait") === "inset", "permission wait should keep inset content as a system prompt");
+}
 
 function verify_stage_experience_state_machine(now) {
   const base_event = {
