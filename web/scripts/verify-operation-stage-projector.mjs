@@ -60,6 +60,7 @@ copyFileSync(join(operation_dir, "operation-event-io.js"), join(operation_dir, "
 mkdirSync(join(operation_dir, "stage"), { recursive: true });
 copyFileSync(join(operation_dir, "stage/operation-stage-window-kinds.js"), join(operation_dir, "stage/operation-stage-window-kinds"));
 copyFileSync(join(operation_dir, "stage/operation-stage-dock-model.js"), join(operation_dir, "stage/operation-stage-dock-model"));
+copyFileSync(join(operation_dir, "stage/operation-stage-window-actions.js"), join(operation_dir, "stage/operation-stage-window-actions"));
 mkdirSync(join(operation_dir, "apps"), { recursive: true });
 copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
 copyFileSync(join(operation_dir, "apps/file-preview-value.js"), join(operation_dir, "apps/file-preview-value"));
@@ -93,6 +94,9 @@ const {
   group_dock_windows_by_app,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-dock-model.js")));
 const {
+  resolve_operation_window_keyboard_action,
+} = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-window-actions.js")));
+const {
   build_terminal_entries,
 } = await import(pathToFileURL(join(operation_dir, "apps/terminal-session-model.js")));
 const {
@@ -119,6 +123,7 @@ const now = Date.now();
 
 verify_desktop_window_kind_contract();
 verify_dock_model_groups_windows_by_mac_app();
+verify_window_keyboard_actions_match_mac_window_controls();
 verify_stage_experience_state_machine(now);
 verify_live_episode_narrates_running_round(now);
 verify_api_retry_runtime_projection(now);
@@ -212,6 +217,18 @@ function verify_dock_model_groups_windows_by_mac_app() {
   assert(slots[1].app_label === "Safari" && slots[1].count === 2, "Dock Safari slot should reflect grouped running windows");
   assert(slots[2].app_label === "Code" && slots[2].window?.id === "code:a", "Dock Code slot should keep recoverable closed window");
   assert(slots.at(-1)?.app_label === "预览", `Dock should append unpinned running apps, got ${slots.at(-1)?.app_label}`);
+}
+
+function verify_window_keyboard_actions_match_mac_window_controls() {
+  assert(resolve_operation_window_keyboard_action({ key: "Enter" }) === "focus", "Enter should focus a desktop window");
+  assert(resolve_operation_window_keyboard_action({ key: " " }) === "focus", "Space should focus a desktop window");
+  assert(resolve_operation_window_keyboard_action({ key: "Escape" }) === "minimize", "Escape should minimize the focused window");
+  assert(resolve_operation_window_keyboard_action({ key: "w", metaKey: true }) === "close", "Cmd+W should close the focused window");
+  assert(resolve_operation_window_keyboard_action({ key: "M", metaKey: true }) === "minimize", "Cmd+M should minimize the focused window");
+  assert(resolve_operation_window_keyboard_action({ key: "f", metaKey: true, ctrlKey: true }) === "zoom", "Ctrl+Cmd+F should zoom the focused window");
+  assert(resolve_operation_window_keyboard_action({ key: "Enter", metaKey: true }) === "zoom", "Cmd+Enter should zoom the focused window");
+  assert(resolve_operation_window_keyboard_action({ key: "w", metaKey: true, shiftKey: true }) === null, "Modified Cmd+W should not trigger the simple close action");
+  assert(resolve_operation_window_keyboard_action({ key: "a", metaKey: true }) === null, "Unrelated shortcuts should stay with the app content");
 }
 
 function mock_stage_window({

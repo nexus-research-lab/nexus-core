@@ -4,6 +4,7 @@ import { Maximize2, Minimize2, Minus, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { resolve_operation_window_keyboard_action } from "./operation-stage-window-actions";
 
 interface OperationStageWindowProps {
   title: string;
@@ -174,6 +175,7 @@ export function OperationStageWindow({
   return (
     <div
       aria-label={app_label ? `${app_label} window: ${title}` : title}
+      aria-roledescription="window"
       className={cn(
         "operation-stage-window absolute flex min-h-0 min-w-0 cursor-default flex-col overflow-hidden rounded-[14px] border backdrop-blur-xl outline-none transition-[left,top,width,height,opacity,filter,box-shadow,border-radius] duration-300 ease-[cubic-bezier(.2,.82,.2,1)] focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.42)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent max-md:!relative max-md:!inset-auto max-md:!h-auto max-md:!min-h-[180px] max-md:!w-full max-md:max-w-full",
         tone === "terminal"
@@ -192,13 +194,19 @@ export function OperationStageWindow({
         if (keyboard_event.currentTarget !== keyboard_event.target) {
           return;
         }
-        if (keyboard_event.key === "Enter" || keyboard_event.key === " ") {
-          keyboard_event.preventDefault();
-          on_focus?.();
+        const action = resolve_operation_window_keyboard_action(keyboard_event);
+        if (!action) {
+          return;
         }
-        if (keyboard_event.key === "Escape") {
-          keyboard_event.preventDefault();
+        keyboard_event.preventDefault();
+        if (action === "focus") {
+          on_focus?.();
+        } else if (action === "close") {
+          on_close?.();
+        } else if (action === "minimize") {
           on_minimize?.();
+        } else {
+          on_zoom?.();
         }
       }}
       onMouseDown={on_focus}
@@ -220,6 +228,7 @@ export function OperationStageWindow({
             : "border-(--divider-subtle-color) bg-white/62 text-(--text-soft)",
         )}
         onPointerCancel={end_drag}
+        onLostPointerCapture={end_drag}
         onDoubleClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
