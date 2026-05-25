@@ -32,7 +32,7 @@ export function DocumentPreview({
   const kind = detect_preview_kind(target);
   const raw_lines = get_preview_lines(value, 18);
   const lines = raw_lines.length ? raw_lines : (fallback_lines ?? []);
-  const display_title = basename(target) || summary || "preview";
+  const display_title = basename(target) || summary || "未命名";
 
   if (kind === "markdown") {
     return (
@@ -40,7 +40,7 @@ export function DocumentPreview({
         <div className="mb-3 flex items-center justify-between gap-3 border-b border-(--divider-subtle-color) pb-3">
           <div className="min-w-0">
             <p className="truncate text-[13px] font-black tracking-[-0.02em] text-(--text-strong)">{display_title}</p>
-            <p className="truncate text-[11px] text-(--text-soft)">{summary ?? "Markdown preview"}</p>
+            <p className="truncate text-[11px] text-(--text-soft)">{summary ?? "Markdown 文稿"}</p>
           </div>
           {diff_stats ? <DiffStatPill additions={diff_stats.additions} deletions={diff_stats.deletions} /> : null}
         </div>
@@ -61,7 +61,7 @@ export function DocumentPreview({
             <div className="min-w-0">
               <p className="truncate text-[14px] font-black tracking-[-0.025em] text-(--text-strong)">{display_title}</p>
               <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-(--text-soft)">
-                {kind === "word" ? "Word document" : "PDF page"}
+                {kind === "word" ? "文稿" : "PDF 页面"}
               </p>
             </div>
             <FileText className="h-4 w-4 shrink-0 text-(--icon-muted)" />
@@ -90,7 +90,7 @@ export function DocumentPreview({
         <div className="flex items-center justify-between gap-3 border-b border-(--divider-subtle-color) px-4 py-2.5">
           <div className="min-w-0">
             <p className="truncate text-[12px] font-bold text-(--text-strong)">{display_title}</p>
-            <p className="truncate text-[10px] text-(--text-soft)">Sheet 1 · {rows.length} rows</p>
+            <p className="truncate text-[10px] text-(--text-soft)">工作表 1 · {rows.length} 行</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {diff_stats ? <DiffStatPill additions={diff_stats.additions} deletions={diff_stats.deletions} /> : null}
@@ -132,9 +132,9 @@ export function DocumentPreview({
         </div>
         <div className="flex items-center gap-2 border-t border-(--divider-subtle-color) bg-white/62 px-3 py-1.5 text-[10px] text-(--text-soft)">
           <span className="rounded-[7px] border border-[rgba(47,184,132,0.22)] bg-[rgba(47,184,132,0.10)] px-2 py-1 font-bold text-[color:var(--success)]">
-            Sheet 1
+            工作表 1
           </span>
-          <span>{rows.length} rows · {column_count} columns</span>
+          <span>{rows.length} 行 · {column_count} 列</span>
         </div>
       </div>
     );
@@ -146,7 +146,7 @@ export function DocumentPreview({
         <div className="flex items-center justify-between gap-3 border-b border-(--divider-subtle-color) bg-white/62 px-4 py-2.5">
           <div className="min-w-0">
             <p className="truncate text-[12px] font-bold text-(--text-strong)">{display_title}</p>
-            <p className="truncate text-[10px] text-(--text-soft)">Preview · {image_format_label(display_title)}</p>
+            <p className="truncate text-[10px] text-(--text-soft)">图像 · {image_format_label(display_title)}</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {diff_stats ? <DiffStatPill additions={diff_stats.additions} deletions={diff_stats.deletions} /> : null}
@@ -162,11 +162,11 @@ export function DocumentPreview({
             </div>
           </div>
           <aside className="hidden border-l border-(--divider-subtle-color) bg-white/58 p-3 text-[10px] sm:block">
-            <p className="font-black uppercase tracking-[0.14em] text-(--text-soft)">Inspector</p>
-            <PreviewInspectorRow label="Kind" value={image_format_label(display_title)} />
-            <PreviewInspectorRow label="Name" value={display_title} />
-            <PreviewInspectorRow label="Size" value="preview" />
-            <PreviewInspectorRow label="Status" value={summary ?? "Ready"} />
+            <p className="font-black uppercase tracking-[0.14em] text-(--text-soft)">检查器</p>
+            <PreviewInspectorRow label="类型" value={image_format_label(display_title)} />
+            <PreviewInspectorRow label="名称" value={display_title} />
+            <PreviewInspectorRow label="尺寸" value="预览尺寸" />
+            <PreviewInspectorRow label="状态" value={summary ?? "就绪"} />
           </aside>
         </div>
       </div>
@@ -187,7 +187,7 @@ export function DocumentPreview({
     <EditorSurface
       diff_stats={diff_stats}
       lines={lines.length ? lines : (fallback_lines ?? [summary ?? "暂无预览"])}
-      phase_label={summary ?? "Preview"}
+      phase_label={summary ?? "预览"}
       title={display_title}
     />
   );
@@ -235,11 +235,11 @@ function EditorSurface({
       </div>
       <div className="flex min-h-0 flex-1">
         <div className="hidden w-[148px] shrink-0 border-r border-white/10 bg-[#0c141c] p-2 text-[10px] text-[#7f94a3] sm:block">
-          <div className="mb-2 truncate rounded-md bg-white/[0.06] px-2 py-1.5 font-bold text-[#dce8ee]">Explorer</div>
+          <div className="mb-2 truncate rounded-md bg-white/[0.06] px-2 py-1.5 font-bold text-[#dce8ee]">资源管理器</div>
           <div className="space-y-1">
             <div className="truncate rounded bg-white/[0.06] px-2 py-1 text-[#dce8ee]">{title}</div>
-            <div className="truncate rounded px-2 py-1">Source Control</div>
-            <div className="truncate rounded px-2 py-1">Timeline</div>
+            <div className="truncate rounded px-2 py-1">源代码管理</div>
+            <div className="truncate rounded px-2 py-1">时间线</div>
           </div>
         </div>
         <div className="soft-scrollbar min-w-0 flex-1 overflow-auto p-3 font-mono text-[11px] leading-5">

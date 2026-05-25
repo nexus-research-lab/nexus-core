@@ -49,7 +49,7 @@ export function PermissionCheckpointPanel({
     ...(snapshot?.recent_evidence ?? []),
   ]).slice(0, compact ? 4 : 7);
   const lead = event.summary ?? event.target ?? event.title ?? event.tool_name ?? "等待用户确认";
-  const request_target = event.target ?? rows[0]?.value ?? event.tool_name ?? "pending request";
+  const request_target = event.target ?? rows[0]?.value ?? event.tool_name ?? "待确认请求";
 
   return (
     <div className="flex h-full min-h-[320px] min-w-0 max-w-full flex-col overflow-hidden bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(248,250,252,0.88))]">
@@ -61,7 +61,7 @@ export function PermissionCheckpointPanel({
             </span>
             <div className="min-w-0">
               <h3 className="mt-1 truncate text-[15px] font-black tracking-[-0.03em] text-(--text-strong)">
-                Privacy & Security
+                隐私与安全
               </h3>
               <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-(--text-muted)">
                 {lead}
@@ -78,13 +78,13 @@ export function PermissionCheckpointPanel({
         <aside className="border-r border-(--divider-subtle-color) bg-white/46 p-2.5 max-md:border-b max-md:border-r-0">
           <div className="mb-2 flex items-center gap-1.5 rounded-[9px] border border-(--divider-subtle-color) bg-white/70 px-2 py-1.5 text-[10px] text-(--text-soft)">
             <Search className="h-3 w-3 shrink-0" />
-            <span className="truncate">Search Settings</span>
+            <span className="truncate">搜索设置</span>
           </div>
           {[
-            { label: "Privacy", Icon: ShieldCheck },
-            { label: "Automation", Icon: Settings2 },
-            { label: "Files", Icon: FileText },
-            { label: "Network", Icon: Globe2 },
+            { label: "隐私", Icon: ShieldCheck },
+            { label: "自动化", Icon: Settings2 },
+            { label: "文件与文件夹", Icon: FileText },
+            { label: "网络", Icon: Globe2 },
           ].map((item, index) => (
             <div
               className={cn(
@@ -103,9 +103,9 @@ export function PermissionCheckpointPanel({
           <div className="rounded-[14px] border border-(--divider-subtle-color) bg-white/76">
             <div className="flex items-start justify-between gap-3 border-b border-(--divider-subtle-color) px-4 py-3">
               <div className="min-w-0">
-                <p className="text-[13px] font-black text-(--text-strong)">Automation</p>
+                <p className="text-[13px] font-black text-(--text-strong)">自动化</p>
                 <p className="mt-1 text-[11px] leading-5 text-(--text-muted)">
-                  Nexus wants to control an app or file on this desktop.
+                  Nexus 正在请求控制这个桌面上的应用或文件。
                 </p>
               </div>
               <span className="relative h-5 w-9 shrink-0 rounded-full bg-[rgba(47,184,132,0.22)] p-0.5 shadow-[inset_0_1px_2px_rgba(18,28,42,0.10)]">
@@ -122,7 +122,7 @@ export function PermissionCheckpointPanel({
                   <p className="truncate text-[10px] text-(--text-soft)">{request_target}</p>
                 </div>
                 <span className="shrink-0 rounded-full bg-[rgba(223,157,46,0.12)] px-2 py-1 text-[10px] font-black text-[color:var(--warning)]">
-                  Pending
+                  待确认
                 </span>
               </div>
               <pre className="mt-3 max-h-[128px] overflow-auto whitespace-pre-wrap break-words rounded-[10px] bg-[rgba(18,28,42,0.05)] px-3 py-2 font-mono text-[11px] leading-5 text-(--text-strong)">
@@ -133,13 +133,13 @@ export function PermissionCheckpointPanel({
                   className="h-7 rounded-[7px] border border-(--divider-subtle-color) bg-white/80 px-3 text-[11px] font-semibold text-(--text-strong) shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] transition hover:bg-white"
                   type="button"
                 >
-                  Deny
+                  拒绝
                 </button>
                 <button
                   className="h-7 rounded-[7px] border border-[rgba(91,114,255,0.28)] bg-[rgba(91,114,255,0.92)] px-3 text-[11px] font-semibold text-white shadow-[0_8px_18px_rgba(91,114,255,0.20)] transition hover:bg-[color:var(--primary)]"
                   type="button"
                 >
-                  Allow
+                  允许
                 </button>
               </div>
             </div>
@@ -147,7 +147,7 @@ export function PermissionCheckpointPanel({
 
           <div className="mt-3 grid grid-cols-3 gap-2 text-[10px] max-sm:grid-cols-1">
             {[
-              { label: "暂停点", value: "permission", Icon: Clock3 },
+              { label: "暂停点", value: "权限确认", Icon: Clock3 },
               { label: "工具", value: profile.title, Icon: Play },
               { label: "更新", value: format_operation_time(event.updated_at), Icon: RefreshCw },
             ].map((item) => (
@@ -161,7 +161,7 @@ export function PermissionCheckpointPanel({
             ))}
           </div>
 
-          <p className="mt-4 text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">Details</p>
+          <p className="mt-4 text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">请求详情</p>
           <div className="mt-2 space-y-1.5">
             {rows.length ? rows.map((row) => (
               <div className="rounded-[10px] border border-white/62 bg-white/70 px-2.5 py-2 text-[10px]" key={row.key}>
@@ -170,16 +170,16 @@ export function PermissionCheckpointPanel({
               </div>
             )) : (
               <div className="rounded-[10px] border border-white/62 bg-white/70 px-2.5 py-2 text-[10px] text-(--text-muted)">
-                {event.target ?? event.tool_name ?? "No additional details"}
+                {event.target ?? event.tool_name ?? "没有更多请求详情"}
               </div>
             )}
           </div>
 
-          <p className="mt-3 text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">Recent Activity</p>
+          <p className="mt-3 text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">最近活动</p>
           <div className="mt-2 space-y-1.5">
             {(evidence.length ? evidence : [{
               type: "permission",
-              label: "waiting",
+              label: "等待确认",
               value: lead,
             } satisfies OperationEvidence]).map((item, index) => {
               const Icon = icon_for_evidence(item.type);
@@ -226,7 +226,7 @@ export function OperationReviewPanel({
   ]).slice(0, compact ? 4 : 8);
   const rows = build_operation_input_rows(event.input_preview, profile.target_keys, compact ? 3 : 6);
   const waiting = event.phase === "waiting" || mode === "permission";
-  const lead = event.summary ?? event.title ?? event.target ?? event.tool_name ?? "Diagnostics";
+  const lead = event.summary ?? event.title ?? event.target ?? event.tool_name ?? "诊断信息";
 
   return (
     <div className="flex h-full min-h-[260px] min-w-0 max-w-full flex-col overflow-hidden rounded-[13px] border border-(--divider-subtle-color) bg-white/76">
@@ -239,10 +239,10 @@ export function OperationReviewPanel({
         <div className="flex min-w-0 items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">
-              {waiting ? "Security Prompt" : "Diagnostics"}
+              {waiting ? "安全请求" : "诊断"}
             </p>
             <h3 className="mt-1 truncate text-[14px] font-black tracking-[-0.03em] text-(--text-strong)">
-              {waiting ? "Waiting for Approval" : "System Log"}
+              {waiting ? "等待确认" : "系统日志"}
             </h3>
           </div>
           <span className={cn(
@@ -262,7 +262,7 @@ export function OperationReviewPanel({
           <div className="space-y-2">
             {(evidence.length ? evidence : [{
               type: waiting ? "permission" : "status",
-              label: waiting ? "request" : "status",
+              label: waiting ? "请求" : "状态",
               value: lead,
             } satisfies OperationEvidence]).map((item, index) => {
               const Icon = icon_for_evidence(item.type);
@@ -297,7 +297,7 @@ export function OperationReviewPanel({
         </div>
 
         <aside className="soft-scrollbar min-h-0 overflow-auto border-l border-(--divider-subtle-color) bg-white/45 p-3 max-md:max-h-[220px] max-md:border-l-0 max-md:border-t">
-          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">Details</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">详情</p>
           <div className="mt-2 space-y-1.5">
             {rows.length ? rows.map((row) => (
               <div className="rounded-[9px] bg-white/70 px-2 py-1.5 text-[10px]" key={row.key}>
@@ -306,22 +306,22 @@ export function OperationReviewPanel({
               </div>
             )) : (
               <div className="rounded-[9px] bg-white/70 px-2 py-1.5 text-[10px] text-(--text-muted)">
-                {event.target ?? event.tool_name ?? "No additional details"}
+                {event.target ?? event.tool_name ?? "没有更多详情"}
               </div>
             )}
           </div>
           {waiting ? (
             <div className="mt-2 grid grid-cols-2 gap-1.5 text-[10px] font-semibold">
               <span className="rounded-[7px] border border-(--divider-subtle-color) bg-white/80 px-2 py-1.5 text-center text-(--text-strong)">
-                Deny
+                拒绝
               </span>
               <span className="rounded-[7px] border border-[rgba(91,114,255,0.26)] bg-[rgba(91,114,255,0.92)] px-2 py-1.5 text-center text-white">
-                Allow
+                允许
               </span>
             </div>
           ) : null}
           <div className="mt-2 rounded-[9px] bg-white/70 px-2 py-1.5 text-[10px] text-(--text-muted)">
-            updated {format_operation_time(event.updated_at)}
+            更新于 {format_operation_time(event.updated_at)}
           </div>
         </aside>
       </div>
