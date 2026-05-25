@@ -279,7 +279,7 @@ function build_windows(
       windows.push(window_state(event, snapshot, {
         id: "run-manifest",
         kind: "run_manifest",
-        title: event.phase === "error" ? "执行清单 · 回看" : "执行清单",
+        title: event.phase === "error" ? "Console · Diagnostics" : "Console",
         layout: "primary",
         phase: focus_target === "manifest" ? "focused" : "background",
         z: focus_target === "manifest" ? 42 : 24,
@@ -411,7 +411,7 @@ function evidence_window(
   return window_state(event, snapshot, {
     id: "evidence",
     kind: event.phase === "waiting" ? "permission_wait" : "evidence",
-    title: event.phase === "waiting" ? "等待确认" : "证据",
+    title: event.phase === "waiting" ? "Security Prompt" : "Diagnostics",
     layout: "inspector",
     phase: event.phase === "done" ? "minimized" : "background",
     z,

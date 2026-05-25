@@ -62,7 +62,7 @@ export function collect_manifest_artifacts(
     }
     add_artifact({
       id: `event:${item.target}`,
-      label: item.surface === "web" ? "浏览器现场" : item.surface === "task" ? "任务记录" : "工作区文件",
+      label: item.surface === "web" ? "Safari View" : item.surface === "task" ? "Activity Log" : "Workspace File",
       value: item.target,
       type: item.surface === "web" ? "url" : item.surface === "task" ? "task" : "file",
     });
@@ -95,7 +95,7 @@ export function collect_manifest_artifacts(
   if (event.target && artifacts.size === 0) {
     add_artifact({
       id: `event:${event.target}`,
-      label: "执行目标",
+      label: "Current Target",
       value: event.target,
       type: "status",
     });
@@ -210,27 +210,27 @@ function looks_like_file_artifact(value: string): boolean {
 
 function evidence_type_label(type: OperationEvidence["type"]): string {
   if (type === "file" || type === "diff") {
-    return "文件证据";
+    return "File Record";
   }
   if (type === "terminal") {
-    return "终端输出";
+    return "Terminal Output";
   }
   if (type === "url") {
-    return "浏览器记录";
+    return "Browser Log";
   }
   if (type === "artifact") {
-    return "产物";
+    return "Artifact";
   }
   if (type === "task") {
-    return "任务记录";
+    return "Activity Log";
   }
   if (type === "permission") {
-    return "权限记录";
+    return "Security Log";
   }
   if (type === "error") {
-    return "错误证据";
+    return "Error Report";
   }
-  return "执行证据";
+  return "Execution Log";
 }
 
 function icon_for_file_path(value: string): LucideIcon {

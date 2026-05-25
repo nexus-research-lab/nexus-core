@@ -229,7 +229,7 @@ function BrowserPreviewFallback({
   const display_lines = lines.length
     ? lines.slice(0, 5)
     : event.phase === "running"
-      ? ["正在等待浏览器返回内容", "如果这是远程页面，加载完成后会保留摘要和证据。"]
+      ? ["正在等待浏览器返回内容", "如果这是远程页面，加载完成后会保留页面摘要和日志。"]
       : [event.summary ?? query];
 
   return (

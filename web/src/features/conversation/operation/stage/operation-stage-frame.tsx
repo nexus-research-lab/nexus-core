@@ -24,7 +24,7 @@ export function StageReplayReturn({
         <div className="flex min-w-0 items-center justify-between gap-2">
           <div className="min-w-0">
             <p className="truncate text-[10px] font-black uppercase tracking-[0.10em] text-(--text-strong)">
-              现场回放中
+              Mission Control
             </p>
             <p className="mt-0.5 truncate text-[10px] font-semibold text-(--text-soft)">
               {display_stage_event_title(current_event)}
@@ -35,7 +35,7 @@ export function StageReplayReturn({
             onClick={on_return}
             type="button"
           >
-            回到交接
+            返回当前桌面
           </button>
         </div>
         <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 text-[9px] font-semibold text-(--text-soft)">
