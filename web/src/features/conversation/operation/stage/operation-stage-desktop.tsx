@@ -44,6 +44,7 @@ const STAGE_DESKTOP_WINDOW_KINDS = new Set<StageWindowKind>([
   "markdown_reader",
   "pdf_reader",
   "permission_wait",
+  "run_manifest",
   "runtime_handoff",
   "spreadsheet",
   "task_board",
@@ -315,6 +316,7 @@ function window_content_mode(kind: StageWindowKind): "flush" | "inset" {
     kind === "image_viewer" ||
     kind === "markdown_reader" ||
     kind === "pdf_reader" ||
+    kind === "run_manifest" ||
     kind === "runtime_handoff" ||
     kind === "spreadsheet" ||
     kind === "task_board" ||
