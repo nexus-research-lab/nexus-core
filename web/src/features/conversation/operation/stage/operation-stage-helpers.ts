@@ -2,6 +2,9 @@ export {
   collect_completion_workspace_artifacts,
 } from "./operation-stage-artifacts";
 export {
+  initial_revealed_window_count,
+} from "./operation-stage-window-reveal";
+export {
   build_stage_narrative,
   collect_narrative_events,
   event_sequence_label,

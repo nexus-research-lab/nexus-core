@@ -62,6 +62,7 @@ copyFileSync(join(operation_dir, "stage/operation-stage-window-kinds.js"), join(
 copyFileSync(join(operation_dir, "stage/operation-stage-dock-model.js"), join(operation_dir, "stage/operation-stage-dock-model"));
 copyFileSync(join(operation_dir, "stage/operation-stage-window-actions.js"), join(operation_dir, "stage/operation-stage-window-actions"));
 copyFileSync(join(operation_dir, "stage/operation-stage-agent-cursor.js"), join(operation_dir, "stage/operation-stage-agent-cursor"));
+copyFileSync(join(operation_dir, "stage/operation-stage-window-reveal.js"), join(operation_dir, "stage/operation-stage-window-reveal"));
 mkdirSync(join(operation_dir, "apps"), { recursive: true });
 copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
 copyFileSync(join(operation_dir, "apps/file-preview-value.js"), join(operation_dir, "apps/file-preview-value"));
@@ -103,6 +104,9 @@ const {
   agent_cursor_intent_for_window_kind,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-agent-cursor.js")));
 const {
+  initial_revealed_window_count,
+} = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-window-reveal.js")));
+const {
   build_terminal_entries,
 } = await import(pathToFileURL(join(operation_dir, "apps/terminal-session-model.js")));
 const {
@@ -131,6 +135,7 @@ verify_desktop_window_kind_contract();
 verify_dock_model_groups_windows_by_mac_app();
 verify_window_keyboard_actions_match_mac_window_controls();
 verify_agent_cursor_tracks_active_mac_app();
+verify_initial_window_reveal_avoids_desktop_clutter_flash();
 verify_stage_experience_state_machine(now);
 verify_live_episode_narrates_running_round(now);
 verify_api_retry_runtime_projection(now);
@@ -253,6 +258,29 @@ function verify_agent_cursor_tracks_active_mac_app() {
   assert(browser_anchor.includes("right-"), `Browser cursor should anchor near the browser window, got ${browser_anchor}`);
   assert(terminal_anchor.includes("left-"), `Terminal cursor should anchor near the terminal window, got ${terminal_anchor}`);
   assert(browser_anchor !== terminal_anchor, "Cursor anchors should move between app windows instead of staying static");
+}
+
+function verify_initial_window_reveal_avoids_desktop_clutter_flash() {
+  assert(initial_revealed_window_count({
+    minimum_count: 1,
+    phase: "running",
+    window_count: 5,
+  }) === 1, "Running stage should reveal only the first window on the first paint");
+  assert(initial_revealed_window_count({
+    minimum_count: 2,
+    phase: "awakening",
+    window_count: 5,
+  }) === 2, "Awakening stage should respect the minimum narrative window count");
+  assert(initial_revealed_window_count({
+    minimum_count: 1,
+    phase: "completed",
+    window_count: 5,
+  }) === 5, "Completed stage should reveal the full review desktop immediately");
+  assert(initial_revealed_window_count({
+    minimum_count: 1,
+    phase: "running",
+    window_count: 0,
+  }) === 0, "Empty desktop should stay empty on the first paint");
 }
 
 function mock_stage_window({

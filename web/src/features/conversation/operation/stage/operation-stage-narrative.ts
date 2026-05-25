@@ -10,6 +10,7 @@ import type {
   StageNarrativePhase,
   StageNarrativeState,
 } from "./operation-stage-model";
+import { initial_revealed_window_count } from "./operation-stage-window-reveal";
 
 export function order_windows_for_reveal(
   windows: StageWindowState[],
@@ -87,7 +88,11 @@ export function useRevealedWindowCount({
   phase: StageNarrativePhase;
   window_count: number;
 }): number {
-  const [revealed_count, set_revealed_count] = useState(window_count);
+  const [revealed_count, set_revealed_count] = useState(() => initial_revealed_window_count({
+    minimum_count,
+    phase,
+    window_count,
+  }));
 
   useEffect(() => {
     if (window_count <= 0) {
