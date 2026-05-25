@@ -4,7 +4,7 @@ import {
 
 import { cn } from "@/lib/utils";
 
-import type { StageWindowState } from "../operation-desktop-types";
+import type { StageWindowKind, StageWindowState } from "../operation-desktop-types";
 import {
   display_stage_event_title,
 } from "../operation-stage-labels";
@@ -13,6 +13,15 @@ import {
   is_low_signal_director_value,
   stage_app_label_for_window_kind,
 } from "./operation-stage-helpers";
+
+const PINNED_DOCK_APPS: Array<{ app_label: string; kind: StageWindowKind }> = [
+  { app_label: "Finder", kind: "finder" },
+  { app_label: "Safari", kind: "browser" },
+  { app_label: "Terminal", kind: "terminal" },
+  { app_label: "Code", kind: "code_editor" },
+  { app_label: "Console", kind: "run_manifest" },
+  { app_label: "Preview", kind: "image_viewer" },
+];
 
 export function StageWindowsHiddenState({
   windows,
@@ -74,6 +83,7 @@ export function StageWindowDock({
   const running_windows = dock_windows.filter((window) => window.phase !== "minimized");
   const minimized_windows = dock_windows.filter((window) => window.phase === "minimized");
   const running_apps = group_running_windows_by_app(running_windows, active_window_id);
+  const dock_apps = build_dock_app_slots(running_apps);
   const active_window = running_windows.find((window) => window.id === active_window_id)
     ?? running_windows[0]
     ?? minimized_windows[0]
@@ -94,13 +104,15 @@ export function StageWindowDock({
             N
           </div>
           <div className="h-9 w-px shrink-0 bg-white/56" />
-        {running_apps.map(({ app_label, count, is_active, window }) => {
-          const Icon = icon_for_window_kind(window.kind);
-          const window_title = display_window_title(window);
-          const state_label = is_active ? "当前" : "后台";
-          const title = count > 1
-            ? `${app_label} · ${count} 个窗口 · ${state_label}`
-            : `${app_label} · ${window_title} · ${state_label}`;
+        {dock_apps.map(({ app_label, count, is_active, is_running, kind, window }) => {
+          const Icon = icon_for_window_kind(window?.kind ?? kind);
+          const window_title = window ? display_window_title(window) : "等待工具调用";
+          const state_label = is_active ? "当前" : is_running ? "后台" : "未打开";
+          const title = !window
+            ? `${app_label} · 未打开`
+            : count > 1
+              ? `${app_label} · ${count} 个窗口 · ${state_label}`
+              : `${app_label} · ${window_title} · ${state_label}`;
           return (
             <button
               aria-label={`${state_label}：${app_label}`}
@@ -108,10 +120,13 @@ export function StageWindowDock({
                 "group relative grid shrink-0 place-items-center rounded-[18px] border text-left transition duration-200 ease-out hover:-translate-y-2 hover:scale-110 focus-visible:-translate-y-2 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.42)]",
                 is_active
                   ? "h-[52px] w-[52px] border-[rgba(91,114,255,0.32)] bg-[rgba(91,114,255,0.16)] text-[color:var(--primary)] shadow-[0_16px_32px_rgba(91,114,255,0.22)]"
-                  : "h-[44px] w-[44px] border-transparent bg-white/42 text-(--icon-muted) hover:bg-white/72 hover:text-(--text-strong)",
+                  : is_running
+                    ? "h-[44px] w-[44px] border-transparent bg-white/42 text-(--icon-muted) hover:bg-white/72 hover:text-(--text-strong)"
+                    : "h-[44px] w-[44px] border-transparent bg-white/20 text-(--icon-muted) opacity-55 hover:bg-white/42 hover:opacity-80",
               )}
               key={app_label}
-              onClick={() => on_restore(window.id)}
+              disabled={!window}
+              onClick={() => window && on_restore(window.id)}
               title={title}
               type="button"
             >
@@ -122,12 +137,14 @@ export function StageWindowDock({
                   : "border-white/52 bg-white/44",
               )}>
                 <Icon className="h-[18px] w-[18px]" />
-                <span className={cn(
-                  "absolute -bottom-0.5 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full border border-white/72 transition",
-                  is_active
-                    ? "bg-[color:var(--primary)]"
-                    : "bg-[rgba(47,184,132,0.72)]",
-                )} />
+                {is_running ? (
+                  <span className={cn(
+                    "absolute -bottom-0.5 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full border border-white/72 transition",
+                    is_active
+                      ? "bg-[color:var(--primary)]"
+                      : "bg-[rgba(47,184,132,0.72)]",
+                  )} />
+                ) : null}
                 {count > 1 ? (
                   <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full border border-white/80 bg-[rgba(20,28,38,0.72)] px-1 text-[8px] font-black leading-none text-white shadow-[0_4px_10px_rgba(18,28,42,0.18)]">
                     {count}
@@ -138,7 +155,9 @@ export function StageWindowDock({
                   "absolute -bottom-2 left-1/2 h-1.5 -translate-x-1/2 rounded-full transition",
                   is_active
                     ? "w-5 bg-[color:var(--primary)]"
-                    : "w-2 bg-[rgba(47,184,132,0.54)]",
+                    : is_running
+                      ? "w-2 bg-[rgba(47,184,132,0.54)]"
+                      : "w-0 bg-transparent",
               )} />
               <span className="pointer-events-none absolute bottom-[calc(100%+10px)] left-1/2 hidden max-w-[230px] -translate-x-1/2 whitespace-nowrap rounded-[10px] border border-white/70 bg-[rgba(20,28,38,0.82)] px-2.5 py-1.5 text-[10px] font-semibold text-white shadow-[0_12px_30px_rgba(18,28,42,0.22)] backdrop-blur-xl group-hover:block group-focus-visible:block">
                 <span className="block max-w-[160px] truncate">{app_label}</span>
@@ -188,6 +207,43 @@ interface DockAppGroup {
   count: number;
   is_active: boolean;
   window: StageWindowState;
+}
+
+interface DockAppSlot {
+  app_label: string;
+  count: number;
+  is_active: boolean;
+  is_running: boolean;
+  kind: StageWindowKind;
+  window: StageWindowState | null;
+}
+
+function build_dock_app_slots(running_apps: DockAppGroup[]): DockAppSlot[] {
+  const running_by_label = new Map(running_apps.map((app) => [app.app_label, app]));
+  const pinned_labels = new Set(PINNED_DOCK_APPS.map((app) => app.app_label));
+  const pinned_slots = PINNED_DOCK_APPS.map((app): DockAppSlot => {
+    const running = running_by_label.get(app.app_label);
+    return {
+      app_label: app.app_label,
+      count: running?.count ?? 0,
+      is_active: Boolean(running?.is_active),
+      is_running: Boolean(running),
+      kind: running?.window.kind ?? app.kind,
+      window: running?.window ?? null,
+    };
+  });
+  const extra_slots = running_apps
+    .filter((app) => !pinned_labels.has(app.app_label))
+    .map((app): DockAppSlot => ({
+      app_label: app.app_label,
+      count: app.count,
+      is_active: app.is_active,
+      is_running: true,
+      kind: app.window.kind,
+      window: app.window,
+    }));
+
+  return [...pinned_slots, ...extra_slots];
 }
 
 function group_running_windows_by_app(
