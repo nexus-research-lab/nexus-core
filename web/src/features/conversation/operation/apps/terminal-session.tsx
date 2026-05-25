@@ -1,4 +1,13 @@
-import { AlertTriangle, CheckCircle2, Clock3, Loader2, Play } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clock3,
+  Copy,
+  Loader2,
+  Search,
+  SplitSquareHorizontal,
+} from "lucide-react";
+import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -36,20 +45,13 @@ export function TerminalSession({
 
   return (
     <div className="flex h-full min-h-[240px] min-w-0 flex-col overflow-hidden bg-[#080d12] font-mono text-[11px] leading-5 text-[#d9ffe5]">
-      <div className="flex min-h-0 items-center justify-between gap-3 border-b border-white/10 bg-[#111922] px-3 py-2 text-[10px] text-[#88a19a]">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md bg-[#17232c] text-[#8de0ad]">
-            {has_running_entry ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
-          </span>
-          <span className="truncate text-[#c8d8d1]">{shell_title}</span>
-          <span className="hidden text-[#536873] sm:inline">{session_label}</span>
-          <span className="hidden text-[#536873] sm:inline">{cwd_label}</span>
-        </div>
-        <div className="flex shrink-0 items-center gap-1.5">
-          <TerminalStatusPill event={event} />
-          <span>{format_operation_time(event.updated_at)}</span>
-        </div>
-      </div>
+      <TerminalTitleBar
+        cwd_label={cwd_label}
+        event={event}
+        has_running_entry={has_running_entry}
+        session_label={session_label}
+        shell_title={shell_title}
+      />
       <TerminalSessionStrip
         cwd_label={cwd_label}
         entries={entries}
@@ -98,6 +100,63 @@ export function TerminalSession({
         ) : null}
       </div>
     </div>
+  );
+}
+
+function TerminalTitleBar({
+  cwd_label,
+  event,
+  has_running_entry,
+  session_label,
+  shell_title,
+}: {
+  cwd_label: string;
+  event: NexusOperationEvent;
+  has_running_entry: boolean;
+  session_label: string;
+  shell_title: string;
+}) {
+  return (
+    <div className="border-b border-white/10 bg-[#111922] text-[10px] text-[#88a19a]">
+      <div className="flex min-h-0 items-center justify-between gap-3 px-3 py-1.5">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md bg-[#17232c] text-[#8de0ad]">
+            {has_running_entry ? <Loader2 className="h-3 w-3 animate-spin" /> : <SplitSquareHorizontal className="h-3 w-3" />}
+          </span>
+          <span className="truncate text-[#c8d8d1]">{shell_title}</span>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <TerminalToolbarButton label="搜索">
+            <Search className="h-3 w-3" />
+          </TerminalToolbarButton>
+          <TerminalToolbarButton label="复制输出">
+            <Copy className="h-3 w-3" />
+          </TerminalToolbarButton>
+          <TerminalStatusPill event={event} />
+        </div>
+      </div>
+      <div className="flex min-w-0 items-center gap-1.5 px-3 pb-2">
+        <div className="flex min-w-0 items-center gap-2 rounded-t-[8px] border border-b-0 border-white/10 bg-[#080d12] px-3 py-1 text-[#c8d8d1]">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#8de0ad]" />
+          <span className="truncate">{session_label}</span>
+        </div>
+        <span className="min-w-0 truncate text-[#536873]">{cwd_label}</span>
+        <span className="ml-auto hidden shrink-0 text-[#536873] sm:inline">{format_operation_time(event.updated_at)}</span>
+      </div>
+    </div>
+  );
+}
+
+function TerminalToolbarButton({ children, label }: { children: ReactNode; label: string }) {
+  return (
+    <button
+      aria-label={label}
+      className="grid h-5 w-5 place-items-center rounded border border-white/8 bg-white/[0.035] text-[#88a19a] transition hover:bg-white/[0.07] hover:text-[#c8d8d1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8de0ad]/30"
+      title={label}
+      type="button"
+    >
+      {children}
+    </button>
   );
 }
 
