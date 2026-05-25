@@ -5,6 +5,7 @@ import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { resolve_operation_window_keyboard_action } from "./operation-stage-window-actions";
+import { build_stage_window_titlebar_state } from "./operation-stage-window-titlebar";
 
 interface OperationStageWindowProps {
   title: string;
@@ -65,6 +66,13 @@ export function OperationStageWindow({
   const cleanup_mouse_drag_ref = useRef<(() => void) | null>(null);
   const [is_dragging, set_is_dragging] = useState(false);
   const [is_restoring, set_is_restoring] = useState(false);
+  const titlebar = build_stage_window_titlebar_state({
+    app_label,
+    focused: focus,
+    maximized,
+    minimized,
+    title,
+  });
 
   const start_drag = (
     event: PointerEvent<HTMLDivElement> | MouseEvent<HTMLDivElement>,
@@ -176,7 +184,7 @@ export function OperationStageWindow({
 
   return (
     <div
-      aria-label={app_label ? `${app_label} window: ${title}` : title}
+      aria-label={titlebar.aria_label}
       aria-roledescription="window"
       className={cn(
         "operation-stage-window absolute flex min-h-0 min-w-0 cursor-default flex-col overflow-hidden rounded-[14px] border backdrop-blur-xl outline-none transition-[left,top,width,height,opacity,filter,box-shadow,border-radius] duration-300 ease-[cubic-bezier(.2,.82,.2,1)] focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.42)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent max-md:!relative max-md:!inset-auto max-md:!h-auto max-md:!min-h-[180px] max-md:!w-full max-md:max-w-full",
@@ -232,6 +240,7 @@ export function OperationStageWindow({
           tone === "terminal"
             ? "border-white/10 bg-white/[0.035] text-[rgba(233,241,244,0.56)]"
             : "border-(--divider-subtle-color) bg-white/62 text-(--text-soft)",
+          !focus && "opacity-[0.82]",
         )}
         onPointerCancel={end_drag}
         onLostPointerCapture={end_drag}
@@ -247,8 +256,13 @@ export function OperationStageWindow({
       >
         <div className="operation-window-traffic flex items-center gap-1.5">
           <button
-            aria-label={`关闭 ${title}`}
-            className="operation-window-traffic-button grid h-4 w-4 place-items-center rounded-full border border-[rgba(223,93,98,0.26)] bg-[rgba(223,93,98,0.58)] transition hover:bg-[rgba(223,93,98,0.86)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(223,93,98,0.24)]"
+            aria-label={titlebar.close_label}
+            className={cn(
+              "operation-window-traffic-button grid h-4 w-4 place-items-center rounded-full border transition hover:bg-[rgba(223,93,98,0.86)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(223,93,98,0.24)]",
+              focus
+                ? "border-[rgba(223,93,98,0.26)] bg-[rgba(223,93,98,0.58)]"
+                : "border-white/44 bg-[rgba(117,131,149,0.20)]",
+            )}
             onMouseDown={(event) => event.stopPropagation()}
             onClick={(event) => {
               event.stopPropagation();
@@ -260,8 +274,13 @@ export function OperationStageWindow({
             <X className="operation-window-traffic-icon h-2.5 w-2.5 text-[#6f2024]" />
           </button>
           <button
-            aria-label={`最小化 ${title}`}
-            className="operation-window-traffic-button grid h-4 w-4 place-items-center rounded-full border border-[rgba(223,157,46,0.26)] bg-[rgba(223,157,46,0.62)] transition hover:bg-[rgba(223,157,46,0.88)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(223,157,46,0.24)]"
+            aria-label={titlebar.minimize_label}
+            className={cn(
+              "operation-window-traffic-button grid h-4 w-4 place-items-center rounded-full border transition hover:bg-[rgba(223,157,46,0.88)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(223,157,46,0.24)]",
+              focus
+                ? "border-[rgba(223,157,46,0.26)] bg-[rgba(223,157,46,0.62)]"
+                : "border-white/44 bg-[rgba(117,131,149,0.20)]",
+            )}
             onMouseDown={(event) => event.stopPropagation()}
             onClick={(event) => {
               event.stopPropagation();
@@ -273,14 +292,19 @@ export function OperationStageWindow({
             <Minus className="operation-window-traffic-icon h-2.5 w-2.5 text-[#735018]" />
           </button>
           <button
-            aria-label={`${maximized ? "还原" : "缩放"} ${title}`}
-            className="operation-window-traffic-button grid h-4 w-4 place-items-center rounded-full border border-[rgba(47,184,132,0.22)] bg-[rgba(47,184,132,0.58)] transition hover:bg-[rgba(47,184,132,0.84)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(47,184,132,0.24)]"
+            aria-label={titlebar.zoom_label}
+            className={cn(
+              "operation-window-traffic-button grid h-4 w-4 place-items-center rounded-full border transition hover:bg-[rgba(47,184,132,0.84)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(47,184,132,0.24)]",
+              focus
+                ? "border-[rgba(47,184,132,0.22)] bg-[rgba(47,184,132,0.58)]"
+                : "border-white/44 bg-[rgba(117,131,149,0.20)]",
+            )}
             onMouseDown={(event) => event.stopPropagation()}
             onClick={(event) => {
               event.stopPropagation();
               on_zoom?.();
             }}
-            title={maximized ? "还原窗口" : "缩放窗口"}
+            title={titlebar.zoom_title}
             type="button"
           >
             {maximized ? (
@@ -292,8 +316,11 @@ export function OperationStageWindow({
         </div>
         <div className="flex min-w-0 flex-1 items-center justify-center gap-1.5 px-2 text-[10px] font-semibold">
           <Icon className="h-3 w-3 shrink-0" />
-          <span className="min-w-0 truncate" title={app_label ? `${app_label} · ${title}` : title}>
+          <span className="min-w-0 truncate" title={titlebar.title_label}>
             {title}
+          </span>
+          <span className="rounded-full bg-white/44 px-1.5 py-0.5 text-[8.5px] font-black text-(--text-soft)">
+            {titlebar.status_label}
           </span>
         </div>
         <span aria-hidden="true" className="h-4 w-[52px] shrink-0" />

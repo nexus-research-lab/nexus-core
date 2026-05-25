@@ -69,6 +69,7 @@ copyFileSync(join(operation_dir, "stage/operation-stage-app-identity.js"), join(
 copyFileSync(join(operation_dir, "stage/operation-stage-window-focus.js"), join(operation_dir, "stage/operation-stage-window-focus"));
 copyFileSync(join(operation_dir, "stage/operation-stage-keyboard-target.js"), join(operation_dir, "stage/operation-stage-keyboard-target"));
 copyFileSync(join(operation_dir, "stage/operation-stage-menu-model.js"), join(operation_dir, "stage/operation-stage-menu-model"));
+copyFileSync(join(operation_dir, "stage/operation-stage-window-titlebar.js"), join(operation_dir, "stage/operation-stage-window-titlebar"));
 mkdirSync(join(operation_dir, "apps"), { recursive: true });
 copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
 copyFileSync(join(operation_dir, "apps/operation-app-surface-policy.js"), join(operation_dir, "apps/operation-app-surface-policy"));
@@ -134,6 +135,9 @@ const {
   build_stage_menu_status,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-menu-model.js")));
 const {
+  build_stage_window_titlebar_state,
+} = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-window-titlebar.js")));
+const {
   build_terminal_entries,
 } = await import(pathToFileURL(join(operation_dir, "apps/terminal-session-model.js")));
 const {
@@ -177,6 +181,7 @@ verify_nexus_tool_app_has_own_desktop_identity();
 verify_window_focus_moves_to_next_visible_window();
 verify_desktop_keyboard_target_policy();
 verify_stage_menu_status_tracks_desktop_windows();
+verify_stage_window_titlebar_state();
 verify_stage_experience_state_machine(now);
 verify_live_episode_narrates_running_round(now);
 verify_api_retry_runtime_projection(now);
@@ -533,6 +538,38 @@ function verify_stage_menu_status_tracks_desktop_windows() {
   assert(idle_status.activity_label === "桌面待命", `Idle menu bar should report standby, got ${idle_status.activity_label}`);
   assert(idle_status.window_label === "0 个窗口", `Idle menu bar should report zero windows, got ${idle_status.window_label}`);
   assert(idle_status.dock_label === null, `Idle menu bar should omit Dock count, got ${idle_status.dock_label}`);
+}
+
+function verify_stage_window_titlebar_state() {
+  const focused = build_stage_window_titlebar_state({
+    app_label: "Safari",
+    focused: true,
+    maximized: false,
+    minimized: false,
+    title: "gomoku.html",
+  });
+  assert(focused.aria_label === "Safari window: gomoku.html", `Focused titlebar should expose app window label, got ${focused.aria_label}`);
+  assert(focused.status_label === "前台", `Focused titlebar should report foreground status, got ${focused.status_label}`);
+  assert(focused.zoom_label === "缩放 gomoku.html", `Focused titlebar should expose zoom action, got ${focused.zoom_label}`);
+
+  const background = build_stage_window_titlebar_state({
+    focused: false,
+    maximized: true,
+    minimized: false,
+    title: "Nexus Console",
+  });
+  assert(background.aria_label === "Nexus Console", `Titlebar without app label should keep plain aria label, got ${background.aria_label}`);
+  assert(background.status_label === "后台", `Background titlebar should report background status, got ${background.status_label}`);
+  assert(background.zoom_title === "还原窗口", `Maximized titlebar should offer restore, got ${background.zoom_title}`);
+
+  const minimized = build_stage_window_titlebar_state({
+    app_label: "Code",
+    focused: false,
+    maximized: false,
+    minimized: true,
+    title: "app.ts",
+  });
+  assert(minimized.status_label === "已最小化", `Minimized titlebar should report minimized status, got ${minimized.status_label}`);
 }
 
 function mock_stage_window({
