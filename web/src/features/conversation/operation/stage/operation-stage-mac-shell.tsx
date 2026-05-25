@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import {
   Apple,
   Battery,
@@ -8,9 +9,8 @@ import {
 
 import { cn } from "@/lib/utils";
 
-import type { StageWindowState } from "../operation-desktop-types";
+import type { StageWindowKind, StageWindowState } from "../operation-desktop-types";
 import { basename } from "../operation-scene-planner-helpers";
-import type { NexusOperationEvent } from "../operation-types";
 import {
   icon_for_window_kind,
   stage_app_label_for_window_kind,
@@ -18,27 +18,35 @@ import {
 
 export function StageMacMenuBar({
   active_window,
-  event,
 }: {
   active_window: StageWindowState | null;
-  event: NexusOperationEvent;
 }) {
   const app_name = active_window ? stage_app_label_for_window_kind(active_window.kind) : "Nexus";
-  const time_label = new Intl.DateTimeFormat("zh-CN", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(event.updated_at));
+  const [current_time, set_current_time] = useState(() => new Date());
+  const menu_items = useMemo(
+    () => menu_items_for_window_kind(active_window?.kind ?? null),
+    [active_window?.kind],
+  );
+  const time_label = useMemo(() => (
+    new Intl.DateTimeFormat("zh-CN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(current_time)
+  ), [current_time]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => set_current_time(new Date()), 30_000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   return (
     <div className="absolute inset-x-3 top-3 z-40 flex h-9 items-center justify-between rounded-[14px] border border-white/62 bg-white/52 px-3 text-[11px] font-semibold text-(--text-strong) shadow-[0_14px_36px_rgba(18,28,42,0.10)] backdrop-blur-2xl max-md:hidden">
       <div className="flex min-w-0 items-center gap-3">
         <Apple className="h-3.5 w-3.5 shrink-0" />
         <span className="font-black">{app_name}</span>
-        <span className="text-(--text-soft)">文件</span>
-        <span className="text-(--text-soft)">编辑</span>
-        <span className="text-(--text-soft)">显示</span>
-        <span className="text-(--text-soft)">窗口</span>
-        <span className="text-(--text-soft)">帮助</span>
+        {menu_items.map((item) => (
+          <span className="text-(--text-soft)" key={item}>{item}</span>
+        ))}
       </div>
       <div className="flex shrink-0 items-center gap-3 text-(--text-soft)">
         <Search className="h-3.5 w-3.5" />
@@ -49,6 +57,39 @@ export function StageMacMenuBar({
       </div>
     </div>
   );
+}
+
+function menu_items_for_window_kind(kind: StageWindowKind | null): string[] {
+  if (kind === "browser") {
+    return ["文件", "编辑", "显示", "历史记录", "书签", "窗口", "帮助"];
+  }
+  if (kind === "terminal" || kind === "runtime_handoff") {
+    return ["Shell", "编辑", "显示", "窗口", "帮助"];
+  }
+  if (kind === "finder") {
+    return ["文件", "编辑", "显示", "前往", "窗口", "帮助"];
+  }
+  if (kind === "permission_wait") {
+    return ["文件", "编辑", "显示", "账户", "窗口", "帮助"];
+  }
+  if (kind === "task_board") {
+    return ["显示", "窗口", "进程", "帮助"];
+  }
+  if (kind === "run_manifest" || kind === "evidence") {
+    return ["文件", "编辑", "显示", "操作", "窗口", "帮助"];
+  }
+  if (
+    kind === "code_editor" ||
+    kind === "markdown_reader" ||
+    kind === "word_reader" ||
+    kind === "pdf_reader" ||
+    kind === "spreadsheet" ||
+    kind === "image_viewer" ||
+    kind === "generic_tool"
+  ) {
+    return ["文件", "编辑", "显示", "格式", "窗口", "帮助"];
+  }
+  return ["文件", "编辑", "显示", "窗口", "帮助"];
 }
 
 export function StageDesktopIcons({

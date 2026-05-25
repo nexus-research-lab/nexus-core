@@ -262,7 +262,6 @@ export function OperationStageDesktop({
     <DynamicStageFrame event={event} narrative={narrative}>
       <StageMacMenuBar
         active_window={active_window}
-        event={active_narrative_event}
       />
       <StageDesktopIcons windows={window_states} on_restore={restore_window} />
       {visible_windows.length ? visible_windows.map((window, index) => {
