@@ -101,6 +101,7 @@ const {
 const {
   build_dock_app_slots,
   group_dock_windows_by_app,
+  resolve_dock_slot_presentation,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-dock-model.js")));
 const {
   resolve_operation_window_keyboard_action,
@@ -265,6 +266,19 @@ function verify_dock_model_groups_windows_by_mac_app() {
   assert(slots[1].app_label === "Safari" && slots[1].count === 2, "Dock Safari slot should reflect grouped running windows");
   assert(slots[2].app_label === "Code" && slots[2].window?.id === "code:a", "Dock Code slot should keep recoverable closed window");
   assert(slots.at(-1)?.app_label === "预览", `Dock should append unpinned running apps, got ${slots.at(-1)?.app_label}`);
+
+  const safari_presentation = resolve_dock_slot_presentation(slots[1], "Search");
+  assert(safari_presentation.state === "active", `Dock active Safari slot should present as active, got ${safari_presentation.state}`);
+  assert(safari_presentation.title === "Safari · 2 个窗口 · 当前", `Dock active Safari title should summarize grouped windows, got ${safari_presentation.title}`);
+  const code_presentation = resolve_dock_slot_presentation(slots[2], "app.ts");
+  assert(code_presentation.state === "recoverable", `Dock closed Code slot should be recoverable, got ${code_presentation.state}`);
+  assert(!code_presentation.is_disabled, "Dock closed Code slot should remain clickable for restore");
+  const idle_finder_presentation = resolve_dock_slot_presentation(slots[0], "访达");
+  assert(idle_finder_presentation.state === "idle", `Dock pinned Finder slot should present as idle, got ${idle_finder_presentation.state}`);
+  assert(idle_finder_presentation.is_disabled, "Dock idle pinned app without a window should be disabled");
+  const preview_slot = slots.at(-1);
+  const preview_presentation = resolve_dock_slot_presentation(preview_slot, "README.md");
+  assert(preview_presentation.state === "minimized", `Dock minimized Preview slot should present as minimized, got ${preview_presentation.state}`);
 }
 
 function verify_window_keyboard_actions_match_mac_window_controls() {

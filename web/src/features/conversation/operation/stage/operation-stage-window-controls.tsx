@@ -12,6 +12,7 @@ import {
 import {
   build_dock_app_slots,
   group_dock_windows_by_app,
+  resolve_dock_slot_presentation,
 } from "./operation-stage-dock-model";
 import { dock_icon_skin_for_kind } from "./operation-stage-app-identity";
 import { summarize_hidden_stage_windows } from "./operation-stage-hidden-windows";
@@ -99,19 +100,17 @@ export function StageWindowDock({
         {dock_apps.map(({ app_label, count, is_active, is_running, kind, window }) => {
           const Icon = icon_for_window_kind(window?.kind ?? kind);
           const window_title = window ? display_window_title(window) : "等待工具调用";
-          const state_label = is_active
-            ? "当前"
-            : window?.phase === "minimized"
-              ? "已最小化"
-              : is_running ? "后台" : window ? "可重新打开" : "未打开";
-          const title = !window
-            ? `${app_label} · 未打开`
-            : count > 1
-              ? `${app_label} · ${count} 个窗口 · ${state_label}`
-              : `${app_label} · ${window_title} · ${state_label}`;
+          const presentation = resolve_dock_slot_presentation({
+            app_label,
+            count,
+            is_active,
+            is_running,
+            kind,
+            window,
+          }, window_title);
           return (
             <button
-              aria-label={`${state_label}：${app_label}`}
+              aria-label={`${presentation.state_label}：${app_label}`}
               className={cn(
                 "group relative grid shrink-0 place-items-center rounded-[18px] border text-left transition duration-200 ease-out hover:-translate-y-2 hover:scale-110 focus-visible:-translate-y-2 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.42)]",
                 is_active
@@ -121,9 +120,9 @@ export function StageWindowDock({
                     : "h-[44px] w-[44px] border-transparent bg-white/20 text-(--icon-muted) opacity-55 hover:bg-white/42 hover:opacity-80",
               )}
               key={app_label}
-              disabled={!window}
+              disabled={presentation.is_disabled}
               onClick={() => window && on_restore(window.id)}
-              title={title}
+              title={presentation.title}
               type="button"
             >
               <span className={cn(
@@ -157,7 +156,7 @@ export function StageWindowDock({
               <span className="pointer-events-none absolute bottom-[calc(100%+10px)] left-1/2 hidden max-w-[230px] -translate-x-1/2 whitespace-nowrap rounded-[10px] border border-white/70 bg-[rgba(20,28,38,0.82)] px-2.5 py-1.5 text-[10px] font-semibold text-white shadow-[0_12px_30px_rgba(18,28,42,0.22)] backdrop-blur-xl group-hover:block group-focus-visible:block">
                 <span className="block max-w-[160px] truncate">{app_label}</span>
                 <span className="block text-[9px] font-medium text-white/66">
-                  {count > 1 ? `${count} 个窗口` : window_title} · {state_label}
+                  {count > 1 ? `${count} 个窗口` : window_title} · {presentation.state_label}
                 </span>
               </span>
             </button>

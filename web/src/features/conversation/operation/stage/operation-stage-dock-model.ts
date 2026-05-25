@@ -22,6 +22,15 @@ export interface DockAppSlot {
   window: StageWindowState | null;
 }
 
+export type DockSlotState = "active" | "background" | "minimized" | "recoverable" | "idle";
+
+export interface DockSlotPresentation {
+  is_disabled: boolean;
+  state: DockSlotState;
+  state_label: string;
+  title: string;
+}
+
 export function build_dock_app_slots(
   app_groups: DockAppGroup[],
   pinned_apps: DockPinnedApp[],
@@ -51,6 +60,26 @@ export function build_dock_app_slots(
     }));
 
   return [...pinned_slots, ...extra_slots];
+}
+
+export function resolve_dock_slot_presentation(
+  slot: DockAppSlot,
+  window_title: string,
+): DockSlotPresentation {
+  const state = resolve_dock_slot_state(slot);
+  const state_label = dock_slot_state_label(state);
+  const title = !slot.window
+    ? `${slot.app_label} · ${state_label}`
+    : slot.count > 1
+      ? `${slot.app_label} · ${slot.count} 个窗口 · ${state_label}`
+      : `${slot.app_label} · ${window_title} · ${state_label}`;
+
+  return {
+    is_disabled: state === "idle",
+    state,
+    state_label,
+    title,
+  };
 }
 
 export function group_dock_windows_by_app(
@@ -85,4 +114,36 @@ export function group_dock_windows_by_app(
   }
 
   return [...groups.values()];
+}
+
+function resolve_dock_slot_state(slot: DockAppSlot): DockSlotState {
+  if (!slot.window) {
+    return "idle";
+  }
+  if (slot.is_active) {
+    return "active";
+  }
+  if (slot.window.phase === "minimized") {
+    return "minimized";
+  }
+  if (slot.is_running) {
+    return "background";
+  }
+  return "recoverable";
+}
+
+function dock_slot_state_label(state: DockSlotState): string {
+  if (state === "active") {
+    return "当前";
+  }
+  if (state === "minimized") {
+    return "已最小化";
+  }
+  if (state === "background") {
+    return "后台";
+  }
+  if (state === "recoverable") {
+    return "可重新打开";
+  }
+  return "未打开";
 }
