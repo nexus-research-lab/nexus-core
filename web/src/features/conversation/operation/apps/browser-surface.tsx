@@ -10,6 +10,7 @@ import {
   PanelLeft,
   Plus,
   RefreshCw,
+  Search,
   Share2,
   ShieldCheck,
 } from "lucide-react";
@@ -233,14 +234,33 @@ function BrowserPreviewFallback({
       : [event.summary ?? query];
 
   return (
-    <div className="soft-scrollbar min-h-0 flex-1 overflow-auto bg-[linear-gradient(180deg,#ffffff,#f3f6fa)] p-4">
-      <div className="operation-web-loading mb-3 h-20 rounded-[14px] border border-[rgba(223,157,46,0.24)] bg-[linear-gradient(135deg,rgba(223,157,46,0.16),rgba(255,255,255,0.72),rgba(91,114,255,0.08))]" />
-      <div className="space-y-2">
-        {display_lines.map((line, index) => (
-          <div className="rounded-[12px] border border-(--divider-subtle-color) bg-white/76 p-3 shadow-[0_10px_24px_rgba(18,28,42,0.05)]" key={`${line}:${index}`}>
-            <p className="line-clamp-3 text-[12px] leading-5 text-(--text-default)">{line}</p>
+    <div className="soft-scrollbar min-h-0 flex-1 overflow-auto bg-[linear-gradient(180deg,#fbfcfe,#eef3f8)] px-6 py-7">
+      <div className="mx-auto flex min-h-full w-full max-w-[680px] flex-col justify-center">
+        <div className="mb-5 text-center">
+          <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-[15px] border border-white/72 bg-white/66 text-(--icon-muted) shadow-[0_16px_42px_rgba(18,28,42,0.08)]">
+            {event.phase === "running" ? <Loader2 className="h-5 w-5 animate-spin" /> : <Globe2 className="h-5 w-5" />}
           </div>
-        ))}
+          <p className="text-[17px] font-semibold tracking-[-0.02em] text-(--text-strong)">
+            {event.phase === "running" ? "Safari 正在载入页面" : "Safari Reader"}
+          </p>
+          <p className="mt-1 text-[11px] text-(--text-soft)">
+            {PHASE_LABEL[event.phase]} · {format_browser_origin(query)}
+          </p>
+        </div>
+        <div className="mb-4 flex min-w-0 items-center gap-2 rounded-[13px] border border-(--divider-subtle-color) bg-white/82 px-3 py-2.5 text-[12px] text-(--text-default) shadow-[0_16px_42px_rgba(18,28,42,0.08),inset_0_1px_0_rgba(255,255,255,0.82)]">
+          <Search className="h-4 w-4 shrink-0 text-(--icon-muted)" />
+          <span className="min-w-0 flex-1 truncate">{query}</span>
+        </div>
+        {event.phase === "running" ? (
+          <div className="operation-web-loading mb-4 h-1.5 overflow-hidden rounded-full bg-[rgba(91,114,255,0.10)]" />
+        ) : null}
+        <div className="overflow-hidden rounded-[14px] border border-(--divider-subtle-color) bg-white/64 shadow-[0_18px_48px_rgba(18,28,42,0.08)]">
+          {display_lines.map((line, index) => (
+            <div className="border-b border-(--divider-subtle-color) px-4 py-3 last:border-b-0" key={`${line}:${index}`}>
+              <p className="line-clamp-3 text-[12px] leading-5 text-(--text-default)">{line}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -288,6 +308,14 @@ function looks_like_html(value: string): boolean {
 
 function looks_like_url(value: string): boolean {
   return /^https?:\/\//i.test(value);
+}
+
+function format_browser_origin(value: string): string {
+  try {
+    return new URL(value).hostname;
+  } catch {
+    return "workspace preview";
+  }
 }
 
 function build_workspace_raw_url(agent_id: string, target?: string | null): string | null {
