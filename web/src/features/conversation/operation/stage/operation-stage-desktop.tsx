@@ -298,7 +298,7 @@ export function OperationStageDesktop({
             on_minimize={() => minimize_window(window.id)}
             position_class_name={position_for_window(window, narrative.phase)}
             sequence_label={sequence_label}
-            status_label={window.phase === "focused" || is_active ? "聚焦" : window.phase === "background" ? "后台" : "现场"}
+            status_label={window.phase === "focused" || is_active ? "当前" : window.phase === "background" ? "后台" : "活动"}
             title={window.title}
             tone={window.kind === "terminal" ? "terminal" : "default"}
             z_index={is_active ? 44 : 8 + index}
@@ -321,7 +321,6 @@ export function OperationStageDesktop({
       ) : null}
       <StageWindowDock
         active_window_id={active_window_id}
-        events={narrative_events}
         windows={window_states}
         on_restore={restore_window}
       />
