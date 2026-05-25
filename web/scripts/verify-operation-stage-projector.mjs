@@ -61,6 +61,7 @@ copyFileSync(join(operation_dir, "stage/operation-stage-window-kinds.js"), join(
 mkdirSync(join(operation_dir, "apps"), { recursive: true });
 copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
 copyFileSync(join(operation_dir, "apps/file-preview-value.js"), join(operation_dir, "apps/file-preview-value"));
+copyFileSync(join(operation_dir, "apps/browser-result-items.js"), join(operation_dir, "apps/browser-result-items"));
 
 const { project_operation_snapshot } = await import(pathToFileURL(join(operation_dir, "operation-projector.js")));
 const {
@@ -88,6 +89,9 @@ const {
 const {
   resolve_file_preview_value,
 } = await import(pathToFileURL(join(operation_dir, "apps/file-preview-value.js")));
+const {
+  build_browser_result_items,
+} = await import(pathToFileURL(join(operation_dir, "apps/browser-result-items.js")));
 const now = Date.now();
 
 verify_desktop_window_kind_contract();
@@ -101,6 +105,7 @@ verify_workspace_live_stays_in_tool_round(now);
 verify_multi_file_windows_keep_event_identity(now);
 verify_terminal_result_envelope(now);
 verify_terminal_entries_render_real_command_result(now);
+verify_browser_fallback_builds_search_results(now);
 verify_completed_manifest_keeps_terminal_window_identity(now);
 verify_completed_round_replay_uses_event_slice({
   assert,
@@ -854,6 +859,41 @@ function verify_terminal_entries_render_real_command_result(now) {
   assert(error_entry.stdout.length === 0, `terminal error should not populate stdout, got ${error_entry.stdout.length}`);
   assert(error_entry.exit_label === "退出 1", `terminal error should show exit 1, got ${error_entry.exit_label}`);
   assert(error_entry.exit_tone === "error", `terminal error should use error tone, got ${error_entry.exit_tone}`);
+}
+
+function verify_browser_fallback_builds_search_results(now) {
+  const event = {
+    id: "web-search",
+    session_key: "session:stage",
+    round_id: "round-web",
+    agent_id: "agent-stage",
+    message_id: "msg-web",
+    kind: "web_research",
+    surface: "web",
+    phase: "done",
+    tool_name: "web_search",
+    target: "nexus stage mac desktop",
+    summary: "Search completed",
+    updated_at: now,
+  };
+
+  const items = build_browser_result_items({
+    event,
+    query: "nexus stage mac desktop",
+    lines: [
+      "https://example.com/stage",
+      "[Nexus Desktop](https://nexus.example.com/desktop) Window design notes",
+      "Local summary without a URL",
+    ],
+  });
+
+  assert(items.length === 3, `browser fallback should keep search result rows, got ${items.length}`);
+  assert(items[0].url === "https://example.com/stage", `plain URL result should preserve URL, got ${items[0].url}`);
+  assert(items[0].title.includes("example.com"), `plain URL result should derive readable title, got ${items[0].title}`);
+  assert(items[1].title === "Nexus Desktop", `markdown link result should preserve title, got ${items[1].title}`);
+  assert(items[1].url === "https://nexus.example.com/desktop", `markdown link result should preserve URL, got ${items[1].url}`);
+  assert(items[2].url.startsWith("nexus-search://"), `plain text result should become a local search row, got ${items[2].url}`);
+  assert(items[2].snippet === "Local summary without a URL", `plain text result should preserve snippet, got ${items[2].snippet}`);
 }
 
 function verify_completed_manifest_keeps_terminal_window_identity(now) {

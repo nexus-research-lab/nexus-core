@@ -24,6 +24,7 @@ import type {
   NexusOperationEvent,
   OperationPhase,
 } from "../operation-types";
+import { build_browser_result_items } from "./browser-result-items";
 
 const PHASE_LABEL: Record<OperationPhase, string> = {
   queued: "排队中",
@@ -214,11 +215,11 @@ function BrowserViewport({
     );
   }
 
-  return <BrowserPreviewFallback event={event} lines={lines} query={query} />;
+  return <BrowserSearchResults event={event} lines={lines} query={query} />;
 }
 
 
-function BrowserPreviewFallback({
+function BrowserSearchResults({
   event,
   lines,
   query,
@@ -227,41 +228,58 @@ function BrowserPreviewFallback({
   lines: string[];
   query: string;
 }) {
-  const display_lines = lines.length
-    ? lines.slice(0, 5)
-    : event.phase === "running"
-      ? ["正在等待浏览器返回内容", "如果这是远程页面，加载完成后会保留页面摘要和日志。"]
-      : [event.summary ?? query];
+  const result_items = build_browser_result_items({ event, lines, query });
 
   return (
-    <div className="soft-scrollbar min-h-0 flex-1 overflow-auto bg-[linear-gradient(180deg,#fbfcfe,#eef3f8)] px-6 py-7">
-      <div className="mx-auto flex min-h-full w-full max-w-[680px] flex-col justify-center">
-        <div className="mb-5 text-center">
-          <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-[15px] border border-white/72 bg-white/66 text-(--icon-muted) shadow-[0_16px_42px_rgba(18,28,42,0.08)]">
-            {event.phase === "running" ? <Loader2 className="h-5 w-5 animate-spin" /> : <Globe2 className="h-5 w-5" />}
-          </div>
-          <p className="text-[17px] font-semibold tracking-[-0.02em] text-(--text-strong)">
-            {event.phase === "running" ? "Safari 正在载入页面" : "Safari 摘要页"}
-          </p>
-          <p className="mt-1 text-[11px] text-(--text-soft)">
-            {PHASE_LABEL[event.phase]} · {format_browser_origin(query)}
-          </p>
-        </div>
-        <div className="mb-4 flex min-w-0 items-center gap-2 rounded-[13px] border border-(--divider-subtle-color) bg-white/82 px-3 py-2.5 text-[12px] text-(--text-default) shadow-[0_16px_42px_rgba(18,28,42,0.08),inset_0_1px_0_rgba(255,255,255,0.82)]">
-          <Search className="h-4 w-4 shrink-0 text-(--icon-muted)" />
-          <span className="min-w-0 flex-1 truncate">{query}</span>
-        </div>
-        {event.phase === "running" ? (
-          <div className="operation-web-loading mb-4 h-1.5 overflow-hidden rounded-full bg-[rgba(91,114,255,0.10)]" />
-        ) : null}
-        <div className="overflow-hidden rounded-[14px] border border-(--divider-subtle-color) bg-white/64 shadow-[0_18px_48px_rgba(18,28,42,0.08)]">
-          {display_lines.map((line, index) => (
-            <div className="border-b border-(--divider-subtle-color) px-4 py-3 last:border-b-0" key={`${line}:${index}`}>
-              <p className="line-clamp-3 text-[12px] leading-5 text-(--text-default)">{line}</p>
+    <div className="soft-scrollbar min-h-0 flex-1 overflow-auto bg-[#fbfcfe]">
+      <div className="grid min-h-full grid-cols-[180px_minmax(0,1fr)] max-md:grid-cols-1">
+        <aside className="hidden border-r border-(--divider-subtle-color) bg-[#f3f6fa] px-3 py-4 text-[11px] text-(--text-soft) md:block">
+          <p className="mb-2 text-[10px] font-black uppercase tracking-[0.14em]">Safari</p>
+          <SafariSidebarItem active label="搜索结果" />
+          <SafariSidebarItem label="阅读列表" />
+          <SafariSidebarItem label="历史记录" />
+        </aside>
+        <div className="min-w-0 px-6 py-5">
+          <div className="mb-4 max-w-[760px]">
+            <div className="flex min-w-0 items-center gap-2 rounded-[14px] border border-(--divider-subtle-color) bg-white px-3 py-2.5 text-[13px] text-(--text-strong) shadow-[0_12px_34px_rgba(18,28,42,0.07),inset_0_1px_0_rgba(255,255,255,0.82)]">
+              <Search className="h-4 w-4 shrink-0 text-(--icon-muted)" />
+              <span className="min-w-0 flex-1 truncate">{query}</span>
+              {event.phase === "running" ? <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[color:var(--primary)]" /> : null}
             </div>
-          ))}
+            <p className="mt-2 text-[11px] text-(--text-soft)">
+              {PHASE_LABEL[event.phase]} · {result_items.length} 条结果 · {format_browser_origin(query)}
+            </p>
+            {event.phase === "running" ? (
+              <div className="operation-web-loading mt-3 h-1.5 overflow-hidden rounded-full bg-[rgba(91,114,255,0.10)]" />
+            ) : null}
+          </div>
+          <div className="max-w-[760px] space-y-3">
+            {result_items.map((item) => (
+              <article
+                className="rounded-[14px] border border-(--divider-subtle-color) bg-white/82 px-4 py-3 shadow-[0_12px_34px_rgba(18,28,42,0.06)]"
+                key={`${item.url}:${item.title}`}
+              >
+                <p className="truncate text-[11px] font-semibold text-[color:var(--success)]">{item.url}</p>
+                <h3 className="mt-1 line-clamp-2 text-[14px] font-black tracking-[-0.02em] text-(--text-strong)">
+                  {item.title}
+                </h3>
+                <p className="mt-1.5 line-clamp-3 text-[12px] leading-5 text-(--text-default)">{item.snippet}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SafariSidebarItem({ active = false, label }: { active?: boolean; label: string }) {
+  return (
+    <div className={cn(
+      "rounded-[9px] px-2.5 py-1.5 font-semibold",
+      active ? "bg-white text-(--text-strong) shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]" : "text-(--text-soft)",
+    )}>
+      {label}
     </div>
   );
 }
