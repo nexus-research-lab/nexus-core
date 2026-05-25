@@ -20,6 +20,11 @@ import { cn } from "@/lib/utils";
 import type { StageWindowState } from "../operation-desktop-types";
 import type { NexusOperationEvent } from "../operation-types";
 import { PHASE_LABELS } from "../operation-tool-catalog";
+import {
+  finder_file_kind_label,
+  finder_preview_lines,
+  resolve_finder_selected_item,
+} from "./finder-item-details";
 
 type WorkspaceItemStatus = NonNullable<NonNullable<StageWindowState["payload"]["workspace_items"]>[number]["status"]>;
 
@@ -46,6 +51,8 @@ export function WorkspaceFinder({
     }];
   const changed_count = display_items.filter((item) => item.status === "updated" || item.status === "writing").length;
   const selected_path = active_path ?? event.target ?? display_items[0]?.path ?? "workspace";
+  const selected_item = resolve_finder_selected_item(display_items, selected_path);
+  const preview_lines = finder_preview_lines(selected_item);
 
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden bg-[#f8fafc]">
@@ -53,7 +60,7 @@ export function WorkspaceFinder({
         <FinderSidebarItem active icon={FolderOpen} label="工作区" />
         <FinderSidebarItem icon={Search} label="搜索" />
         <FinderSidebarItem icon={HardDrive} label="变更" />
-        <div className="mt-4 px-2 text-[9px] font-black uppercase tracking-[0.14em] text-(--text-soft)">Locations</div>
+        <div className="mt-4 px-2 text-[9px] font-black uppercase tracking-[0.14em] text-(--text-soft)">位置</div>
         <div className="mt-1 rounded-[9px] px-2 py-1.5 text-[10px] text-(--text-muted)">~/workspace</div>
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
@@ -108,7 +115,7 @@ export function WorkspaceFinder({
             ))}
           </div>
           <aside className="hidden min-h-0 border-l border-(--divider-subtle-color) bg-white/54 p-3 md:block">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">预览</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">信息</p>
             <div className="mt-3 grid h-16 w-16 place-items-center rounded-[16px] border border-(--divider-subtle-color) bg-white/74 text-(--icon-default)">
               {(() => {
                 const Icon = icon_for_workspace_path(selected_path);
@@ -119,8 +126,28 @@ export function WorkspaceFinder({
               {basename(selected_path)}
             </p>
             <p className="truncate text-[10px] text-(--text-soft)">
-              {changed_count ? `${changed_count} 个变更待查看` : "没有新的文件变更"}
+              {finder_file_kind_label(selected_path)}
             </p>
+            <div className="mt-4 space-y-2 border-t border-(--divider-subtle-color) pt-3">
+              <FinderInspectorRow label="状态" value={selected_item ? workspace_status_label(selected_item.status) : "未选择"} />
+              <FinderInspectorRow label="位置" value={selected_path} />
+              <FinderInspectorRow label="修改时间" value={selected_item ? format_workspace_time(selected_item.updated_at) : "--"} />
+              <FinderInspectorRow label="版本" value={selected_item ? `v${selected_item.version}` : "--"} />
+            </div>
+            {preview_lines.length ? (
+              <div className="mt-4 overflow-hidden rounded-[11px] border border-(--divider-subtle-color) bg-[#101820] p-2 font-mono text-[10px] leading-4 text-[#dce8ee]">
+                {preview_lines.map((line, index) => (
+                  <div className="flex min-w-0 gap-2" key={`${index}:${line}`}>
+                    <span className="w-5 shrink-0 select-none text-right text-[#6f8190]">{index + 1}</span>
+                    <span className="min-w-0 truncate">{line}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-4 rounded-[11px] border border-(--divider-subtle-color) bg-white/54 px-3 py-2 text-[10px] leading-4 text-(--text-soft)">
+                {changed_count ? `${changed_count} 个变更待查看` : "没有新的文件变更"}
+              </p>
+            )}
           </aside>
         </div>
         <FinderPathBar
@@ -129,6 +156,15 @@ export function WorkspaceFinder({
           path={selected_path}
         />
       </div>
+    </div>
+  );
+}
+
+function FinderInspectorRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[9px] font-black uppercase tracking-[0.12em] text-(--text-soft)">{label}</p>
+      <p className="mt-0.5 truncate text-[10.5px] font-semibold text-(--text-strong)" title={value}>{value}</p>
     </div>
   );
 }

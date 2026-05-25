@@ -62,6 +62,7 @@ mkdirSync(join(operation_dir, "apps"), { recursive: true });
 copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
 copyFileSync(join(operation_dir, "apps/file-preview-value.js"), join(operation_dir, "apps/file-preview-value"));
 copyFileSync(join(operation_dir, "apps/browser-result-items.js"), join(operation_dir, "apps/browser-result-items"));
+copyFileSync(join(operation_dir, "apps/finder-item-details.js"), join(operation_dir, "apps/finder-item-details"));
 
 const { project_operation_snapshot } = await import(pathToFileURL(join(operation_dir, "operation-projector.js")));
 const {
@@ -92,6 +93,11 @@ const {
 const {
   build_browser_result_items,
 } = await import(pathToFileURL(join(operation_dir, "apps/browser-result-items.js")));
+const {
+  finder_file_kind_label,
+  finder_preview_lines,
+  resolve_finder_selected_item,
+} = await import(pathToFileURL(join(operation_dir, "apps/finder-item-details.js")));
 const now = Date.now();
 
 verify_desktop_window_kind_contract();
@@ -106,6 +112,7 @@ verify_multi_file_windows_keep_event_identity(now);
 verify_terminal_result_envelope(now);
 verify_terminal_entries_render_real_command_result(now);
 verify_browser_fallback_builds_search_results(now);
+verify_finder_details_reflect_selected_workspace_item(now);
 verify_completed_manifest_keeps_terminal_window_identity(now);
 verify_completed_round_replay_uses_event_slice({
   assert,
@@ -894,6 +901,42 @@ function verify_browser_fallback_builds_search_results(now) {
   assert(items[1].url === "https://nexus.example.com/desktop", `markdown link result should preserve URL, got ${items[1].url}`);
   assert(items[2].url.startsWith("nexus-search://"), `plain text result should become a local search row, got ${items[2].url}`);
   assert(items[2].snippet === "Local summary without a URL", `plain text result should preserve snippet, got ${items[2].snippet}`);
+}
+
+function verify_finder_details_reflect_selected_workspace_item(now) {
+  const items = [{
+    id: "workspace-html",
+    agent_id: "agent-stage",
+    path: "src/gomoku.html",
+    status: "updated",
+    version: 3,
+    source: "agent",
+    session_key: "session:stage",
+    tool_use_id: "tool-html",
+    event_type: "file_write_end",
+    live_content: "<main>\n  <h1>Gomoku</h1>\n</main>\n",
+    updated_at: now,
+  }, {
+    id: "workspace-css",
+    agent_id: "agent-stage",
+    path: "src/style.css",
+    status: "updated",
+    version: 2,
+    source: "agent",
+    session_key: "session:stage",
+    tool_use_id: "tool-css",
+    event_type: "file_write_end",
+    live_content: "body { margin: 0; }\n",
+    updated_at: now,
+  }];
+
+  const selected = resolve_finder_selected_item(items, "src/gomoku.html");
+  assert(selected?.path === "src/gomoku.html", `Finder should resolve selected file, got ${selected?.path}`);
+  assert(finder_file_kind_label("src/gomoku.html") === "网页文件", "Finder should label html files as web files");
+  assert(finder_file_kind_label("src/app.tsx") === "JavaScript 源代码", "Finder should label tsx files as JavaScript source");
+  const preview_lines = finder_preview_lines(selected);
+  assert(preview_lines.length === 3, `Finder preview should preserve non-empty live content lines, got ${preview_lines.length}`);
+  assert(preview_lines[1].includes("Gomoku"), `Finder preview should include selected file content, got ${preview_lines[1]}`);
 }
 
 function verify_completed_manifest_keeps_terminal_window_identity(now) {
