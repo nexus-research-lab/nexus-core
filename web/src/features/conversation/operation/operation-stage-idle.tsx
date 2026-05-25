@@ -1,12 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  Activity,
-  CheckCircle2,
-  FolderTree,
-  RadioTower,
-  Sparkles,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -14,17 +6,10 @@ import type {
   NexusOperationEvent,
   NexusOperationSnapshot,
 } from "./operation-types";
-import type { OperationStageExperiencePhase } from "./operation-stage-experience";
-import {
-  fallback_stage_event_object_label,
-  is_low_signal_stage_label,
-} from "./operation-stage-labels";
 import {
   build_stage_transition_style,
-  surface_meta_for_transition,
 } from "./operation-stage-transition";
 import type { StageTransitionIntent } from "./operation-stage-transition";
-import { StageBootSignal } from "./operation-stage-launch-overlay";
 
 interface IdleParticle {
   x: number;
@@ -38,26 +23,8 @@ interface IdleParticle {
 
 const IDLE_PARTICLE_GLYPHS = ["{", "}", "<", ">", "/", "\\", "0", "1", "n", "x", "+", "·", ";", ":"];
 
-const STAGE_STORY_ITEMS: Array<{
-  id: OperationStageExperiencePhase;
-  label: string;
-  value: string;
-  Icon: LucideIcon;
-}> = [
-  { id: "idle", label: "入口", value: "字符场", Icon: Sparkles },
-  { id: "awakening", label: "唤醒", value: "运行接入", Icon: RadioTower },
-  { id: "running", label: "执行", value: "工具窗口", Icon: Activity },
-  { id: "settling", label: "落盘", value: "现场沉淀", Icon: FolderTree },
-  { id: "completed", label: "交接", value: "可回看", Icon: CheckCircle2 },
-];
-
 export function EmptyStage({
-  active_event = null,
   exiting = false,
-  previous_event = null,
-  round_event_count = 0,
-  snapshot,
-  subtitle,
   transition_intent = "summary",
 }: {
   active_event?: NexusOperationEvent | null;
@@ -96,207 +63,6 @@ export function EmptyStage({
         </div>
       </div>
 
-      <div className="operation-idle-agent-pill pointer-events-none absolute right-8 top-7 z-10 flex max-w-[220px] justify-end max-sm:right-5 max-sm:top-5">
-        <div className="min-w-0 rounded-full border border-white/72 bg-white/54 px-3 py-1.5 text-right text-[11px] font-semibold text-(--text-soft) shadow-[0_14px_34px_rgba(18,28,42,0.08)] backdrop-blur-xl">
-          <span className="block truncate">{subtitle}</span>
-        </div>
-      </div>
-
-      <IdleWorkstationStatus
-        active_event={active_event}
-        exiting={exiting}
-        snapshot={snapshot}
-        subtitle={subtitle}
-        transition_intent={transition_intent}
-      />
-      <IdleNarrativeDock phase={exiting ? "awakening" : "idle"} snapshot={snapshot} />
-
-      {exiting && active_event ? (
-        <StageBootSignal
-          event={active_event}
-          intent={transition_intent}
-          previous_event={previous_event}
-          round_event_count={round_event_count}
-        />
-      ) : null}
-    </div>
-  );
-}
-
-function IdleWorkstationStatus({
-  active_event,
-  exiting,
-  snapshot,
-  subtitle,
-  transition_intent,
-}: {
-  active_event: NexusOperationEvent | null;
-  exiting: boolean;
-  snapshot: NexusOperationSnapshot | null;
-  subtitle: string;
-  transition_intent: StageTransitionIntent;
-}) {
-  const event_count = snapshot?.events.length ?? 0;
-  const artifact_count = snapshot?.workspace_events.length ?? 0;
-  const evidence_count = snapshot?.recent_evidence.length ?? 0;
-  const launch_meta = active_event ? surface_meta_for_transition(active_event, transition_intent) : null;
-  const LaunchIcon = launch_meta?.Icon ?? Sparkles;
-  const launch_target_candidate = active_event?.target ?? active_event?.summary ?? active_event?.title;
-  const launch_target = is_low_signal_stage_label(launch_target_candidate)
-    ? fallback_stage_event_object_label(active_event, launch_meta?.label)
-    : launch_target_candidate;
-  const launch_subtitle_candidate = active_event?.tool_name ?? active_event?.title ?? subtitle;
-  const launch_subtitle = is_low_signal_stage_label(launch_subtitle_candidate)
-    ? fallback_stage_event_object_label(active_event, launch_meta?.label)
-    : launch_subtitle_candidate;
-
-  return (
-    <div className="operation-idle-status-card pointer-events-none absolute left-8 top-7 z-10 w-[min(320px,calc(100%-4rem))] max-sm:left-5 max-sm:top-5 max-sm:w-[min(280px,calc(100%-2.5rem))]">
-      <div className="rounded-[18px] border border-white/66 bg-white/46 p-3 shadow-[0_18px_46px_rgba(18,28,42,0.09)] backdrop-blur-xl">
-        <div className="flex min-w-0 items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className={cn(
-              "grid h-8 w-8 shrink-0 place-items-center rounded-[11px] border text-[color:var(--primary)]",
-              exiting
-                ? "border-[rgba(91,114,255,0.24)] bg-[rgba(91,114,255,0.12)]"
-                : "border-[rgba(91,114,255,0.18)] bg-[rgba(91,114,255,0.09)]",
-            )}>
-              <LaunchIcon className={cn("h-4 w-4", exiting && "animate-pulse")} />
-            </span>
-            <div className="min-w-0">
-              <p className="truncate text-[12px] font-black text-(--text-strong)">
-                {exiting && launch_meta ? `${launch_meta.label} 接入` : "nexus 字符场"}
-              </p>
-              <p className="truncate text-[10px] font-semibold text-(--text-soft)">
-                {exiting ? launch_subtitle : subtitle}
-              </p>
-            </div>
-          </div>
-          <span className={cn(
-            "shrink-0 rounded-full border px-2 py-1 text-[9.5px] font-bold",
-            exiting
-              ? "border-[rgba(91,114,255,0.24)] bg-[rgba(91,114,255,0.10)] text-[color:var(--primary)]"
-              : "border-[rgba(47,184,132,0.20)] bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]",
-          )}>
-            {exiting ? "唤醒中" : "待机"}
-          </span>
-        </div>
-        {exiting ? (
-          <div className="mt-3 rounded-[12px] border border-[rgba(91,114,255,0.16)] bg-[rgba(91,114,255,0.07)] px-2.5 py-2">
-            <p className="truncate text-[9px] font-black uppercase tracking-[0.10em] text-(--text-soft)">
-              下一步
-            </p>
-            <p className="mt-0.5 truncate text-[10.5px] font-semibold text-(--text-strong)">
-              {launch_target}
-            </p>
-          </div>
-        ) : (
-          <IdleStandbyRoute />
-        )}
-        <div className="mt-3 grid grid-cols-3 gap-1.5 text-center">
-          <IdleStatusMetric label="状态" value={exiting ? "唤醒" : "就绪"} />
-          <IdleStatusMetric label="现场" value={event_count ? `${event_count}` : "空"} />
-          <IdleStatusMetric label="证据" value={artifact_count + evidence_count ? `${artifact_count + evidence_count}` : "0"} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function IdleStandbyRoute() {
-  return (
-    <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 text-[8.5px] font-bold text-(--text-soft)">
-      <IdleRouteCell label="入口" value="字符场" />
-      <span className="text-center">-&gt;</span>
-      <IdleRouteCell label="唤醒" value="运行接入" />
-      <span className="text-center">-&gt;</span>
-      <IdleRouteCell label="显影" value="工具窗口" />
-    </div>
-  );
-}
-
-function IdleRouteCell({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0 rounded-[9px] border border-white/42 bg-white/30 px-2 py-1.5 text-center">
-      <p className="truncate text-[8px] font-black text-(--text-soft)">{label}</p>
-      <p className="mt-0.5 truncate text-[9px] font-black text-(--text-strong)">{value}</p>
-    </div>
-  );
-}
-
-function IdleNarrativeDock({
-  phase,
-  snapshot,
-}: {
-  phase: OperationStageExperiencePhase;
-  snapshot: NexusOperationSnapshot | null;
-}) {
-  const has_resume_context = Boolean(
-    snapshot &&
-    (snapshot.events.length > 0 || snapshot.workspace_events.length > 0 || snapshot.recent_evidence.length > 0),
-  );
-
-  return (
-    <div className="pointer-events-none absolute bottom-8 right-8 z-10 w-[min(520px,calc(100%-4rem))] max-sm:bottom-24 max-sm:right-5 max-sm:w-[min(320px,calc(100%-2.5rem))]">
-      <div className="rounded-[18px] border border-white/62 bg-white/40 p-2.5 shadow-[0_18px_46px_rgba(18,28,42,0.08)] backdrop-blur-xl">
-        <div className="flex items-center justify-between gap-3 px-1 pb-2">
-          <span className="text-[10px] font-black text-(--text-strong)">
-            {has_resume_context ? "可恢复工作台" : "工作台叙事轨"}
-          </span>
-          <span className="text-[9px] font-semibold text-(--text-soft)">
-            {has_resume_context ? `${snapshot?.events.length ?? 0} 步快照` : "idle"}
-          </span>
-        </div>
-        <StageStoryTrack phase={phase} />
-      </div>
-    </div>
-  );
-}
-
-function StageStoryTrack({ phase }: { phase: OperationStageExperiencePhase }) {
-  const active_index = stage_story_active_index(phase);
-
-  return (
-    <div className="grid grid-cols-5 gap-1.5 max-sm:grid-cols-1">
-      {STAGE_STORY_ITEMS.map((item, index) => {
-        const Icon = item.Icon;
-        const is_active = index === active_index;
-        const is_done = index < active_index || phase === "completed";
-        return (
-          <div
-            className={cn(
-              "min-w-0 rounded-[12px] border px-2 py-2 text-center transition",
-              is_active
-                ? "border-[rgba(91,114,255,0.28)] bg-[rgba(91,114,255,0.12)] text-(--text-strong)"
-                : is_done
-                  ? "border-[rgba(47,184,132,0.20)] bg-[rgba(47,184,132,0.08)] text-(--text-strong)"
-                  : "border-white/46 bg-white/28 text-(--text-soft)",
-            )}
-            key={item.id}
-          >
-            <Icon className={cn(
-              "mx-auto h-3.5 w-3.5",
-              is_active ? "text-[color:var(--primary)]" : is_done ? "text-[color:var(--success)]" : "text-(--icon-muted)",
-              item.id === "running" && is_active && "animate-spin",
-            )} />
-            <p className="mt-1 truncate text-[9.5px] font-black">{item.value}</p>
-            <p className="mt-0.5 truncate text-[8px] font-semibold">{item.label}</p>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function stage_story_active_index(phase: OperationStageExperiencePhase): number {
-  return Math.max(0, STAGE_STORY_ITEMS.findIndex((item) => item.id === phase));
-}
-
-function IdleStatusMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0 rounded-[10px] border border-white/42 bg-white/32 px-2 py-1.5">
-      <p className="truncate text-[10.5px] font-black text-(--text-strong)">{value}</p>
-      <p className="mt-0.5 truncate text-[8.5px] font-semibold text-(--text-soft)">{label}</p>
     </div>
   );
 }

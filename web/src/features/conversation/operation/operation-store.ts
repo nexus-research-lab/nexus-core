@@ -25,6 +25,11 @@ export function build_operation_stage_key(
     return null;
   }
 
+  const conversation_id = identity.conversation_id?.trim();
+  if (conversation_id) {
+    return `${identity.chat_type === "group" ? "room-conversation" : "dm-conversation"}:${conversation_id}`;
+  }
+
   const room_session_id = identity.room_session_id?.trim();
   if (room_session_id) {
     return `room-session:${room_session_id}`;
@@ -33,11 +38,6 @@ export function build_operation_stage_key(
   const session_identity = get_session_key_identity(identity.session_key);
   if (session_identity) {
     return `session:${session_identity}`;
-  }
-
-  const conversation_id = identity.conversation_id?.trim();
-  if (identity.chat_type === "group" && conversation_id) {
-    return `room-conversation:${conversation_id}`;
   }
 
   return null;

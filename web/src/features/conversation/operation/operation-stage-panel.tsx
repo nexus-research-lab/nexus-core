@@ -20,10 +20,6 @@ import {
   EmptyStage,
 } from "./operation-stage-idle";
 import {
-  StageEventSignal,
-  StageMaterializingSignal,
-} from "./operation-stage-launch-overlay";
-import {
   PHASE_META,
   SURFACE_META,
 } from "./operation-stage-panel-style";
@@ -142,8 +138,6 @@ function StageSurface({
   const is_stage = presentation === "stage";
   const stage_transition = useStageTransition(active_event);
   const is_scene_entering = stage_transition.phase === "priming" || stage_transition.phase === "materializing";
-  const is_scene_materializing = stage_transition.phase === "materializing";
-  const is_event_handoff = stage_transition.phase === "handoff";
   const experience_phase = derive_operation_stage_experience_phase(active_event, snapshot);
   const transition_style = build_stage_transition_style(stage_transition.intent);
   const round_event_count = active_event && snapshot
@@ -195,21 +189,6 @@ function StageSurface({
                     snapshot={snapshot}
                   />
                 </div>
-                {is_event_handoff ? (
-                  <StageEventSignal
-                    event={active_event}
-                    intent={stage_transition.intent}
-                    previous_event={previous_round_event}
-                    round_event_count={round_event_count}
-                    sequence={stage_transition.sequence}
-                  />
-                ) : null}
-                {is_scene_materializing ? (
-                  <StageMaterializingSignal
-                    event={active_event}
-                    intent={stage_transition.intent}
-                  />
-                ) : null}
               </>
             ) : (
               <EmptyStage snapshot={snapshot} subtitle={subtitle} />

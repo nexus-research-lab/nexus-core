@@ -13,12 +13,7 @@ import type {
   NexusOperationEvent,
   NexusOperationSnapshot,
 } from "../operation-types";
-import { StageArchiveShelf } from "./operation-stage-archive-shelf";
-import {
-  StageCompletionLedger,
-  StageOutcomeSummary,
-} from "./operation-stage-completion";
-import { build_stage_episodes } from "./operation-stage-episodes";
+import { EmptyStage } from "../operation-stage-idle";
 import {
   build_stage_narrative,
   collect_narrative_events,
@@ -33,24 +28,31 @@ import {
 import type {
   StageWindowOverride,
 } from "./operation-stage-model";
-import { StageActGuide } from "./operation-stage-act-guide";
-import { StageDirectorCue } from "./operation-stage-director-cue";
-import { StageNarrativeRail, StageOperationRunway } from "./operation-stage-event-flow";
-import {
-  DynamicStageFrame,
-  StageReplayReturn,
-} from "./operation-stage-frame";
-import { StageHandoffSpotlight } from "./operation-stage-handoff-spotlight";
-import { StageStatusBar } from "./operation-stage-status";
+import { StageMacMenuBar, StageDesktopIcons } from "./operation-stage-mac-shell";
+import { DynamicStageFrame } from "./operation-stage-frame";
 import { OperationStageWindow } from "./operation-stage-window";
 import {
   BackgroundWindowSummary,
-  StageFocusBeam,
-  StageWindowControls,
   StageWindowDock,
   StageWindowsHiddenState,
   WindowSettlementBar,
 } from "./operation-stage-window-controls";
+
+const STAGE_DESKTOP_WINDOW_KINDS = new Set<StageWindowKind>([
+  "browser",
+  "code_editor",
+  "finder",
+  "generic_tool",
+  "image_viewer",
+  "markdown_reader",
+  "pdf_reader",
+  "permission_wait",
+  "runtime_handoff",
+  "spreadsheet",
+  "task_board",
+  "terminal",
+  "word_reader",
+]);
 
 export function OperationStageDesktop({
   event,
@@ -72,19 +74,20 @@ export function OperationStageDesktop({
   const active_narrative_event = useMemo(() => (
     narrative_events.find((item) => item.id === active_narrative_event_id) ?? event
   ), [active_narrative_event_id, event, narrative_events]);
-  const episodes = useMemo(() => build_stage_episodes({
-    active_event_id: active_narrative_event_id,
-    events: narrative_events,
-    narrative,
-    snapshot,
-  }), [active_narrative_event_id, narrative, narrative_events, snapshot]);
   const desktop = useMemo(() => (
     plan_operation_desktop({ event: active_narrative_event, snapshot })
   ), [active_narrative_event, snapshot]);
-  const is_replay = active_narrative_event.id !== event.id;
+  const desktop_windows = useMemo(() => (
+    desktop.windows.filter((window) => STAGE_DESKTOP_WINDOW_KINDS.has(window.kind))
+  ), [desktop.windows]);
+  const desktop_active_window_id = useMemo(() => (
+    desktop_windows.some((window) => window.id === desktop.active_window_id)
+      ? desktop.active_window_id
+      : desktop_windows[0]?.id ?? null
+  ), [desktop.active_window_id, desktop_windows]);
   const windows_for_reveal = useMemo(() => (
-    order_windows_for_reveal(desktop.windows, desktop.active_window_id)
-  ), [desktop.active_window_id, desktop.windows]);
+    order_windows_for_reveal(desktop_windows, desktop_active_window_id)
+  ), [desktop_active_window_id, desktop_windows]);
   const revealed_window_count = useRevealedWindowCount({
     event_key: `${active_narrative_event.round_id}:${active_narrative_event.id}:${active_narrative_event.phase}`,
     minimum_count: minimum_revealed_window_count({
@@ -107,7 +110,7 @@ export function OperationStageDesktop({
   }, [event.id]);
 
   useEffect(() => {
-    const next_active_window_id = desktop.active_window_id;
+    const next_active_window_id = desktop_active_window_id;
     if (!next_active_window_id) {
       return;
     }
@@ -121,7 +124,7 @@ export function OperationStageDesktop({
         minimized: false,
       },
     }));
-  }, [active_narrative_event.id, desktop.active_window_id]);
+  }, [active_narrative_event.id, desktop_active_window_id]);
 
   const window_states = useMemo(() => (
     windows_for_reveal
@@ -160,27 +163,15 @@ export function OperationStageDesktop({
       return focused_window_id;
     }
     const explicit_active = visible_windows.find((window) => (
-      window.id === desktop.active_window_id && window.phase !== "minimized"
+      window.id === desktop_active_window_id && window.phase !== "minimized"
     ));
     const focused = explicit_active ?? visible_windows.find((window) => window.phase === "focused");
     return (focused ?? visible_windows[0] ?? null)?.id ?? null;
-  }, [desktop.active_window_id, focused_window_id, visible_windows]);
+  }, [desktop_active_window_id, focused_window_id, visible_windows]);
 
   const active_window = useMemo(() => (
     visible_windows.find((window) => window.id === active_window_id) ?? null
   ), [active_window_id, visible_windows]);
-  const has_window_layout_changes = useMemo(() => (
-    Object.values(window_overrides).some((override) => (
-      override.closed ||
-      override.minimized ||
-      Boolean(override.offset_x) ||
-      Boolean(override.offset_y)
-    ))
-  ), [window_overrides]);
-  const has_window_position_changes = useMemo(() => (
-    Object.values(window_overrides).some((override) => Boolean(override.offset_x) || Boolean(override.offset_y))
-  ), [window_overrides]);
-
   const close_window = (window_id: string) => {
     set_focused_window_id((current) => current === window_id ? null : current);
     set_window_overrides((current) => ({
@@ -240,29 +231,16 @@ export function OperationStageDesktop({
   };
 
   const restore_all_windows = () => {
-    set_focused_window_id(desktop.active_window_id ?? desktop.windows[0]?.id ?? null);
+    set_focused_window_id(desktop_active_window_id ?? desktop_windows[0]?.id ?? null);
     set_window_overrides(Object.fromEntries(
-      desktop.windows.map((window) => [window.id, { closed: false, minimized: false }]),
-    ));
-  };
-
-  const reset_window_positions = () => {
-    set_window_overrides((current) => Object.fromEntries(
-      Object.entries(current).map(([window_id, override]) => [
-        window_id,
-        {
-          ...override,
-          offset_x: 0,
-          offset_y: 0,
-        },
-      ]),
+      desktop_windows.map((window) => [window.id, { closed: false, minimized: false }]),
     ));
   };
 
   const focus_event_window = (target_event: NexusOperationEvent) => {
-    const target_window_id = resolve_operation_event_window_id(target_event, desktop.windows)
-      ?? desktop.active_window_id
-      ?? desktop.windows[0]?.id
+    const target_window_id = resolve_operation_event_window_id(target_event, desktop_windows)
+      ?? desktop_active_window_id
+      ?? desktop_windows[0]?.id
       ?? null;
     if (!target_window_id) {
       return;
@@ -271,68 +249,23 @@ export function OperationStageDesktop({
     restore_window(target_window_id);
   };
 
+  if (!desktop_windows.length) {
+    return (
+      <EmptyStage
+        snapshot={snapshot}
+        subtitle={event.agent_id || "Nexus"}
+      />
+    );
+  }
+
   return (
     <DynamicStageFrame event={event} narrative={narrative}>
-      <StageStatusBar
+      <StageMacMenuBar
         active_window={active_window}
         event={active_narrative_event}
-        is_replay={is_replay}
-        narrative={narrative}
-        snapshot={snapshot}
-        visible_window_count={visible_windows.length}
-        window_count={desktop.windows.length}
-      />
-      <StageOperationRunway
-        active_event_id={active_narrative_event_id}
-        episodes={episodes}
-        events={narrative_events}
-        narrative={narrative}
-        on_focus_event={focus_event_window}
-      />
-      <StageActGuide
-        active_window={active_window}
-        event={active_narrative_event}
-        events={narrative_events}
-        narrative={narrative}
-        snapshot={snapshot}
-      />
-      <StageDirectorCue
-        active_event={active_narrative_event}
-        active_window={active_window}
-        episodes={episodes}
-        is_replay={is_replay}
         narrative={narrative}
       />
-      {narrative.phase === "settling" ? (
-        <StageCompletionLedger
-          active_event_id={active_narrative_event_id}
-          event={event}
-          episodes={episodes}
-          events={narrative_events}
-          narrative={narrative}
-          on_focus_event={focus_event_window}
-          snapshot={snapshot}
-        />
-      ) : narrative.phase === "completed" && !is_replay ? null : (
-        <StageNarrativeRail
-          active_event_id={active_narrative_event_id}
-          active_window={active_window}
-          episodes={episodes}
-          events={narrative_events}
-          narrative={narrative}
-          on_focus_event={focus_event_window}
-          revealed_window_count={revealed_window_count}
-          snapshot={snapshot}
-          total_window_count={windows_for_reveal.length}
-        />
-      )}
-      <StageHandoffSpotlight
-        event={event}
-        episodes={episodes}
-        events={narrative_events}
-        narrative={narrative}
-        snapshot={snapshot}
-      />
+      <StageDesktopIcons windows={window_states} />
       {visible_windows.length ? visible_windows.map((window, index) => {
         const is_active = active_window_id === window.id && window.phase !== "minimized";
         const sequence_label = event_sequence_label(window.payload.event, narrative_events);
@@ -379,56 +312,18 @@ export function OperationStageDesktop({
             )}
           </OperationStageWindow>
         );
-      }) : (
+      }) : desktop_windows.length ? (
         <StageWindowsHiddenState
-          window_count={desktop.windows.length}
+          window_count={desktop_windows.length}
           on_restore_all={restore_all_windows}
         />
-      )}
+      ) : null}
       <StageWindowDock
         active_window_id={active_window_id}
         events={narrative_events}
         windows={window_states}
         on_restore={restore_window}
       />
-      <StageWindowControls
-        active_window={active_window}
-        has_layout_changes={has_window_layout_changes}
-        has_position_changes={has_window_position_changes}
-        on_reset_positions={reset_window_positions}
-        on_restore_all={restore_all_windows}
-        visible_window_count={visible_windows.length}
-        window_count={desktop.windows.length}
-      />
-      {narrative.phase === "completed" || narrative.phase === "settling" ? (
-        <>
-          <StageArchiveShelf
-            event={event}
-            episodes={episodes}
-            events={narrative_events}
-            narrative={narrative}
-            snapshot={snapshot}
-            windows={window_states}
-          />
-          {is_replay ? (
-            <StageReplayReturn
-              current_event={active_narrative_event}
-              final_event={event}
-              on_return={() => set_replay_event_id(null)}
-            />
-          ) : null}
-          <StageOutcomeSummary
-            event={event}
-            episodes={episodes}
-            events={narrative_events}
-            narrative={narrative}
-            snapshot={snapshot}
-          />
-        </>
-      ) : null}
-      {active_window?.kind === "terminal" || narrative.phase === "completed" || narrative.phase === "settling"
-        ? null
-        : <StageFocusBeam />}
     </DynamicStageFrame>
   );
 }
