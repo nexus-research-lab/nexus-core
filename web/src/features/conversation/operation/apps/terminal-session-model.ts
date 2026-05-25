@@ -21,6 +21,13 @@ export interface TerminalEntry {
   stdout: string[];
   stderr: string[];
   other: string[];
+  rows: TerminalTranscriptRow[];
+}
+
+export interface TerminalTranscriptRow {
+  id: string;
+  text: string;
+  stream: "stdout" | "stderr" | "output" | "command" | "system" | "exit";
 }
 
 export function build_terminal_entries({
@@ -49,17 +56,30 @@ export function build_terminal_entries({
     const exit_code = read_exit_code(item.result_preview);
     const duration_label = format_terminal_duration(item);
     const exit_tone = terminal_exit_tone(item, exit_code);
+    const exit_label = terminal_exit_label(item, exit_code);
+    const rows = build_terminal_transcript_rows({
+      command: resolved_command,
+      duration_label,
+      exit_label,
+      exit_tone,
+      id: item.id,
+      phase: item.phase,
+      started_label: format_operation_time(item.started_at ?? item.updated_at),
+      streams,
+      fallback_other: other,
+    });
     return {
       id: item.id,
       command: resolved_command,
       duration_label,
       started_label: format_operation_time(item.started_at ?? item.updated_at),
-      exit_label: terminal_exit_label(item, exit_code),
+      exit_label,
       exit_tone,
       phase: item.phase,
       stdout: streams.stdout,
       stderr: streams.stderr,
       other,
+      rows,
     };
   });
 
@@ -74,6 +94,17 @@ export function build_terminal_entries({
     stdout: [],
     stderr: [],
     other: fallback_lines,
+    rows: build_terminal_transcript_rows({
+      command: command.trim() || event.target || event.title,
+      duration_label: format_terminal_duration(event),
+      exit_label: event.phase === "running" ? "运行中" : "无输出",
+      exit_tone: event.phase === "running" ? "running" : "muted",
+      id: event.id,
+      phase: event.phase,
+      started_label: format_operation_time(event.started_at ?? event.updated_at),
+      streams: empty_terminal_streams(),
+      fallback_other: fallback_lines,
+    }),
   }];
 }
 
@@ -106,23 +137,93 @@ export function terminal_cwd_label(event: NexusOperationEvent): string {
   return "~/workspace";
 }
 
-function extract_terminal_streams(value: unknown): { stdout: string[]; stderr: string[]; other: string[] } {
+function build_terminal_transcript_rows({
+  command,
+  duration_label,
+  exit_label,
+  exit_tone,
+  id,
+  phase,
+  started_label,
+  streams,
+  fallback_other,
+}: {
+  command: string;
+  duration_label: string;
+  exit_label: string;
+  exit_tone: TerminalEntry["exit_tone"];
+  id: string;
+  phase: OperationPhase;
+  started_label: string;
+  streams: TerminalStreams;
+  fallback_other: string[];
+}): TerminalTranscriptRow[] {
+  const output_rows = streams.rows.length
+    ? streams.rows
+    : fallback_other.map((text, index) => ({
+      id: `${id}:fallback:${index}`,
+      stream: "output" as const,
+      text,
+    }));
+  return [
+    {
+      id: `${id}:system:start`,
+      stream: "system",
+      text: `Last login: ${started_label} on nexus-session`,
+    },
+    {
+      id: `${id}:command`,
+      stream: "command",
+      text: command,
+    },
+    ...output_rows,
+    {
+      id: `${id}:exit`,
+      stream: "exit",
+      text: `${exit_label} · ${duration_label}${phase === "running" ? " · process attached" : exit_tone === "error" ? " · command failed" : ""}`,
+    },
+  ];
+}
+
+interface TerminalStreams {
+  stdout: string[];
+  stderr: string[];
+  other: string[];
+  rows: TerminalTranscriptRow[];
+}
+
+function extract_terminal_streams(value: unknown): TerminalStreams {
   if (value == null) {
-    return { stdout: [], stderr: [], other: [] };
+    return empty_terminal_streams();
   }
   if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-    return { stdout: [], stderr: [], other: split_terminal_text(String(value)).slice(0, 24) };
+    const other = split_terminal_text(String(value)).slice(0, 24);
+    return {
+      stdout: [],
+      stderr: [],
+      other,
+      rows: terminal_rows_from_lines("result", "output", other),
+    };
   }
   if (Array.isArray(value)) {
     const parts = value.map((item) => extract_terminal_streams(item));
+    const stdout = parts.flatMap((item) => item.stdout).slice(0, 24);
+    const stderr = parts.flatMap((item) => item.stderr).slice(0, 24);
+    const other = parts.flatMap((item) => item.other).slice(0, 24);
     return {
-      stdout: parts.flatMap((item) => item.stdout).slice(0, 24),
-      stderr: parts.flatMap((item) => item.stderr).slice(0, 24),
-      other: parts.flatMap((item) => item.other).slice(0, 24),
+      stdout,
+      stderr,
+      other,
+      rows: parts.flatMap((item) => item.rows).slice(0, 48),
     };
   }
   if (typeof value !== "object") {
-    return { stdout: [], stderr: [], other: [String(value)] };
+    return {
+      stdout: [],
+      stderr: [],
+      other: [String(value)],
+      rows: terminal_rows_from_lines("result", "output", [String(value)]),
+    };
   }
 
   const record = value as Record<string, unknown>;
@@ -130,22 +231,51 @@ function extract_terminal_streams(value: unknown): { stdout: string[]; stderr: s
   const stderr = extract_terminal_text_fields(record, ["stderr", "err", "error"]);
   const content_lines = extract_terminal_text_fields(record, ["content"]);
   const content_is_error = record.is_error === true || record.subtype === "error";
-  const other = extract_terminal_text_fields(record, ["output", "text", "result", "message"]);
-  if (stdout.length || stderr.length || other.length) {
+  const other_lines = extract_terminal_text_fields(record, ["output", "text", "result", "message"]);
+  if (stdout.length || stderr.length || other_lines.length) {
+    const stdout_rows = terminal_rows_from_lines("stdout", "stdout", [...stdout, ...(content_is_error ? [] : content_lines)].slice(0, 24));
+    const stderr_rows = terminal_rows_from_lines("stderr", "stderr", [...stderr, ...(content_is_error ? content_lines : [])].slice(0, 24));
+    const other_rows = terminal_rows_from_lines("other", "output", other_lines.slice(0, 24));
     return {
-      stdout: [...stdout, ...(content_is_error ? [] : content_lines)].slice(0, 24),
-      stderr: [...stderr, ...(content_is_error ? content_lines : [])].slice(0, 24),
-      other: other.slice(0, 24),
+      stdout: stdout_rows.map((row) => row.text),
+      stderr: stderr_rows.map((row) => row.text),
+      other: other_lines.slice(0, 24),
+      rows: [...stdout_rows, ...stderr_rows, ...other_rows].slice(0, 48),
     };
   }
   if (content_lines.length) {
+    const stream = content_is_error ? "stderr" : "stdout";
+    const rows = terminal_rows_from_lines("content", stream, content_lines.slice(0, 24));
     return {
-      stdout: content_is_error ? [] : content_lines.slice(0, 24),
-      stderr: content_is_error ? content_lines.slice(0, 24) : [],
+      stdout: content_is_error ? [] : rows.map((row) => row.text),
+      stderr: content_is_error ? rows.map((row) => row.text) : [],
       other: [],
+      rows,
     };
   }
-  return { stdout: [], stderr: [], other: split_terminal_text(safe_json_stringify(value)).slice(0, 24) };
+  const serialized_other = split_terminal_text(safe_json_stringify(value)).slice(0, 24);
+  return {
+    stdout: [],
+    stderr: [],
+    other: serialized_other,
+    rows: terminal_rows_from_lines("json", "output", serialized_other),
+  };
+}
+
+function empty_terminal_streams(): TerminalStreams {
+  return { stdout: [], stderr: [], other: [], rows: [] };
+}
+
+function terminal_rows_from_lines(
+  prefix: string,
+  stream: TerminalTranscriptRow["stream"],
+  lines: string[],
+): TerminalTranscriptRow[] {
+  return lines.map((text, index) => ({
+    id: `${prefix}:${index}:${text.slice(0, 16)}`,
+    stream,
+    text,
+  }));
 }
 
 function extract_terminal_text_fields(record: Record<string, unknown>, keys: string[]): string[] {

@@ -1,7 +1,4 @@
 import {
-  AlertTriangle,
-  CheckCircle2,
-  Clock3,
   Copy,
   Loader2,
   Search,
@@ -11,7 +8,6 @@ import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-import { format_operation_time } from "../operation-preview";
 import type { NexusOperationEvent } from "../operation-types";
 import {
   build_terminal_entries,
@@ -19,7 +15,7 @@ import {
   terminal_cwd_label,
   terminal_shell_title,
 } from "./terminal-session-model";
-import type { TerminalEntry } from "./terminal-session-model";
+import type { TerminalEntry, TerminalTranscriptRow } from "./terminal-session-model";
 
 export function TerminalSession({
   command,
@@ -52,36 +48,31 @@ export function TerminalSession({
         session_label={session_label}
         shell_title={shell_title}
       />
-      <div className="soft-scrollbar min-h-0 flex-1 overflow-auto px-4 py-3">
+      <div className="soft-scrollbar min-h-0 flex-1 overflow-auto px-3 py-2">
         {entries.map((entry, entry_index) => (
           <div className={entry_index > 0 ? "mt-4 border-t border-white/8 pt-3" : undefined} key={entry.id}>
             {entry_index > 0 ? <TerminalCommandSeparator entry={entry} /> : null}
-            <TerminalCommandLine command={entry.command} cwd_label={cwd_label} session_label={session_label} />
-            {entry.stdout.length || entry.stderr.length || entry.other.length ? (
-              <div className="mt-1.5 space-y-0.5">
-                {entry.stdout.map((line, index) => (
-                  <TerminalOutputLine key={`stdout:${index}:${line}`} line={line} stream="stdout" />
-                ))}
-                {entry.stderr.map((line, index) => (
-                  <TerminalOutputLine key={`stderr:${index}:${line}`} line={line} stream="stderr" />
-                ))}
-                {entry.other.map((line, index) => (
-                  <TerminalOutputLine
-                    key={`other:${index}:${line}`}
-                    line={line}
-                    stream="output"
-                  />
-                ))}
+            <div className="space-y-0.5">
+              {entry.rows.map((row) => (
+                <TerminalTranscriptLine
+                  cwd_label={cwd_label}
+                  key={row.id}
+                  row={row}
+                  session_label={session_label}
+                />
+              ))}
+              {entry.phase === "running" ? (
+                <TerminalPromptLine cwd_label={cwd_label} session_label={session_label} />
+              ) : null}
+            </div>
+            {entry.phase === "running" ? null : (
+              <div className="mt-2 flex min-w-0 items-center gap-2 pl-5 text-[10px] text-[#526875]">
+                <span className="h-px flex-1 bg-white/8" />
+                <span>{entry.exit_label}</span>
               </div>
-            ) : null}
-            <TerminalExitLine entry={entry} />
+            )}
           </div>
         ))}
-        {has_running_entry ? (
-          <div className="mt-2 flex min-w-0 items-start">
-            <span className="operation-terminal-caret mt-[3px] shrink-0" />
-          </div>
-        ) : null}
       </div>
     </div>
   );
@@ -108,8 +99,12 @@ function TerminalTitleBar({
             {has_running_entry ? <Loader2 className="h-3 w-3 animate-spin" /> : <TerminalSquare className="h-3 w-3" />}
           </span>
           <span className="truncate text-[#c8d8d1]">{shell_title}</span>
+          <span className="hidden min-w-0 truncate text-[#536873] sm:inline">{cwd_label}</span>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
+          <span className="hidden max-w-[140px] truncate rounded border border-white/10 bg-[#080d12] px-2 py-0.5 text-[#c8d8d1] sm:inline">
+            {session_label}
+          </span>
           <TerminalToolbarButton label="搜索">
             <Search className="h-3 w-3" />
           </TerminalToolbarButton>
@@ -118,16 +113,6 @@ function TerminalTitleBar({
           </TerminalToolbarButton>
           <TerminalStatusPill event={event} />
         </div>
-      </div>
-      <div className="flex min-w-0 items-center gap-1.5 px-3 pb-2">
-        <div className="flex min-w-0 items-center gap-2 rounded-t-[8px] border border-b-0 border-white/10 bg-[#080d12] px-3 py-1 text-[#c8d8d1]">
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#8de0ad]" />
-          <span className="truncate">{session_label}</span>
-        </div>
-        <span className="min-w-0 truncate text-[#536873]">{cwd_label}</span>
-        <span className="ml-auto hidden shrink-0 text-[#536873] sm:inline">
-          上次活动 {format_operation_time(event.updated_at)}
-        </span>
       </div>
     </div>
   );
@@ -143,6 +128,23 @@ function TerminalToolbarButton({ children, label }: { children: ReactNode; label
     >
       {children}
     </button>
+  );
+}
+
+function TerminalPromptLine({
+  cwd_label,
+  session_label,
+}: {
+  cwd_label: string;
+  session_label: string;
+}) {
+  return (
+    <div className="flex min-w-0 flex-wrap items-start gap-x-2">
+      <span className="select-none text-[#6f827d]">{session_label}</span>
+      <span className="select-none text-[#526875]">{cwd_label}</span>
+      <span className="select-none text-[#8de0ad]">%</span>
+      <span className="operation-terminal-caret ml-2 mt-[3px] shrink-0" />
+    </div>
   );
 }
 
@@ -163,6 +165,39 @@ function TerminalCommandLine({
       <span className="ml-2 min-w-0 break-words text-[#f1fff7]">{command}</span>
     </div>
   );
+}
+
+function TerminalTranscriptLine({
+  cwd_label,
+  row,
+  session_label,
+}: {
+  cwd_label: string;
+  row: TerminalTranscriptRow;
+  session_label: string;
+}) {
+  if (row.stream === "system") {
+    return (
+      <div className="flex min-w-0 items-start gap-2 text-[#526875]">
+        <span className="select-none">#</span>
+        <span className="min-w-0 break-words whitespace-pre-wrap">{row.text}</span>
+      </div>
+    );
+  }
+  if (row.stream === "command") {
+    return (
+      <TerminalCommandLine command={row.text} cwd_label={cwd_label} session_label={session_label} />
+    );
+  }
+  if (row.stream === "exit") {
+    return (
+      <div className="flex min-w-0 items-start gap-2 pl-5 text-[#526875]">
+        <span className="select-none">[process]</span>
+        <span className="min-w-0 break-words whitespace-pre-wrap">{row.text}</span>
+      </div>
+    );
+  }
+  return <TerminalOutputLine line={row.text} stream={row.stream} />;
 }
 
 function TerminalOutputLine({
@@ -208,25 +243,6 @@ function TerminalCommandSeparator({ entry }: { entry: TerminalEntry }) {
       <span className="shrink-0">
         {entry.started_label} · {entry.duration_label}
       </span>
-    </div>
-  );
-}
-
-function TerminalExitLine({ entry }: { entry: TerminalEntry }) {
-  return (
-    <div className={cn(
-      "mt-2 inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[10px]",
-      entry.exit_tone === "success" && "border-[#1f4b39] bg-[#0f211b] text-[#8de0ad]",
-      entry.exit_tone === "error" && "border-[#55262b] bg-[#251217] text-[#ff9d9d]",
-      entry.exit_tone === "running" && "border-[#45504a] bg-[#161d1b] text-[#cdd7d0]",
-      entry.exit_tone === "muted" && "border-white/8 bg-white/[0.03] text-[#768982]",
-    )}>
-      {entry.exit_tone === "success" ? <CheckCircle2 className="h-3 w-3" /> : null}
-      {entry.exit_tone === "error" ? <AlertTriangle className="h-3 w-3" /> : null}
-      {entry.exit_tone === "running" ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-      {entry.exit_tone === "muted" ? <Clock3 className="h-3 w-3" /> : null}
-      <span>{entry.exit_label}</span>
-      <span className="text-current opacity-55">· {entry.duration_label}</span>
     </div>
   );
 }
