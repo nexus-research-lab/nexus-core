@@ -174,6 +174,18 @@ export function StageWindowContent({
     );
   }
 
+  if (is_file_app_window(window.kind)) {
+    return (
+      <DocumentPreview
+        diff_stats={window.payload.diff_stats}
+        fallback_lines={build_editor_preview_lines(event, get_preview_lines(window.payload.preview, 12))}
+        summary={window.payload.summary ?? event.summary ?? event.title}
+        target={window.payload.target ?? window.target ?? event.target}
+        value={window.payload.preview ?? event.result_preview ?? event.input_preview ?? event.summary}
+      />
+    );
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
       <ToolActionHeader
@@ -192,6 +204,16 @@ export function StageWindowContent({
       </div>
     </div>
   );
+}
+
+function is_file_app_window(kind: StageWindowState["kind"]): boolean {
+  return kind === "code_editor"
+    || kind === "markdown_reader"
+    || kind === "word_reader"
+    || kind === "pdf_reader"
+    || kind === "spreadsheet"
+    || kind === "image_viewer"
+    || kind === "generic_tool";
 }
 
 function ToolActionHeader({

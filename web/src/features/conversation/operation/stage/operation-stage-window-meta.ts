@@ -105,45 +105,45 @@ export function icon_for_window_kind(kind: StageWindowKind): LucideIcon {
 
 export function stage_app_label_for_window_kind(kind: StageWindowKind): string {
   if (kind === "finder") {
-    return "文件";
+    return "Finder";
   }
   if (kind === "terminal") {
-    return "终端";
+    return "Terminal";
   }
   if (kind === "browser") {
-    return "浏览器";
+    return "Safari";
   }
   if (kind === "task_board") {
-    return "任务";
+    return "Activity";
   }
   if (kind === "runtime_handoff") {
-    return "运行接入";
+    return "Nexus Shell";
   }
   if (kind === "run_manifest") {
-    return "执行清单";
+    return "Console";
   }
   if (kind === "summary") {
-    return "交接";
+    return "Notes";
   }
   if (kind === "evidence") {
-    return "证据";
+    return "Console";
   }
   if (kind === "permission_wait") {
-    return "授权";
+    return "Settings";
   }
   if (kind === "spreadsheet") {
-    return "表格";
+    return "Numbers";
   }
   if (kind === "image_viewer") {
-    return "图片";
+    return "Preview";
   }
   if (kind === "code_editor") {
-    return "编辑器";
+    return "Code";
   }
   if (kind === "markdown_reader" || kind === "word_reader" || kind === "pdf_reader") {
-    return "阅读器";
+    return kind === "word_reader" ? "Pages" : "Preview";
   }
-  return "工具";
+  return "Nexus";
 }
 
 export function position_for_window(window: StageWindowState, narrative_phase: StageNarrativePhase): string {

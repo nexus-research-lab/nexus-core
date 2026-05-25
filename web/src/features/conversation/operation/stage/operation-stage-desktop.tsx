@@ -328,7 +328,19 @@ export function OperationStageDesktop({
 }
 
 function window_content_mode(kind: StageWindowKind): "flush" | "inset" {
-  if (kind === "browser" || kind === "finder" || kind === "terminal" || kind === "runtime_handoff") {
+  if (
+    kind === "browser" ||
+    kind === "code_editor" ||
+    kind === "finder" ||
+    kind === "generic_tool" ||
+    kind === "image_viewer" ||
+    kind === "markdown_reader" ||
+    kind === "pdf_reader" ||
+    kind === "runtime_handoff" ||
+    kind === "spreadsheet" ||
+    kind === "terminal" ||
+    kind === "word_reader"
+  ) {
     return "flush";
   }
   return "inset";

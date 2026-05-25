@@ -32,7 +32,7 @@ export function DocumentPreview({
 
   if (kind === "markdown") {
     return (
-      <div className="soft-scrollbar h-full overflow-auto rounded-[12px] border border-(--divider-subtle-color) bg-white/78 p-4">
+      <div className="soft-scrollbar h-full min-h-[240px] overflow-auto bg-white/86 p-5">
         <div className="mb-3 flex items-center justify-between gap-3 border-b border-(--divider-subtle-color) pb-3">
           <div className="min-w-0">
             <p className="truncate text-[13px] font-black tracking-[-0.02em] text-(--text-strong)">{display_title}</p>
@@ -51,7 +51,7 @@ export function DocumentPreview({
 
   if (kind === "word" || kind === "pdf") {
     return (
-      <div className="flex h-full min-h-[260px] items-start justify-center overflow-auto rounded-[12px] bg-[#e9eef3] p-4">
+      <div className="flex h-full min-h-[260px] items-start justify-center overflow-auto bg-[#e9eef3] p-5">
         <article className="min-h-full w-full max-w-[420px] rounded-[3px] bg-white px-8 py-7 shadow-[0_20px_52px_rgba(18,28,42,0.16)]">
           <div className="mb-5 flex items-start justify-between gap-4 border-b border-(--divider-subtle-color) pb-4">
             <div className="min-w-0">
@@ -81,8 +81,8 @@ export function DocumentPreview({
     const sheet_lines = lines.length ? lines : ["name,status,value", "file,updated,1", "tests,passed,3"];
     const rows = sheet_lines.slice(0, 6).map((line) => line.split(/,|\t/).slice(0, 4));
     return (
-      <div className="overflow-hidden rounded-[12px] border border-(--divider-subtle-color) bg-white/82">
-        <div className="flex items-center justify-between gap-3 border-b border-(--divider-subtle-color) px-3 py-2">
+      <div className="h-full min-h-[240px] overflow-hidden bg-white/90">
+        <div className="flex items-center justify-between gap-3 border-b border-(--divider-subtle-color) px-4 py-2.5">
           <p className="truncate text-[12px] font-bold text-(--text-strong)">{display_title}</p>
           <FileSpreadsheet className="h-4 w-4 text-(--icon-muted)" />
         </div>
@@ -107,7 +107,7 @@ export function DocumentPreview({
 
   if (kind === "image") {
     return (
-      <div className="flex h-full min-h-[240px] flex-col rounded-[12px] border border-(--divider-subtle-color) bg-[linear-gradient(135deg,rgba(91,114,255,0.08),rgba(255,255,255,0.82),rgba(79,162,159,0.10))] p-4">
+      <div className="flex h-full min-h-[240px] flex-col bg-[linear-gradient(135deg,rgba(91,114,255,0.08),rgba(255,255,255,0.82),rgba(79,162,159,0.10))] p-5">
         <div className="flex items-center justify-between gap-3">
           <p className="truncate text-[12px] font-bold text-(--text-strong)">{display_title}</p>
           <ImageIcon className="h-4 w-4 text-(--icon-muted)" />
@@ -121,7 +121,7 @@ export function DocumentPreview({
 
   if (kind === "folder") {
     return (
-      <div className="space-y-2 rounded-[12px] border border-(--divider-subtle-color) bg-white/78 p-3">
+      <div className="soft-scrollbar h-full min-h-[240px] space-y-2 overflow-auto bg-white/86 p-4">
         {(lines.length ? lines : [target ?? "workspace", "src/", "docs/", "package.json"]).slice(0, 9).map((line, index) => (
           <FileRow active={index === 0} key={`${line}:${index}`} label={line} />
         ))}
@@ -152,13 +152,10 @@ function EditorSurface({
 }) {
   const extension = title.includes(".") ? title.slice(title.lastIndexOf(".") + 1).toUpperCase() : "TEXT";
   return (
-    <div className="flex h-full min-h-[240px] flex-col overflow-hidden rounded-[12px] border border-[#1d2936] bg-[#101820] text-[#dce8ee]">
+    <div className="flex h-full min-h-[240px] flex-col overflow-hidden bg-[#101820] text-[#dce8ee]">
       <div className="flex min-w-0 items-center justify-between gap-3 border-b border-white/10 bg-[#151f29] px-3 py-2">
         <div className="flex min-w-0 items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#ff6b6b]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#f7c948]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#4fd1a5]" />
-          <span className="ml-2 truncate text-[11px] font-bold text-[#e7eef5]">{title}</span>
+          <span className="truncate text-[11px] font-bold text-[#e7eef5]">{title}</span>
         </div>
         <span className="shrink-0 rounded bg-white/[0.06] px-1.5 py-px text-[9px] font-bold text-[#8aa0ad]">
           {extension}
