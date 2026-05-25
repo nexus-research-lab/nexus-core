@@ -46,12 +46,14 @@ export function RunManifestSurface({
   related_events: NexusOperationEvent[];
   snapshot: NexusOperationSnapshot | null;
 }) {
-  const events = related_events.length ? related_events : [event];
-  const artifacts = collect_manifest_artifacts(event, events, snapshot, evidence);
-  const terminal_events = events.filter((item) => item.surface === "terminal");
-  const failed_count = events.filter((item) => item.phase === "error" || item.phase === "cancelled").length;
-  const completed_count = events.filter((item) => item.phase === "done").length;
-  const duration = format_manifest_duration(events);
+  const source_events = related_events.length ? related_events : [event];
+  const events = source_events.filter(should_show_manifest_event);
+  const manifest_events = events.length ? events : [event];
+  const artifacts = collect_manifest_artifacts(event, source_events, snapshot, evidence);
+  const terminal_events = manifest_events.filter((item) => item.surface === "terminal");
+  const failed_count = manifest_events.filter((item) => item.phase === "error" || item.phase === "cancelled").length;
+  const completed_count = manifest_events.filter((item) => item.phase === "done").length;
+  const duration = format_manifest_duration(manifest_events);
   const result_text = extract_manifest_result_text(event);
 
   return (
@@ -70,11 +72,11 @@ export function RunManifestSurface({
           </div>
         </div>
 
-        <ManifestActionMap events={events} />
+        <ManifestActionMap events={manifest_events} />
 
         <div className="mt-2 space-y-1 rounded-[10px] bg-white/58 p-1.5 text-[10px]">
-          <ManifestSidebarRow label="事件" value={events.length} />
-          <ManifestSidebarRow label="完成" value={`${completed_count}/${events.length}`} />
+          <ManifestSidebarRow label="事件" value={manifest_events.length} />
+          <ManifestSidebarRow label="完成" value={`${completed_count}/${manifest_events.length}`} />
           <ManifestSidebarRow label="命令" value={terminal_events.length} />
           <ManifestSidebarRow label="耗时" value={duration} />
         </div>
@@ -144,7 +146,7 @@ export function RunManifestSurface({
               <span>消息</span>
               <span>状态</span>
             </div>
-            {events.map((item, index) => {
+            {manifest_events.map((item, index) => {
               const profile = resolve_operation_tool_profile(item.tool_name, item.kind, item.surface);
               const Icon = ACTION_ICON[profile.action];
               const can_focus_event = Boolean(on_focus_event);
@@ -213,12 +215,34 @@ export function RunManifestSurface({
         </div>
 
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-(--divider-subtle-color) bg-white/62 px-3 py-2 text-[10px] text-(--text-soft)">
-          <span className="truncate">{handoff_summary?.status_detail ?? `${evidence.length} 条证据记录`}</span>
-          <span className="shrink-0 font-mono">{events.length} 事件</span>
+          <span className="truncate">{manifest_status_detail({ completed_count, failed_count, total_count: manifest_events.length })}</span>
+          <span className="shrink-0 font-mono">{manifest_events.length} 事件</span>
         </div>
       </section>
     </div>
   );
+}
+
+function should_show_manifest_event(event: NexusOperationEvent): boolean {
+  return !(event.surface === "conversation" && event.phase === "running");
+}
+
+function manifest_status_detail({
+  completed_count,
+  failed_count,
+  total_count,
+}: {
+  completed_count: number;
+  failed_count: number;
+  total_count: number;
+}): string {
+  if (failed_count) {
+    return `本轮有 ${failed_count} 个异常步骤，执行现场已保留。`;
+  }
+  if (completed_count >= total_count) {
+    return "本轮工具轨迹、窗口现场和关键产物已经归档。";
+  }
+  return `已完成 ${completed_count}/${total_count} 个步骤。`;
 }
 
 function ConsoleToolbarButton({ children, label }: { children: ReactNode; label: string }) {

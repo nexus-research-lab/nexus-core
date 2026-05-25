@@ -299,7 +299,7 @@ function build_windows(
       windows.push(window_state(event, snapshot, {
         id: "run-manifest",
         kind: "run_manifest",
-        title: event.phase === "error" ? "Console · Diagnostics" : "Console",
+        title: event.phase === "error" ? "诊断报告" : "执行记录",
         layout: "primary",
         phase: focus_target === "manifest" ? "focused" : "background",
         z: focus_target === "manifest" ? 42 : 24,

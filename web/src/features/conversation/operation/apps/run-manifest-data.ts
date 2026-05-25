@@ -62,7 +62,7 @@ export function collect_manifest_artifacts(
     }
     add_artifact({
       id: `event:${item.target}`,
-      label: item.surface === "web" ? "Safari View" : item.surface === "task" ? "Activity Log" : "Workspace File",
+      label: item.surface === "web" ? "Safari 页面" : item.surface === "task" ? "活动记录" : "工作区文件",
       value: item.target,
       type: item.surface === "web" ? "url" : item.surface === "task" ? "task" : "file",
     });
@@ -95,7 +95,7 @@ export function collect_manifest_artifacts(
   if (event.target && artifacts.size === 0) {
     add_artifact({
       id: `event:${event.target}`,
-      label: "Current Target",
+      label: "当前目标",
       value: event.target,
       type: "status",
     });
