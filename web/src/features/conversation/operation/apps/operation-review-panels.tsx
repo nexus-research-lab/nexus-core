@@ -6,8 +6,12 @@ import {
   Clock3,
   FileText,
   Globe2,
+  LockKeyhole,
   Play,
   RefreshCw,
+  Search,
+  Settings2,
+  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -52,12 +56,12 @@ export function PermissionCheckpointPanel({
       <div className="border-b border-(--divider-subtle-color) px-4 py-3">
         <div className="flex min-w-0 items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[13px] bg-[rgba(223,157,46,0.13)] text-[color:var(--warning)]">
-              <CircleHelp className="h-5 w-5" />
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[13px] bg-[rgba(223,157,46,0.13)] text-[color:var(--warning)] shadow-[inset_0_1px_0_rgba(255,255,255,0.78)]">
+              <LockKeyhole className="h-5 w-5" />
             </span>
             <div className="min-w-0">
               <h3 className="mt-1 truncate text-[15px] font-black tracking-[-0.03em] text-(--text-strong)">
-                Security & Privacy
+                Privacy & Security
               </h3>
               <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-(--text-muted)">
                 {lead}
@@ -72,28 +76,59 @@ export function PermissionCheckpointPanel({
 
       <div className="grid min-h-0 min-w-0 flex-1 grid-cols-[170px_minmax(0,1fr)] max-md:grid-cols-1">
         <aside className="border-r border-(--divider-subtle-color) bg-white/46 p-2.5 max-md:border-b max-md:border-r-0">
-          {["Privacy", "Automation", "Files", "Network"].map((item, index) => (
+          <div className="mb-2 flex items-center gap-1.5 rounded-[9px] border border-(--divider-subtle-color) bg-white/70 px-2 py-1.5 text-[10px] text-(--text-soft)">
+            <Search className="h-3 w-3 shrink-0" />
+            <span className="truncate">Search Settings</span>
+          </div>
+          {[
+            { label: "Privacy", Icon: ShieldCheck },
+            { label: "Automation", Icon: Settings2 },
+            { label: "Files", Icon: FileText },
+            { label: "Network", Icon: Globe2 },
+          ].map((item, index) => (
             <div
               className={cn(
-                "mb-1 rounded-[9px] px-2.5 py-2 text-[11px] font-bold",
+                "mb-1 flex items-center gap-2 rounded-[9px] px-2.5 py-2 text-[11px] font-bold",
                 index === 1 ? "bg-white/82 text-(--text-strong)" : "text-(--text-soft)",
               )}
-              key={item}
+              key={item.label}
             >
-              {item}
+              <item.Icon className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{item.label}</span>
             </div>
           ))}
         </aside>
 
         <section className="soft-scrollbar min-h-0 min-w-0 overflow-auto p-4">
-          <div className="rounded-[14px] border border-(--divider-subtle-color) bg-white/76 p-4">
-            <p className="text-[13px] font-black text-(--text-strong)">{profile.title}</p>
-            <p className="mt-1 text-[11px] leading-5 text-(--text-muted)">
-              Nexus wants to continue this tool call. Review the request before allowing the desktop session to proceed.
-            </p>
-            <pre className="mt-3 max-h-[128px] overflow-auto whitespace-pre-wrap break-words rounded-[10px] bg-[rgba(18,28,42,0.05)] px-3 py-2 font-mono text-[11px] leading-5 text-(--text-strong)">
-              {request_target}
-            </pre>
+          <div className="rounded-[14px] border border-(--divider-subtle-color) bg-white/76">
+            <div className="flex items-start justify-between gap-3 border-b border-(--divider-subtle-color) px-4 py-3">
+              <div className="min-w-0">
+                <p className="text-[13px] font-black text-(--text-strong)">Automation</p>
+                <p className="mt-1 text-[11px] leading-5 text-(--text-muted)">
+                  Nexus wants to control an app or file on this desktop.
+                </p>
+              </div>
+              <span className="relative h-5 w-9 shrink-0 rounded-full bg-[rgba(47,184,132,0.22)] p-0.5 shadow-[inset_0_1px_2px_rgba(18,28,42,0.10)]">
+                <span className="block h-4 w-4 translate-x-4 rounded-full bg-white shadow-[0_2px_6px_rgba(18,28,42,0.20)]" />
+              </span>
+            </div>
+            <div className="px-4 py-3">
+              <div className="flex min-w-0 items-center gap-3 rounded-[12px] bg-[rgba(248,250,252,0.82)] px-3 py-2">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[11px] bg-[rgba(91,114,255,0.10)] text-[color:var(--primary)]">
+                  <Settings2 className="h-4 w-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[12px] font-black text-(--text-strong)">{profile.title}</p>
+                  <p className="truncate text-[10px] text-(--text-soft)">{request_target}</p>
+                </div>
+                <span className="shrink-0 rounded-full bg-[rgba(223,157,46,0.12)] px-2 py-1 text-[10px] font-black text-[color:var(--warning)]">
+                  Pending
+                </span>
+              </div>
+              <pre className="mt-3 max-h-[128px] overflow-auto whitespace-pre-wrap break-words rounded-[10px] bg-[rgba(18,28,42,0.05)] px-3 py-2 font-mono text-[11px] leading-5 text-(--text-strong)">
+                {request_target}
+              </pre>
+            </div>
           </div>
 
           <div className="mt-3 grid grid-cols-3 gap-2 text-[10px] max-sm:grid-cols-1">
