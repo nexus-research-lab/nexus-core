@@ -1,7 +1,11 @@
 import {
   AlertTriangle,
   CheckCircle2,
+  Filter,
+  Search,
+  Trash2,
 } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -108,7 +112,20 @@ export function RunManifestSurface({
       </aside>
 
       <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-white/74">
-        <div className="flex min-w-0 items-center justify-between gap-3 border-b border-(--divider-subtle-color) bg-white/70 px-3 py-2.5">
+        <div className="border-b border-(--divider-subtle-color) bg-white/70 px-3 py-2.5">
+          <div className="mb-2 flex min-w-0 items-center gap-2">
+            <ConsoleToolbarButton label="过滤">
+              <Filter className="h-3.5 w-3.5" />
+            </ConsoleToolbarButton>
+            <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-[8px] border border-(--divider-subtle-color) bg-white/74 px-2 py-1 text-[10px] text-(--text-soft)">
+              <Search className="h-3 w-3 shrink-0" />
+              <span className="truncate">Search all messages</span>
+            </div>
+            <ConsoleToolbarButton label="清空显示">
+              <Trash2 className="h-3.5 w-3.5" />
+            </ConsoleToolbarButton>
+          </div>
+          <div className="flex min-w-0 items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="truncate text-[12px] font-black text-(--text-strong)">All Messages</p>
             <p className="truncate text-[10px] text-(--text-soft)">
@@ -116,6 +133,7 @@ export function RunManifestSurface({
             </p>
           </div>
           <span className="shrink-0 font-mono text-[10px] text-(--text-soft)">{PHASE_LABEL[event.phase]}</span>
+          </div>
         </div>
         <div className="soft-scrollbar min-h-0 flex-1 overflow-auto p-3">
           <div className="space-y-2">
@@ -189,6 +207,19 @@ export function RunManifestSurface({
         </div>
       </section>
     </div>
+  );
+}
+
+function ConsoleToolbarButton({ children, label }: { children: ReactNode; label: string }) {
+  return (
+    <button
+      aria-label={label}
+      className="grid h-7 w-7 shrink-0 place-items-center rounded-[8px] border border-(--divider-subtle-color) bg-white/64 text-(--icon-muted) transition hover:bg-white hover:text-(--text-strong) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.32)]"
+      title={label}
+      type="button"
+    >
+      {children}
+    </button>
   );
 }
 
