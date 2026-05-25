@@ -59,7 +59,7 @@ export function verify_handoff_spotlight_model({
 
   assert(model !== null, "completed handoff should produce spotlight model");
   assert(model.is_completed === true, "successful completed handoff should mark spotlight as completed");
-  assert(model.steps[0].value === "nexus 字符场", "handoff should keep nexus character field as entry step");
+  assert(model.steps[0].value === "Nexus 桌面", "handoff should keep Nexus desktop as entry step");
   assert(model.steps[1].value === "2 个动作", `handoff should narrate event count, got ${model.steps[1].value}`);
   assert(model.steps[2].value === "gomoku.html", `handoff should use workspace artifact, got ${model.steps[2].value}`);
 

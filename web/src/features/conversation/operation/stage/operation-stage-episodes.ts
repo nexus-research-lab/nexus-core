@@ -164,7 +164,7 @@ function build_episode_detail(
     return event.phase === "error" ? "错误证据已保留" : "输出已进入回放记录";
   }
   if (state === "entered") {
-    return "窗口已显影，等待输出沉淀";
+    return "窗口已打开，等待输出记录";
   }
   return "等待前序工具完成后接续";
 }

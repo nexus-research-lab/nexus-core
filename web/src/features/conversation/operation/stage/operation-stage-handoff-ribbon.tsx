@@ -52,8 +52,8 @@ export function StageHandoffRibbon({
     },
     {
       Icon: ListChecks,
-      label: has_error ? "回看入口" : "可回放轨迹",
-      value: `${replayable_count} 个工具现场`,
+      label: has_error ? "回看入口" : "回放记录",
+      value: `${replayable_count} 个工具窗口`,
       tone: has_error ? "warning" : "success",
     },
     {
@@ -74,7 +74,7 @@ export function StageHandoffRibbon({
       <div className="mb-2 flex min-w-0 items-center justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-[10px] font-black uppercase tracking-[0.08em] text-(--text-strong)">
-            交接带
+            继续条
           </p>
           <p className="mt-0.5 truncate text-[9.5px] font-semibold text-(--text-soft)">
             {continuation.status_detail}

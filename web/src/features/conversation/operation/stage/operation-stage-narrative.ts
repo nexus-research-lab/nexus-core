@@ -144,8 +144,8 @@ export function build_stage_narrative(
       phase: "awakening",
       label: event.surface === "conversation" ? "运行接入" : "唤醒工作台",
       detail: event.surface === "conversation"
-        ? "nexus 字符场正在接入运行时，等待第一个工具窗口显影"
-        : "nexus 字符场正在展开为执行现场",
+        ? "Nexus 桌面正在接入运行时，等待第一个工具窗口打开"
+        : "Nexus 桌面正在展开为执行现场",
     };
   }
   if (event.phase === "waiting") {

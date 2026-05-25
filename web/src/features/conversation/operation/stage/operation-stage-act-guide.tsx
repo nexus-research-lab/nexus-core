@@ -57,7 +57,7 @@ export function StageActGuide({
         ? RadioTower
         : Route;
   const guide_title = narrative.phase === "awakening"
-    ? "工作台正在显影"
+    ? "工作台正在打开"
     : is_waiting
       ? "等待用户介入"
       : is_runtime_retry
@@ -129,7 +129,7 @@ export function StageActGuide({
 
         <div className="mt-3 rounded-[12px] border border-white/46 bg-white/34 px-2.5 py-2">
           <div className="mb-1 flex items-center justify-between gap-2 text-[9.5px] font-bold text-(--text-soft)">
-            <span>当前意图</span>
+            <span>当前请求</span>
             <span>{SURFACE_LABEL[event.surface]}</span>
           </div>
           <p className="line-clamp-2 text-[11px] leading-5 text-(--text-strong)">
@@ -148,7 +148,7 @@ export function StageActGuide({
                   {episode.status_label}
                 </p>
                 <span className="shrink-0 rounded-full bg-white/54 px-1.5 py-px text-[8.5px] font-bold text-(--text-soft)">
-                  live
+                  实时
                 </span>
               </div>
               <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-(--text-muted)">
@@ -191,9 +191,9 @@ export function StageActGuide({
 }
 
 const STAGE_RUNNING_ACT_STEPS = [
-  { label: "进入", detail: "字符场展开" },
-  { label: "执行", detail: "工具逐个登场" },
-  { label: "沉淀", detail: "结果可回看" },
+  { label: "进入", detail: "桌面已唤醒" },
+  { label: "执行", detail: "应用窗口接管" },
+  { label: "记录", detail: "结果可回放" },
 ] as const;
 
 const STAGE_HANDOFF_ACT_STEPS = [
@@ -203,7 +203,7 @@ const STAGE_HANDOFF_ACT_STEPS = [
 ] as const;
 
 const STAGE_WAITING_ACT_STEPS = [
-  { label: "进入", detail: "字符场展开" },
+  { label: "进入", detail: "桌面已唤醒" },
   { label: "确认", detail: "权限检查点" },
   { label: "继续", detail: "回到现场" },
 ] as const;

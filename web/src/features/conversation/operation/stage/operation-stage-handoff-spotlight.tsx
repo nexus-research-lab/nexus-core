@@ -90,7 +90,7 @@ export function StageHandoffSpotlight({
         <div className="mt-3 rounded-[13px] border border-white/48 bg-white/36 p-2.5">
           <div className="mb-1.5 flex min-w-0 items-center justify-between gap-2">
             <p className="truncate text-[9.5px] font-black uppercase tracking-[0.08em] text-(--text-strong)">
-              continuation
+              继续入口
             </p>
             <span className="shrink-0 rounded-full bg-white/56 px-2 py-1 text-[8.5px] font-bold text-(--text-soft)">
               下一轮入口

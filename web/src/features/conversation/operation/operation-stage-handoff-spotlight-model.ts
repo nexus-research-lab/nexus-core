@@ -17,7 +17,7 @@ export interface OperationStageHandoffSpotlightModel {
     status: string;
   };
   steps: Array<{
-    label: "入口" | "执行" | "交接";
+    label: "入口" | "执行" | "记录";
     value: string;
   }>;
   tone: "success" | "warning" | "neutral";
@@ -49,20 +49,20 @@ export function build_operation_stage_handoff_spotlight_model({
 
   return {
     artifact_label,
-    badge_label: failed_count ? `${failed_count} 异常` : "ready",
+    badge_label: failed_count ? `${failed_count} 异常` : "就绪",
     is_completed,
     status_label: continuation.status_label,
     subtitle: `${continuation.status_label} · ${completed_count}/${Math.max(total_count, 1)} 步`,
-    title: is_completed ? "工作台已完成交接" : "工作台正在收束",
+    title: is_completed ? "工作台记录已就绪" : "工作台正在收束",
     continuation: {
       detail: continuation.status_detail,
       prompt: continuation.resume_prompt,
       status: continuation.status_label,
     },
     steps: [
-      { label: "入口", value: "nexus 字符场" },
+      { label: "入口", value: "Nexus 桌面" },
       { label: "执行", value: `${events.length} 个动作` },
-      { label: "交接", value: artifact_label },
+      { label: "记录", value: artifact_label },
     ],
     tone: failed_count ? "warning" : is_completed ? "success" : "neutral",
   };
