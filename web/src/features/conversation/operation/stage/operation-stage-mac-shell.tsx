@@ -62,7 +62,7 @@ export function StageMacMenuBar({
         ))}
       </div>
       <div className="flex shrink-0 items-center gap-3 text-(--text-soft)">
-        <span className="rounded-full bg-white/40 px-2 py-0.5 text-[10px] font-bold text-(--text-muted)">
+        <span className="max-w-[220px] truncate rounded-full bg-white/40 px-2 py-0.5 text-[10px] font-bold text-(--text-muted)">
           {menu_status.activity_label}
         </span>
         <span className="font-mono text-[10px] text-(--text-soft)">{menu_status.window_label}</span>

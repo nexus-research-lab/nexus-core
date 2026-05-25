@@ -594,7 +594,7 @@ function verify_desktop_keyboard_target_policy() {
 
 function verify_stage_menu_status_tracks_desktop_windows() {
   const windows = [
-    mock_stage_window({ id: "terminal", kind: "terminal", phase: "focused" }),
+    mock_stage_window({ id: "terminal", kind: "terminal", phase: "focused", title: "open gomoku.html" }),
     mock_stage_window({ id: "browser", kind: "browser", phase: "background" }),
     mock_stage_window({ id: "code", kind: "code_editor", phase: "minimized" }),
     mock_stage_window({ id: "finder", kind: "finder", phase: "closed" }),
@@ -605,11 +605,14 @@ function verify_stage_menu_status_tracks_desktop_windows() {
     finder: "访达",
     terminal: "终端",
   })[window.kind] ?? "Nexus");
-  assert(status.activity_label === "终端 前台", `Menu bar should expose the foreground app, got ${status.activity_label}`);
+  assert(status.active_app_label === "终端", `Menu bar should expose the foreground app, got ${status.active_app_label}`);
+  assert(status.active_window_label === "open gomoku.html", `Menu bar should expose foreground document title, got ${status.active_window_label}`);
+  assert(status.activity_label === "终端 · open gomoku.html", `Menu bar should connect app and focused window, got ${status.activity_label}`);
   assert(status.window_label === "2 个窗口", `Menu bar should count visible app windows, got ${status.window_label}`);
   assert(status.dock_label === "1 个在 Dock", `Menu bar should count minimized windows, got ${status.dock_label}`);
 
   const idle_status = build_stage_menu_status([], null, () => "Nexus");
+  assert(idle_status.active_window_label === null, `Idle menu bar should not expose a window title, got ${idle_status.active_window_label}`);
   assert(idle_status.activity_label === "桌面待命", `Idle menu bar should report standby, got ${idle_status.activity_label}`);
   assert(idle_status.window_label === "0 个窗口", `Idle menu bar should report zero windows, got ${idle_status.window_label}`);
   assert(idle_status.dock_label === null, `Idle menu bar should omit Dock count, got ${idle_status.dock_label}`);
@@ -680,6 +683,7 @@ function mock_stage_window({
   kind,
   phase,
   target = id,
+  title = id,
   z = 1,
 }) {
   return {
@@ -702,7 +706,7 @@ function mock_stage_window({
     },
     phase,
     target,
-    title: id,
+    title,
     z,
   };
 }
