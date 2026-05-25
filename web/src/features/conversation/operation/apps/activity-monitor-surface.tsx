@@ -1,5 +1,4 @@
 import {
-  Activity,
   AlertTriangle,
   CheckCircle2,
   CircleHelp,
@@ -51,6 +50,7 @@ export function ActivityMonitorSurface({
   const preview_value = lines.join("\n") || event.result_preview || event.input_preview || event.summary;
   const finished_count = task_events.filter((item) => item.phase === "done").length;
   const running_count = task_events.filter((item) => item.phase === "running" || item.phase === "waiting").length;
+  const cpu_load = cpu_load_for_activity(running_count, finished_count);
 
   return (
     <div className="flex h-full min-h-[320px] min-w-0 max-w-full overflow-hidden bg-[#f7f9fb] max-md:flex-col">
@@ -127,10 +127,22 @@ export function ActivityMonitorSurface({
             );
           })}
         </div>
-        <div className="grid grid-cols-3 gap-1 border-t border-(--divider-subtle-color) bg-white/54 p-2 text-[10px] text-(--text-muted)">
-          <span className="truncate rounded-[8px] bg-white/64 px-2 py-1.5">CPU {running_count ? "active" : "idle"}</span>
-          <span className="truncate rounded-[8px] bg-white/64 px-2 py-1.5">Proc {task_events.length}</span>
-          <span className="truncate rounded-[8px] bg-white/64 px-2 py-1.5">Done {finished_count}</span>
+        <div className="border-t border-(--divider-subtle-color) bg-white/58 p-2 text-[10px] text-(--text-muted)">
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <span className="font-black text-(--text-strong)">CPU Load</span>
+            <span className="font-mono">{running_count ? "Active" : "Idle"}</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-[rgba(117,131,149,0.14)]">
+            <span
+              className="block h-full rounded-full bg-[linear-gradient(90deg,rgba(47,184,132,0.86),rgba(91,114,255,0.74))]"
+              style={{ width: `${cpu_load.total}%` }}
+            />
+          </div>
+          <div className="mt-2 grid grid-cols-3 gap-1">
+            <ActivityMetric label="System" value={`${cpu_load.system}%`} />
+            <ActivityMetric label="User" value={`${cpu_load.user}%`} />
+            <ActivityMetric label="Proc" value={task_events.length} />
+          </div>
         </div>
       </section>
       <section className="min-h-0 min-w-0 flex-1">
@@ -141,6 +153,14 @@ export function ActivityMonitorSurface({
         />
       </section>
     </div>
+  );
+}
+
+function ActivityMetric({ label, value }: { label: string; value: number | string }) {
+  return (
+    <span className="min-w-0 truncate rounded-[8px] bg-white/64 px-2 py-1.5">
+      {label} <span className="font-mono font-black text-(--text-strong)">{value}</span>
+    </span>
   );
 }
 
@@ -157,6 +177,20 @@ function collect_task_events(
   return events
     .sort((a, b) => (a.started_at ?? a.updated_at) - (b.started_at ?? b.updated_at))
     .slice(-8);
+}
+
+function cpu_load_for_activity(running_count: number, finished_count: number): {
+  system: number;
+  total: number;
+  user: number;
+} {
+  const user = Math.min(72, running_count ? 18 + running_count * 14 : Math.max(3, finished_count * 2));
+  const system = Math.min(24, running_count ? 7 + running_count * 3 : 2);
+  return {
+    system,
+    total: Math.min(96, user + system),
+    user,
+  };
 }
 
 function ActivityMonitorButton({
