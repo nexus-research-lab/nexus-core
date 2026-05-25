@@ -10,18 +10,6 @@ import type { LucideIcon } from "lucide-react";
 
 import type { OperationPhase, OperationSurface } from "../operation-types";
 
-export const SURFACE_ACCENT_CLASS_NAME: Record<OperationSurface, string> = {
-  workspace: "from-[rgba(91,114,255,0.24)] via-[rgba(91,114,255,0.12)] to-transparent",
-  editor: "from-[rgba(79,162,159,0.24)] via-[rgba(79,162,159,0.12)] to-transparent",
-  terminal: "from-[rgba(47,184,132,0.22)] via-[rgba(47,184,132,0.1)] to-transparent",
-  web: "from-[rgba(223,157,46,0.22)] via-[rgba(223,157,46,0.1)] to-transparent",
-  knowledge: "from-[rgba(91,114,255,0.2)] via-[rgba(79,162,159,0.1)] to-transparent",
-  task: "from-[rgba(223,157,46,0.2)] via-[rgba(91,114,255,0.1)] to-transparent",
-  conversation: "from-[rgba(91,114,255,0.2)] via-[rgba(255,255,255,0.08)] to-transparent",
-  summary: "from-[rgba(47,184,132,0.2)] via-[rgba(79,162,159,0.1)] to-transparent",
-  fallback: "from-[rgba(117,131,149,0.18)] via-[rgba(255,255,255,0.08)] to-transparent",
-};
-
 export const SURFACE_LABEL: Record<OperationSurface, string> = {
   workspace: "工作区",
   editor: "编辑器",

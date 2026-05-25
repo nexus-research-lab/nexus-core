@@ -181,15 +181,6 @@ export function OperationStageMotionStyles() {
             nexus-operation-window-float 7.5s ease-in-out infinite;
         }
 
-        .operation-stage-narrative-awakening .operation-stage-aura {
-          opacity: .36;
-          transform: translate(-50%, -50%) scale(.82);
-        }
-
-        .operation-stage-narrative-running .operation-stage-light {
-          opacity: .88;
-        }
-
         .operation-stage-narrative-settling .operation-stage-window,
         .operation-stage-narrative-completed .operation-stage-window {
           animation-duration: 420ms, 11s;
@@ -218,17 +209,21 @@ export function OperationStageMotionStyles() {
           mask-image: radial-gradient(circle at 50% 45%, black, transparent 72%);
         }
 
-        .operation-stage-light {
+        .operation-desktop-wallpaper {
+          background:
+            linear-gradient(145deg, rgba(255,255,255,.86) 0%, rgba(241,246,251,.76) 34%, rgba(223,232,242,.82) 100%),
+            linear-gradient(30deg, rgba(91,114,255,.10) 0%, transparent 35%, rgba(79,162,159,.08) 72%, transparent 100%),
+            repeating-linear-gradient(135deg, rgba(255,255,255,.16) 0 1px, transparent 1px 28px);
+        }
+
+        .operation-desktop-wallpaper::after {
+          content: "";
           position: absolute;
-          left: 50%;
-          top: -130px;
-          width: 560px;
-          height: 430px;
-          border-radius: 50%;
-          transform: translateX(-50%);
-          background: radial-gradient(circle, rgba(255,255,255,.74), rgba(91,114,255,.12) 38%, transparent 70%);
-          filter: blur(10px);
-          pointer-events: none;
+          inset: 0;
+          background-image: radial-gradient(rgba(18,28,42,.045) .65px, transparent .65px);
+          background-size: 22px 22px;
+          opacity: .26;
+          mask-image: linear-gradient(to bottom, transparent, black 16%, black 84%, transparent);
         }
 
         .operation-desktop-shadow {
@@ -358,7 +353,6 @@ export function OperationStageMotionStyles() {
           .operation-stage-window,
           .operation-preview-line,
           .operation-scan-line,
-          .operation-stage-light,
           .operation-terminal-caret,
           .operation-web-loading::after,
           .operation-diff-bar,

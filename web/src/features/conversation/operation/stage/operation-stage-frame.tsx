@@ -8,7 +8,6 @@ import {
 } from "../operation-stage-labels";
 import type { NexusOperationEvent } from "../operation-types";
 import type { StageNarrativeState } from "./operation-stage-model";
-import { SURFACE_ACCENT_CLASS_NAME } from "./operation-stage-style";
 
 export function StageReplayReturn({
   current_event,
@@ -65,19 +64,12 @@ export function DynamicStageFrame({
   return (
     <div
       className={cn(
-        "operation-stage-frame relative h-full min-h-0 overflow-hidden rounded-[18px] bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(244,247,251,0.86)_42%,rgba(234,239,247,0.92))] p-4 max-md:w-full max-md:min-w-0 max-md:max-w-full max-md:overflow-y-auto max-md:overflow-x-hidden",
+        "operation-stage-frame relative h-full min-h-0 overflow-hidden rounded-[18px] bg-[#edf2f7] p-4 max-md:w-full max-md:min-w-0 max-md:max-w-full max-md:overflow-y-auto max-md:overflow-x-hidden",
         `operation-stage-narrative-${narrative.phase}`,
       )}
       data-stage-experience-phase={narrative.phase}
     >
-      <div
-        className={cn(
-          "operation-stage-aura absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br opacity-[0.28] blur-3xl",
-          SURFACE_ACCENT_CLASS_NAME[event.surface],
-        )}
-      />
-      <div className="operation-stage-gridlines pointer-events-none absolute inset-0 opacity-[0.32]" />
-      <div className="operation-stage-light" />
+      <div className="operation-desktop-wallpaper pointer-events-none absolute inset-0" data-surface={event.surface} />
       <div className="operation-desktop-shadow" />
       <div className="relative h-full min-h-[280px] max-md:flex max-md:h-auto max-md:min-h-0 max-md:w-full max-md:min-w-0 max-md:max-w-full max-md:flex-col max-md:gap-3 max-md:overflow-x-hidden">
         {children}
