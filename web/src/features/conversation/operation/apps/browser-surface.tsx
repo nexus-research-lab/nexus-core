@@ -55,12 +55,12 @@ export function BrowserSurface({
   const status = browser_status_for_event(event, has_live_view);
   const display_url = browser_display_url({ iframe_url, query, srcdoc, target });
   const source_label = srcdoc
-    ? "srcdoc"
+    ? "内嵌页面"
     : iframe_url?.startsWith("/nexus/")
-      ? "workspace"
+      ? "工作区"
         : looks_like_url(display_url)
-          ? "remote"
-          : "preview";
+          ? "网页"
+          : "摘要";
 
   return (
     <div className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col overflow-hidden bg-[#f7f9fc] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]">
@@ -102,7 +102,7 @@ function BrowserChromeHeader({
       <div className="flex min-w-0 items-end gap-1.5 px-3 pt-2">
         <div className="flex min-w-0 max-w-[52%] items-center gap-1.5 rounded-t-[10px] border border-b-0 border-(--divider-subtle-color) bg-white/72 px-3 py-1.5 text-[10px] font-bold text-(--text-strong)">
           <Globe2 className="h-3.5 w-3.5 shrink-0 text-(--icon-muted)" />
-          <span className="truncate">{target ?? event.target ?? event.tool_name ?? "preview"}</span>
+          <span className="truncate">{target ?? event.target ?? event.tool_name ?? "起始页"}</span>
         </div>
       </div>
       <div className="flex min-w-0 items-center gap-2 px-3 py-2">
@@ -174,7 +174,7 @@ function SafariPageStatus({
       {status.tone === "error" ? <AlertTriangle className="h-2.5 w-2.5" /> : null}
       {status.tone === "idle" ? <Clock3 className="h-2.5 w-2.5" /> : null}
       <span>{status.label}</span>
-      <span className="uppercase text-current/62">{source_label}</span>
+      <span className="text-current/62">{source_label}</span>
     </span>
   );
 }
@@ -241,7 +241,7 @@ function BrowserPreviewFallback({
             {event.phase === "running" ? <Loader2 className="h-5 w-5 animate-spin" /> : <Globe2 className="h-5 w-5" />}
           </div>
           <p className="text-[17px] font-semibold tracking-[-0.02em] text-(--text-strong)">
-            {event.phase === "running" ? "Safari 正在载入页面" : "Safari Reader"}
+            {event.phase === "running" ? "Safari 正在载入页面" : "Safari 摘要页"}
           </p>
           <p className="mt-1 text-[11px] text-(--text-soft)">
             {PHASE_LABEL[event.phase]} · {format_browser_origin(query)}
@@ -314,7 +314,7 @@ function format_browser_origin(value: string): string {
   try {
     return new URL(value).hostname;
   } catch {
-    return "workspace preview";
+    return "工作区预览";
   }
 }
 
