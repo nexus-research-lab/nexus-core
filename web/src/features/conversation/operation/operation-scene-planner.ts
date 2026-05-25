@@ -13,6 +13,7 @@ import type {
 } from "./operation-desktop-types";
 import {
   collect_operation_file_context,
+  fallback_window_kind_for_file_event,
   window_kind_for_file_target,
 } from "./operation-file-documents";
 import { find_operation_html_artifact } from "./operation-html-artifacts";
@@ -165,7 +166,7 @@ function build_windows(
     );
     const document_kind = window_kind_for_file_target(
       document.target,
-      document.event.surface === "workspace" ? "generic_tool" : "code_editor",
+      fallback_window_kind_for_file_event(document.event),
     );
     windows.push(window_state(document.event, snapshot, {
       id: `document:${normalize_window_id(document.target)}`,

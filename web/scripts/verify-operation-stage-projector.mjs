@@ -161,6 +161,7 @@ verify_error_summary_settles_live_handoff(now);
 verify_stage_restore_merge_preserves_round_context(now);
 verify_workspace_live_stays_in_tool_round(now);
 verify_multi_file_windows_keep_event_identity(now);
+verify_extensionless_workspace_file_opens_code_app(now);
 verify_terminal_result_envelope(now);
 verify_terminal_entries_render_real_command_result(now);
 verify_browser_fallback_builds_search_results(now);
@@ -994,6 +995,41 @@ function verify_multi_file_windows_keep_event_identity(now) {
     snapshot,
   });
   assert(active_css_desktop.active_window_id?.includes(":document:style.css"), `active workspace write should focus its document window, got ${active_css_desktop.active_window_id}`);
+}
+
+function verify_extensionless_workspace_file_opens_code_app(now) {
+  const read_event = {
+    id: "tool-read-makefile",
+    session_key: "session:stage",
+    round_id: "round-extensionless-file",
+    agent_id: "agent-stage",
+    tool_use_id: "tool-read",
+    tool_name: "Read",
+    kind: "workspace_read",
+    surface: "workspace",
+    phase: "done",
+    title: "Read Makefile",
+    target: "Makefile",
+    result_preview: "test:\n\tpnpm test",
+    updated_at: now,
+  };
+  const snapshot = {
+    key: "session:stage",
+    session_key: "session:stage",
+    active_event: read_event,
+    events: [read_event],
+    recent_evidence: [],
+    workspace_events: [],
+    updated_at: now,
+  };
+  const desktop = plan_operation_desktop({
+    event: read_event,
+    snapshot,
+  });
+  const document_window = desktop.windows.find((window) => window.target === "Makefile");
+  assert(document_window, "extensionless workspace file should still open a document window");
+  assert(document_window.kind === "code_editor", `extensionless workspace file should open in Code, got ${document_window.kind}`);
+  assert(app_surface_for_window_kind(document_window.kind) === "document", "extensionless workspace file should render as document content");
 }
 
 function verify_terminal_result_envelope(now) {

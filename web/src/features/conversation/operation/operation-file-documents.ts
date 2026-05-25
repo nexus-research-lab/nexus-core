@@ -88,6 +88,18 @@ export function window_kind_for_file_target(
   return fallback;
 }
 
+export function fallback_window_kind_for_file_event(event: NexusOperationEvent): StageWindowKind {
+  if (
+    event.kind === "workspace_read" ||
+    event.kind === "workspace_edit" ||
+    event.kind === "artifact_update" ||
+    event.surface === "editor"
+  ) {
+    return "code_editor";
+  }
+  return "finder";
+}
+
 function find_latest_workspace_item(
   event: NexusOperationEvent,
   snapshot: NexusOperationSnapshot | null,
