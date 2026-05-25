@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Loader2, RadioTower, Terminal, Wifi } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -24,21 +24,37 @@ export function RuntimeHandoffSurface({
   const is_retrying = is_runtime_retry_event(event);
   const prompt = read_prompt_from_preview(event.input_preview) ?? summary ?? event.target ?? "等待运行时接入";
 
+  const connection_label = is_retrying ? "RETRYING" : is_stalled ? "WAITING" : "CONNECTING";
+
   return (
-    <div className="flex h-full min-h-[280px] min-w-0 flex-col overflow-hidden rounded-[14px] border border-[#1d2936] bg-[#101820] text-[#dce8ee] shadow-[0_18px_48px_rgba(18,28,42,0.18)]">
-      <div className="flex min-w-0 items-center justify-between gap-3 border-b border-white/10 bg-[#151f29] px-3 py-2">
-        <div className="flex min-w-0 items-center gap-1.5">
-          <span className="truncate text-[11px] font-bold text-[#e7eef5]">agent-runtime</span>
+    <div className="flex h-full min-h-[280px] min-w-0 flex-col overflow-hidden bg-[#101820] text-[#dce8ee]">
+      <div className="border-b border-white/10 bg-[#151f29]">
+        <div className="flex min-w-0 items-center justify-between gap-3 px-3 py-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-[#17232c] text-[#8de0ad]">
+              {event.phase === "running" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Terminal className="h-3.5 w-3.5" />}
+            </span>
+            <span className="truncate text-[11px] font-bold text-[#e7eef5]">Nexus Shell</span>
+          </div>
+          <span className="inline-flex shrink-0 items-center gap-1 rounded bg-white/[0.06] px-1.5 py-px text-[9px] font-bold text-[#8aa0ad]">
+            <Wifi className="h-2.5 w-2.5" />
+            {connection_label}
+          </span>
         </div>
-        <span className="shrink-0 rounded bg-white/[0.06] px-1.5 py-px text-[9px] font-bold text-[#8aa0ad]">
-          {is_retrying ? "RETRYING" : is_stalled ? "WAITING" : "CONNECTING"}
-        </span>
+        <div className="flex min-w-0 items-end gap-1.5 px-3">
+          <div className="flex min-w-0 max-w-[70%] items-center gap-1.5 rounded-t-[9px] border border-b-0 border-white/10 bg-[#101820] px-3 py-1.5 text-[10px] font-semibold text-[#dce8ee]">
+            <RadioTower className="h-3 w-3 shrink-0 text-[#8ca0ff]" />
+            <span className="truncate">{event.agent_id || "agent"} · runtime login</span>
+          </div>
+        </div>
       </div>
       <div className="soft-scrollbar min-h-0 flex-1 overflow-auto p-4 font-mono text-[11px] leading-5">
         <RuntimeLine tone="muted" value={`last login ${format_operation_time(handoff_started_at)}`} />
         <RuntimeLine tone="muted" value={`session ${event.session_key}`} />
+        <RuntimeLine tone="ok" value="login accepted for nexus desktop" />
         <RuntimeLine tone="ok" value="mounted ~/workspace" />
         <RuntimeLine tone="ok" value="loaded conversation context" />
+        <RuntimeLine tone="ok" value="waiting for LaunchServices to open the first app" />
         <RuntimeLine
           tone={is_stalled || is_retrying ? "warn" : "active"}
           value={is_retrying
