@@ -18,12 +18,14 @@ export function DynamicStageFrame({
 }) {
   return (
     <div
+      aria-label="Nexus desktop stage"
       className={cn(
-        "operation-stage-frame relative h-full min-h-0 overflow-hidden rounded-[18px] bg-[#edf2f7] p-4 max-md:w-full max-md:min-w-0 max-md:max-w-full max-md:overflow-y-auto max-md:overflow-x-hidden",
+        "operation-stage-frame relative h-full min-h-0 overflow-hidden rounded-[18px] bg-[#edf2f7] p-4 outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.36)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent max-md:w-full max-md:min-w-0 max-md:max-w-full max-md:overflow-y-auto max-md:overflow-x-hidden",
         `operation-stage-narrative-${narrative.phase}`,
       )}
       data-stage-experience-phase={narrative.phase}
       onKeyDownCapture={on_key_down_capture}
+      tabIndex={0}
     >
       <div className="operation-desktop-wallpaper pointer-events-none absolute inset-0" data-surface={event.surface} />
       <div className="operation-desktop-shadow" />

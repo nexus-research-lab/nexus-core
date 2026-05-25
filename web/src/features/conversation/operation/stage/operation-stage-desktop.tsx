@@ -34,6 +34,7 @@ import {
   resolve_operation_window_keyboard_action,
   should_handle_stage_desktop_keyboard_action,
 } from "./operation-stage-window-actions";
+import { should_ignore_stage_desktop_keyboard_target } from "./operation-stage-keyboard-target";
 import {
   StageWindowDock,
   StageWindowsHiddenState,
@@ -380,7 +381,11 @@ function is_text_entry_keyboard_target(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) {
     return false;
   }
-  if (target.isContentEditable) {
+  if (should_ignore_stage_desktop_keyboard_target({
+    content_editable: target.getAttribute("contenteditable"),
+    is_content_editable: target.isContentEditable,
+    tag_name: target.tagName,
+  })) {
     return true;
   }
   return Boolean(target.closest("input, textarea, select, [contenteditable='true']"));

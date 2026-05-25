@@ -66,6 +66,7 @@ copyFileSync(join(operation_dir, "stage/operation-stage-window-reveal.js"), join
 copyFileSync(join(operation_dir, "stage/operation-stage-hidden-windows.js"), join(operation_dir, "stage/operation-stage-hidden-windows"));
 copyFileSync(join(operation_dir, "stage/operation-stage-app-identity.js"), join(operation_dir, "stage/operation-stage-app-identity"));
 copyFileSync(join(operation_dir, "stage/operation-stage-window-focus.js"), join(operation_dir, "stage/operation-stage-window-focus"));
+copyFileSync(join(operation_dir, "stage/operation-stage-keyboard-target.js"), join(operation_dir, "stage/operation-stage-keyboard-target"));
 mkdirSync(join(operation_dir, "apps"), { recursive: true });
 copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
 copyFileSync(join(operation_dir, "apps/operation-app-surface-policy.js"), join(operation_dir, "apps/operation-app-surface-policy"));
@@ -123,6 +124,9 @@ const {
   resolve_cycled_window_focus,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-window-focus.js")));
 const {
+  should_ignore_stage_desktop_keyboard_target,
+} = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-keyboard-target.js")));
+const {
   build_terminal_entries,
 } = await import(pathToFileURL(join(operation_dir, "apps/terminal-session-model.js")));
 const {
@@ -160,6 +164,7 @@ verify_unclassified_tool_activity_opens_nexus_app_window(now);
 verify_generic_tool_uses_nexus_tool_surface();
 verify_nexus_tool_app_has_own_desktop_identity();
 verify_window_focus_moves_to_next_visible_window();
+verify_desktop_keyboard_target_policy();
 verify_stage_experience_state_machine(now);
 verify_live_episode_narrates_running_round(now);
 verify_api_retry_runtime_projection(now);
@@ -417,6 +422,14 @@ function verify_window_focus_moves_to_next_visible_window() {
     direction: "next",
     windows,
   }) === "browser", "Window cycle should start from the topmost visible window when focus is empty");
+}
+
+function verify_desktop_keyboard_target_policy() {
+  assert(should_ignore_stage_desktop_keyboard_target({ tag_name: "input" }), "Desktop shortcuts should ignore text inputs");
+  assert(should_ignore_stage_desktop_keyboard_target({ tag_name: "textarea" }), "Desktop shortcuts should ignore textareas");
+  assert(should_ignore_stage_desktop_keyboard_target({ tag_name: "div", is_content_editable: true }), "Desktop shortcuts should ignore contenteditable areas");
+  assert(!should_ignore_stage_desktop_keyboard_target({ tag_name: "button" }), "Desktop shortcuts should still work from window controls and desktop buttons");
+  assert(!should_ignore_stage_desktop_keyboard_target({ tag_name: "div" }), "Desktop shortcuts should work from the desktop frame");
 }
 
 function mock_stage_window({
