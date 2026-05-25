@@ -84,15 +84,40 @@ export function DocumentPreview({
   if (kind === "spreadsheet") {
     const sheet_lines = lines.length ? lines : ["name,status,value", "file,updated,1", "tests,passed,3"];
     const rows = sheet_lines.slice(0, 6).map((line) => line.split(/,|\t/).slice(0, 4));
+    const column_count = 4;
     return (
-      <div className="h-full min-h-[240px] overflow-hidden bg-white/90">
+      <div className="flex h-full min-h-[240px] flex-col overflow-hidden bg-[#f6f8fb]">
         <div className="flex items-center justify-between gap-3 border-b border-(--divider-subtle-color) px-4 py-2.5">
-          <p className="truncate text-[12px] font-bold text-(--text-strong)">{display_title}</p>
-          <FileSpreadsheet className="h-4 w-4 text-(--icon-muted)" />
+          <div className="min-w-0">
+            <p className="truncate text-[12px] font-bold text-(--text-strong)">{display_title}</p>
+            <p className="truncate text-[10px] text-(--text-soft)">Sheet 1 · {rows.length} rows</p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {diff_stats ? <DiffStatPill additions={diff_stats.additions} deletions={diff_stats.deletions} /> : null}
+            <FileSpreadsheet className="h-4 w-4 text-(--icon-muted)" />
+          </div>
         </div>
-        <div className="grid grid-cols-4 text-[11px] text-(--text-default)">
-          {rows.flatMap((row, row_index) => (
-            Array.from({ length: 4 }).map((_, column_index) => (
+        <div
+          className="grid min-w-[420px] flex-1 auto-rows-min overflow-auto text-[11px] text-(--text-default)"
+          style={{ gridTemplateColumns: `42px repeat(${column_count}, minmax(84px, 1fr))` }}
+        >
+          <div className="sticky left-0 top-0 z-20 border-b border-r border-(--divider-subtle-color) bg-[#eef3f8]" />
+          {Array.from({ length: column_count }).map((_, column_index) => (
+            <div
+              className="sticky top-0 z-10 border-b border-r border-(--divider-subtle-color) bg-[#eef3f8] px-2 py-1.5 text-center text-[10px] font-black text-(--text-soft)"
+              key={`col:${column_index}`}
+            >
+              {spreadsheet_column_label(column_index)}
+            </div>
+          ))}
+          {rows.flatMap((row, row_index) => [
+            <div
+              className="sticky left-0 z-10 border-b border-r border-(--divider-subtle-color) bg-[#eef3f8] px-2 py-2 text-right text-[10px] font-black text-(--text-soft)"
+              key={`row:${row_index}`}
+            >
+              {row_index + 1}
+            </div>,
+            ...Array.from({ length: column_count }).map((_, column_index) => (
               <div
                 className={cn(
                   "min-h-9 truncate border-b border-r border-(--divider-subtle-color) px-2 py-2",
@@ -102,8 +127,14 @@ export function DocumentPreview({
               >
                 {row[column_index] ?? ""}
               </div>
-            ))
-          ))}
+            )),
+          ])}
+        </div>
+        <div className="flex items-center gap-2 border-t border-(--divider-subtle-color) bg-white/62 px-3 py-1.5 text-[10px] text-(--text-soft)">
+          <span className="rounded-[7px] border border-[rgba(47,184,132,0.22)] bg-[rgba(47,184,132,0.10)] px-2 py-1 font-bold text-[color:var(--success)]">
+            Sheet 1
+          </span>
+          <span>{rows.length} rows · {column_count} columns</span>
         </div>
       </div>
     );
@@ -264,6 +295,10 @@ function DiffStatPill({ additions, deletions }: { additions: number; deletions: 
       +{additions} -{deletions}
     </span>
   );
+}
+
+function spreadsheet_column_label(index: number): string {
+  return String.fromCharCode("A".charCodeAt(0) + index);
 }
 
 function FileRow({
