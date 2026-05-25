@@ -65,6 +65,7 @@ copyFileSync(join(operation_dir, "apps/file-preview-value.js"), join(operation_d
 copyFileSync(join(operation_dir, "apps/browser-result-items.js"), join(operation_dir, "apps/browser-result-items"));
 copyFileSync(join(operation_dir, "apps/finder-item-details.js"), join(operation_dir, "apps/finder-item-details"));
 copyFileSync(join(operation_dir, "apps/run-manifest-console.js"), join(operation_dir, "apps/run-manifest-console"));
+copyFileSync(join(operation_dir, "apps/activity-monitor-data.js"), join(operation_dir, "apps/activity-monitor-data"));
 
 const { project_operation_snapshot } = await import(pathToFileURL(join(operation_dir, "operation-projector.js")));
 const {
@@ -104,6 +105,11 @@ const {
   console_event_level,
   console_event_subsystem,
 } = await import(pathToFileURL(join(operation_dir, "apps/run-manifest-console.js")));
+const {
+  activity_cpu_label,
+  activity_cpu_load,
+  activity_pid_label,
+} = await import(pathToFileURL(join(operation_dir, "apps/activity-monitor-data.js")));
 const now = Date.now();
 
 verify_desktop_window_kind_contract();
@@ -120,6 +126,7 @@ verify_terminal_entries_render_real_command_result(now);
 verify_browser_fallback_builds_search_results(now);
 verify_finder_details_reflect_selected_workspace_item(now);
 verify_console_events_use_mac_app_subsystems(now);
+verify_activity_monitor_process_metrics();
 verify_completed_manifest_keeps_terminal_window_identity(now);
 verify_completed_round_replay_uses_event_slice({
   assert,
@@ -967,6 +974,19 @@ function verify_console_events_use_mac_app_subsystems(now) {
   assert(console_event_subsystem({ ...base_event, surface: "web" }) === "Safari", "Console subsystem should use Safari for web events");
   assert(console_event_subsystem({ ...base_event, surface: "workspace" }) === "Finder", "Console subsystem should use Finder for workspace events");
   assert(console_event_subsystem({ ...base_event, surface: "editor" }) === "Code", "Console subsystem should use Code for editor events");
+}
+
+function verify_activity_monitor_process_metrics() {
+  assert(activity_pid_label("task-one") === activity_pid_label("task-one"), "Activity Monitor PID should be deterministic");
+  assert(activity_pid_label("task-one") !== activity_pid_label("task-two"), "Activity Monitor PID should vary per process id");
+  assert(activity_cpu_label("running", 0) === "12.0", `running task CPU should start at 12.0, got ${activity_cpu_label("running", 0)}`);
+  assert(activity_cpu_label("waiting", 2) === "1.2", `waiting task CPU should stay low, got ${activity_cpu_label("waiting", 2)}`);
+  assert(activity_cpu_label("done", 1) === "0.0", `completed task CPU should be idle, got ${activity_cpu_label("done", 1)}`);
+  const active_load = activity_cpu_load(2, 0);
+  assert(active_load.total > active_load.system, "Activity Monitor total CPU should include system and user load");
+  assert(active_load.total <= 96, `Activity Monitor total CPU should be capped, got ${active_load.total}`);
+  const idle_load = activity_cpu_load(0, 2);
+  assert(idle_load.total < active_load.total, "Activity Monitor idle CPU should be lower than active CPU");
 }
 
 function verify_completed_manifest_keeps_terminal_window_identity(now) {

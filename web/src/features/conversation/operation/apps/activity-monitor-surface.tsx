@@ -20,7 +20,11 @@ import type {
   OperationPhase,
 } from "../operation-types";
 import { PHASE_LABELS } from "../operation-tool-catalog";
-import { DocumentPreview } from "./document-preview-surface";
+import {
+  activity_cpu_label,
+  activity_cpu_load,
+  activity_pid_label,
+} from "./activity-monitor-data";
 
 const PHASE_LABEL: Record<OperationPhase, string> = {
   queued: "排队中",
@@ -50,7 +54,8 @@ export function ActivityMonitorSurface({
   const preview_value = lines.join("\n") || event.result_preview || event.input_preview || event.summary;
   const finished_count = task_events.filter((item) => item.phase === "done").length;
   const running_count = task_events.filter((item) => item.phase === "running" || item.phase === "waiting").length;
-  const cpu_load = cpu_load_for_activity(running_count, finished_count);
+  const cpu_load = activity_cpu_load(running_count, finished_count);
+  const active_step = steps[active_index] ?? steps[0];
 
   return (
     <div className="flex h-full min-h-[320px] min-w-0 max-w-full overflow-hidden bg-[#f7f9fb] max-md:flex-col">
@@ -86,8 +91,8 @@ export function ActivityMonitorSurface({
           {steps.map((step, index) => {
             const Icon = icon_for_task_phase(step.event.phase);
             const active = index === active_index;
-            const pid_label = task_pid_label(step.event.id);
-            const cpu_label = task_cpu_label(step.event.phase, index);
+            const pid_label = activity_pid_label(step.event.id);
+            const cpu_label = activity_cpu_label(step.event.phase, index);
             return (
               <div
                 className={cn(
@@ -145,13 +150,11 @@ export function ActivityMonitorSurface({
           </div>
         </div>
       </section>
-      <section className="min-h-0 min-w-0 flex-1">
-        <DocumentPreview
-          summary={event.summary ?? event.title}
-          target="task-output.md"
-          value={preview_value}
-        />
-      </section>
+      <ActivityProcessInspector
+        active_index={active_index}
+        preview_value={preview_value}
+        step={active_step}
+      />
     </div>
   );
 }
@@ -177,20 +180,6 @@ function collect_task_events(
   return events
     .sort((a, b) => (a.started_at ?? a.updated_at) - (b.started_at ?? b.updated_at))
     .slice(-8);
-}
-
-function cpu_load_for_activity(running_count: number, finished_count: number): {
-  system: number;
-  total: number;
-  user: number;
-} {
-  const user = Math.min(72, running_count ? 18 + running_count * 14 : Math.max(3, finished_count * 2));
-  const system = Math.min(24, running_count ? 7 + running_count * 3 : 2);
-  return {
-    system,
-    total: Math.min(96, user + system),
-    user,
-  };
 }
 
 function ActivityMonitorButton({
@@ -219,30 +208,6 @@ function ActivityMonitorButton({
   );
 }
 
-function task_pid_label(id: string): string {
-  let hash = 0;
-  for (let index = 0; index < id.length; index += 1) {
-    hash = (hash * 33 + id.charCodeAt(index)) >>> 0;
-  }
-  return String(120 + (hash % 8800));
-}
-
-function task_cpu_label(phase: OperationPhase, index: number): string {
-  if (phase === "running") {
-    return `${(12 + index * 3.7).toFixed(1)}`;
-  }
-  if (phase === "waiting") {
-    return "1.2";
-  }
-  if (phase === "done") {
-    return "0.0";
-  }
-  if (phase === "error" || phase === "cancelled") {
-    return "0.1";
-  }
-  return "0.0";
-}
-
 function icon_for_task_phase(phase: OperationPhase): LucideIcon {
   if (phase === "done") {
     return CheckCircle2;
@@ -257,4 +222,92 @@ function icon_for_task_phase(phase: OperationPhase): LucideIcon {
     return AlertTriangle;
   }
   return Clock3;
+}
+
+function ActivityProcessInspector({
+  active_index,
+  preview_value,
+  step,
+}: {
+  active_index: number;
+  preview_value: unknown;
+  step?: { event: NexusOperationEvent; label: string; status: string };
+}) {
+  if (!step) {
+    return (
+      <section className="grid min-h-0 min-w-0 flex-1 place-items-center bg-white/74 text-[12px] text-(--text-soft)">
+        没有活动进程
+      </section>
+    );
+  }
+
+  const output_lines = format_process_output(preview_value);
+  const cpu_label = activity_cpu_label(step.event.phase, active_index);
+  const pid_label = activity_pid_label(step.event.id);
+
+  return (
+    <section className="soft-scrollbar min-h-0 min-w-0 flex-1 overflow-auto bg-white/74 p-4">
+      <div className="mb-4 flex items-start justify-between gap-3 border-b border-(--divider-subtle-color) pb-3">
+        <div className="min-w-0">
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">进程检查器</p>
+          <h3 className="mt-1 truncate text-[15px] font-black tracking-[-0.03em] text-(--text-strong)">
+            {step.label}
+          </h3>
+          <p className="mt-1 truncate text-[11px] text-(--text-soft)">
+            PID {pid_label} · {step.status}
+          </p>
+        </div>
+        <span className={cn(
+          "shrink-0 rounded-[9px] px-2.5 py-1 text-[10px] font-black",
+          step.event.phase === "running" || step.event.phase === "waiting"
+            ? "bg-[rgba(91,114,255,0.10)] text-[color:var(--primary)]"
+            : "bg-white/70 text-(--text-soft)",
+        )}>
+          {cpu_label}% CPU
+        </span>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 text-[10px] max-sm:grid-cols-1">
+        <ActivityDetailTile label="状态" value={PHASE_LABELS[step.event.phase]} />
+        <ActivityDetailTile label="更新" value={format_operation_time(step.event.updated_at)} />
+        <ActivityDetailTile label="来源" value={step.event.tool_name ?? step.event.surface} />
+      </div>
+
+      <div className="mt-4 overflow-hidden rounded-[13px] border border-(--divider-subtle-color) bg-[#101820] p-3 font-mono text-[11px] leading-5 text-[#dce8ee]">
+        <div className="mb-2 flex items-center justify-between border-b border-white/10 pb-2 text-[10px] text-[#8aa0ad]">
+          <span>输出</span>
+          <span>{output_lines.length} 行</span>
+        </div>
+        {(output_lines.length ? output_lines : ["等待进程输出..."]).map((line, index) => (
+          <div className="flex min-w-0 gap-2" key={`${index}:${line}`}>
+            <span className="w-6 shrink-0 select-none text-right text-[#6f8190]">{index + 1}</span>
+            <span className="min-w-0 whitespace-pre-wrap break-words">{line}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ActivityDetailTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-[11px] border border-(--divider-subtle-color) bg-white/68 px-2.5 py-2">
+      <p className="text-[9px] font-black uppercase tracking-[0.12em] text-(--text-soft)">{label}</p>
+      <p className="mt-1 truncate font-mono text-[10px] font-black text-(--text-strong)" title={value}>{value}</p>
+    </div>
+  );
+}
+
+function format_process_output(value: unknown): string[] {
+  if (value == null) {
+    return [];
+  }
+  const text = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+  return text
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .filter((line) => line.trim())
+    .slice(0, 12);
 }
