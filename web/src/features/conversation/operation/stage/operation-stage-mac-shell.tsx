@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import type { StageWindowKind, StageWindowState } from "../operation-desktop-types";
 import { basename } from "../operation-scene-planner-helpers";
 import {
+  icon_for_artifact_path,
   icon_for_window_kind,
   stage_app_label_for_window_kind,
 } from "./operation-stage-window-meta";
@@ -76,7 +77,7 @@ function menu_items_for_window_kind(kind: StageWindowKind | null): string[] {
     return ["显示", "窗口", "进程", "帮助"];
   }
   if (kind === "run_manifest" || kind === "evidence") {
-    return ["文件", "编辑", "显示", "操作", "窗口", "帮助"];
+    return ["文件", "编辑", "显示", "窗口", "帮助"];
   }
   if (
     kind === "code_editor" ||
@@ -100,8 +101,8 @@ export function StageDesktopIcons({
   windows: StageWindowState[];
 }) {
   const desktop_items = windows
-    .filter((window) => window.kind !== "runtime_handoff" && window.kind !== "evidence")
-    .slice(0, 4);
+    .filter(is_desktop_artifact_window)
+    .slice(0, 5);
 
   if (!desktop_items.length) {
     return null;
@@ -110,7 +111,8 @@ export function StageDesktopIcons({
   return (
     <div className="absolute right-6 top-16 z-10 hidden grid-cols-1 gap-4 md:grid">
       {desktop_items.map((window) => {
-        const Icon = icon_for_window_kind(window.kind);
+        const target = window.target ?? window.payload.target ?? "";
+        const Icon = window.kind === "browser" ? icon_for_window_kind(window.kind) : icon_for_artifact_path(target);
         const app_label = stage_app_label_for_window_kind(window.kind);
         const display_name = desktop_icon_label(window);
         const state_label = window.phase === "closed"
@@ -126,7 +128,7 @@ export function StageDesktopIcons({
             className="group flex w-[92px] flex-col items-center gap-1.5 text-center outline-none"
             key={window.id}
             onClick={() => on_restore(window.id)}
-            title={`${app_label} · ${display_name} · ${state_label}`}
+            title={`${display_name} · 用 ${app_label} 打开 · ${state_label}`}
             type="button"
           >
             <div className={cn(
@@ -153,6 +155,25 @@ export function StageDesktopIcons({
         );
       })}
     </div>
+  );
+}
+
+function is_desktop_artifact_window(window: StageWindowState): boolean {
+  const target = window.target ?? window.payload.target;
+  if (!target || basename(target) === "preview") {
+    return false;
+  }
+  if (window.kind === "browser") {
+    return true;
+  }
+  return (
+    window.kind === "finder" ||
+    window.kind === "code_editor" ||
+    window.kind === "markdown_reader" ||
+    window.kind === "word_reader" ||
+    window.kind === "pdf_reader" ||
+    window.kind === "spreadsheet" ||
+    window.kind === "image_viewer"
   );
 }
 
