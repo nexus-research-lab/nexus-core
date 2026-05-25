@@ -220,20 +220,27 @@ export function OperationStageDesktop({
 
   const restore_window = (window_id: string) => {
     set_focused_window_id(window_id);
+    const restore_token = Date.now();
     set_window_overrides((current) => ({
       ...current,
       [window_id]: {
         ...current[window_id],
         closed: false,
         minimized: false,
+        restore_token,
       },
     }));
   };
 
   const restore_all_windows = () => {
     set_focused_window_id(desktop_active_window_id ?? desktop_windows[0]?.id ?? null);
+    const restore_token = Date.now();
     set_window_overrides(Object.fromEntries(
-      desktop_windows.map((window) => [window.id, { closed: false, minimized: false }]),
+      desktop_windows.map((window, index) => [window.id, {
+        closed: false,
+        minimized: false,
+        restore_token: restore_token + index,
+      }]),
     ));
   };
 
@@ -291,6 +298,7 @@ export function OperationStageDesktop({
             position_class_name={is_maximized
               ? "left-[4%] top-[8%] h-[78%] w-[92%]"
               : position_for_window(window, narrative.phase)}
+            restore_token={window_overrides[window.id]?.restore_token}
             title={window.title}
             tone={window.kind === "terminal" ? "terminal" : "default"}
             z_index={is_active ? 44 : 8 + index}

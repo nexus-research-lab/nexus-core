@@ -19,6 +19,7 @@ interface OperationStageWindowProps {
   drag_offset?: { x: number; y: number };
   mobile_hidden?: boolean;
   content_mode?: "flush" | "inset";
+  restore_token?: number;
   z_index?: number;
   tone?: "default" | "terminal";
   on_close?: () => void;
@@ -42,6 +43,7 @@ export function OperationStageWindow({
   drag_offset = { x: 0, y: 0 },
   mobile_hidden = false,
   content_mode = "inset",
+  restore_token,
   z_index,
   tone = "default",
   on_close,
@@ -59,6 +61,7 @@ export function OperationStageWindow({
   } | null>(null);
   const cleanup_mouse_drag_ref = useRef<(() => void) | null>(null);
   const [is_dragging, set_is_dragging] = useState(false);
+  const [is_restoring, set_is_restoring] = useState(false);
 
   const start_drag = (
     event: PointerEvent<HTMLDivElement> | MouseEvent<HTMLDivElement>,
@@ -135,6 +138,15 @@ export function OperationStageWindow({
     };
   }, []);
 
+  useEffect(() => {
+    if (!restore_token) {
+      return;
+    }
+    set_is_restoring(true);
+    const timeout = window.setTimeout(() => set_is_restoring(false), 360);
+    return () => window.clearTimeout(timeout);
+  }, [restore_token]);
+
   const move_drag = (event: PointerEvent<HTMLDivElement>) => {
     const drag_state = drag_state_ref.current;
     if (!drag_state || drag_state.pointer_id !== event.pointerId) {
@@ -171,6 +183,7 @@ export function OperationStageWindow({
         maximized && "operation-stage-window-maximized rounded-[18px]",
         dimmed && "opacity-[0.62] saturate-[0.82]",
         is_dragging && "operation-stage-window-dragging select-none",
+        is_restoring && "operation-stage-window-restoring",
         minimized && "min-h-0",
         mobile_hidden && "max-md:hidden",
         position_class_name,

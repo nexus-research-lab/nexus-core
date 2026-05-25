@@ -9,6 +9,7 @@ export interface StageWindowOverride {
   minimized?: boolean;
   offset_x?: number;
   offset_y?: number;
+  restore_token?: number;
 }
 
 export type StageNarrativePhase = "awakening" | "running" | "settling" | "completed";
