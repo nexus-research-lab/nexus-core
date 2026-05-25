@@ -24,7 +24,7 @@ export function fallback_stage_event_object_label(
     return "等待第一个应用窗口";
   }
   if (event.kind === "round_summary" || event.surface === "summary") {
-    return surface_label === "控制台" ? "执行记录" : "本轮摘要";
+    return surface_label === "控制台" ? "控制台日志" : "本轮摘要";
   }
   return event.tool_name ?? `${surface_label ?? "Nexus"}窗口`;
 }
@@ -34,7 +34,7 @@ export function fallback_stage_event_target_label(
   surface_label?: string,
 ): string {
   if (event.kind === "round_summary" || event.surface === "summary") {
-    return surface_label === "控制台" ? "本轮摘要" : "执行摘要";
+    return surface_label === "控制台" ? "本轮日志" : "执行摘要";
   }
   return "等待应用输入";
 }

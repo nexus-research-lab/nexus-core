@@ -75,6 +75,7 @@ copyFileSync(join(operation_dir, "apps/file-preview-value.js"), join(operation_d
 copyFileSync(join(operation_dir, "apps/browser-result-items.js"), join(operation_dir, "apps/browser-result-items"));
 copyFileSync(join(operation_dir, "apps/finder-item-details.js"), join(operation_dir, "apps/finder-item-details"));
 copyFileSync(join(operation_dir, "apps/run-manifest-console.js"), join(operation_dir, "apps/run-manifest-console"));
+copyFileSync(join(operation_dir, "apps/run-manifest-sources.js"), join(operation_dir, "apps/run-manifest-sources"));
 copyFileSync(join(operation_dir, "apps/activity-monitor-data.js"), join(operation_dir, "apps/activity-monitor-data"));
 
 const { project_operation_snapshot } = await import(pathToFileURL(join(operation_dir, "operation-projector.js")));
@@ -148,6 +149,9 @@ const {
   console_event_level,
   console_event_subsystem,
 } = await import(pathToFileURL(join(operation_dir, "apps/run-manifest-console.js")));
+const {
+  collect_manifest_log_sources,
+} = await import(pathToFileURL(join(operation_dir, "apps/run-manifest-sources.js")));
 const {
   activity_cpu_label,
   activity_cpu_load,
@@ -976,6 +980,7 @@ function verify_workspace_live_stays_in_tool_round(now) {
   assert(desktop.active_window_id?.includes(":run-manifest"), `completed stage should focus run manifest, got ${desktop.active_window_id}`);
   const manifest_window = desktop.windows.find((window) => window.kind === "run_manifest");
   assert(manifest_window, "completed stage should render a run manifest window");
+  assert(manifest_window.title === "Nexus Console", `completed manifest should use Console window title, got ${manifest_window.title}`);
   assert(manifest_window.payload.handoff_summary?.status_label === "可继续", `completed manifest should expose handoff summary, got ${manifest_window.payload.handoff_summary?.status_label}`);
   assert(manifest_window.payload.handoff_summary?.resume_prompt.includes("gomoku.html"), "handoff resume prompt should point to current artifact");
   assert(!manifest_window.payload.handoff_summary?.resume_prompt.includes("stale-session.md"), "handoff resume prompt should not reference stale workspace artifact");
@@ -1354,6 +1359,17 @@ function verify_console_events_use_mac_app_subsystems(now) {
   assert(console_event_subsystem({ ...base_event, surface: "web" }) === "Safari", "Console subsystem should use Safari for web events");
   assert(console_event_subsystem({ ...base_event, surface: "workspace" }) === "Finder", "Console subsystem should use Finder for workspace events");
   assert(console_event_subsystem({ ...base_event, surface: "editor" }) === "Code", "Console subsystem should use Code for editor events");
+
+  const sources = collect_manifest_log_sources([
+    { ...base_event, id: "terminal", surface: "terminal" },
+    { ...base_event, id: "web", surface: "web" },
+    { ...base_event, id: "editor", surface: "editor" },
+  ]);
+  assert(sources[0]?.label === "这台 Mac", `Console source list should begin with this Mac, got ${sources[0]?.label}`);
+  assert(sources.some((source) => source.label === "Nexus" && source.count === 3), "Console source list should include Nexus desktop source");
+  assert(sources.some((source) => source.label === "Terminal"), "Console source list should include Terminal source");
+  assert(sources.some((source) => source.label === "Safari"), "Console source list should include Safari source");
+  assert(sources.some((source) => source.label === "Code"), "Console source list should include Code source");
 }
 
 function verify_activity_monitor_process_metrics() {

@@ -1,6 +1,8 @@
 import {
   AlertTriangle,
+  Bookmark,
   CheckCircle2,
+  HardDrive,
   Filter,
   Search,
   Trash2,
@@ -21,7 +23,7 @@ import {
   display_stage_event_title,
 } from "../operation-stage-labels";
 import { resolve_operation_tool_profile } from "../operation-tool-catalog";
-import { ACTION_ICON, ACTION_TONE_CLASS } from "./operation-action-style";
+import { ACTION_ICON } from "./operation-action-style";
 import {
   console_event_level,
   console_event_subsystem,
@@ -34,6 +36,7 @@ import {
   icon_for_manifest_artifact,
   PHASE_LABEL,
 } from "./run-manifest-data";
+import { collect_manifest_log_sources } from "./run-manifest-sources";
 
 export function RunManifestSurface({
   event,
@@ -59,10 +62,11 @@ export function RunManifestSurface({
   const completed_count = manifest_events.filter((item) => item.phase === "done").length;
   const duration = format_manifest_duration(manifest_events);
   const result_text = extract_manifest_result_text(event);
+  const log_sources = collect_manifest_log_sources(manifest_events);
 
   return (
     <div className="flex h-full min-h-[330px] min-w-0 overflow-hidden bg-[#f6f8fb] text-(--text-default) max-md:flex-col">
-      <aside className="soft-scrollbar flex w-[210px] shrink-0 flex-col overflow-auto border-r border-(--divider-subtle-color) bg-white/58 p-2.5 max-md:w-full max-md:border-b max-md:border-r-0">
+      <aside className="soft-scrollbar flex w-[220px] shrink-0 flex-col overflow-auto border-r border-(--divider-subtle-color) bg-white/62 p-2.5 max-md:w-full max-md:border-b max-md:border-r-0">
         <div className="mb-2 flex items-center gap-2 px-1.5 py-1">
           <span className={cn(
             "grid h-7 w-7 shrink-0 place-items-center rounded-[9px]",
@@ -71,21 +75,24 @@ export function RunManifestSurface({
             {failed_count ? <AlertTriangle className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
           </span>
           <div className="min-w-0">
-            <p className="truncate text-[11px] font-black text-(--text-strong)">控制台</p>
-            <p className="truncate text-[9.5px] text-(--text-soft)">round {event.round_id}</p>
+            <p className="truncate text-[11px] font-black text-(--text-strong)">Nexus Console</p>
+            <p className="truncate text-[9.5px] text-(--text-soft)">这台 Mac · round {event.round_id}</p>
           </div>
         </div>
 
-        <ManifestActionMap events={manifest_events} />
+        <ManifestSourceList sources={log_sources} />
 
-        <div className="mt-2 space-y-1 rounded-[10px] bg-white/58 p-1.5 text-[10px]">
+        <div className="mt-2 space-y-1 rounded-[10px] border border-white/52 bg-white/42 p-1.5 text-[10px]">
           <ManifestSidebarRow label="事件" value={manifest_events.length} />
           <ManifestSidebarRow label="完成" value={`${completed_count}/${manifest_events.length}`} />
           <ManifestSidebarRow label="命令" value={terminal_events.length} />
           <ManifestSidebarRow label="耗时" value={duration} />
         </div>
 
-        <div className="mt-3 px-1 text-[9px] font-black uppercase tracking-[0.12em] text-(--text-soft)">产物</div>
+        <div className="mt-3 flex items-center gap-1.5 px-1 text-[9px] font-black uppercase tracking-[0.12em] text-(--text-soft)">
+          <Bookmark className="h-3 w-3" />
+          <span>书签</span>
+        </div>
         <div className="mt-1.5 space-y-1.5">
             {(artifacts.length ? artifacts : [{
               id: "context-only",
@@ -133,7 +140,7 @@ export function RunManifestSurface({
           </div>
           <div className="flex min-w-0 items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="truncate text-[12px] font-black text-(--text-strong)">所有消息</p>
+            <p className="truncate text-[12px] font-black text-(--text-strong)">所有消息 · Nexus</p>
             <p className="truncate text-[10px] text-(--text-soft)">
               {result_text || event.summary || handoff_summary?.resume_prompt || "执行日志已保留，可用于回放。"}
             </p>
@@ -272,70 +279,47 @@ function ManifestEventIOPill({ label, value }: { label: string; value: string })
   );
 }
 
-function ManifestActionMap({ events }: { events: NexusOperationEvent[] }) {
-  const groups = collect_manifest_action_groups(events);
-
-  if (!groups.length) {
+function ManifestSourceList({ sources }: { sources: ReturnType<typeof collect_manifest_log_sources> }) {
+  if (!sources.length) {
     return null;
   }
 
   return (
-    <section className="rounded-[10px] bg-white/58 p-1.5">
+    <section className="rounded-[10px] border border-white/52 bg-white/42 p-1.5">
       <div className="mb-1 flex items-center justify-between gap-2 px-1 text-[9px] font-black uppercase tracking-[0.12em] text-(--text-soft)">
-        <span>来源</span>
-        <span>{groups.length}</span>
+        <span>日志源</span>
+        <span>{sources.length}</span>
       </div>
       <div className="space-y-1">
-        {groups.map((group) => {
-          const Icon = ACTION_ICON[group.action];
-          return (
-            <div
-              className={cn(
-                "min-w-0 rounded-[8px] border px-2 py-1.5",
-                ACTION_TONE_CLASS[group.action],
-              )}
-              key={group.action}
-              title={group.title}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="flex min-w-0 items-center gap-1.5">
-                  <Icon className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate text-[10px] font-black">{group.label}</span>
-                </span>
-                <span className="shrink-0 text-[10px] font-black">{group.count}</span>
-              </div>
-            </div>
-          );
-        })}
+        {sources.map((source, index) => (
+          <button
+            aria-label={`查看日志源 ${source.label}`}
+            className={cn(
+              "flex w-full min-w-0 items-center gap-2 rounded-[8px] px-2 py-1.5 text-left transition hover:bg-white/62 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.32)]",
+              index === 0 && "bg-[rgba(91,114,255,0.09)] text-[color:var(--primary)]",
+            )}
+            key={source.id}
+            type="button"
+          >
+            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-[8px] bg-white/58 text-(--icon-muted)">
+              <HardDrive className="h-3.5 w-3.5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-[10px] font-black text-(--text-strong)">
+                {source.label}
+              </span>
+              <span className="block truncate text-[9px] text-(--text-soft)">
+                {source.detail}
+              </span>
+            </span>
+            <span className="shrink-0 rounded-[7px] bg-white/58 px-1.5 py-0.5 font-mono text-[9px] font-black text-(--text-soft)">
+              {source.count}
+            </span>
+          </button>
+        ))}
       </div>
     </section>
   );
-}
-
-function collect_manifest_action_groups(events: NexusOperationEvent[]) {
-  const groups = new Map<string, {
-    action: ReturnType<typeof resolve_operation_tool_profile>["action"];
-    count: number;
-    label: string;
-    title: string;
-  }>();
-
-  for (const event of events) {
-    const profile = resolve_operation_tool_profile(event.tool_name, event.kind, event.surface);
-    const existing = groups.get(profile.action);
-    if (existing) {
-      existing.count += 1;
-      continue;
-    }
-    groups.set(profile.action, {
-      action: profile.action,
-      count: 1,
-      label: profile.action_label,
-      title: profile.title,
-    });
-  }
-
-  return [...groups.values()].sort((left, right) => right.count - left.count || left.label.localeCompare(right.label));
 }
 
 function format_console_time(timestamp: number): string {

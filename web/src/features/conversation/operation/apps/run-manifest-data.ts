@@ -230,7 +230,7 @@ function evidence_type_label(type: OperationEvidence["type"]): string {
   if (type === "error") {
     return "错误报告";
   }
-  return "执行记录";
+  return "日志记录";
 }
 
 function icon_for_file_path(value: string): LucideIcon {
