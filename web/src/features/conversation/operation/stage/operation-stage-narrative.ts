@@ -142,10 +142,10 @@ export function build_stage_narrative(
   if (phase === "awakening") {
     return {
       phase: "awakening",
-      label: event.surface === "conversation" ? "运行接入" : "唤醒工作台",
+      label: event.surface === "conversation" ? "Nexus 桌面" : "唤醒桌面",
       detail: event.surface === "conversation"
-        ? "Nexus 桌面正在接入运行时，等待第一个工具窗口打开"
-        : "Nexus 桌面正在展开为执行现场",
+        ? "桌面已唤醒，等待第一个应用窗口打开"
+        : "Nexus 桌面正在展开为工作现场",
     };
   }
   if (event.phase === "waiting") {
@@ -159,14 +159,14 @@ export function build_stage_narrative(
     if (event.surface === "conversation") {
       return {
         phase: "running",
-        label: "运行接入",
-        detail: "运行时正在装载上下文，等待第一个工具事件",
+        label: "桌面待命",
+        detail: "Nexus 桌面保持空场，等待第一个工具打开应用窗口",
       };
     }
     return {
       phase: "running",
       label: "现场执行",
-      detail: `${events.length} 个工具动作正在形成工作台轨迹`,
+      detail: `${events.length} 个工具动作正在形成桌面轨迹`,
     };
   }
   if (
@@ -176,7 +176,7 @@ export function build_stage_narrative(
     return {
       phase,
       label: phase === "completed" ? "完成沉淀" : "结果落盘",
-      detail: "工具窗口已收束为可回看的执行现场",
+      detail: "应用窗口已收束为可回看的桌面现场",
     };
   }
   return {

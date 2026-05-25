@@ -938,6 +938,8 @@ function verify_live_round_placeholder(now) {
   assert(snapshot.active_event?.id === "live-round:round-live", "live round without tool events should create a placeholder event");
   assert(snapshot.active_event?.phase === "running", `live round placeholder should be running, got ${snapshot.active_event?.phase}`);
   assert(snapshot.active_event?.surface === "conversation", `live round placeholder should use conversation surface, got ${snapshot.active_event?.surface}`);
+  assert(snapshot.active_event?.title === "桌面待命", `live round placeholder should read as a desktop idle state, got ${snapshot.active_event?.title}`);
+  assert(snapshot.active_event?.target === "等待第一个应用窗口", `live round placeholder should wait for the first app window, got ${snapshot.active_event?.target}`);
   const desktop = plan_operation_desktop({
     event: snapshot.active_event,
     snapshot,

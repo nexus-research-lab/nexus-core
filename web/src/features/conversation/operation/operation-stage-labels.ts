@@ -21,7 +21,7 @@ export function fallback_stage_event_object_label(
   surface_label?: string,
 ): string {
   if (!event) {
-    return "等待第一个工具事件";
+    return "等待第一个应用窗口";
   }
   if (event.kind === "round_summary" || event.surface === "summary") {
     return surface_label === "控制台" ? "执行记录" : "本轮摘要";

@@ -166,25 +166,25 @@ export function build_operation_live_episode(
 
   return {
     status_label: is_queued
-      ? "工作台唤醒"
+      ? "桌面唤醒"
       : is_waiting
         ? "等待确认"
         : is_api_retry
           ? "API 重试中"
           : is_handoff
-            ? "运行接入"
+            ? "桌面待命"
             : "现场执行",
     status_detail: is_queued
-      ? "字符场正在展开为第一层工作现场。"
+      ? "字符场正在展开为第一层桌面。"
       : is_waiting
         ? "当前工具停在权限检查点，确认后会继续回到执行现场。"
         : is_api_retry
-          ? "模型 API 暂未返回可执行事件，运行时正在重试并保留现场。"
+          ? "模型 API 暂未返回可执行事件，Nexus 桌面正在保留现场。"
           : is_handoff
-            ? "nexus 初始场正在让位给运行时接入，等待第一个工具调用形成窗口。"
+            ? "Nexus 桌面保持空场，等待第一个工具打开应用窗口。"
           : is_terminal
             ? "命令窗口正在接收真实 stdout、stderr 和退出状态。"
-            : "当前工具窗口已成为焦点，前序步骤沉淀在工作台轨迹里。",
+            : "当前应用窗口已成为焦点，前序步骤沉淀在桌面轨迹里。",
     active_index,
     total_count: ordered_events.length,
     settled_count,
@@ -192,7 +192,7 @@ export function build_operation_live_episode(
     active_target,
     previous_label: previous_event
       ? `${previous_event.tool_name ?? previous_event.title} · ${previous_event.target ?? previous_event.summary ?? "已沉淀"}`
-      : "从 nexus 初始场进入",
+      : "从 Nexus 桌面进入",
     next_label: is_waiting
       ? "等待用户确认后继续执行"
       : is_terminal
@@ -200,13 +200,13 @@ export function build_operation_live_episode(
         : is_api_retry
           ? "等待模型响应恢复或返回错误"
         : is_handoff
-          ? "等待第一个工具调用"
+          ? "等待第一个应用窗口"
           : "等待下一个工具事件或本轮收束",
     progress_label: `${active_index + 1}/${ordered_events.length}`,
     checkpoints: [
       {
         label: "上一步",
-        value: previous_event ? "沉淀" : "初始场",
+        value: previous_event ? "沉淀" : "桌面",
         tone: previous_event ? "success" : "neutral",
       },
       {

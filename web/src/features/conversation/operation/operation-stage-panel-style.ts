@@ -62,7 +62,7 @@ export const SURFACE_META: Record<OperationSurface, SurfaceMeta> = {
     accent_class_name: "from-[rgba(223,157,46,0.2)] via-[rgba(91,114,255,0.1)] to-transparent",
   },
   conversation: {
-    label: "运行时",
+    label: "Nexus",
     Icon: MessageSquare,
     accent_class_name: "from-[rgba(91,114,255,0.2)] via-[rgba(255,255,255,0.08)] to-transparent",
   },

@@ -38,7 +38,7 @@ export function StageWindowsHiddenState({
     window.phase === "minimized" || window.phase === "closed"
   ));
   const has_only_minimized_windows = minimized_count > 0 && closed_count === 0;
-  const title = has_only_minimized_windows ? "桌面" : "调度中心";
+  const title = has_only_minimized_windows ? "桌面" : "Mission Control";
   const detail = has_only_minimized_windows
     ? `${minimized_count} 个窗口已收进 Dock。`
     : minimized_count > 0

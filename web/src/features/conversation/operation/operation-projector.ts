@@ -228,10 +228,10 @@ function project_system_event({
   const is_api_retry = subtype === "api_retry";
   const title = is_api_retry
     ? block.label || "API 正在重试"
-    : block.label || "运行接入中";
+    : block.label || "桌面待命";
   const target = is_api_retry
     ? block.content || "模型请求暂未成功，正在重试"
-    : block.content || "等待第一个工具事件";
+    : block.content || "等待第一个应用窗口";
 
   return {
     id: `${message.message_id}:system:${subtype}:${block.timestamp}`,
@@ -287,9 +287,9 @@ function project_live_round_placeholder({
     kind: "unknown",
     surface: "conversation",
     phase: "running",
-    title: "运行接入中",
-    target: "等待第一个工具事件",
-    summary: user_prompt || "模型正在建立上下文，还没有进入具体工具。",
+    title: "桌面待命",
+    target: "等待第一个应用窗口",
+    summary: user_prompt || "Nexus 桌面已打开，还没有进入具体工具。",
     input_preview: user_prompt ? { prompt: user_prompt } : null,
     evidence: [
       { type: "status", label: "round", value: "running" },

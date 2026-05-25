@@ -334,8 +334,8 @@ export function resolve_operation_tool_profile(
   if (kind === "unknown" && surface === "conversation") {
     return {
       action: "generic",
-      action_label: "运行时",
-      title: "运行接入",
+      action_label: "Nexus",
+      title: "桌面待命",
       kind: "unknown",
       surface: "conversation",
       target_keys: DEFAULT_TARGET_KEYS,
