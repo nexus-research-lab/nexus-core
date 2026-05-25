@@ -79,6 +79,7 @@ copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operati
 copyFileSync(join(operation_dir, "apps/operation-app-surface-policy.js"), join(operation_dir, "apps/operation-app-surface-policy"));
 copyFileSync(join(operation_dir, "apps/nexus-tool-session.js"), join(operation_dir, "apps/nexus-tool-session"));
 copyFileSync(join(operation_dir, "apps/file-preview-value.js"), join(operation_dir, "apps/file-preview-value"));
+copyFileSync(join(operation_dir, "apps/code-editor-session.js"), join(operation_dir, "apps/code-editor-session"));
 copyFileSync(join(operation_dir, "apps/browser-result-items.js"), join(operation_dir, "apps/browser-result-items"));
 copyFileSync(join(operation_dir, "apps/browser-session.js"), join(operation_dir, "apps/browser-session"));
 copyFileSync(join(operation_dir, "apps/finder-item-details.js"), join(operation_dir, "apps/finder-item-details"));
@@ -169,6 +170,9 @@ const {
   resolve_file_preview_value,
 } = await import(pathToFileURL(join(operation_dir, "apps/file-preview-value.js")));
 const {
+  build_code_editor_session_view,
+} = await import(pathToFileURL(join(operation_dir, "apps/code-editor-session.js")));
+const {
   build_browser_result_items,
 } = await import(pathToFileURL(join(operation_dir, "apps/browser-result-items.js")));
 const {
@@ -221,6 +225,7 @@ verify_stage_restore_merge_preserves_round_context(now);
 verify_workspace_live_stays_in_tool_round(now);
 verify_multi_file_windows_keep_event_identity(now);
 verify_extensionless_workspace_file_opens_code_app(now);
+verify_code_editor_session_view();
 verify_terminal_result_envelope(now);
 verify_terminal_entries_render_real_command_result(now);
 verify_browser_fallback_builds_search_results(now);
@@ -1376,6 +1381,27 @@ function verify_extensionless_workspace_file_opens_code_app(now) {
   assert(document_window, "extensionless workspace file should still open a document window");
   assert(document_window.kind === "code_editor", `extensionless workspace file should open in Code, got ${document_window.kind}`);
   assert(app_surface_for_window_kind(document_window.kind) === "document", "extensionless workspace file should render as document content");
+}
+
+function verify_code_editor_session_view() {
+  const ts_view = build_code_editor_session_view({
+    diff_stats: { additions: 3, deletions: 1 },
+    lines: ["export const answer = 42;"],
+    title: "stage-preview.tsx",
+  });
+  assert(ts_view.tab_title === "stage-preview.tsx", `Code tab should keep file title, got ${ts_view.tab_title}`);
+  assert(ts_view.extension_label === "TSX", `Code extension badge should use uppercase extension, got ${ts_view.extension_label}`);
+  assert(ts_view.language_label === "TypeScript React", `Code language should map tsx, got ${ts_view.language_label}`);
+  assert(ts_view.status_label.includes("+3 -1"), `Code status should include diff stats, got ${ts_view.status_label}`);
+  assert(ts_view.cursor_label === "Ln 1, Col 1", `Code cursor should track line count, got ${ts_view.cursor_label}`);
+
+  const text_view = build_code_editor_session_view({
+    lines: [],
+    title: "Makefile",
+  });
+  assert(!text_view.is_code, "Extensionless files should use plain text editor semantics");
+  assert(text_view.status_label.includes("Plain Text"), `Extensionless status should be plain text, got ${text_view.status_label}`);
+  assert(text_view.cursor_label === "Ln 1, Col 1", `Empty editor should still expose first line cursor, got ${text_view.cursor_label}`);
 }
 
 function verify_terminal_result_envelope(now) {

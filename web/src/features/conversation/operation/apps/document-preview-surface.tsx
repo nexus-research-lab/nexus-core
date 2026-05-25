@@ -15,6 +15,7 @@ import {
   detect_preview_kind,
   get_preview_lines,
 } from "../operation-preview";
+import { build_code_editor_session_view } from "./code-editor-session";
 
 export function DocumentPreview({
   target,
@@ -204,8 +205,7 @@ function EditorSurface({
   title: string;
   lines: string[];
 }) {
-  const extension = title.includes(".") ? title.slice(title.lastIndexOf(".") + 1).toUpperCase() : "TEXT";
-  const is_code = extension !== "TEXT";
+  const session = build_code_editor_session_view({ diff_stats, lines, title });
   return (
     <div className="flex h-full min-h-[240px] flex-col overflow-hidden bg-[#101820] text-[#dce8ee]">
       <div className="border-b border-white/10 bg-[#151f29]">
@@ -219,17 +219,17 @@ function EditorSurface({
             </EditorToolbarButton>
           </div>
           <div className="min-w-0 text-center">
-            <p className="truncate text-[11px] font-bold text-[#e7eef5]">{title}</p>
+            <p className="truncate text-[11px] font-bold text-[#e7eef5]">{session.tab_title}</p>
             <p className="truncate text-[9px] text-[#7f94a3]">{phase_label}</p>
           </div>
           <span className="shrink-0 rounded bg-white/[0.06] px-1.5 py-px text-[9px] font-bold text-[#8aa0ad]">
-            {extension}
+            {session.extension_label}
           </span>
         </div>
         <div className="flex min-w-0 items-end gap-1.5 px-3">
           <div className="flex min-w-0 max-w-[62%] items-center gap-1.5 rounded-t-[9px] border border-b-0 border-white/10 bg-[#101820] px-3 py-1.5 text-[10px] font-semibold text-[#dce8ee]">
-            {is_code ? <Braces className="h-3 w-3 shrink-0 text-[#8de0ad]" /> : <FileText className="h-3 w-3 shrink-0 text-[#8aa0ad]" />}
-            <span className="truncate">{title}</span>
+            {session.is_code ? <Braces className="h-3 w-3 shrink-0 text-[#8de0ad]" /> : <FileText className="h-3 w-3 shrink-0 text-[#8aa0ad]" />}
+            <span className="truncate">{session.tab_title}</span>
           </div>
         </div>
       </div>
@@ -266,8 +266,8 @@ function EditorSurface({
         </div>
       </div>
       <div className="flex min-w-0 items-center justify-between gap-3 border-t border-white/10 bg-[#0c141c] px-3 py-1.5 text-[10px] text-[#7f94a3]">
-        <span className="truncate">UTF-8 · Spaces: 2 · {is_code ? extension.toLowerCase() : "plain text"}</span>
-        <span className="shrink-0">Ln {Math.max(lines.length, 1)}, Col 1</span>
+        <span className="truncate">{session.status_label}</span>
+        <span className="shrink-0">{session.cursor_label}</span>
       </div>
     </div>
   );
