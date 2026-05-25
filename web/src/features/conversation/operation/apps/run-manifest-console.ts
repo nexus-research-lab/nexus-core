@@ -1,0 +1,36 @@
+import type { NexusOperationEvent } from "../operation-types";
+
+export function console_event_level(phase: NexusOperationEvent["phase"]): "ERROR" | "INFO" | "NOTICE" {
+  if (phase === "error" || phase === "cancelled") {
+    return "ERROR";
+  }
+  if (phase === "waiting" || phase === "queued") {
+    return "NOTICE";
+  }
+  return "INFO";
+}
+
+export function console_event_subsystem(event: NexusOperationEvent): string {
+  if (event.surface === "terminal") {
+    return "Terminal";
+  }
+  if (event.surface === "web") {
+    return "Safari";
+  }
+  if (event.surface === "workspace") {
+    return "Finder";
+  }
+  if (event.surface === "editor") {
+    return "Code";
+  }
+  if (event.surface === "summary") {
+    return "Console";
+  }
+  if (event.surface === "task") {
+    return "Activity Monitor";
+  }
+  if (event.surface === "knowledge") {
+    return "Preview";
+  }
+  return "Nexus";
+}

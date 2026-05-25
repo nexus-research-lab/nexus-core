@@ -56,6 +56,7 @@ copyFileSync(join(operation_dir, "operation-stage-labels.js"), join(operation_di
 copyFileSync(join(operation_dir, "operation-stage-experience.js"), join(operation_dir, "operation-stage-experience"));
 copyFileSync(join(operation_dir, "operation-terminal-lines.js"), join(operation_dir, "operation-terminal-lines"));
 copyFileSync(join(operation_dir, "operation-summary-events.js"), join(operation_dir, "operation-summary-events"));
+copyFileSync(join(operation_dir, "operation-event-io.js"), join(operation_dir, "operation-event-io"));
 mkdirSync(join(operation_dir, "stage"), { recursive: true });
 copyFileSync(join(operation_dir, "stage/operation-stage-window-kinds.js"), join(operation_dir, "stage/operation-stage-window-kinds"));
 mkdirSync(join(operation_dir, "apps"), { recursive: true });
@@ -63,6 +64,7 @@ copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operati
 copyFileSync(join(operation_dir, "apps/file-preview-value.js"), join(operation_dir, "apps/file-preview-value"));
 copyFileSync(join(operation_dir, "apps/browser-result-items.js"), join(operation_dir, "apps/browser-result-items"));
 copyFileSync(join(operation_dir, "apps/finder-item-details.js"), join(operation_dir, "apps/finder-item-details"));
+copyFileSync(join(operation_dir, "apps/run-manifest-console.js"), join(operation_dir, "apps/run-manifest-console"));
 
 const { project_operation_snapshot } = await import(pathToFileURL(join(operation_dir, "operation-projector.js")));
 const {
@@ -98,6 +100,10 @@ const {
   finder_preview_lines,
   resolve_finder_selected_item,
 } = await import(pathToFileURL(join(operation_dir, "apps/finder-item-details.js")));
+const {
+  console_event_level,
+  console_event_subsystem,
+} = await import(pathToFileURL(join(operation_dir, "apps/run-manifest-console.js")));
 const now = Date.now();
 
 verify_desktop_window_kind_contract();
@@ -113,6 +119,7 @@ verify_terminal_result_envelope(now);
 verify_terminal_entries_render_real_command_result(now);
 verify_browser_fallback_builds_search_results(now);
 verify_finder_details_reflect_selected_workspace_item(now);
+verify_console_events_use_mac_app_subsystems(now);
 verify_completed_manifest_keeps_terminal_window_identity(now);
 verify_completed_round_replay_uses_event_slice({
   assert,
@@ -937,6 +944,29 @@ function verify_finder_details_reflect_selected_workspace_item(now) {
   const preview_lines = finder_preview_lines(selected);
   assert(preview_lines.length === 3, `Finder preview should preserve non-empty live content lines, got ${preview_lines.length}`);
   assert(preview_lines[1].includes("Gomoku"), `Finder preview should include selected file content, got ${preview_lines[1]}`);
+}
+
+function verify_console_events_use_mac_app_subsystems(now) {
+  const base_event = {
+    id: "console-event",
+    session_key: "session:stage",
+    round_id: "round-console",
+    agent_id: "agent-stage",
+    message_id: "msg-console",
+    kind: "unknown",
+    surface: "summary",
+    phase: "done",
+    updated_at: now,
+  };
+
+  assert(console_event_level({ ...base_event, phase: "done" }.phase) === "INFO", "Console should map done events to INFO");
+  assert(console_event_level({ ...base_event, phase: "running" }.phase) === "INFO", "Console should map running events to INFO");
+  assert(console_event_level({ ...base_event, phase: "waiting" }.phase) === "NOTICE", "Console should map waiting events to NOTICE");
+  assert(console_event_level({ ...base_event, phase: "error" }.phase) === "ERROR", "Console should map error events to ERROR");
+  assert(console_event_subsystem({ ...base_event, surface: "terminal" }) === "Terminal", "Console subsystem should use Terminal for command events");
+  assert(console_event_subsystem({ ...base_event, surface: "web" }) === "Safari", "Console subsystem should use Safari for web events");
+  assert(console_event_subsystem({ ...base_event, surface: "workspace" }) === "Finder", "Console subsystem should use Finder for workspace events");
+  assert(console_event_subsystem({ ...base_event, surface: "editor" }) === "Code", "Console subsystem should use Code for editor events");
 }
 
 function verify_completed_manifest_keeps_terminal_window_identity(now) {

@@ -23,6 +23,10 @@ import {
 import { resolve_operation_tool_profile } from "../operation-tool-catalog";
 import { ACTION_ICON, ACTION_TONE_CLASS } from "./operation-action-style";
 import {
+  console_event_level,
+  console_event_subsystem,
+} from "./run-manifest-console";
+import {
   collect_manifest_artifacts,
   extract_manifest_event_output,
   extract_manifest_result_text,
@@ -155,6 +159,7 @@ export function RunManifestSurface({
               const output_label = extract_manifest_event_output(item);
               const event_title = display_stage_event_title(item, profile.action_label);
               const event_target = display_stage_event_target(item, profile.action_label);
+              const level_label = console_event_level(item.phase);
               return (
                 <button
                   aria-label={`查看执行步骤 ${index + 1}：${profile.action_label} ${event_title}`}
@@ -182,10 +187,10 @@ export function RunManifestSurface({
                         : "bg-[rgba(91,114,255,0.08)] text-[color:var(--primary)]",
                   )}>
                     <Icon className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{console_level_label(item.phase)}</span>
+                    <span className="truncate">{level_label}</span>
                   </span>
                   <span className="truncate text-[10px] font-semibold text-(--text-muted) max-md:hidden">
-                    {profile.action_label}
+                    {console_event_subsystem(item)}
                   </span>
                   <span className="min-w-0 text-[10.5px]">
                     <span className="block truncate font-black text-(--text-strong)">
@@ -331,19 +336,6 @@ function collect_manifest_action_groups(events: NexusOperationEvent[]) {
   }
 
   return [...groups.values()].sort((left, right) => right.count - left.count || left.label.localeCompare(right.label));
-}
-
-function console_level_label(phase: NexusOperationEvent["phase"]): string {
-  if (phase === "error" || phase === "cancelled") {
-    return "ERROR";
-  }
-  if (phase === "running") {
-    return "INFO";
-  }
-  if (phase === "waiting" || phase === "queued") {
-    return "NOTICE";
-  }
-  return "DEFAULT";
 }
 
 function format_console_time(timestamp: number): string {
