@@ -181,6 +181,20 @@ export function OperationStageMotionStyles() {
             nexus-operation-window-float 7.5s ease-in-out infinite;
         }
 
+        .operation-window-traffic-icon {
+          opacity: 0;
+          transform: scale(.72);
+          transition:
+            opacity 120ms ease,
+            transform 120ms ease;
+        }
+
+        .operation-window-traffic:hover .operation-window-traffic-icon,
+        .operation-window-traffic-button:focus-visible .operation-window-traffic-icon {
+          opacity: 1;
+          transform: scale(1);
+        }
+
         .operation-stage-narrative-settling .operation-stage-window,
         .operation-stage-narrative-completed .operation-stage-window {
           animation-duration: 420ms, 11s;
@@ -368,8 +382,10 @@ export function OperationStageMotionStyles() {
           .operation-materializing-signal,
           .operation-materializing-line,
           .operation-stage-director-cue,
-          .operation-stage-handoff-spotlight {
+          .operation-stage-handoff-spotlight,
+          .operation-window-traffic-icon {
             animation: none !important;
+            transition: none !important;
           }
         }
       `}

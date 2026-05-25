@@ -230,10 +230,10 @@ export function OperationStageWindow({
         onPointerMove={move_drag}
         onPointerUp={end_drag}
       >
-        <div className="flex items-center gap-1.5">
+        <div className="operation-window-traffic flex items-center gap-1.5">
           <button
             aria-label={`关闭 ${title}`}
-            className="grid h-4 w-4 place-items-center rounded-full border border-[rgba(223,93,98,0.26)] bg-[rgba(223,93,98,0.12)] transition hover:bg-[rgba(223,93,98,0.24)]"
+            className="operation-window-traffic-button grid h-4 w-4 place-items-center rounded-full border border-[rgba(223,93,98,0.26)] bg-[rgba(223,93,98,0.58)] transition hover:bg-[rgba(223,93,98,0.86)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(223,93,98,0.24)]"
             onMouseDown={(event) => event.stopPropagation()}
             onClick={(event) => {
               event.stopPropagation();
@@ -242,11 +242,11 @@ export function OperationStageWindow({
             title="关闭窗口"
             type="button"
           >
-            <X className="h-2.5 w-2.5" />
+            <X className="operation-window-traffic-icon h-2.5 w-2.5 text-[#6f2024]" />
           </button>
           <button
             aria-label={`最小化 ${title}`}
-            className="grid h-4 w-4 place-items-center rounded-full border border-[rgba(223,157,46,0.26)] bg-[rgba(223,157,46,0.12)] transition hover:bg-[rgba(223,157,46,0.24)]"
+            className="operation-window-traffic-button grid h-4 w-4 place-items-center rounded-full border border-[rgba(223,157,46,0.26)] bg-[rgba(223,157,46,0.62)] transition hover:bg-[rgba(223,157,46,0.88)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(223,157,46,0.24)]"
             onMouseDown={(event) => event.stopPropagation()}
             onClick={(event) => {
               event.stopPropagation();
@@ -255,11 +255,11 @@ export function OperationStageWindow({
             title="最小化窗口"
             type="button"
           >
-            <Minus className="h-2.5 w-2.5" />
+            <Minus className="operation-window-traffic-icon h-2.5 w-2.5 text-[#735018]" />
           </button>
           <button
             aria-label={`${maximized ? "还原" : "缩放"} ${title}`}
-            className="grid h-4 w-4 place-items-center rounded-full border border-[rgba(47,184,132,0.22)] bg-[rgba(47,184,132,0.11)] transition hover:bg-[rgba(47,184,132,0.22)]"
+            className="operation-window-traffic-button grid h-4 w-4 place-items-center rounded-full border border-[rgba(47,184,132,0.22)] bg-[rgba(47,184,132,0.58)] transition hover:bg-[rgba(47,184,132,0.84)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(47,184,132,0.24)]"
             onMouseDown={(event) => event.stopPropagation()}
             onClick={(event) => {
               event.stopPropagation();
@@ -269,9 +269,9 @@ export function OperationStageWindow({
             type="button"
           >
             {maximized ? (
-              <Minimize2 className="h-2.5 w-2.5" />
+              <Minimize2 className="operation-window-traffic-icon h-2.5 w-2.5 text-[#1d6048]" />
             ) : (
-              <Maximize2 className="h-2.5 w-2.5" />
+              <Maximize2 className="operation-window-traffic-icon h-2.5 w-2.5 text-[#1d6048]" />
             )}
           </button>
         </div>
