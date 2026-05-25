@@ -1,13 +1,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import { get_session_key_identity } from "@/lib/conversation/session-key";
 import { create_browser_json_storage } from "@/lib/storage/browser-storage";
-import {
-  get_agent_conversation_identity_key,
-  type AgentConversationIdentity,
-} from "@/types/agent/agent-conversation";
 
+export { build_operation_stage_key } from "./operation-stage-key";
 import type { NexusOperationSnapshot } from "./operation-types";
 
 const MAX_PERSISTED_STAGE_SNAPSHOTS = 12;
@@ -19,36 +15,6 @@ interface OperationStageStoreState {
   snapshots: Record<string, NexusOperationSnapshot>;
   set_snapshot: (key: string, snapshot: NexusOperationSnapshot) => void;
   clear_snapshot: (key: string) => void;
-}
-
-export function build_operation_stage_key(
-  identity: AgentConversationIdentity | null | undefined,
-): string | null {
-  if (!identity) {
-    return null;
-  }
-
-  const identity_key = get_agent_conversation_identity_key(identity);
-  if (identity_key) {
-    return identity_key;
-  }
-
-  const conversation_id = identity.conversation_id?.trim();
-  if (conversation_id) {
-    return `${identity.chat_type === "group" ? "room-conversation" : "dm-conversation"}:${conversation_id}`;
-  }
-
-  const room_session_id = identity.room_session_id?.trim();
-  if (room_session_id) {
-    return `room-session:${room_session_id}`;
-  }
-
-  const session_identity = get_session_key_identity(identity.session_key);
-  if (session_identity) {
-    return `session:${session_identity}`;
-  }
-
-  return null;
 }
 
 export const useOperationStageStore = create<OperationStageStoreState>()(

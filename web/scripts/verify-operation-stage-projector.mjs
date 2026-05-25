@@ -55,6 +55,7 @@ copyFileSync(join(operation_dir, "operation-scene-planner-helpers.js"), join(ope
 copyFileSync(join(operation_dir, "operation-scene-window-policy.js"), join(operation_dir, "operation-scene-window-policy"));
 copyFileSync(join(operation_dir, "operation-stage-labels.js"), join(operation_dir, "operation-stage-labels"));
 copyFileSync(join(operation_dir, "operation-stage-experience.js"), join(operation_dir, "operation-stage-experience"));
+copyFileSync(join(operation_dir, "operation-stage-key.js"), join(operation_dir, "operation-stage-key"));
 copyFileSync(join(operation_dir, "operation-terminal-lines.js"), join(operation_dir, "operation-terminal-lines"));
 copyFileSync(join(operation_dir, "operation-summary-events.js"), join(operation_dir, "operation-summary-events"));
 copyFileSync(join(operation_dir, "operation-event-io.js"), join(operation_dir, "operation-event-io"));
@@ -96,6 +97,9 @@ const {
   derive_operation_stage_experience_phase,
   merge_operation_stage_snapshots_for_restore,
 } = await import(pathToFileURL(join(operation_dir, "operation-stage-experience.js")));
+const {
+  build_operation_stage_key,
+} = await import(pathToFileURL(join(operation_dir, "operation-stage-key.js")));
 const {
   fallback_stage_event_object_label,
   fallback_stage_event_target_label,
@@ -207,6 +211,7 @@ verify_stage_window_titlebar_state();
 verify_stage_desktop_icon_items();
 verify_stage_minimized_window_tile();
 verify_stage_window_drag_model();
+verify_operation_stage_key_is_session_scoped();
 verify_stage_experience_state_machine(now);
 verify_live_episode_narrates_running_round(now);
 verify_api_retry_runtime_projection(now);
@@ -710,6 +715,27 @@ function verify_stage_window_drag_model() {
   assert(is_meaningful_stage_window_drag({ x: 12, y: 0 }), "Visible window drag should be meaningful");
   const invalid = normalize_stage_window_drag_offset({ x: Number.NaN, y: Infinity });
   assert(invalid.x === 0 && invalid.y === 0, `Invalid drag offsets should reset to zero, got ${invalid.x}, ${invalid.y}`);
+}
+
+function verify_operation_stage_key_is_session_scoped() {
+  const identity = {
+    chat_type: "group",
+    conversation_id: "conversation-1",
+    room_session_id: null,
+    session_key: "agent:agent-a:websocket:group:runtime-session-a",
+  };
+  assert(
+    build_operation_stage_key(identity) === "session:agent:agent-a:websocket:group:runtime-session-a",
+    `Stage key should prefer runtime session over conversation, got ${build_operation_stage_key(identity)}`,
+  );
+  assert(
+    build_operation_stage_key({ ...identity, room_session_id: "room-session-a" }) === "room-session:room-session-a",
+    "Stage key should keep explicit room_session_id as the strongest isolation key",
+  );
+  assert(
+    build_operation_stage_key({ ...identity, session_key: null }) === "room-conversation:conversation-1",
+    "Stage key should fall back to conversation only when runtime session identity is missing",
+  );
 }
 
 function verify_stage_experience_state_machine(now) {
