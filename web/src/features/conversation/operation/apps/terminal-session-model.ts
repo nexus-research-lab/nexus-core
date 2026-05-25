@@ -14,7 +14,6 @@ export interface TerminalEntry {
   id: string;
   command: string;
   duration_label: string;
-  pid_label: string;
   started_label: string;
   exit_label: string;
   exit_tone: "success" | "error" | "running" | "muted";
@@ -54,7 +53,6 @@ export function build_terminal_entries({
       id: item.id,
       command: resolved_command,
       duration_label,
-      pid_label: terminal_pid_label(item.id),
       started_label: format_operation_time(item.started_at ?? item.updated_at),
       exit_label: terminal_exit_label(item, exit_code),
       exit_tone,
@@ -69,9 +67,8 @@ export function build_terminal_entries({
     id: event.id,
     command: command.trim() || event.target || event.title,
     duration_label: format_terminal_duration(event),
-    pid_label: terminal_pid_label(event.id),
     started_label: format_operation_time(event.started_at ?? event.updated_at),
-    exit_label: event.phase === "running" ? "running" : "no output",
+    exit_label: event.phase === "running" ? "运行中" : "无输出",
     exit_tone: event.phase === "running" ? "running" : "muted",
     phase: event.phase,
     stdout: [],
@@ -192,26 +189,18 @@ function terminal_exit_tone(event: NexusOperationEvent, exit_code: number | null
 
 function terminal_exit_label(event: NexusOperationEvent, exit_code: number | null): string {
   if (event.phase === "running") {
-    return "process running";
+    return "运行中";
   }
   if (event.phase === "error") {
-    return exit_code == null ? "process failed" : `exit ${exit_code}`;
+    return exit_code == null ? "执行失败" : `退出 ${exit_code}`;
   }
   if (event.phase === "cancelled") {
-    return "process cancelled";
+    return "已中断";
   }
   if (exit_code != null) {
-    return `exit ${exit_code}`;
+    return `退出 ${exit_code}`;
   }
-  return event.phase === "done" ? "exit 0" : TERMINAL_PHASE_LABEL[event.phase];
-}
-
-function terminal_pid_label(id: string): string {
-  let hash = 0;
-  for (let index = 0; index < id.length; index += 1) {
-    hash = (hash * 31 + id.charCodeAt(index)) >>> 0;
-  }
-  return String(1000 + (hash % 89000));
+  return event.phase === "done" ? "退出 0" : TERMINAL_PHASE_LABEL[event.phase];
 }
 
 function format_terminal_duration(event: NexusOperationEvent): string {

@@ -5,7 +5,7 @@ import {
   Copy,
   Loader2,
   Search,
-  SplitSquareHorizontal,
+  TerminalSquare,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -52,20 +52,10 @@ export function TerminalSession({
         session_label={session_label}
         shell_title={shell_title}
       />
-      <TerminalSessionStrip
-        cwd_label={cwd_label}
-        entries={entries}
-        session_label={session_label}
-      />
       <div className="soft-scrollbar min-h-0 flex-1 overflow-auto px-4 py-3">
         {entries.map((entry, entry_index) => (
           <div className={entry_index > 0 ? "mt-4 border-t border-white/8 pt-3" : undefined} key={entry.id}>
-            <div className="mb-1.5 flex min-w-0 items-center justify-between gap-3 text-[10px] text-[#60757f]">
-              <span className="truncate">
-                pid {entry.pid_label} · proc {entry_index + 1}
-              </span>
-              <span className="shrink-0">{entry.started_label} · {entry.duration_label}</span>
-            </div>
+            {entry_index > 0 ? <TerminalCommandSeparator entry={entry} /> : null}
             <TerminalCommandLine command={entry.command} cwd_label={cwd_label} session_label={session_label} />
             {entry.stdout.length || entry.stderr.length || entry.other.length ? (
               <div className="mt-1.5 space-y-0.5">
@@ -83,11 +73,7 @@ export function TerminalSession({
                   />
                 ))}
               </div>
-            ) : (
-              <div className="mt-1.5 flex min-w-0 items-center gap-2 pl-5 text-[#6f827d]">
-                <span>{entry.phase === "running" ? "waiting for stdout/stderr..." : "[process completed with no stdout/stderr]"}</span>
-              </div>
-            )}
+            ) : null}
             <TerminalExitLine entry={entry} />
           </div>
         ))}
@@ -119,7 +105,7 @@ function TerminalTitleBar({
       <div className="flex min-h-0 items-center justify-between gap-3 px-3 py-1.5">
         <div className="flex min-w-0 items-center gap-2">
           <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md bg-[#17232c] text-[#8de0ad]">
-            {has_running_entry ? <Loader2 className="h-3 w-3 animate-spin" /> : <SplitSquareHorizontal className="h-3 w-3" />}
+            {has_running_entry ? <Loader2 className="h-3 w-3 animate-spin" /> : <TerminalSquare className="h-3 w-3" />}
           </span>
           <span className="truncate text-[#c8d8d1]">{shell_title}</span>
         </div>
@@ -139,7 +125,9 @@ function TerminalTitleBar({
           <span className="truncate">{session_label}</span>
         </div>
         <span className="min-w-0 truncate text-[#536873]">{cwd_label}</span>
-        <span className="ml-auto hidden shrink-0 text-[#536873] sm:inline">{format_operation_time(event.updated_at)}</span>
+        <span className="ml-auto hidden shrink-0 text-[#536873] sm:inline">
+          上次活动 {format_operation_time(event.updated_at)}
+        </span>
       </div>
     </div>
   );
@@ -177,61 +165,6 @@ function TerminalCommandLine({
   );
 }
 
-function TerminalSessionStrip({
-  cwd_label,
-  entries,
-  session_label,
-}: {
-  cwd_label: string;
-  entries: TerminalEntry[];
-  session_label: string;
-}) {
-  const latest_entry = entries.at(-1);
-  const stdout_count = entries.reduce((count, entry) => count + entry.stdout.length, 0);
-  const stderr_count = entries.reduce((count, entry) => count + entry.stderr.length, 0);
-  const command_count = entries.length;
-  const exit_label = latest_entry?.exit_label ?? "idle";
-  const exit_tone = latest_entry?.exit_tone ?? "muted";
-
-  return (
-    <div className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto] items-center gap-2 border-b border-white/8 bg-[#0b1118] px-3 py-1.5 text-[9px] font-semibold text-[#60757f] max-sm:grid-cols-2">
-      <span className="min-w-0 truncate">
-        {session_label} · {cwd_label} · {command_count} command{command_count === 1 ? "" : "s"}
-      </span>
-      <TerminalMiniBadge label="stdout" value={stdout_count} />
-      <TerminalMiniBadge label="stderr" tone={stderr_count ? "error" : "muted"} value={stderr_count} />
-      <span className={cn(
-        "shrink-0 rounded px-1.5 py-px text-[8.5px]",
-        exit_tone === "success" && "bg-[#10251d] text-[#8de0ad]",
-        exit_tone === "error" && "bg-[#2c1519] text-[#ff9d9d]",
-        exit_tone === "running" && "bg-[#182822] text-[#8de0ad]",
-        exit_tone === "muted" && "bg-white/[0.04] text-[#788b86]",
-      )}>
-        {exit_label}
-      </span>
-    </div>
-  );
-}
-
-function TerminalMiniBadge({
-  label,
-  tone = "neutral",
-  value,
-}: {
-  label: string;
-  tone?: "error" | "muted" | "neutral";
-  value: number;
-}) {
-  return (
-    <span className={cn(
-      "shrink-0 rounded px-1.5 py-px text-[8.5px]",
-      tone === "error" ? "bg-[#2c1519] text-[#ff9d9d]" : tone === "muted" ? "bg-white/[0.03] text-[#52656e]" : "bg-[#10272b] text-[#80cbc4]",
-    )}>
-      {label}:{value}
-    </span>
-  );
-}
-
 function TerminalOutputLine({
   line,
   stream = "output",
@@ -263,6 +196,17 @@ function TerminalOutputLine({
         stream === "stderr" || is_error ? "text-[#ff8f8f]" : is_success ? "text-[#8de0ad]" : "text-[#b7cbc5]",
       )}>
         {line}
+      </span>
+    </div>
+  );
+}
+
+function TerminalCommandSeparator({ entry }: { entry: TerminalEntry }) {
+  return (
+    <div className="mb-2 flex min-w-0 items-center gap-2 text-[10px] text-[#526875]">
+      <span className="h-px flex-1 bg-white/8" />
+      <span className="shrink-0">
+        {entry.started_label} · {entry.duration_label}
       </span>
     </div>
   );
