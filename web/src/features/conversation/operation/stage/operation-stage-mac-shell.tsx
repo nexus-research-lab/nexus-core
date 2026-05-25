@@ -41,7 +41,7 @@ export function StageMacMenuBar({
   }, []);
 
   return (
-    <div className="absolute inset-x-3 top-3 z-40 flex h-9 items-center justify-between rounded-[14px] border border-white/62 bg-white/52 px-3 text-[11px] font-semibold text-(--text-strong) shadow-[0_14px_36px_rgba(18,28,42,0.10)] backdrop-blur-2xl max-md:hidden">
+    <div className="absolute inset-x-0 top-0 z-40 flex h-8 items-center justify-between border-b border-white/58 bg-white/54 px-4 text-[11px] font-semibold text-(--text-strong) shadow-[0_1px_0_rgba(255,255,255,0.70),0_12px_34px_rgba(18,28,42,0.08)] backdrop-blur-2xl max-md:hidden">
       <div className="flex min-w-0 items-center gap-3">
         <Apple className="h-3.5 w-3.5 shrink-0" />
         <span className="font-black">{app_name}</span>

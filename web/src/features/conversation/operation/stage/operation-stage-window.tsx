@@ -173,7 +173,7 @@ export function OperationStageWindow({
 
   return (
     <div
-      aria-label={title}
+      aria-label={app_label ? `${app_label} window: ${title}` : title}
       className={cn(
         "operation-stage-window absolute flex min-h-0 min-w-0 cursor-default flex-col overflow-hidden rounded-[14px] border backdrop-blur-xl outline-none transition-[left,top,width,height,opacity,filter,box-shadow,border-radius] duration-300 ease-[cubic-bezier(.2,.82,.2,1)] focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.42)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent max-md:!relative max-md:!inset-auto max-md:!h-auto max-md:!min-h-[180px] max-md:!w-full max-md:max-w-full",
         tone === "terminal"
@@ -277,8 +277,8 @@ export function OperationStageWindow({
         </div>
         <div className="flex min-w-0 flex-1 items-center justify-center gap-1.5 px-2 text-[10px] font-semibold">
           <Icon className="h-3 w-3 shrink-0" />
-          <span className="min-w-0 truncate">
-            {app_label ? `${app_label} · ${title}` : title}
+          <span className="min-w-0 truncate" title={app_label ? `${app_label} · ${title}` : title}>
+            {title}
           </span>
         </div>
         <span aria-hidden="true" className="h-4 w-[52px] shrink-0" />
