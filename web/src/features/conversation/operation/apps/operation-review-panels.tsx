@@ -128,6 +128,20 @@ export function PermissionCheckpointPanel({
               <pre className="mt-3 max-h-[128px] overflow-auto whitespace-pre-wrap break-words rounded-[10px] bg-[rgba(18,28,42,0.05)] px-3 py-2 font-mono text-[11px] leading-5 text-(--text-strong)">
                 {request_target}
               </pre>
+              <div className="mt-3 flex items-center justify-end gap-2 border-t border-(--divider-subtle-color) pt-3">
+                <button
+                  className="h-7 rounded-[7px] border border-(--divider-subtle-color) bg-white/80 px-3 text-[11px] font-semibold text-(--text-strong) shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] transition hover:bg-white"
+                  type="button"
+                >
+                  Deny
+                </button>
+                <button
+                  className="h-7 rounded-[7px] border border-[rgba(91,114,255,0.28)] bg-[rgba(91,114,255,0.92)] px-3 text-[11px] font-semibold text-white shadow-[0_8px_18px_rgba(91,114,255,0.20)] transition hover:bg-[color:var(--primary)]"
+                  type="button"
+                >
+                  Allow
+                </button>
+              </div>
             </div>
           </div>
 
@@ -147,7 +161,7 @@ export function PermissionCheckpointPanel({
             ))}
           </div>
 
-          <p className="mt-4 text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">request payload</p>
+          <p className="mt-4 text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">Details</p>
           <div className="mt-2 space-y-1.5">
             {rows.length ? rows.map((row) => (
               <div className="rounded-[10px] border border-white/62 bg-white/70 px-2.5 py-2 text-[10px]" key={row.key}>
@@ -156,12 +170,12 @@ export function PermissionCheckpointPanel({
               </div>
             )) : (
               <div className="rounded-[10px] border border-white/62 bg-white/70 px-2.5 py-2 text-[10px] text-(--text-muted)">
-                {event.target ?? event.tool_name ?? "No request payload"}
+                {event.target ?? event.tool_name ?? "No additional details"}
               </div>
             )}
           </div>
 
-          <p className="mt-3 text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">evidence</p>
+          <p className="mt-3 text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">Recent Activity</p>
           <div className="mt-2 space-y-1.5">
             {(evidence.length ? evidence : [{
               type: "permission",
@@ -292,17 +306,17 @@ export function OperationReviewPanel({
               </div>
             )) : (
               <div className="rounded-[9px] bg-white/70 px-2 py-1.5 text-[10px] text-(--text-muted)">
-                {event.target ?? event.tool_name ?? "No request payload"}
+                {event.target ?? event.tool_name ?? "No additional details"}
               </div>
             )}
           </div>
           {waiting ? (
-            <div className="mt-2 grid grid-cols-2 gap-1.5 text-[10px] font-black">
-              <span className="rounded-[9px] border border-[rgba(47,184,132,0.20)] bg-[rgba(47,184,132,0.10)] px-2 py-1.5 text-center text-[color:var(--success)]">
-                Allow
-              </span>
-              <span className="rounded-[9px] border border-[rgba(223,93,98,0.18)] bg-[rgba(223,93,98,0.08)] px-2 py-1.5 text-center text-[color:var(--destructive)]">
+            <div className="mt-2 grid grid-cols-2 gap-1.5 text-[10px] font-semibold">
+              <span className="rounded-[7px] border border-(--divider-subtle-color) bg-white/80 px-2 py-1.5 text-center text-(--text-strong)">
                 Deny
+              </span>
+              <span className="rounded-[7px] border border-[rgba(91,114,255,0.26)] bg-[rgba(91,114,255,0.92)] px-2 py-1.5 text-center text-white">
+                Allow
               </span>
             </div>
           ) : null}
