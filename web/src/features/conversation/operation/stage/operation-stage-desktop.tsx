@@ -315,6 +315,7 @@ export function OperationStageDesktop({
       ) : null}
       <StageWindowDock
         active_window_id={active_window_id}
+        on_restore_all={restore_all_windows}
         windows={window_states}
         on_restore={restore_window}
       />

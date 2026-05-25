@@ -118,10 +118,12 @@ function MissionControlTile({
 
 export function StageWindowDock({
   active_window_id,
+  on_restore_all,
   windows,
   on_restore,
 }: {
   active_window_id: string | null;
+  on_restore_all: () => void;
   windows: StageWindowState[];
   on_restore: (window_id: string) => void;
 }) {
@@ -144,12 +146,15 @@ export function StageWindowDock({
     <div className="absolute inset-x-4 bottom-4 z-30 flex justify-center max-md:relative max-md:inset-x-auto max-md:bottom-auto max-md:mt-3">
       <div className="flex max-w-full flex-col items-center gap-1.5">
         <div className="operation-window-dock soft-scrollbar flex max-w-full items-end gap-2 overflow-x-auto rounded-[26px] border border-white/70 bg-[rgba(255,255,255,0.60)] px-2.5 py-2 shadow-[0_24px_60px_rgba(18,28,42,0.18),inset_0_1px_0_rgba(255,255,255,0.78)] backdrop-blur-2xl">
-          <div
-            className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-[17px] border border-white/60 bg-[linear-gradient(135deg,rgba(91,114,255,0.18),rgba(255,255,255,0.74),rgba(79,162,159,0.14))] text-[13px] font-black text-(--text-strong) shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]"
+          <button
+            aria-label="恢复 Nexus 工作现场"
+            className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-[17px] border border-white/60 bg-[linear-gradient(135deg,rgba(91,114,255,0.18),rgba(255,255,255,0.74),rgba(79,162,159,0.14))] text-[13px] font-black text-(--text-strong) shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] transition hover:-translate-y-1 hover:scale-105 hover:bg-white/72 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.42)]"
+            onClick={on_restore_all}
             title={active_window ? `${active_app_label} · ${display_window_title(active_window)}` : "Nexus"}
+            type="button"
           >
             N
-          </div>
+          </button>
           <div className="h-9 w-px shrink-0 bg-white/56" />
         {dock_apps.map(({ app_label, count, is_active, is_running, kind, window }) => {
           const Icon = icon_for_window_kind(window?.kind ?? kind);
