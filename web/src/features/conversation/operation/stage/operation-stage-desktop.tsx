@@ -322,6 +322,7 @@ export function OperationStageDesktop({
     >
       <StageMacMenuBar
         active_window={active_window}
+        windows={window_states}
       />
       <StageDesktopIcons windows={window_states} on_restore={restore_window} />
       <StageAgentCursor active_window={active_window} />

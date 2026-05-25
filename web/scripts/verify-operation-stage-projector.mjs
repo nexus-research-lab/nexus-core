@@ -68,6 +68,7 @@ copyFileSync(join(operation_dir, "stage/operation-stage-hidden-windows.js"), joi
 copyFileSync(join(operation_dir, "stage/operation-stage-app-identity.js"), join(operation_dir, "stage/operation-stage-app-identity"));
 copyFileSync(join(operation_dir, "stage/operation-stage-window-focus.js"), join(operation_dir, "stage/operation-stage-window-focus"));
 copyFileSync(join(operation_dir, "stage/operation-stage-keyboard-target.js"), join(operation_dir, "stage/operation-stage-keyboard-target"));
+copyFileSync(join(operation_dir, "stage/operation-stage-menu-model.js"), join(operation_dir, "stage/operation-stage-menu-model"));
 mkdirSync(join(operation_dir, "apps"), { recursive: true });
 copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
 copyFileSync(join(operation_dir, "apps/operation-app-surface-policy.js"), join(operation_dir, "apps/operation-app-surface-policy"));
@@ -130,6 +131,9 @@ const {
   should_ignore_stage_desktop_keyboard_target,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-keyboard-target.js")));
 const {
+  build_stage_menu_status,
+} = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-menu-model.js")));
+const {
   build_terminal_entries,
 } = await import(pathToFileURL(join(operation_dir, "apps/terminal-session-model.js")));
 const {
@@ -172,6 +176,7 @@ verify_generic_tool_uses_nexus_tool_surface();
 verify_nexus_tool_app_has_own_desktop_identity();
 verify_window_focus_moves_to_next_visible_window();
 verify_desktop_keyboard_target_policy();
+verify_stage_menu_status_tracks_desktop_windows();
 verify_stage_experience_state_machine(now);
 verify_live_episode_narrates_running_round(now);
 verify_api_retry_runtime_projection(now);
@@ -505,6 +510,29 @@ function verify_desktop_keyboard_target_policy() {
   assert(should_ignore_stage_desktop_keyboard_target({ tag_name: "div", is_content_editable: true }), "Desktop shortcuts should ignore contenteditable areas");
   assert(!should_ignore_stage_desktop_keyboard_target({ tag_name: "button" }), "Desktop shortcuts should still work from window controls and desktop buttons");
   assert(!should_ignore_stage_desktop_keyboard_target({ tag_name: "div" }), "Desktop shortcuts should work from the desktop frame");
+}
+
+function verify_stage_menu_status_tracks_desktop_windows() {
+  const windows = [
+    mock_stage_window({ id: "terminal", kind: "terminal", phase: "focused" }),
+    mock_stage_window({ id: "browser", kind: "browser", phase: "background" }),
+    mock_stage_window({ id: "code", kind: "code_editor", phase: "minimized" }),
+    mock_stage_window({ id: "finder", kind: "finder", phase: "closed" }),
+  ];
+  const status = build_stage_menu_status(windows, windows[0], (window) => ({
+    browser: "Safari",
+    code_editor: "Code",
+    finder: "访达",
+    terminal: "终端",
+  })[window.kind] ?? "Nexus");
+  assert(status.activity_label === "终端 前台", `Menu bar should expose the foreground app, got ${status.activity_label}`);
+  assert(status.window_label === "2 个窗口", `Menu bar should count visible app windows, got ${status.window_label}`);
+  assert(status.dock_label === "1 个在 Dock", `Menu bar should count minimized windows, got ${status.dock_label}`);
+
+  const idle_status = build_stage_menu_status([], null, () => "Nexus");
+  assert(idle_status.activity_label === "桌面待命", `Idle menu bar should report standby, got ${idle_status.activity_label}`);
+  assert(idle_status.window_label === "0 个窗口", `Idle menu bar should report zero windows, got ${idle_status.window_label}`);
+  assert(idle_status.dock_label === null, `Idle menu bar should omit Dock count, got ${idle_status.dock_label}`);
 }
 
 function mock_stage_window({

@@ -18,6 +18,7 @@ import {
   stage_app_label_for_window_kind,
 } from "./operation-stage-window-meta";
 import { stage_menu_items_for_window_kind } from "./operation-stage-app-identity";
+import { build_stage_menu_status } from "./operation-stage-menu-model";
 import {
   agent_cursor_action_label,
   agent_cursor_anchor_class,
@@ -26,10 +27,15 @@ import {
 
 export function StageMacMenuBar({
   active_window,
+  windows,
 }: {
   active_window: StageWindowState | null;
+  windows: StageWindowState[];
 }) {
   const app_name = active_window ? stage_app_label_for_window_kind(active_window.kind) : "Nexus";
+  const menu_status = useMemo(() => (
+    build_stage_menu_status(windows, active_window, (window) => stage_app_label_for_window_kind(window.kind))
+  ), [active_window, windows]);
   const [current_time, set_current_time] = useState(() => new Date());
   const menu_items = useMemo(
     () => stage_menu_items_for_window_kind(active_window?.kind ?? null),
@@ -57,6 +63,13 @@ export function StageMacMenuBar({
         ))}
       </div>
       <div className="flex shrink-0 items-center gap-3 text-(--text-soft)">
+        <span className="rounded-full bg-white/40 px-2 py-0.5 text-[10px] font-bold text-(--text-muted)">
+          {menu_status.activity_label}
+        </span>
+        <span className="font-mono text-[10px] text-(--text-soft)">{menu_status.window_label}</span>
+        {menu_status.dock_label ? (
+          <span className="font-mono text-[10px] text-(--text-soft)">{menu_status.dock_label}</span>
+        ) : null}
         <Search className="h-3.5 w-3.5" />
         <Command className="h-3.5 w-3.5" />
         <Wifi className="h-3.5 w-3.5" />
