@@ -71,24 +71,28 @@ function menu_items_for_window_kind(kind: StageWindowKind | null): string[] {
     return ["文件", "编辑", "显示", "前往", "窗口", "帮助"];
   }
   if (kind === "permission_wait") {
-    return ["文件", "编辑", "显示", "账户", "窗口", "帮助"];
+    return ["隐私与安全", "显示", "账户", "窗口", "帮助"];
   }
   if (kind === "task_board") {
-    return ["显示", "窗口", "进程", "帮助"];
+    return ["显示", "进程", "窗口", "帮助"];
   }
   if (kind === "run_manifest" || kind === "evidence") {
-    return ["文件", "编辑", "显示", "窗口", "帮助"];
+    return ["文件", "编辑", "日志", "显示", "窗口", "帮助"];
   }
-  if (
-    kind === "code_editor" ||
-    kind === "markdown_reader" ||
-    kind === "word_reader" ||
-    kind === "pdf_reader" ||
-    kind === "spreadsheet" ||
-    kind === "image_viewer" ||
-    kind === "generic_tool"
-  ) {
-    return ["文件", "编辑", "显示", "格式", "窗口", "帮助"];
+  if (kind === "code_editor" || kind === "generic_tool") {
+    return ["文件", "编辑", "选择", "查找", "运行", "终端", "帮助"];
+  }
+  if (kind === "spreadsheet") {
+    return ["文件", "编辑", "插入", "表格", "排列", "窗口", "帮助"];
+  }
+  if (kind === "word_reader") {
+    return ["文件", "编辑", "插入", "格式", "排列", "窗口", "帮助"];
+  }
+  if (kind === "markdown_reader" || kind === "pdf_reader" || kind === "image_viewer") {
+    return ["文件", "编辑", "显示", "工具", "窗口", "帮助"];
+  }
+  if (kind === "summary") {
+    return ["文件", "编辑", "格式", "显示", "窗口", "帮助"];
   }
   return ["文件", "编辑", "显示", "窗口", "帮助"];
 }

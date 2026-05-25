@@ -114,7 +114,7 @@ export function stage_app_label_for_window_kind(kind: StageWindowKind): string {
     return "Safari";
   }
   if (kind === "task_board") {
-    return "Activity";
+    return "Activity Monitor";
   }
   if (kind === "runtime_handoff") {
     return "Nexus Shell";
