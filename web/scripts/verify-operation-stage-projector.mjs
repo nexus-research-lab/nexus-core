@@ -65,6 +65,7 @@ copyFileSync(join(operation_dir, "stage/operation-stage-agent-cursor.js"), join(
 copyFileSync(join(operation_dir, "stage/operation-stage-window-reveal.js"), join(operation_dir, "stage/operation-stage-window-reveal"));
 copyFileSync(join(operation_dir, "stage/operation-stage-hidden-windows.js"), join(operation_dir, "stage/operation-stage-hidden-windows"));
 copyFileSync(join(operation_dir, "stage/operation-stage-app-identity.js"), join(operation_dir, "stage/operation-stage-app-identity"));
+copyFileSync(join(operation_dir, "stage/operation-stage-window-focus.js"), join(operation_dir, "stage/operation-stage-window-focus"));
 mkdirSync(join(operation_dir, "apps"), { recursive: true });
 copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
 copyFileSync(join(operation_dir, "apps/operation-app-surface-policy.js"), join(operation_dir, "apps/operation-app-surface-policy"));
@@ -117,6 +118,9 @@ const {
   stage_menu_items_for_window_kind,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-app-identity.js")));
 const {
+  resolve_next_window_focus,
+} = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-window-focus.js")));
+const {
   build_terminal_entries,
 } = await import(pathToFileURL(join(operation_dir, "apps/terminal-session-model.js")));
 const {
@@ -153,6 +157,7 @@ verify_hidden_stage_uses_desktop_state_instead_of_mission_control();
 verify_unclassified_tool_activity_opens_nexus_app_window(now);
 verify_generic_tool_uses_nexus_tool_surface();
 verify_nexus_tool_app_has_own_desktop_identity();
+verify_window_focus_moves_to_next_visible_window();
 verify_stage_experience_state_machine(now);
 verify_live_episode_narrates_running_round(now);
 verify_api_retry_runtime_projection(now);
@@ -368,10 +373,35 @@ function verify_nexus_tool_app_has_own_desktop_identity() {
   assert(dock_icon_skin_for_kind("code_editor") !== nexus_skin, "Nexus tool Dock skin should differ from Code");
 }
 
+function verify_window_focus_moves_to_next_visible_window() {
+  const windows = [
+    mock_stage_window({ id: "finder", kind: "finder", phase: "background", z: 12 }),
+    mock_stage_window({ id: "browser", kind: "browser", phase: "focused", z: 40 }),
+    mock_stage_window({ id: "terminal", kind: "terminal", phase: "background", z: 24 }),
+    mock_stage_window({ id: "code", kind: "code_editor", phase: "minimized", z: 36 }),
+  ];
+  assert(resolve_next_window_focus({
+    current_focus_id: "terminal",
+    hidden_window_id: "browser",
+    windows,
+  }) === "terminal", "Hiding another window should preserve the current focused window");
+  assert(resolve_next_window_focus({
+    current_focus_id: "browser",
+    hidden_window_id: "browser",
+    windows,
+  }) === "terminal", "Hiding the focused window should focus the topmost visible replacement");
+  assert(resolve_next_window_focus({
+    current_focus_id: "browser",
+    hidden_window_id: "terminal",
+    windows: windows.map((window) => window.id === "browser" ? { ...window, phase: "minimized" } : window),
+  }) === "finder", "Focus fallback should skip minimized windows");
+}
+
 function mock_stage_window({
   id,
   kind,
   phase,
+  z = 1,
 }) {
   return {
     id,
@@ -393,7 +423,7 @@ function mock_stage_window({
     },
     phase,
     title: id,
-    z: 1,
+    z,
   };
 }
 

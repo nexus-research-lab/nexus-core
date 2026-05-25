@@ -33,6 +33,7 @@ import {
   StageWindowDock,
   StageWindowsHiddenState,
 } from "./operation-stage-window-controls";
+import { resolve_next_window_focus } from "./operation-stage-window-focus";
 
 export function OperationStageDesktop({
   event,
@@ -153,7 +154,11 @@ export function OperationStageDesktop({
     visible_windows.find((window) => window.id === active_window_id) ?? null
   ), [active_window_id, visible_windows]);
   const close_window = (window_id: string) => {
-    set_focused_window_id((current) => current === window_id ? null : current);
+    set_focused_window_id((current) => resolve_next_window_focus({
+      current_focus_id: current,
+      hidden_window_id: window_id,
+      windows: window_states,
+    }));
     set_window_overrides((current) => ({
       ...current,
       [window_id]: {
@@ -175,7 +180,11 @@ export function OperationStageDesktop({
   };
 
   const minimize_window = (window_id: string) => {
-    set_focused_window_id((current) => current === window_id ? null : current);
+    set_focused_window_id((current) => resolve_next_window_focus({
+      current_focus_id: current,
+      hidden_window_id: window_id,
+      windows: window_states,
+    }));
     set_window_overrides((current) => ({
       ...current,
       [window_id]: {
