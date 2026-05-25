@@ -129,19 +129,16 @@ export function StageWindowDock({
     return null;
   }
 
-  const dock_windows = windows.filter((window) => window.phase !== "closed");
-  const running_windows = dock_windows.filter((window) => window.phase !== "minimized");
-  const minimized_windows = dock_windows.filter((window) => window.phase === "minimized");
-  const running_apps = group_running_windows_by_app(running_windows, active_window_id);
-  const dock_apps = build_dock_app_slots(running_apps);
+  const running_windows = windows.filter((window) => (
+    window.phase !== "closed" && window.phase !== "minimized"
+  ));
+  const minimized_windows = windows.filter((window) => window.phase === "minimized");
+  const dock_apps = build_dock_app_slots(group_dock_windows_by_app(windows, active_window_id));
   const active_window = running_windows.find((window) => window.id === active_window_id)
     ?? running_windows[0]
     ?? minimized_windows[0]
     ?? null;
   const active_app_label = active_window ? stage_app_label_for_window_kind(active_window.kind) : "Nexus";
-  if (!dock_windows.length) {
-    return null;
-  }
 
   return (
     <div className="absolute inset-x-4 bottom-4 z-30 flex justify-center max-md:relative max-md:inset-x-auto max-md:bottom-auto max-md:mt-3">
@@ -157,7 +154,7 @@ export function StageWindowDock({
         {dock_apps.map(({ app_label, count, is_active, is_running, kind, window }) => {
           const Icon = icon_for_window_kind(window?.kind ?? kind);
           const window_title = window ? display_window_title(window) : "等待工具调用";
-          const state_label = is_active ? "当前" : is_running ? "后台" : "未打开";
+          const state_label = is_active ? "当前" : is_running ? "后台" : window ? "可重新打开" : "未打开";
           const title = !window
             ? `${app_label} · 未打开`
             : count > 1
@@ -256,6 +253,7 @@ interface DockAppGroup {
   app_label: string;
   count: number;
   is_active: boolean;
+  is_running: boolean;
   window: StageWindowState;
 }
 
@@ -268,27 +266,27 @@ interface DockAppSlot {
   window: StageWindowState | null;
 }
 
-function build_dock_app_slots(running_apps: DockAppGroup[]): DockAppSlot[] {
-  const running_by_label = new Map(running_apps.map((app) => [app.app_label, app]));
+function build_dock_app_slots(app_groups: DockAppGroup[]): DockAppSlot[] {
+  const groups_by_label = new Map(app_groups.map((app) => [app.app_label, app]));
   const pinned_labels = new Set(PINNED_DOCK_APPS.map((app) => app.app_label));
   const pinned_slots = PINNED_DOCK_APPS.map((app): DockAppSlot => {
-    const running = running_by_label.get(app.app_label);
+    const group = groups_by_label.get(app.app_label);
     return {
       app_label: app.app_label,
-      count: running?.count ?? 0,
-      is_active: Boolean(running?.is_active),
-      is_running: Boolean(running),
-      kind: running?.window.kind ?? app.kind,
-      window: running?.window ?? null,
+      count: group?.count ?? 0,
+      is_active: Boolean(group?.is_active),
+      is_running: Boolean(group?.is_running),
+      kind: group?.window.kind ?? app.kind,
+      window: group?.window ?? null,
     };
   });
-  const extra_slots = running_apps
+  const extra_slots = app_groups
     .filter((app) => !pinned_labels.has(app.app_label))
     .map((app): DockAppSlot => ({
       app_label: app.app_label,
       count: app.count,
       is_active: app.is_active,
-      is_running: true,
+      is_running: app.is_running,
       kind: app.window.kind,
       window: app.window,
     }));
@@ -296,7 +294,7 @@ function build_dock_app_slots(running_apps: DockAppGroup[]): DockAppSlot[] {
   return [...pinned_slots, ...extra_slots];
 }
 
-function group_running_windows_by_app(
+function group_dock_windows_by_app(
   windows: StageWindowState[],
   active_window_id: string | null,
 ): DockAppGroup[] {
@@ -306,18 +304,22 @@ function group_running_windows_by_app(
     const app_label = stage_app_label_for_window_kind(window.kind);
     const existing = groups.get(app_label);
     const is_active = window.id === active_window_id;
+    const is_running = window.phase !== "closed";
     if (!existing) {
       groups.set(app_label, {
         app_label,
-        count: 1,
+        count: is_running ? 1 : 0,
         is_active,
+        is_running,
         window,
       });
       continue;
     }
-    existing.count += 1;
+    const had_running_window = existing.is_running;
+    existing.count += is_running ? 1 : 0;
     existing.is_active = existing.is_active || is_active;
-    if (is_active) {
+    existing.is_running = existing.is_running || is_running;
+    if (is_active || (!had_running_window && is_running)) {
       existing.window = window;
     }
   }
