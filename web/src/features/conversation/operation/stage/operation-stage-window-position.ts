@@ -68,6 +68,11 @@ export function position_for_window(
   if (window.kind === "run_manifest") {
     return is_review_layout ? "left-[23%] top-[13%] h-[59%] w-[45%]" : "left-[29%] top-[11%] h-[64%] w-[55%]";
   }
+  if (window.kind === "handoff") {
+    return window.phase === "focused"
+      ? "left-[27%] top-[10%] h-[68%] w-[59%]"
+      : "left-[29%] top-[14%] h-[52%] w-[40%]";
+  }
   if (window.kind === "summary") {
     return is_review_layout ? "left-[28%] top-[16%] h-[50%] w-[38%]" : "left-[31%] top-[16%] h-[50%] w-[40%]";
   }

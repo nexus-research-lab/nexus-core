@@ -20,6 +20,7 @@ export type StageWindowKind =
   | "terminal"
   | "task_board"
   | "run_manifest"
+  | "handoff"
   | "evidence"
   | "summary"
   | "permission_wait"

@@ -24,6 +24,7 @@ import { DocumentPreview } from "./document-preview-surface";
 import { resolve_file_preview_value } from "./file-preview-value";
 import { NexusToolSurface } from "./nexus-tool-surface";
 import { OperationReviewPanel, PermissionCheckpointPanel } from "./operation-review-panels";
+import { HandoffSurface } from "./handoff-surface";
 import { RunManifestSurface } from "./run-manifest-surface";
 import { TerminalSession } from "./terminal-session";
 import { WorkspaceFinder } from "./workspace-finder-surface";
@@ -97,6 +98,19 @@ export function StageWindowContent({
   if (window.kind === "run_manifest") {
     return (
       <RunManifestSurface
+        event={event}
+        evidence={window.payload.evidence ?? []}
+        handoff_summary={window.payload.handoff_summary}
+        on_focus_event={on_focus_event}
+        related_events={window.payload.related_events ?? []}
+        snapshot={snapshot}
+      />
+    );
+  }
+
+  if (window.kind === "handoff") {
+    return (
+      <HandoffSurface
         event={event}
         evidence={window.payload.evidence ?? []}
         handoff_summary={window.payload.handoff_summary}

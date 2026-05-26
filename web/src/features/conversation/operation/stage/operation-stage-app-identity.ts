@@ -19,6 +19,9 @@ export function stage_menu_items_for_window_kind(kind: StageWindowKind | null): 
   if (kind === "run_manifest" || kind === "evidence") {
     return ["文件", "编辑", "日志", "显示", "窗口", "帮助"];
   }
+  if (kind === "handoff") {
+    return ["文件", "编辑", "交付", "显示", "窗口", "帮助"];
+  }
   if (kind === "generic_tool") {
     return ["工具", "输入", "输出", "日志", "窗口", "帮助"];
   }
@@ -58,6 +61,9 @@ export function dock_icon_skin_for_kind(kind: StageWindowKind): string {
   }
   if (kind === "run_manifest" || kind === "evidence") {
     return "border-[rgba(117,131,149,0.30)] bg-[linear-gradient(135deg,#f8fafc,#cbd5e1)] text-[#334155]";
+  }
+  if (kind === "handoff") {
+    return "border-[rgba(47,184,132,0.32)] bg-[linear-gradient(135deg,#f6fffb,#8de0ad_48%,#5b72ff)] text-[#123f3a]";
   }
   if (kind === "image_viewer" || kind === "markdown_reader" || kind === "pdf_reader" || kind === "word_reader") {
     return "border-[rgba(47,184,132,0.32)] bg-[linear-gradient(135deg,#ffffff,#a7f3d0_52%,#60a5fa)] text-[#17644f]";

@@ -275,6 +275,7 @@ function verify_desktop_window_kind_contract() {
     "code_editor",
     "finder",
     "generic_tool",
+    "handoff",
     "image_viewer",
     "markdown_reader",
     "pdf_reader",
@@ -510,6 +511,7 @@ function verify_current_unclassified_tool_opens_beside_existing_app_window(now) 
 
 function verify_generic_tool_uses_nexus_tool_surface() {
   assert(app_surface_for_window_kind("generic_tool") === "nexus_tool", "Generic tool windows should render as the Nexus tool app");
+  assert(app_surface_for_window_kind("handoff") === "specialized", "Handoff windows should render as a specialized Mac app surface");
   assert(app_surface_for_window_kind("code_editor") === "document", "Code windows should keep document preview rendering");
   assert(app_surface_for_window_kind("browser") === "specialized", "Browser windows should keep specialized app rendering");
 }
@@ -1285,13 +1287,13 @@ function verify_workspace_live_stays_in_tool_round(now) {
     event: snapshot.active_event,
     snapshot,
   });
-  assert(desktop.active_window_id?.includes(":run-manifest"), `completed stage should focus run manifest, got ${desktop.active_window_id}`);
-  const manifest_window = desktop.windows.find((window) => window.kind === "run_manifest");
-  assert(manifest_window, "completed stage should render a run manifest window");
-  assert(manifest_window.title === "Nexus Console", `completed manifest should use Console window title, got ${manifest_window.title}`);
-  assert(manifest_window.payload.handoff_summary?.status_label === "可继续", `completed manifest should expose handoff summary, got ${manifest_window.payload.handoff_summary?.status_label}`);
-  assert(manifest_window.payload.handoff_summary?.resume_prompt.includes("gomoku.html"), "handoff resume prompt should point to current artifact");
-  assert(!manifest_window.payload.handoff_summary?.resume_prompt.includes("stale-session.md"), "handoff resume prompt should not reference stale workspace artifact");
+  assert(desktop.active_window_id?.includes(":handoff"), `completed stage should focus handoff app, got ${desktop.active_window_id}`);
+  const handoff_window = desktop.windows.find((window) => window.kind === "handoff");
+  assert(handoff_window, "completed stage should render a handoff app window");
+  assert(handoff_window.title === "Nexus 交付台", `completed handoff should use delivery window title, got ${handoff_window.title}`);
+  assert(handoff_window.payload.handoff_summary?.status_label === "可继续", `completed handoff should expose handoff summary, got ${handoff_window.payload.handoff_summary?.status_label}`);
+  assert(handoff_window.payload.handoff_summary?.resume_prompt.includes("gomoku.html"), "handoff resume prompt should point to current artifact");
+  assert(!handoff_window.payload.handoff_summary?.resume_prompt.includes("stale-session.md"), "handoff resume prompt should not reference stale workspace artifact");
   const continuation_brief = build_operation_continuation_brief(snapshot.active_event, snapshot.events, snapshot);
   assert(continuation_brief.status_label === "可继续", `completed stage continuation brief should be ready, got ${continuation_brief.status_label}`);
   assert(continuation_brief.primary_artifact === "gomoku.html", `completed stage continuation brief should point to current artifact, got ${continuation_brief.primary_artifact}`);
@@ -1310,7 +1312,7 @@ function verify_workspace_live_stays_in_tool_round(now) {
   const write_window_id = resolve_operation_event_window_id(write_event, desktop.windows);
   assert(write_window_id?.includes(":document:gomoku.html"), `write event should focus gomoku document window, got ${write_window_id}`);
   const summary_window_id = resolve_operation_event_window_id(snapshot.active_event, desktop.windows);
-  assert(summary_window_id?.includes(":run-manifest"), `summary event should focus run manifest window, got ${summary_window_id}`);
+  assert(summary_window_id?.includes(":handoff"), `summary event should focus handoff app window, got ${summary_window_id}`);
 }
 
 function verify_multi_file_windows_keep_event_identity(now) {

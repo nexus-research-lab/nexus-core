@@ -66,6 +66,9 @@ export function agent_cursor_anchor_class(window: StageWindowState): string {
   if (window.kind === "finder" || window.kind === "code_editor" || window.kind === "generic_tool") {
     return "left-[31%] top-[18%]";
   }
+  if (window.kind === "handoff") {
+    return "left-[64%] top-[18%]";
+  }
   if (window.kind === "run_manifest" || window.kind === "task_board") {
     return "left-[54%] top-[20%]";
   }

@@ -23,6 +23,7 @@ const PINNED_DOCK_APPS: Array<{ app_label: string; kind: StageWindowKind }> = [
   { app_label: "Safari", kind: "browser" },
   { app_label: "终端", kind: "terminal" },
   { app_label: "Code", kind: "code_editor" },
+  { app_label: "交付台", kind: "handoff" },
   { app_label: "控制台", kind: "run_manifest" },
   { app_label: "预览", kind: "image_viewer" },
 ];

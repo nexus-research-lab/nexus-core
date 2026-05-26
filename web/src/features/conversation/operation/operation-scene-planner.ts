@@ -43,7 +43,6 @@ import {
   fallback_stage_event_target_label,
   is_low_signal_stage_label,
 } from "./operation-stage-labels";
-
 export function plan_operation_desktop({
   event,
   snapshot,
@@ -304,10 +303,11 @@ function build_windows(
     }));
   } else if (event.surface === "summary" || event.surface === "fallback" || event.surface === "conversation") {
     if (event.kind === "round_summary" || event.phase === "done" || event.phase === "error" || event.phase === "cancelled") {
+      const is_successful_handoff = event.kind === "round_summary" && event.phase === "done";
       windows.push(window_state(event, snapshot, {
-        id: "run-manifest",
-        kind: "run_manifest",
-        title: event.phase === "error" ? "Nexus Console · 诊断" : "Nexus Console",
+        id: is_successful_handoff ? "handoff" : "run-manifest",
+        kind: is_successful_handoff ? "handoff" : "run_manifest",
+        title: event.phase === "error" ? "Nexus Console · 诊断" : is_successful_handoff ? "Nexus 交付台" : "Nexus Console",
         layout: "primary",
         phase: focus_target === "manifest" ? "focused" : "background",
         z: focus_target === "manifest" ? 42 : 24,
@@ -481,7 +481,7 @@ function preferred_window_kind_for_event(event: NexusOperationEvent): StageWindo
     return ["terminal", "finder", "browser"];
   }
   if (event.surface === "summary" || event.kind === "round_summary") {
-    return ["run_manifest", "summary"];
+    return ["handoff", "run_manifest", "summary"];
   }
   if (event.surface === "workspace") {
     if (

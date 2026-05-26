@@ -14,6 +14,7 @@ import {
   Search,
   ShieldQuestion,
   Sparkles,
+  PackageCheck,
   Terminal,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -84,6 +85,9 @@ export function icon_for_window_kind(kind: StageWindowKind): LucideIcon {
   if (kind === "run_manifest") {
     return ListChecks;
   }
+  if (kind === "handoff") {
+    return PackageCheck;
+  }
   if (kind === "evidence") {
     return CheckCircle2;
   }
@@ -120,6 +124,9 @@ export function stage_app_label_for_window_kind(kind: StageWindowKind): string {
   }
   if (kind === "run_manifest") {
     return "控制台";
+  }
+  if (kind === "handoff") {
+    return "交付台";
   }
   if (kind === "summary") {
     return "备忘录";

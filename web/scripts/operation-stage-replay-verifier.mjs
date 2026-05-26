@@ -82,8 +82,8 @@ export function verify_completed_round_replay_uses_event_slice({
     event: snapshot.active_event,
     snapshot,
   });
-  assert(final_desktop.active_window_id?.includes(":run-manifest"), `completed desktop should focus manifest, got ${final_desktop.active_window_id}`);
-  assert(final_desktop.windows.some((window) => window.kind === "run_manifest"), "completed desktop should include manifest handoff");
+  assert(final_desktop.active_window_id?.includes(":handoff"), `completed desktop should focus handoff app, got ${final_desktop.active_window_id}`);
+  assert(final_desktop.windows.some((window) => window.kind === "handoff"), "completed desktop should include delivery handoff");
   const completed_terminal_window = final_desktop.windows.find((window) => window.kind === "terminal");
   assert(completed_terminal_window?.phase === "minimized", `completed desktop should return terminal to Dock, got ${completed_terminal_window?.phase}`);
   const completed_browser_window = final_desktop.windows.find((window) => window.kind === "browser");
@@ -96,7 +96,7 @@ export function verify_completed_round_replay_uses_event_slice({
     snapshot,
   });
   assert(replay_desktop.active_window_id?.includes(":terminal"), `event replay slice should focus terminal, got ${replay_desktop.active_window_id}`);
-  assert(!replay_desktop.windows.some((window) => window.kind === "run_manifest"), "event replay slice should not keep final manifest as the active scene");
+  assert(!replay_desktop.windows.some((window) => window.kind === "handoff" || window.kind === "run_manifest"), "event replay slice should not keep final handoff as the active scene");
   const terminal_window = replay_desktop.windows.find((window) => window.kind === "terminal");
   assert(terminal_window?.payload.event.id === bash_event.id, "event replay terminal should keep selected Bash identity");
   assert(terminal_window?.payload.command === "open gomoku.html", `event replay terminal should keep selected command, got ${terminal_window?.payload.command}`);
