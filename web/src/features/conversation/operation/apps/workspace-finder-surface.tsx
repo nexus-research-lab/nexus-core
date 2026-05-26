@@ -11,6 +11,7 @@ import {
   List,
   Search,
   SquareStack,
+  Tag,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
@@ -39,11 +40,13 @@ export function WorkspaceFinder({
 
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden bg-[#f8fafc]">
-      <div className="hidden w-36 shrink-0 border-r border-(--divider-subtle-color) bg-[#eef3f8]/88 p-2 text-[11px] font-semibold text-(--text-soft) sm:block">
-        <FinderSidebarItem active icon={FolderOpen} label="工作区" />
-        <FinderSidebarItem icon={Search} label="搜索" />
-        <FinderSidebarItem icon={HardDrive} label="变更" />
+      <div className="hidden w-40 shrink-0 border-r border-(--divider-subtle-color) bg-[#eef3f8]/88 p-2 text-[11px] font-semibold text-(--text-soft) sm:block">
+        <div className="px-2 pb-1 pt-1 text-[9px] font-black uppercase tracking-[0.14em] text-(--text-soft)">收藏</div>
+        <FinderSidebarItem icon={Search} label="最近项目" />
+        <FinderSidebarItem icon={FileText} label="文稿" />
+        <FinderSidebarItem active icon={FolderOpen} label="Nexus Workspace" />
         <div className="mt-4 px-2 text-[9px] font-black uppercase tracking-[0.14em] text-(--text-soft)">位置</div>
+        <FinderSidebarItem icon={HardDrive} label="Macintosh HD" />
         <div className="mt-1 rounded-[9px] px-2 py-1.5 text-[10px] text-(--text-muted)">~/workspace</div>
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
@@ -56,9 +59,11 @@ export function WorkspaceFinder({
               <Columns3 className="h-3.5 w-3.5" />
             </FinderToolbarButton>
             <div className="min-w-0">
-              <p className="truncate text-[11px] font-black text-(--text-strong)">工作区</p>
+              <p className="truncate text-[11px] font-black text-(--text-strong)">
+                {basename(finder_session.selected_path) || "Nexus Workspace"}
+              </p>
               <p className="truncate text-[10px] text-(--text-soft)">
-                {finder_session.item_count} 个文件 · {finder_session.changed_count} 个变更
+                {finder_session.item_count} 个项目 · {finder_session.changed_count ? `${finder_session.changed_count} 个已修改` : "已同步"}
               </p>
             </div>
           </div>
@@ -66,23 +71,16 @@ export function WorkspaceFinder({
             <Search className="mr-1.5 h-3 w-3 shrink-0" />
             <span className="truncate">{active_path ?? event.target ?? "搜索工作区"}</span>
           </div>
+          <FinderSyncIndicator phase={event.phase} />
           <FinderToolbarButton label="分组">
             <SquareStack className="h-3.5 w-3.5" />
           </FinderToolbarButton>
-          <span className={cn(
-            "shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold",
-            event.phase === "running"
-              ? "bg-[rgba(91,114,255,0.10)] text-[color:var(--primary)]"
-              : "bg-white/70 text-(--text-muted)",
-          )}>
-            {PHASE_LABELS[event.phase]}
-          </span>
         </div>
         <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(160px,0.36fr)] max-md:grid-cols-1">
           <div className="soft-scrollbar min-h-0 overflow-auto p-2">
             <div className="grid grid-cols-[minmax(0,1fr)_72px_86px] gap-2 px-2 pb-1 text-[9px] font-bold uppercase tracking-[0.12em] text-(--text-soft)">
               <span>名称</span>
-              <span>状态</span>
+              <span>标签</span>
               <span>修改时间</span>
             </div>
             {finder_session.rows.map((row) => (
@@ -149,6 +147,29 @@ function FinderInspectorRow({ label, value }: { label: string; value: string }) 
       <p className="text-[9px] font-black uppercase tracking-[0.12em] text-(--text-soft)">{label}</p>
       <p className="mt-0.5 truncate text-[10.5px] font-semibold text-(--text-strong)" title={value}>{value}</p>
     </div>
+  );
+}
+
+function FinderSyncIndicator({ phase }: { phase: NexusOperationEvent["phase"] }) {
+  return (
+    <span
+      className={cn(
+        "hidden shrink-0 items-center gap-1 rounded-[8px] px-1.5 py-1 text-[10px] font-semibold md:inline-flex",
+        phase === "running"
+          ? "bg-[rgba(91,114,255,0.08)] text-[color:var(--primary)]"
+          : "bg-white/42 text-(--text-soft)",
+      )}
+      title={PHASE_LABELS[phase]}
+    >
+      <span className={cn(
+        "h-1.5 w-1.5 rounded-full",
+        phase === "running" && "operation-focus-dot bg-[color:var(--primary)]",
+        phase === "done" && "bg-[color:var(--success)]",
+        phase === "error" && "bg-[color:var(--destructive)]",
+        (phase === "queued" || phase === "waiting" || phase === "cancelled") && "bg-[color:var(--icon-muted)]",
+      )} />
+      <span>{phase === "running" ? "同步中" : "已同步"}</span>
+    </span>
   );
 }
 
@@ -234,13 +255,14 @@ function WorkspaceTreeRow({
         {label}
       </span>
       {status ? (
-        <span className={cn(
-          "shrink-0 rounded px-1.5 py-px text-[9px] font-bold",
-          status === "writing" && "bg-[rgba(91,114,255,0.10)] text-[color:var(--primary)]",
-          status === "updated" && "bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]",
-          status === "deleted" && "bg-[rgba(223,93,98,0.10)] text-[color:var(--destructive)]",
-          status === "idle" && "bg-white/70 text-(--text-soft)",
-        )}>
+        <span className="inline-flex shrink-0 items-center gap-1 text-[9px] font-bold text-(--text-soft)">
+          <Tag className={cn(
+            "h-2.5 w-2.5 fill-current",
+            status === "writing" && "text-[color:var(--primary)]",
+            status === "updated" && "text-[color:var(--success)]",
+            status === "deleted" && "text-[color:var(--destructive)]",
+            status === "idle" && "text-(--icon-muted)",
+          )} />
           {workspace_status_label(status)}
         </span>
       ) : <span />}
