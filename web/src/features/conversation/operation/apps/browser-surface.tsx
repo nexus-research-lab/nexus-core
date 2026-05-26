@@ -2,8 +2,6 @@ import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
-  CheckCircle2,
-  Clock3,
   ExternalLink,
   Globe2,
   Loader2,
@@ -120,8 +118,8 @@ function BrowserChromeHeader({
         <div className="flex min-w-0 flex-1 items-center gap-2 rounded-[9px] border border-(--divider-subtle-color) bg-white/88 px-2.5 py-1.5 text-[11px] text-(--text-default) shadow-[inset_0_1px_0_rgba(255,255,255,0.76)]">
           <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-[color:var(--success)]" />
           <span className="min-w-0 flex-1 truncate font-medium">{display_url}</span>
+          <SafariLoadDot source_label={source_label} status={status} />
         </div>
-        <SafariPageStatus source_label={source_label} status={status} />
         <SafariToolbarButton label="共享">
           <Share2 className="h-3.5 w-3.5" />
         </SafariToolbarButton>
@@ -149,7 +147,7 @@ function SafariToolbarButton({ children, label }: { children: ReactNode; label: 
   );
 }
 
-function SafariPageStatus({
+function SafariLoadDot({
   source_label,
   status,
 }: {
@@ -157,19 +155,22 @@ function SafariPageStatus({
   status: { label: string; tone: "loading" | "ready" | "error" | "idle" };
 }) {
   return (
-    <span className={cn(
-      "hidden shrink-0 items-center gap-1 rounded-md px-1.5 py-1 text-[9px] font-bold sm:inline-flex",
-      status.tone === "loading" && "bg-[rgba(91,114,255,0.10)] text-[color:var(--primary)]",
-      status.tone === "ready" && "bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]",
-      status.tone === "error" && "bg-[rgba(223,93,98,0.10)] text-[color:var(--destructive)]",
-      status.tone === "idle" && "bg-[rgba(117,131,149,0.10)] text-(--text-soft)",
-    )}>
-      {status.tone === "loading" ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : null}
-      {status.tone === "ready" ? <CheckCircle2 className="h-2.5 w-2.5" /> : null}
-      {status.tone === "error" ? <AlertTriangle className="h-2.5 w-2.5" /> : null}
-      {status.tone === "idle" ? <Clock3 className="h-2.5 w-2.5" /> : null}
-      <span>{status.label}</span>
-      <span className="text-current/62">{source_label}</span>
+    <span
+      aria-label={`${status.label} · ${source_label}`}
+      className={cn(
+        "grid h-4 w-4 shrink-0 place-items-center rounded-full",
+        status.tone === "loading" && "text-[color:var(--primary)]",
+        status.tone === "ready" && "text-[color:var(--success)]",
+        status.tone === "error" && "text-[color:var(--destructive)]",
+        status.tone === "idle" && "text-(--icon-muted)",
+      )}
+      title={`${status.label} · ${source_label}`}
+    >
+      {status.tone === "loading" ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+      {status.tone === "error" ? <AlertTriangle className="h-3 w-3" /> : null}
+      {status.tone !== "loading" && status.tone !== "error" ? (
+        <span className="h-1.5 w-1.5 rounded-full bg-current" />
+      ) : null}
     </span>
   );
 }
@@ -225,32 +226,26 @@ function BrowserSearchResults({
   const result_items = build_browser_result_items({ event, lines, query });
 
   return (
-    <div className="soft-scrollbar min-h-0 flex-1 overflow-auto bg-[#fbfcfe]">
-      <div className="grid min-h-full grid-cols-[180px_minmax(0,1fr)] max-md:grid-cols-1">
-        <aside className="hidden border-r border-(--divider-subtle-color) bg-[#f3f6fa] px-3 py-4 text-[11px] text-(--text-soft) md:block">
-          <p className="mb-2 text-[10px] font-black uppercase tracking-[0.14em]">Safari</p>
-          <SafariSidebarItem active label="搜索结果" />
-          <SafariSidebarItem label="阅读列表" />
-          <SafariSidebarItem label="历史记录" />
-        </aside>
-        <div className="min-w-0 px-6 py-5">
-          <div className="mb-4 max-w-[760px]">
-            <div className="flex min-w-0 items-center gap-2 rounded-[14px] border border-(--divider-subtle-color) bg-white px-3 py-2.5 text-[13px] text-(--text-strong) shadow-[0_12px_34px_rgba(18,28,42,0.07),inset_0_1px_0_rgba(255,255,255,0.82)]">
+    <div className="soft-scrollbar min-h-0 flex-1 overflow-auto bg-[radial-gradient(70%_42%_at_50%_0%,rgba(91,114,255,0.055),transparent_70%),#fbfcfe]">
+      <div className="min-h-full px-6 py-6">
+        <div className="mx-auto max-w-[820px]">
+          <div className="mb-5">
+            <div className="flex min-w-0 items-center gap-2 rounded-[18px] border border-(--divider-subtle-color) bg-white px-4 py-3 text-[13px] text-(--text-strong) shadow-[0_16px_42px_rgba(18,28,42,0.08),inset_0_1px_0_rgba(255,255,255,0.82)]">
               <Search className="h-4 w-4 shrink-0 text-(--icon-muted)" />
               <span className="min-w-0 flex-1 truncate">{query}</span>
               {event.phase === "running" ? <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[color:var(--primary)]" /> : null}
             </div>
-            <p className="mt-2 text-[11px] text-(--text-soft)">
-              {PHASE_LABEL[event.phase]} · {result_items.length} 条结果 · {format_browser_origin(query)}
+            <p className="mt-3 text-[11px] text-(--text-soft)">
+              Safari 搜索 · {PHASE_LABEL[event.phase]} · {result_items.length} 条结果 · {format_browser_origin(query)}
             </p>
             {event.phase === "running" ? (
               <div className="operation-web-loading mt-3 h-1.5 overflow-hidden rounded-full bg-[rgba(91,114,255,0.10)]" />
             ) : null}
           </div>
-          <div className="max-w-[760px] space-y-3">
+          <div className="space-y-3">
             {result_items.map((item) => (
               <article
-                className="rounded-[14px] border border-(--divider-subtle-color) bg-white/82 px-4 py-3 shadow-[0_12px_34px_rgba(18,28,42,0.06)]"
+                className="rounded-[16px] border border-(--divider-subtle-color) bg-white/84 px-4 py-3 shadow-[0_12px_34px_rgba(18,28,42,0.055)]"
                 key={`${item.url}:${item.title}`}
               >
                 <p className="truncate text-[11px] font-semibold text-[color:var(--success)]">{item.url}</p>
@@ -263,17 +258,6 @@ function BrowserSearchResults({
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function SafariSidebarItem({ active = false, label }: { active?: boolean; label: string }) {
-  return (
-    <div className={cn(
-      "rounded-[9px] px-2.5 py-1.5 font-semibold",
-      active ? "bg-white text-(--text-strong) shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]" : "text-(--text-soft)",
-    )}>
-      {label}
     </div>
   );
 }
