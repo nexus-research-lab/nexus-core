@@ -48,8 +48,8 @@ export function NexusToolSurface({
             <Settings2 className="h-4 w-4" />
           </span>
           <div className="min-w-0">
-            <p className="truncate text-[12px] font-black text-(--text-strong)">Nexus 实用工具</p>
-            <p className="truncate text-[10px] text-(--text-soft)">工具会话</p>
+            <p className="truncate text-[12px] font-black text-(--text-strong)">Nexus · {session.app_intent.app_label}</p>
+            <p className="truncate text-[10px] text-(--text-soft)">{session.app_intent.detail_label}</p>
           </div>
         </div>
         <div className="mt-2 space-y-0.5">
@@ -84,7 +84,7 @@ export function NexusToolSurface({
                 {session.tool_name}
               </h3>
               <p className="mt-0.5 truncate text-[10px] font-semibold text-(--text-soft)">
-                {session.display_target}
+                {session.app_intent.group_label} · {session.display_target}
               </p>
             </div>
           </div>

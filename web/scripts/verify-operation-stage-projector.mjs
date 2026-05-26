@@ -79,6 +79,7 @@ copyFileSync(join(operation_dir, "stage/operation-stage-window-position.js"), jo
 mkdirSync(join(operation_dir, "apps"), { recursive: true });
 copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
 copyFileSync(join(operation_dir, "apps/operation-app-surface-policy.js"), join(operation_dir, "apps/operation-app-surface-policy"));
+copyFileSync(join(operation_dir, "apps/tool-app-intent.js"), join(operation_dir, "apps/tool-app-intent"));
 copyFileSync(join(operation_dir, "apps/nexus-tool-session.js"), join(operation_dir, "apps/nexus-tool-session"));
 copyFileSync(join(operation_dir, "apps/file-preview-value.js"), join(operation_dir, "apps/file-preview-value"));
 copyFileSync(join(operation_dir, "apps/code-editor-session.js"), join(operation_dir, "apps/code-editor-session"));
@@ -177,6 +178,9 @@ const {
   build_nexus_tool_session_view,
 } = await import(pathToFileURL(join(operation_dir, "apps/nexus-tool-session.js")));
 const {
+  tool_app_intent_for_action,
+} = await import(pathToFileURL(join(operation_dir, "apps/tool-app-intent.js")));
+const {
   resolve_file_preview_value,
 } = await import(pathToFileURL(join(operation_dir, "apps/file-preview-value.js")));
 const {
@@ -220,6 +224,7 @@ verify_hidden_stage_uses_desktop_state_instead_of_mission_control();
 verify_unclassified_tool_activity_opens_nexus_app_window(now);
 verify_current_unclassified_tool_opens_beside_existing_app_window(now);
 verify_generic_tool_uses_nexus_tool_surface();
+verify_tool_app_intent_map();
 verify_nexus_tool_session_view(now);
 verify_nexus_tool_app_has_own_desktop_identity();
 verify_window_focus_moves_to_next_visible_window();
@@ -516,6 +521,19 @@ function verify_generic_tool_uses_nexus_tool_surface() {
   assert(app_surface_for_window_kind("browser") === "specialized", "Browser windows should keep specialized app rendering");
 }
 
+function verify_tool_app_intent_map() {
+  assert(tool_app_intent_for_action("read").app_label === "Code", "Read tools should feel like Code document work");
+  assert(tool_app_intent_for_action("create").group_label === "创建", "Create tools should keep creation semantics");
+  assert(tool_app_intent_for_action("edit").detail_label.includes("修改"), "Edit tools should keep modification semantics");
+  assert(tool_app_intent_for_action("list").app_label === "访达", "List tools should feel like Finder browsing");
+  assert(tool_app_intent_for_action("search").app_label === "访达", "Workspace search should feel like Finder search");
+  assert(tool_app_intent_for_action("run").app_label === "终端", "Run tools should feel like Terminal");
+  assert(tool_app_intent_for_action("web_search").app_label === "Safari", "Web search should feel like Safari");
+  assert(tool_app_intent_for_action("web_fetch").detail_label === "打开网页", "Web fetch should read as opening a page");
+  assert(tool_app_intent_for_action("task").app_label === "活动监视器", "Task delegation should feel like Activity Monitor");
+  assert(tool_app_intent_for_action("plan").sidebar_title === "计划调度", "Plan tools should have scheduling semantics");
+}
+
 function verify_nexus_tool_session_view(now) {
   const event = {
     id: "tool-plan",
@@ -552,8 +570,11 @@ function verify_nexus_tool_session_view(now) {
     target: "todos",
   });
   assert(view.tool_name === "TodoWrite", `Nexus tool app should keep tool name, got ${view.tool_name}`);
+  assert(view.app_intent.app_label === "Nexus", `Plan tool app should keep Nexus intent, got ${view.app_intent.app_label}`);
+  assert(view.app_intent.group_label === "计划", `Plan tool app should expose plan group, got ${view.app_intent.group_label}`);
   assert(view.display_target === "todos", `Nexus tool app should expose target, got ${view.display_target}`);
-  assert(view.sidebar_items.length === 4, `Nexus tool app should expose sidebar status rows, got ${view.sidebar_items.length}`);
+  assert(view.sidebar_items.length === 5, `Nexus tool app should expose sidebar status rows, got ${view.sidebar_items.length}`);
+  assert(view.sidebar_items.some((item) => item.label === "对应应用" && item.value === "Nexus"), "Nexus tool app should expose mapped app intent");
   assert(view.input_rows.some((row) => row.key === "todos"), "Nexus tool app should expose tool input rows");
   assert(view.output_text.includes("\"ok\": true"), `Nexus tool app should render structured output, got ${view.output_text}`);
   assert(view.timeline.length === 2, `Nexus tool app should keep recent tool trace, got ${view.timeline.length}`);
