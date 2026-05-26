@@ -1,10 +1,7 @@
 import {
-  Copy,
   Loader2,
-  Search,
   TerminalSquare,
 } from "lucide-react";
-import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -48,7 +45,7 @@ export function TerminalSession({
         session_label={session_label}
         shell_title={shell_title}
       />
-      <div className="soft-scrollbar min-h-0 flex-1 overflow-auto px-3 py-2">
+      <div className="soft-scrollbar min-h-0 flex-1 overflow-auto bg-[radial-gradient(70%_36%_at_50%_0%,rgba(141,224,173,0.055),transparent_70%),#080d12] px-3 py-2">
         {entries.map((entry, entry_index) => (
           <div className={entry_index > 0 ? "mt-4 border-t border-white/8 pt-3" : undefined} key={entry.id}>
             {entry_index > 0 ? <TerminalCommandSeparator entry={entry} /> : null}
@@ -93,41 +90,32 @@ function TerminalTitleBar({
 }) {
   return (
     <div className="border-b border-white/10 bg-[#111922] text-[10px] text-[#88a19a]">
-      <div className="flex min-h-0 items-center justify-between gap-3 px-3 py-1.5">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="grid h-5 w-5 shrink-0 place-items-center rounded-md bg-[#17232c] text-[#8de0ad]">
-            {has_running_entry ? <Loader2 className="h-3 w-3 animate-spin" /> : <TerminalSquare className="h-3 w-3" />}
+      <div className="flex min-h-0 items-end gap-1.5 px-2 pt-1.5">
+        <div className="flex min-w-0 max-w-[70%] items-center gap-2 rounded-t-[8px] border border-b-0 border-white/10 bg-[#080d12] px-3 py-1.5 text-[#c8d8d1] shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
+          <span className="grid h-4 w-4 shrink-0 place-items-center text-[#8de0ad]">
+            {has_running_entry
+              ? <Loader2 className="h-3 w-3 animate-spin" />
+              : <TerminalSquare className="h-3 w-3" />}
           </span>
-          <span className="truncate text-[#c8d8d1]">{shell_title}</span>
-          <span className="hidden min-w-0 truncate text-[#536873] sm:inline">{cwd_label}</span>
+          <span className="min-w-0 truncate">{shell_title}</span>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5">
-          <span className="hidden max-w-[140px] truncate rounded border border-white/10 bg-[#080d12] px-2 py-0.5 text-[#c8d8d1] sm:inline">
-            {session_label}
-          </span>
-          <TerminalToolbarButton label="搜索">
-            <Search className="h-3 w-3" />
-          </TerminalToolbarButton>
-          <TerminalToolbarButton label="复制输出">
-            <Copy className="h-3 w-3" />
-          </TerminalToolbarButton>
-          <TerminalStatusPill event={event} />
-        </div>
+        <span className="mb-1 hidden min-w-0 truncate text-[#536873] sm:block">
+          {session_label}
+        </span>
+      </div>
+      <div className="flex min-h-0 items-center justify-between gap-3 border-t border-white/[0.035] px-3 py-1.5">
+        <span className="min-w-0 truncate text-[#536873]">{cwd_label}</span>
+        <span className={cn(
+          "shrink-0 text-[10px] font-semibold",
+          event.phase === "running" && "text-[#8de0ad]",
+          event.phase === "done" && "text-[#8de0ad]",
+          event.phase === "error" && "text-[#ff9d9d]",
+          (event.phase === "queued" || event.phase === "waiting" || event.phase === "cancelled") && "text-[#8aa09b]",
+        )}>
+          {TERMINAL_PHASE_LABEL[event.phase]}
+        </span>
       </div>
     </div>
-  );
-}
-
-function TerminalToolbarButton({ children, label }: { children: ReactNode; label: string }) {
-  return (
-    <button
-      aria-label={label}
-      className="grid h-5 w-5 place-items-center rounded border border-white/8 bg-white/[0.035] text-[#88a19a] transition hover:bg-white/[0.07] hover:text-[#c8d8d1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8de0ad]/30"
-      title={label}
-      type="button"
-    >
-      {children}
-    </button>
   );
 }
 
@@ -244,19 +232,5 @@ function TerminalCommandSeparator({ entry }: { entry: TerminalEntry }) {
         {entry.started_label} · {entry.duration_label}
       </span>
     </div>
-  );
-}
-
-function TerminalStatusPill({ event }: { event: NexusOperationEvent }) {
-  return (
-    <span className={cn(
-      "rounded-md px-1.5 py-0.5 font-semibold",
-      event.phase === "running" && "bg-[#182822] text-[#8de0ad]",
-      event.phase === "done" && "bg-[#17241e] text-[#8de0ad]",
-      event.phase === "error" && "bg-[#2c1519] text-[#ff9d9d]",
-      (event.phase === "queued" || event.phase === "waiting" || event.phase === "cancelled") && "bg-white/[0.05] text-[#8aa09b]",
-    )}>
-      {TERMINAL_PHASE_LABEL[event.phase]}
-    </span>
   );
 }
