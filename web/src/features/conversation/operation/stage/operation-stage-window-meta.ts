@@ -181,6 +181,11 @@ export function position_for_window(window: StageWindowState, narrative_phase: S
   if (window.kind === "task_board") {
     return is_review_layout ? "left-[25%] top-[15%] h-[50%] w-[40%]" : "left-[27%] top-[15%] h-[50%] w-[42%]";
   }
+  if (window.kind === "generic_tool") {
+    return window.phase === "focused"
+      ? is_review_layout ? "left-[23%] top-[12%] h-[62%] w-[46%]" : "left-[22%] top-[10%] h-[66%] w-[50%]"
+      : is_review_layout ? "left-[28%] top-[16%] h-[50%] w-[36%]" : "left-[28%] top-[14%] h-[52%] w-[38%]";
+  }
   if (window.kind === "run_manifest") {
     return is_review_layout ? "left-[23%] top-[13%] h-[59%] w-[45%]" : "left-[27%] top-[14%] h-[56%] w-[43%]";
   }

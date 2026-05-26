@@ -87,6 +87,38 @@ const write_event: NexusOperationEvent = {
   updated_at: now - 8_000,
 };
 
+const generic_tool_event: NexusOperationEvent = {
+  agent_id,
+  evidence: [
+    { type: "skill", label: "工具", value: "Context7" },
+    { type: "status", label: "结果", value: "3 条文档片段" },
+  ],
+  id: "tool-generic-docs",
+  kind: "unknown",
+  message_id: "message-assistant",
+  phase: "running",
+  round_id,
+  session_key,
+  surface: "fallback",
+  target: "React useEffect cleanup",
+  title: "查询文档",
+  tool_name: "Context7",
+  tool_use_id: "tool-context7",
+  input_preview: {
+    library: "react",
+    query: "useEffect cleanup",
+  },
+  result_preview: {
+    snippets: [
+      "Effect cleanup runs before the next effect and during unmount.",
+      "Return a cleanup function from useEffect when subscribing to external systems.",
+      "Abort fetches or ignore stale responses to prevent updates after unmount.",
+    ],
+  },
+  summary: "查询 React 文档，提取 useEffect 清理函数相关片段。",
+  updated_at: now - 6_500,
+};
+
 const open_event: NexusOperationEvent = {
   agent_id,
   evidence: [
@@ -153,6 +185,7 @@ const workspace_item: WorkspaceActivityItem = {
 const PREVIEW_STEPS = [
   { id: "idle", label: "空桌面", event: live_event, events: [live_event] },
   { id: "write", label: "创建文件", event: write_event, events: [live_event, write_event] },
+  { id: "tool", label: "工具窗口", event: generic_tool_event, events: [live_event, generic_tool_event] },
   { id: "open", label: "打开预览", event: open_event, events: [live_event, write_event, open_event] },
   { id: "done", label: "完成收束", event: summary_event, events: [live_event, write_event, open_event, summary_event] },
 ] as const;
