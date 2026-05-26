@@ -7,6 +7,7 @@ import {
   Loader2,
   MousePointer2,
   Search,
+  SlidersHorizontal,
   AlertTriangle,
   Wifi,
 } from "lucide-react";
@@ -57,7 +58,15 @@ export function StageMacMenuBar({
   }, []);
 
   return (
-    <div className="absolute inset-x-0 top-0 z-40 flex h-8 items-center justify-between border-b border-white/58 bg-white/54 px-4 text-[11px] font-semibold text-(--text-strong) shadow-[0_1px_0_rgba(255,255,255,0.70),0_12px_34px_rgba(18,28,42,0.08)] backdrop-blur-2xl max-md:hidden">
+    <div
+      aria-label={menu_status.activity_label}
+      className="absolute inset-x-0 top-0 z-40 flex h-8 items-center justify-between border-b border-white/58 bg-white/54 px-4 text-[11px] font-semibold text-(--text-strong) shadow-[0_1px_0_rgba(255,255,255,0.70),0_12px_34px_rgba(18,28,42,0.08)] backdrop-blur-2xl max-md:hidden"
+      title={[
+        menu_status.activity_label,
+        menu_status.window_label,
+        menu_status.dock_label,
+      ].filter(Boolean).join(" · ")}
+    >
       <div className="flex min-w-0 items-center gap-3">
         <Apple className="h-3.5 w-3.5 shrink-0" />
         <span className="font-black">{app_name}</span>
@@ -66,15 +75,9 @@ export function StageMacMenuBar({
         ))}
       </div>
       <div className="flex shrink-0 items-center gap-3 text-(--text-soft)">
-        <span className="max-w-[220px] truncate rounded-full bg-white/40 px-2 py-0.5 text-[10px] font-bold text-(--text-muted)">
-          {menu_status.activity_label}
-        </span>
-        <span className="font-mono text-[10px] text-(--text-soft)">{menu_status.window_label}</span>
-        {menu_status.dock_label ? (
-          <span className="font-mono text-[10px] text-(--text-soft)">{menu_status.dock_label}</span>
-        ) : null}
         <Search className="h-3.5 w-3.5" />
         <Command className="h-3.5 w-3.5" />
+        <SlidersHorizontal className="h-3.5 w-3.5" />
         <Wifi className="h-3.5 w-3.5" />
         <Battery className="h-3.5 w-3.5" />
         <span className="font-mono text-[11px] text-(--text-strong)">{time_label}</span>
