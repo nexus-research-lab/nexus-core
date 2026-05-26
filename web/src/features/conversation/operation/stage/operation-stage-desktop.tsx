@@ -47,6 +47,7 @@ import {
   is_meaningful_stage_window_drag,
   normalize_stage_window_drag_offset,
 } from "./operation-stage-window-drag";
+import { build_stage_window_launch_state } from "./operation-stage-window-launch";
 
 export function OperationStageDesktop({
   event,
@@ -334,10 +335,11 @@ export function OperationStageDesktop({
       {visible_windows.length ? visible_windows.map((window, index) => {
         const is_active = active_window_id === window.id && window.phase !== "minimized";
         const is_maximized = Boolean(window_overrides[window.id]?.maximized);
+        const launch = build_stage_window_launch_state({ index, is_active, window });
         return (
           <OperationStageWindow
             app_label={stage_app_label_for_window_kind(window.kind)}
-            delay_ms={Math.min(index * 70, 280)}
+            delay_ms={launch.delay_ms}
             dimmed={!is_active && window.phase !== "minimized"}
             drag_offset={is_maximized ? { x: 0, y: 0 } : {
               x: window_overrides[window.id]?.offset_x ?? 0,
@@ -347,6 +349,7 @@ export function OperationStageDesktop({
             icon={icon_for_window_kind(window.kind)}
             key={window.id}
             content_mode={window_content_mode_for_kind(window.kind)}
+            launch_origin={launch.origin}
             maximized={is_maximized}
             mobile_hidden={!is_active}
             minimized={window.phase === "minimized"}

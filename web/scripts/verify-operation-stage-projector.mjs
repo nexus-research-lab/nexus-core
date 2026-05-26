@@ -74,6 +74,7 @@ copyFileSync(join(operation_dir, "stage/operation-stage-window-titlebar.js"), jo
 copyFileSync(join(operation_dir, "stage/operation-stage-desktop-icons.js"), join(operation_dir, "stage/operation-stage-desktop-icons"));
 copyFileSync(join(operation_dir, "stage/operation-stage-minimized-window.js"), join(operation_dir, "stage/operation-stage-minimized-window"));
 copyFileSync(join(operation_dir, "stage/operation-stage-window-drag.js"), join(operation_dir, "stage/operation-stage-window-drag"));
+copyFileSync(join(operation_dir, "stage/operation-stage-window-launch.js"), join(operation_dir, "stage/operation-stage-window-launch"));
 mkdirSync(join(operation_dir, "apps"), { recursive: true });
 copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
 copyFileSync(join(operation_dir, "apps/operation-app-surface-policy.js"), join(operation_dir, "apps/operation-app-surface-policy"));
@@ -159,6 +160,9 @@ const {
   normalize_stage_window_drag_offset,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-window-drag.js")));
 const {
+  build_stage_window_launch_state,
+} = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-window-launch.js")));
+const {
   build_terminal_entries,
 } = await import(pathToFileURL(join(operation_dir, "apps/terminal-session-model.js")));
 const {
@@ -220,6 +224,7 @@ verify_stage_window_titlebar_state();
 verify_stage_desktop_icon_items();
 verify_stage_minimized_window_tile();
 verify_stage_window_drag_model();
+verify_stage_window_launch_model();
 verify_operation_stage_key_is_session_scoped();
 verify_stage_experience_state_machine(now);
 verify_live_episode_narrates_running_round(now);
@@ -736,6 +741,32 @@ function verify_stage_window_drag_model() {
   assert(is_meaningful_stage_window_drag({ x: 12, y: 0 }), "Visible window drag should be meaningful");
   const invalid = normalize_stage_window_drag_offset({ x: Number.NaN, y: Infinity });
   assert(invalid.x === 0 && invalid.y === 0, `Invalid drag offsets should reset to zero, got ${invalid.x}, ${invalid.y}`);
+}
+
+function verify_stage_window_launch_model() {
+  const active = build_stage_window_launch_state({
+    index: 2,
+    is_active: true,
+    window: mock_stage_window({ id: "terminal", kind: "terminal", phase: "focused" }),
+  });
+  assert(active.delay_ms === 0, `Active window should launch immediately, got ${active.delay_ms}`);
+  assert(active.origin === "active", `Active window should use active launch origin, got ${active.origin}`);
+
+  const browser = build_stage_window_launch_state({
+    index: 1,
+    is_active: false,
+    window: mock_stage_window({ id: "browser", kind: "browser", phase: "background" }),
+  });
+  assert(browser.origin === "dock", `App windows should launch from Dock, got ${browser.origin}`);
+  assert(browser.delay_ms === 250, `Background app window should stagger after active window, got ${browser.delay_ms}`);
+
+  const finder = build_stage_window_launch_state({
+    index: 3,
+    is_active: false,
+    window: { ...mock_stage_window({ id: "finder", kind: "finder", phase: "background" }), layout: "secondary" },
+  });
+  assert(finder.origin === "desktop", `Finder should launch from desktop context, got ${finder.origin}`);
+  assert(finder.delay_ms === 420, `Desktop context launch should be capped, got ${finder.delay_ms}`);
 }
 
 function verify_operation_stage_key_is_session_scoped() {

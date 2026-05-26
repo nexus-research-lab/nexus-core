@@ -152,6 +152,14 @@ export function OperationStageMotionStyles() {
           transform-origin: 50% 60%;
         }
 
+        .operation-stage-window-launch-dock {
+          transform-origin: 50% 100%;
+        }
+
+        .operation-stage-window-launch-desktop {
+          transform-origin: 88% 20%;
+        }
+
         .operation-stage-window-focus {
           box-shadow:
             0 32px 82px rgba(34,48,72,.18),

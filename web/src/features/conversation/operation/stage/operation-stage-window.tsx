@@ -15,6 +15,7 @@ interface OperationStageWindowProps {
   app_label?: string;
   delay_ms?: number;
   focus?: boolean;
+  launch_origin?: "active" | "desktop" | "dock";
   maximized?: boolean;
   minimized?: boolean;
   dimmed?: boolean;
@@ -40,6 +41,7 @@ export function OperationStageWindow({
   app_label,
   delay_ms = 0,
   focus = false,
+  launch_origin = "active",
   maximized = false,
   minimized = false,
   dimmed = false,
@@ -192,6 +194,8 @@ export function OperationStageWindow({
           ? "border-white/14 bg-[#0d151e]/95 text-[#d8e8e2] shadow-[0_30px_76px_rgba(0,8,16,0.34)]"
           : "border-white/60 bg-[rgba(250,252,253,0.96)] text-(--text-strong) shadow-[0_28px_72px_rgba(18,28,42,0.24)]",
         focus && "operation-stage-window-focus",
+        launch_origin === "dock" && "operation-stage-window-launch-dock",
+        launch_origin === "desktop" && "operation-stage-window-launch-desktop",
         maximized && "operation-stage-window-maximized rounded-[18px]",
         dimmed && "opacity-[0.62] saturate-[0.82]",
         is_dragging && "operation-stage-window-dragging select-none",
