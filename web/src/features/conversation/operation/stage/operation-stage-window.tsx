@@ -314,14 +314,31 @@ export function OperationStageWindow({
             )}
           </button>
         </div>
-        <div className="flex min-w-0 flex-1 items-center justify-center gap-1.5 px-2 text-[10px] font-semibold">
-          <Icon className="h-3 w-3 shrink-0" />
-          <span className="min-w-0 truncate" title={titlebar.title_label}>
-            {title}
-          </span>
-          <span className="rounded-full bg-white/44 px-1.5 py-0.5 text-[8.5px] font-black text-(--text-soft)">
-            {titlebar.status_label}
-          </span>
+        <div className="flex min-w-0 flex-1 justify-center px-2">
+          <div className="flex min-w-0 max-w-[70%] items-center justify-center gap-1.5 text-[10px] font-semibold">
+            <Icon className={cn(
+              "h-3 w-3 shrink-0",
+              focus ? "text-(--icon-default)" : "text-(--icon-muted)",
+            )} />
+            <span className="min-w-0 truncate" title={titlebar.title_label}>
+              {title}
+            </span>
+            <span
+              aria-label={titlebar.status_label}
+              className={cn(
+                "h-1.5 w-1.5 shrink-0 rounded-full",
+                titlebar.state_dot_tone === "active" && "bg-[rgba(47,184,132,0.82)]",
+                titlebar.state_dot_tone === "background" && "bg-[rgba(117,131,149,0.42)]",
+                titlebar.state_dot_tone === "minimized" && "bg-[rgba(223,157,46,0.86)]",
+              )}
+              title={titlebar.state_dot_title}
+            />
+            {titlebar.proxy_label ? (
+              <span className="hidden truncate text-[9px] font-bold text-(--text-soft) lg:inline">
+                {titlebar.proxy_label}
+              </span>
+            ) : null}
+          </div>
         </div>
         <span aria-hidden="true" className="h-4 w-[52px] shrink-0" />
       </div>

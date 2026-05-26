@@ -638,6 +638,8 @@ function verify_stage_window_titlebar_state() {
     title: "gomoku.html",
   });
   assert(focused.aria_label === "Safari window: gomoku.html", `Focused titlebar should expose app window label, got ${focused.aria_label}`);
+  assert(focused.proxy_label === "Safari", `Focused titlebar should expose a macOS proxy label, got ${focused.proxy_label}`);
+  assert(focused.state_dot_tone === "active", `Focused titlebar should use active state dot, got ${focused.state_dot_tone}`);
   assert(focused.status_label === "前台", `Focused titlebar should report foreground status, got ${focused.status_label}`);
   assert(focused.zoom_label === "缩放 gomoku.html", `Focused titlebar should expose zoom action, got ${focused.zoom_label}`);
 
@@ -648,6 +650,8 @@ function verify_stage_window_titlebar_state() {
     title: "Nexus Console",
   });
   assert(background.aria_label === "Nexus Console", `Titlebar without app label should keep plain aria label, got ${background.aria_label}`);
+  assert(background.proxy_label === null, `Titlebar without app label should omit proxy label, got ${background.proxy_label}`);
+  assert(background.state_dot_tone === "background", `Background titlebar should use background state dot, got ${background.state_dot_tone}`);
   assert(background.status_label === "后台", `Background titlebar should report background status, got ${background.status_label}`);
   assert(background.zoom_title === "还原窗口", `Maximized titlebar should offer restore, got ${background.zoom_title}`);
 
@@ -658,6 +662,8 @@ function verify_stage_window_titlebar_state() {
     minimized: true,
     title: "app.ts",
   });
+  assert(minimized.state_dot_tone === "minimized", `Minimized titlebar should use minimized state dot, got ${minimized.state_dot_tone}`);
+  assert(minimized.state_dot_title === "app.ts · 已最小化", `Minimized titlebar should expose state dot title, got ${minimized.state_dot_title}`);
   assert(minimized.status_label === "已最小化", `Minimized titlebar should report minimized status, got ${minimized.status_label}`);
 }
 
