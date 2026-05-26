@@ -338,7 +338,7 @@ export function OperationStageDesktop({
         windows={window_states}
       />
       <StageDesktopIcons windows={window_states} on_restore={restore_window} />
-      <StageLiveStrip state={live_strip} />
+      <StageLiveStrip key={active_narrative_event.id} state={live_strip} />
       <StageAgentCursor active_window={active_window} />
       {visible_windows.length ? visible_windows.map((window, index) => {
         const is_active = active_window_id === window.id && window.phase !== "minimized";

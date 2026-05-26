@@ -785,7 +785,7 @@ function verify_stage_window_launch_model() {
     window: mock_stage_window({ id: "terminal", kind: "terminal", phase: "focused" }),
   });
   assert(active.delay_ms === 0, `Active window should launch immediately, got ${active.delay_ms}`);
-  assert(active.origin === "active", `Active window should use active launch origin, got ${active.origin}`);
+  assert(active.origin === "dock", `Active app windows should launch from Dock, got ${active.origin}`);
 
   const browser = build_stage_window_launch_state({
     index: 1,
@@ -797,11 +797,11 @@ function verify_stage_window_launch_model() {
 
   const finder = build_stage_window_launch_state({
     index: 3,
-    is_active: false,
-    window: { ...mock_stage_window({ id: "finder", kind: "finder", phase: "background" }), layout: "secondary" },
+    is_active: true,
+    window: { ...mock_stage_window({ id: "finder", kind: "finder", phase: "focused" }), layout: "secondary" },
   });
   assert(finder.origin === "desktop", `Finder should launch from desktop context, got ${finder.origin}`);
-  assert(finder.delay_ms === 420, `Desktop context launch should be capped, got ${finder.delay_ms}`);
+  assert(finder.delay_ms === 0, `Focused Finder should launch immediately from desktop context, got ${finder.delay_ms}`);
 }
 
 function verify_stage_window_position_model() {

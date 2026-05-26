@@ -14,16 +14,18 @@ export function build_stage_window_launch_state({
   is_active: boolean;
   window: StageWindowState;
 }): StageWindowLaunchState {
+  if (window.layout === "artifact" || window.kind === "finder") {
+    return {
+      delay_ms: is_active || window.phase === "focused"
+        ? 0
+        : Math.min(420, 220 + index * 90),
+      origin: "desktop",
+    };
+  }
   if (is_active || window.phase === "focused") {
     return {
       delay_ms: 0,
-      origin: "active",
-    };
-  }
-  if (window.layout === "artifact" || window.kind === "finder") {
-    return {
-      delay_ms: Math.min(420, 220 + index * 90),
-      origin: "desktop",
+      origin: "dock",
     };
   }
   return {
