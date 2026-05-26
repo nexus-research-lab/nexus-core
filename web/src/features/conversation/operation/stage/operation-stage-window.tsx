@@ -361,34 +361,19 @@ export function OperationStageWindow({
         {preview_mode === "stage-manager" ? (
           <button
             aria-label={`切换到 ${titlebar.title_label}`}
-            className="group flex h-full w-full flex-col justify-between overflow-hidden bg-[linear-gradient(145deg,rgba(255,255,255,0.82),rgba(239,244,249,0.68))] p-3 text-left outline-none"
+            className="group h-full w-full overflow-hidden bg-[linear-gradient(145deg,rgba(255,255,255,0.82),rgba(239,244,249,0.68))] p-2 text-left outline-none"
             onClick={(event) => {
               event.stopPropagation();
               on_focus?.();
             }}
             type="button"
           >
-            <div className="flex items-start justify-between gap-2">
-              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-[12px] border border-white/64 bg-white/68 text-(--icon-default) shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
-                <Icon className="h-4 w-4" />
-              </div>
-              <span className="rounded-full bg-white/52 px-2 py-0.5 text-[9px] font-black text-(--text-soft)">
-                {app_label ?? "Nexus"}
-              </span>
-            </div>
-            <div className="min-w-0">
-              <p className="truncate text-[11px] font-black leading-4 text-(--text-strong)">
-                {titlebar.title_label}
-              </p>
-              <p className="mt-1 line-clamp-2 text-[9px] font-semibold leading-3 text-(--text-soft)">
-                后台窗口 · 点击切换
-              </p>
-            </div>
-            <div className="flex h-6 items-end gap-1.5 opacity-70 transition group-hover:opacity-100">
-              <span className="h-2.5 flex-1 rounded-full bg-[rgba(91,114,255,0.18)]" />
-              <span className="h-4 flex-1 rounded-full bg-[rgba(47,184,132,0.18)]" />
-              <span className="h-3 flex-1 rounded-full bg-[rgba(117,131,149,0.16)]" />
-            </div>
+            <StageManagerWindowPreview
+              app_label={app_label ?? "Nexus"}
+              icon={Icon}
+              title={titlebar.title_label}
+              tone={tone}
+            />
           </button>
         ) : tone !== "terminal" && content_mode !== "flush" ? (
           <div className="pointer-events-none absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-[10px] border border-(--divider-subtle-color) bg-white/72 text-(--icon-muted) opacity-30">
@@ -399,4 +384,89 @@ export function OperationStageWindow({
       </div>
     </div>
   );
+}
+
+function StageManagerWindowPreview({
+  app_label,
+  icon: Icon,
+  title,
+  tone,
+}: {
+  app_label: string;
+  icon: LucideIcon;
+  title: string;
+  tone: "default" | "terminal";
+}) {
+  const skin = stage_manager_preview_skin(app_label, tone);
+  return (
+    <div className={cn(
+      "flex h-full min-h-0 flex-col overflow-hidden rounded-[12px] border shadow-[inset_0_1px_0_rgba(255,255,255,0.62)] transition group-hover:brightness-[1.03]",
+      skin.frame,
+    )}>
+      <div className={cn("flex h-5 shrink-0 items-center gap-1.5 border-b px-2", skin.titlebar)}>
+        <span className="h-1.5 w-1.5 rounded-full bg-[rgba(223,93,98,0.72)]" />
+        <span className="h-1.5 w-1.5 rounded-full bg-[rgba(223,157,46,0.72)]" />
+        <span className="h-1.5 w-1.5 rounded-full bg-[rgba(47,184,132,0.72)]" />
+        <span className="ml-auto flex min-w-0 items-center gap-1 text-[7px] font-black">
+          <Icon className="h-2.5 w-2.5 shrink-0" />
+          <span className="truncate">{app_label}</span>
+        </span>
+      </div>
+      <div className="min-h-0 flex-1 p-2">
+        <p className={cn("truncate text-[9px] font-black leading-3", skin.title)}>{title}</p>
+        <div className={cn("mt-1.5 space-y-1", skin.body)}>
+          {skin.lines.map((line, index) => (
+            <span
+              className={cn("block h-1.5 rounded-full", line)}
+              key={`${app_label}-${index}`}
+            />
+          ))}
+        </div>
+      </div>
+      <div className={cn("h-3 shrink-0 border-t px-2 py-0.5", skin.status)}>
+        <span className="block h-1.5 w-8 rounded-full bg-current opacity-30" />
+      </div>
+    </div>
+  );
+}
+
+function stage_manager_preview_skin(app_label: string, tone: "default" | "terminal") {
+  if (tone === "terminal" || app_label === "终端") {
+    return {
+      body: "bg-[#070c12]",
+      frame: "border-white/12 bg-[#0a1118] text-[#8de0ad]",
+      lines: ["w-10 bg-[#8de0ad]/35", "w-16 bg-white/18", "w-12 bg-[#8de0ad]/28"],
+      status: "border-white/8 bg-[#070c12] text-[#8de0ad]",
+      title: "text-[#d8e8e2]",
+      titlebar: "border-white/8 bg-white/[0.04] text-[#8aa09b]",
+    };
+  }
+  if (app_label === "Safari") {
+    return {
+      body: "bg-white/60",
+      frame: "border-white/70 bg-[#eef5fb] text-(--text-soft)",
+      lines: ["w-full bg-[rgba(91,114,255,0.16)]", "w-3/4 bg-[rgba(47,184,132,0.14)]", "w-1/2 bg-[rgba(117,131,149,0.14)]"],
+      status: "border-white/54 bg-white/50 text-(--text-soft)",
+      title: "text-(--text-strong)",
+      titlebar: "border-white/60 bg-white/64 text-(--text-soft)",
+    };
+  }
+  if (app_label === "Code") {
+    return {
+      body: "bg-[#101820]",
+      frame: "border-white/14 bg-[#0c141c] text-[#8aa0ad]",
+      lines: ["w-14 bg-[#8de0ad]/25", "w-full bg-white/12", "w-2/3 bg-white/10"],
+      status: "border-white/8 bg-[#0a1118] text-[#8de0ad]",
+      title: "text-[#dce8ee]",
+      titlebar: "border-white/8 bg-[#151f29] text-[#8aa0ad]",
+    };
+  }
+  return {
+    body: "bg-white/54",
+    frame: "border-white/68 bg-white/58 text-(--text-soft)",
+    lines: ["w-full bg-[rgba(91,114,255,0.14)]", "w-4/5 bg-[rgba(117,131,149,0.14)]", "w-1/2 bg-[rgba(47,184,132,0.14)]"],
+    status: "border-white/58 bg-white/46 text-(--text-soft)",
+    title: "text-(--text-strong)",
+    titlebar: "border-white/58 bg-white/58 text-(--text-soft)",
+  };
 }
