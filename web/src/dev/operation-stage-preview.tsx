@@ -148,6 +148,30 @@ const open_event: NexusOperationEvent = {
   updated_at: now - 5_000,
 };
 
+const permission_event: NexusOperationEvent = {
+  agent_id,
+  evidence: [
+    { type: "permission", label: "需要确认", value: "允许终端打开本地 HTML 预览" },
+    { type: "terminal", label: "命令", value: "open gomoku.html" },
+  ],
+  id: "permission-open-gomoku",
+  kind: "command_run",
+  message_id: "message-assistant",
+  phase: "waiting",
+  round_id,
+  session_key,
+  surface: "terminal",
+  target: "open gomoku.html",
+  title: "需要确认",
+  tool_name: "Bash",
+  tool_use_id: "tool-open",
+  input_preview: {
+    command: "open gomoku.html",
+  },
+  summary: "允许 Nexus 通过终端打开生成的五子棋 HTML 页面。",
+  updated_at: now - 5_800,
+};
+
 const summary_event: NexusOperationEvent = {
   agent_id,
   evidence: [
@@ -186,6 +210,7 @@ const PREVIEW_STEPS = [
   { id: "idle", label: "空桌面", event: live_event, events: [live_event] },
   { id: "write", label: "创建文件", event: write_event, events: [live_event, write_event] },
   { id: "tool", label: "工具窗口", event: generic_tool_event, events: [live_event, generic_tool_event] },
+  { id: "permission", label: "权限确认", event: permission_event, events: [live_event, write_event, permission_event] },
   { id: "open", label: "打开预览", event: open_event, events: [live_event, write_event, open_event] },
   { id: "done", label: "完成收束", event: summary_event, events: [live_event, write_event, open_event, summary_event] },
 ] as const;

@@ -61,10 +61,10 @@ export function PermissionCheckpointPanel({
             </span>
             <div className="min-w-0">
               <h3 className="mt-1 truncate text-[15px] font-black tracking-[-0.03em] text-(--text-strong)">
-                隐私与安全
+                系统设置
               </h3>
               <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-(--text-muted)">
-                {lead}
+                自动化权限需要确认后才能继续。
               </p>
             </div>
           </div>
@@ -80,10 +80,10 @@ export function PermissionCheckpointPanel({
             <Search className="h-3 w-3 shrink-0" />
             <span className="truncate">搜索设置</span>
           </div>
-          {[
-            { label: "隐私", Icon: ShieldCheck },
-            { label: "自动化", Icon: Settings2 },
-            { label: "文件与文件夹", Icon: FileText },
+            {[
+              { label: "隐私", Icon: ShieldCheck },
+              { label: "自动化", Icon: Settings2 },
+              { label: "文件与文件夹", Icon: FileText },
             { label: "网络", Icon: Globe2 },
           ].map((item, index) => (
             <div
@@ -103,9 +103,9 @@ export function PermissionCheckpointPanel({
           <div className="rounded-[14px] border border-(--divider-subtle-color) bg-white/76">
             <div className="flex items-start justify-between gap-3 border-b border-(--divider-subtle-color) px-4 py-3">
               <div className="min-w-0">
-                <p className="text-[13px] font-black text-(--text-strong)">自动化</p>
+                <p className="text-[13px] font-black text-(--text-strong)">自动化权限</p>
                 <p className="mt-1 text-[11px] leading-5 text-(--text-muted)">
-                  Nexus 正在请求控制这个桌面上的应用或文件。
+                  “Nexus”想要控制这个桌面上的应用或文件。
                 </p>
               </div>
               <span className="relative h-5 w-9 shrink-0 rounded-full bg-[rgba(47,184,132,0.22)] p-0.5 shadow-[inset_0_1px_2px_rgba(18,28,42,0.10)]">
@@ -125,9 +125,11 @@ export function PermissionCheckpointPanel({
                   待确认
                 </span>
               </div>
-              <pre className="mt-3 max-h-[128px] overflow-auto whitespace-pre-wrap break-words rounded-[10px] bg-[rgba(18,28,42,0.05)] px-3 py-2 font-mono text-[11px] leading-5 text-(--text-strong)">
-                {request_target}
-              </pre>
+              <div className="mt-3 rounded-[10px] border border-(--divider-subtle-color) bg-white/76 px-3 py-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-(--text-soft)">请求内容</p>
+                <p className="mt-1 break-words font-mono text-[11px] leading-5 text-(--text-strong)">{request_target}</p>
+                <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-(--text-muted)">{lead}</p>
+              </div>
               <div className="mt-3 flex items-center justify-end gap-2 border-t border-(--divider-subtle-color) pt-3">
                 <button
                   className="h-7 rounded-[7px] border border-(--divider-subtle-color) bg-white/80 px-3 text-[11px] font-semibold text-(--text-strong) shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] transition hover:bg-white"
