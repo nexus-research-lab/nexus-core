@@ -20,13 +20,11 @@ import { cn } from "@/lib/utils";
 import type { StageWindowState } from "../operation-desktop-types";
 import type { NexusOperationEvent } from "../operation-types";
 import { PHASE_LABELS } from "../operation-tool-catalog";
+import { finder_file_kind_label } from "./finder-item-details";
 import {
-  finder_file_kind_label,
-  finder_preview_lines,
-  resolve_finder_selected_item,
-} from "./finder-item-details";
-
-type WorkspaceItemStatus = NonNullable<NonNullable<StageWindowState["payload"]["workspace_items"]>[number]["status"]>;
+  build_finder_session_view,
+  workspace_status_label,
+} from "./finder-session";
 
 export function WorkspaceFinder({
   active_path,
@@ -37,22 +35,7 @@ export function WorkspaceFinder({
   event: NexusOperationEvent;
   items: NonNullable<StageWindowState["payload"]["workspace_items"]>;
 }) {
-  const display_items = items.length
-    ? items
-    : [{
-      id: "empty",
-      path: active_path ?? event.target ?? "workspace",
-      status: event.phase === "running" ? "writing" as const : "idle" as const,
-      updated_at: event.updated_at,
-      agent_id: event.agent_id,
-      version: 1,
-      source: "unknown" as const,
-      event_type: "file_write_end" as const,
-    }];
-  const changed_count = display_items.filter((item) => item.status === "updated" || item.status === "writing").length;
-  const selected_path = active_path ?? event.target ?? display_items[0]?.path ?? "workspace";
-  const selected_item = resolve_finder_selected_item(display_items, selected_path);
-  const preview_lines = finder_preview_lines(selected_item);
+  const finder_session = build_finder_session_view({ active_path, event, items });
 
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden bg-[#f8fafc]">
@@ -75,7 +58,7 @@ export function WorkspaceFinder({
             <div className="min-w-0">
               <p className="truncate text-[11px] font-black text-(--text-strong)">工作区</p>
               <p className="truncate text-[10px] text-(--text-soft)">
-                {display_items.length} 个文件 · {changed_count} 个变更
+                {finder_session.item_count} 个文件 · {finder_session.changed_count} 个变更
               </p>
             </div>
           </div>
@@ -102,11 +85,11 @@ export function WorkspaceFinder({
               <span>状态</span>
               <span>修改时间</span>
             </div>
-            {workspace_tree_rows(display_items.map((item) => item.path)).map((row) => (
+            {finder_session.rows.map((row) => (
               <WorkspaceTreeRow
                 active={row.path === active_path}
                 depth={row.depth}
-                item={display_items.find((item) => item.path === row.path)}
+                item={finder_session.display_items.find((item) => item.path === row.path)}
                 key={row.path}
                 label={row.label}
                 path={row.path}
@@ -118,25 +101,25 @@ export function WorkspaceFinder({
             <p className="text-[10px] font-black uppercase tracking-[0.14em] text-(--text-soft)">信息</p>
             <div className="mt-3 grid h-16 w-16 place-items-center rounded-[16px] border border-(--divider-subtle-color) bg-white/74 text-(--icon-default)">
               {(() => {
-                const Icon = icon_for_workspace_path(selected_path);
+                const Icon = icon_for_workspace_path(finder_session.selected_path);
                 return <Icon className="h-7 w-7" />;
               })()}
             </div>
             <p className="mt-3 line-clamp-2 text-[12px] font-black text-(--text-strong)">
-              {basename(selected_path)}
+              {basename(finder_session.selected_path)}
             </p>
             <p className="truncate text-[10px] text-(--text-soft)">
-              {finder_file_kind_label(selected_path)}
+              {finder_file_kind_label(finder_session.selected_path)}
             </p>
             <div className="mt-4 space-y-2 border-t border-(--divider-subtle-color) pt-3">
-              <FinderInspectorRow label="状态" value={selected_item ? workspace_status_label(selected_item.status) : "未选择"} />
-              <FinderInspectorRow label="位置" value={selected_path} />
-              <FinderInspectorRow label="修改时间" value={selected_item ? format_workspace_time(selected_item.updated_at) : "--"} />
-              <FinderInspectorRow label="版本" value={selected_item ? `v${selected_item.version}` : "--"} />
+              <FinderInspectorRow label="状态" value={finder_session.selected_item ? workspace_status_label(finder_session.selected_item.status) : "未选择"} />
+              <FinderInspectorRow label="位置" value={finder_session.selected_path} />
+              <FinderInspectorRow label="修改时间" value={finder_session.selected_item ? format_workspace_time(finder_session.selected_item.updated_at) : "--"} />
+              <FinderInspectorRow label="版本" value={finder_session.selected_item ? `v${finder_session.selected_item.version}` : "--"} />
             </div>
-            {preview_lines.length ? (
+            {finder_session.preview_lines.length ? (
               <div className="mt-4 overflow-hidden rounded-[11px] border border-(--divider-subtle-color) bg-[#101820] p-2 font-mono text-[10px] leading-4 text-[#dce8ee]">
-                {preview_lines.map((line, index) => (
+                {finder_session.preview_lines.map((line, index) => (
                   <div className="flex min-w-0 gap-2" key={`${index}:${line}`}>
                     <span className="w-5 shrink-0 select-none text-right text-[#6f8190]">{index + 1}</span>
                     <span className="min-w-0 truncate">{line}</span>
@@ -145,15 +128,15 @@ export function WorkspaceFinder({
               </div>
             ) : (
               <p className="mt-4 rounded-[11px] border border-(--divider-subtle-color) bg-white/54 px-3 py-2 text-[10px] leading-4 text-(--text-soft)">
-                {changed_count ? `${changed_count} 个变更待查看` : "没有新的文件变更"}
+                {finder_session.changed_count ? `${finder_session.changed_count} 个变更待查看` : "没有新的文件变更"}
               </p>
             )}
           </aside>
         </div>
         <FinderPathBar
-          changed_count={changed_count}
-          item_count={display_items.length}
-          path={selected_path}
+          changed_count={finder_session.changed_count}
+          item_count={finder_session.item_count}
+          path_parts={finder_session.path_parts}
         />
       </div>
     </div>
@@ -271,19 +254,18 @@ function WorkspaceTreeRow({
 function FinderPathBar({
   changed_count,
   item_count,
-  path,
+  path_parts,
 }: {
   changed_count: number;
   item_count: number;
-  path: string;
+  path_parts: string[];
 }) {
-  const parts = path.split("/").filter(Boolean);
   return (
     <div className="flex min-h-8 items-center justify-between gap-3 border-t border-(--divider-subtle-color) bg-white/58 px-3 py-1.5 text-[10px] text-(--text-soft)">
       <div className="flex min-w-0 items-center gap-1.5">
         <FolderOpen className="h-3.5 w-3.5 shrink-0 text-(--icon-muted)" />
         <span className="shrink-0 font-semibold text-(--text-strong)">workspace</span>
-        {parts.map((part, index) => (
+        {path_parts.map((part, index) => (
           <span className="flex min-w-0 items-center gap-1.5" key={`${index}:${part}`}>
             <ChevronRight className="h-3 w-3 shrink-0 text-(--icon-muted)" />
             <span className="max-w-[120px] truncate">{part}</span>
@@ -295,53 +277,6 @@ function FinderPathBar({
       </span>
     </div>
   );
-}
-
-function workspace_tree_rows(paths: string[]): Array<{
-  depth: number;
-  label: string;
-  path: string;
-  type: "folder" | "file";
-}> {
-  const rows = new Map<string, { depth: number; label: string; path: string; type: "folder" | "file" }>();
-  paths.forEach((path) => {
-    const parts = path.split("/").filter(Boolean);
-    parts.forEach((part, index) => {
-      const current_path = parts.slice(0, index + 1).join("/");
-      if (!rows.has(current_path)) {
-        rows.set(current_path, {
-          depth: index,
-          label: part,
-          path: current_path,
-          type: index === parts.length - 1 ? "file" : "folder",
-        });
-      }
-    });
-  });
-  return Array.from(rows.values()).sort((left, right) => {
-    if (left.path === right.path) {
-      return 0;
-    }
-    const left_parent = left.path.split("/").slice(0, -1).join("/");
-    const right_parent = right.path.split("/").slice(0, -1).join("/");
-    if (left_parent === right_parent && left.type !== right.type) {
-      return left.type === "folder" ? -1 : 1;
-    }
-    return left.path.localeCompare(right.path);
-  });
-}
-
-function workspace_status_label(status: WorkspaceItemStatus): string {
-  if (status === "writing") {
-    return "写入中";
-  }
-  if (status === "updated") {
-    return "已更新";
-  }
-  if (status === "deleted") {
-    return "已删除";
-  }
-  return "未变更";
 }
 
 function basename(path: string): string {

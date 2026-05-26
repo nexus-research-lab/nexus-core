@@ -83,6 +83,7 @@ copyFileSync(join(operation_dir, "apps/code-editor-session.js"), join(operation_
 copyFileSync(join(operation_dir, "apps/browser-result-items.js"), join(operation_dir, "apps/browser-result-items"));
 copyFileSync(join(operation_dir, "apps/browser-session.js"), join(operation_dir, "apps/browser-session"));
 copyFileSync(join(operation_dir, "apps/finder-item-details.js"), join(operation_dir, "apps/finder-item-details"));
+copyFileSync(join(operation_dir, "apps/finder-session.js"), join(operation_dir, "apps/finder-session"));
 copyFileSync(join(operation_dir, "apps/run-manifest-console.js"), join(operation_dir, "apps/run-manifest-console"));
 copyFileSync(join(operation_dir, "apps/run-manifest-sources.js"), join(operation_dir, "apps/run-manifest-sources"));
 copyFileSync(join(operation_dir, "apps/activity-monitor-data.js"), join(operation_dir, "apps/activity-monitor-data"));
@@ -184,6 +185,10 @@ const {
   resolve_finder_selected_item,
 } = await import(pathToFileURL(join(operation_dir, "apps/finder-item-details.js")));
 const {
+  build_finder_session_view,
+  workspace_status_label,
+} = await import(pathToFileURL(join(operation_dir, "apps/finder-session.js")));
+const {
   console_event_level,
   console_event_subsystem,
 } = await import(pathToFileURL(join(operation_dir, "apps/run-manifest-console.js")));
@@ -231,6 +236,7 @@ verify_terminal_entries_render_real_command_result(now);
 verify_browser_fallback_builds_search_results(now);
 verify_browser_session_view(now);
 verify_finder_details_reflect_selected_workspace_item(now);
+verify_finder_session_view(now);
 verify_console_events_use_mac_app_subsystems(now);
 verify_activity_monitor_process_metrics();
 verify_completed_manifest_keeps_terminal_window_identity(now);
@@ -1646,6 +1652,79 @@ function verify_finder_details_reflect_selected_workspace_item(now) {
   const preview_lines = finder_preview_lines(selected);
   assert(preview_lines.length === 3, `Finder preview should preserve non-empty live content lines, got ${preview_lines.length}`);
   assert(preview_lines[1].includes("Gomoku"), `Finder preview should include selected file content, got ${preview_lines[1]}`);
+}
+
+function verify_finder_session_view(now) {
+  const base_event = {
+    id: "finder-event",
+    session_key: "session:stage",
+    round_id: "round-finder",
+    agent_id: "agent-stage",
+    message_id: "msg-finder",
+    kind: "file_write",
+    surface: "code",
+    phase: "running",
+    title: "写入文件",
+    target: "src/gomoku.html",
+    updated_at: now,
+  };
+  const items = [{
+    id: "workspace-html",
+    agent_id: "agent-stage",
+    path: "src/gomoku.html",
+    status: "updated",
+    version: 3,
+    source: "agent",
+    session_key: "session:stage",
+    tool_use_id: "tool-html",
+    event_type: "file_write_end",
+    live_content: "<main>\n  <h1>Gomoku</h1>\n</main>\n",
+    updated_at: now,
+  }, {
+    id: "workspace-css",
+    agent_id: "agent-stage",
+    path: "src/styles/main.css",
+    status: "writing",
+    version: 2,
+    source: "agent",
+    session_key: "session:stage",
+    tool_use_id: "tool-css",
+    event_type: "file_write_progress",
+    live_content: "body { margin: 0; }\n",
+    updated_at: now,
+  }, {
+    id: "workspace-readme",
+    agent_id: "agent-stage",
+    path: "README.md",
+    status: "idle",
+    version: 1,
+    source: "agent",
+    session_key: "session:stage",
+    event_type: "file_write_end",
+    updated_at: now,
+  }];
+
+  const view = build_finder_session_view({
+    active_path: "src/gomoku.html",
+    event: base_event,
+    items,
+  });
+  assert(view.item_count === 3, `Finder session should expose item count, got ${view.item_count}`);
+  assert(view.changed_count === 2, `Finder session should count updated and writing items, got ${view.changed_count}`);
+  assert(view.selected_item?.path === "src/gomoku.html", `Finder session should resolve selected item, got ${view.selected_item?.path}`);
+  assert(view.preview_lines[1].includes("Gomoku"), `Finder session preview should use selected live content, got ${view.preview_lines[1]}`);
+  assert(view.path_parts.join("/") === "src/gomoku.html", `Finder session should expose path parts, got ${view.path_parts.join("/")}`);
+  assert(view.rows.some((row) => row.path === "src" && row.type === "folder"), "Finder session should include workspace folder rows");
+  assert(view.rows.some((row) => row.path === "src/styles/main.css" && row.depth === 2), "Finder session should include nested file rows");
+  assert(workspace_status_label("writing") === "写入中", "Finder session should label writing files");
+
+  const fallback = build_finder_session_view({
+    active_path: null,
+    event: { ...base_event, target: "workspace/untitled.html" },
+    items: [],
+  });
+  assert(fallback.display_items[0]?.path === "workspace/untitled.html", `Finder fallback should use event target, got ${fallback.display_items[0]?.path}`);
+  assert(fallback.display_items[0]?.status === "writing", `Running Finder fallback should show writing status, got ${fallback.display_items[0]?.status}`);
 }
 
 function verify_console_events_use_mac_app_subsystems(now) {
