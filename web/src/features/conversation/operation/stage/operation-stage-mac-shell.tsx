@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Apple,
   Battery,
-  Command,
+  Bell,
   CheckCircle2,
+  Command,
   Loader2,
   MousePointer2,
   Search,
@@ -154,23 +155,30 @@ export function StageLiveStrip({
       : Loader2;
 
   return (
-    <div className="pointer-events-none absolute left-1/2 top-10 z-30 hidden -translate-x-1/2 md:block">
+    <div className="pointer-events-none absolute right-4 top-11 z-30 hidden w-[260px] md:block">
       <div className={cn(
-        "operation-stage-live-strip flex min-w-[220px] max-w-[420px] items-center gap-1.5 rounded-full border px-2 py-1.5 text-[9px] font-bold opacity-90 shadow-[0_14px_34px_rgba(18,28,42,0.11)] backdrop-blur-2xl",
-        state.tone === "error" && "border-[rgba(223,93,98,0.26)] bg-[rgba(255,246,246,0.82)] text-[color:var(--destructive)]",
-        state.tone === "waiting" && "border-[rgba(223,157,46,0.26)] bg-[rgba(255,249,236,0.82)] text-[color:var(--warning)]",
-        state.tone === "done" && "border-[rgba(47,184,132,0.24)] bg-[rgba(241,253,247,0.82)] text-[color:var(--success)]",
-        state.tone === "active" && "border-[rgba(91,114,255,0.24)] bg-[rgba(247,249,255,0.84)] text-[color:var(--primary)]",
+        "operation-stage-live-strip grid min-w-0 grid-cols-[28px_minmax(0,1fr)] gap-2 rounded-[14px] border px-2.5 py-2 text-[10px] font-semibold opacity-92 shadow-[0_18px_44px_rgba(18,28,42,0.13)] backdrop-blur-2xl",
+        state.tone === "error" && "border-[rgba(223,93,98,0.22)] bg-[rgba(255,246,246,0.78)] text-[color:var(--destructive)]",
+        state.tone === "waiting" && "border-[rgba(223,157,46,0.22)] bg-[rgba(255,249,236,0.78)] text-[color:var(--warning)]",
+        state.tone === "done" && "border-[rgba(47,184,132,0.20)] bg-[rgba(241,253,247,0.78)] text-[color:var(--success)]",
+        state.tone === "active" && "border-[rgba(91,114,255,0.20)] bg-[rgba(247,249,255,0.78)] text-[color:var(--primary)]",
       )}>
-        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white/68 shadow-[inset_0_1px_0_rgba(255,255,255,0.76)]">
-          <Icon className={cn("h-3 w-3", state.tone === "active" && "animate-spin")} />
-        </span>
-        <span className="shrink-0 rounded-full bg-white/58 px-2 py-1 font-black text-(--text-strong)">
-          {state.step_label}
+        <span className="relative grid h-7 w-7 shrink-0 place-items-center rounded-[9px] bg-white/68 text-(--icon-default) shadow-[inset_0_1px_0_rgba(255,255,255,0.76)]">
+          <Bell className="h-3.5 w-3.5" />
+          <Icon className={cn(
+            "absolute -bottom-1 -right-1 h-3 w-3 rounded-full bg-white/84 p-0.5 shadow-[0_4px_10px_rgba(18,28,42,0.12)]",
+            state.tone === "active" && "animate-spin",
+          )} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-(--text-strong)">{state.title}</span>
-          <span className="block truncate font-semibold text-(--text-soft)">{state.app_label} · {state.detail}</span>
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="truncate font-black text-(--text-strong)">{state.app_label}</span>
+            <span className="shrink-0 rounded-full bg-white/58 px-1.5 py-px text-[8px] font-black text-(--text-soft)">
+              {state.step_label}
+            </span>
+          </span>
+          <span className="mt-0.5 block truncate font-bold text-(--text-strong)">{state.title}</span>
+          <span className="mt-0.5 block truncate text-[9px] font-semibold text-(--text-soft)">{state.detail}</span>
         </span>
       </div>
     </div>
