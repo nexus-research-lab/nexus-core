@@ -75,6 +75,7 @@ copyFileSync(join(operation_dir, "stage/operation-stage-desktop-icons.js"), join
 copyFileSync(join(operation_dir, "stage/operation-stage-minimized-window.js"), join(operation_dir, "stage/operation-stage-minimized-window"));
 copyFileSync(join(operation_dir, "stage/operation-stage-window-drag.js"), join(operation_dir, "stage/operation-stage-window-drag"));
 copyFileSync(join(operation_dir, "stage/operation-stage-window-launch.js"), join(operation_dir, "stage/operation-stage-window-launch"));
+copyFileSync(join(operation_dir, "stage/operation-stage-window-position.js"), join(operation_dir, "stage/operation-stage-window-position"));
 mkdirSync(join(operation_dir, "apps"), { recursive: true });
 copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
 copyFileSync(join(operation_dir, "apps/operation-app-surface-policy.js"), join(operation_dir, "apps/operation-app-surface-policy"));
@@ -163,6 +164,9 @@ const {
   build_stage_window_launch_state,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-window-launch.js")));
 const {
+  position_for_window,
+} = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-window-position.js")));
+const {
   build_terminal_entries,
 } = await import(pathToFileURL(join(operation_dir, "apps/terminal-session-model.js")));
 const {
@@ -225,6 +229,7 @@ verify_stage_desktop_icon_items();
 verify_stage_minimized_window_tile();
 verify_stage_window_drag_model();
 verify_stage_window_launch_model();
+verify_stage_window_position_model();
 verify_operation_stage_key_is_session_scoped();
 verify_stage_experience_state_machine(now);
 verify_live_episode_narrates_running_round(now);
@@ -767,6 +772,26 @@ function verify_stage_window_launch_model() {
   });
   assert(finder.origin === "desktop", `Finder should launch from desktop context, got ${finder.origin}`);
   assert(finder.delay_ms === 420, `Desktop context launch should be capped, got ${finder.delay_ms}`);
+}
+
+function verify_stage_window_position_model() {
+  const code_position = position_for_window(
+    mock_stage_window({ id: "code", kind: "code_editor", phase: "background" }),
+    "running",
+  );
+  assert(code_position.includes("left-[10%]"), `Background Code should sit on the left side, got ${code_position}`);
+
+  const browser_position = position_for_window(
+    mock_stage_window({ id: "browser", kind: "browser", phase: "background" }),
+    "running",
+  );
+  assert(browser_position.includes("right-[5%]"), `Background Safari should sit on the right side, got ${browser_position}`);
+
+  const terminal_position = position_for_window(
+    { ...mock_stage_window({ id: "terminal", kind: "terminal", phase: "focused" }), layout: "terminal" },
+    "running",
+  );
+  assert(terminal_position.includes("bottom-[10%]"), `Focused terminal should anchor near the Dock, got ${terminal_position}`);
 }
 
 function verify_operation_stage_key_is_session_scoped() {
