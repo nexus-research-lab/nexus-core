@@ -1,12 +1,12 @@
 import {
+  Blocks,
   Braces,
   FileSpreadsheet,
   FileText,
+  GitBranch,
   ImageIcon,
-  Search,
-  SplitSquareHorizontal,
+  Package,
 } from "lucide-react";
-import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -209,36 +209,40 @@ function EditorSurface({
   return (
     <div className="flex h-full min-h-[240px] flex-col overflow-hidden bg-[#101820] text-[#dce8ee]">
       <div className="border-b border-white/10 bg-[#151f29]">
-        <div className="flex min-w-0 items-center justify-between gap-3 px-3 py-1.5">
-          <div className="flex min-w-0 items-center gap-1.5">
-            <EditorToolbarButton label="切换侧边栏">
-              <SplitSquareHorizontal className="h-3.5 w-3.5" />
-            </EditorToolbarButton>
-            <EditorToolbarButton label="搜索">
-              <Search className="h-3.5 w-3.5" />
-            </EditorToolbarButton>
+        <div className="flex min-w-0 items-end gap-1.5 px-3 pt-1.5">
+          <div className="flex min-w-0 max-w-[68%] items-center gap-1.5 rounded-t-[9px] border border-b-0 border-white/10 bg-[#101820] px-3 py-1.5 text-[10px] font-semibold text-[#dce8ee]">
+            {session.is_code ? <Braces className="h-3 w-3 shrink-0 text-[#8de0ad]" /> : <FileText className="h-3 w-3 shrink-0 text-[#8aa0ad]" />}
+            <span className="truncate">{session.tab_title}</span>
+            <span className="shrink-0 text-[#526879]">●</span>
           </div>
-          <div className="min-w-0 text-center">
-            <p className="truncate text-[11px] font-bold text-[#e7eef5]">{session.tab_title}</p>
-            <p className="truncate text-[9px] text-[#7f94a3]">{phase_label}</p>
-          </div>
-          <span className="shrink-0 rounded bg-white/[0.06] px-1.5 py-px text-[9px] font-bold text-[#8aa0ad]">
+          <span className="mb-1 hidden min-w-0 truncate text-[9px] font-semibold text-[#7f94a3] md:block">
+            {phase_label}
+          </span>
+          <span className="mb-1 ml-auto shrink-0 rounded bg-white/[0.06] px-1.5 py-px text-[9px] font-bold text-[#8aa0ad]">
             {session.extension_label}
           </span>
         </div>
-        <div className="flex min-w-0 items-end gap-1.5 px-3">
-          <div className="flex min-w-0 max-w-[62%] items-center gap-1.5 rounded-t-[9px] border border-b-0 border-white/10 bg-[#101820] px-3 py-1.5 text-[10px] font-semibold text-[#dce8ee]">
-            {session.is_code ? <Braces className="h-3 w-3 shrink-0 text-[#8de0ad]" /> : <FileText className="h-3 w-3 shrink-0 text-[#8aa0ad]" />}
-            <span className="truncate">{session.tab_title}</span>
-          </div>
-        </div>
       </div>
       <div className="flex min-h-0 flex-1">
-        <div className="hidden w-[148px] shrink-0 border-r border-white/10 bg-[#0c141c] p-2 text-[10px] text-[#7f94a3] sm:block">
+        <div className="hidden w-10 shrink-0 flex-col items-center gap-2 border-r border-white/10 bg-[#0a1118] py-2 text-[#7f94a3] sm:flex">
+          <span className="grid h-7 w-7 place-items-center rounded-[8px] bg-white/[0.07] text-[#dce8ee]">
+            <FileText className="h-3.5 w-3.5" />
+          </span>
+          <span className="grid h-7 w-7 place-items-center rounded-[8px] text-[#7f94a3]">
+            <GitBranch className="h-3.5 w-3.5" />
+          </span>
+          <span className="grid h-7 w-7 place-items-center rounded-[8px] text-[#7f94a3]">
+            <Blocks className="h-3.5 w-3.5" />
+          </span>
+        </div>
+        <div className="hidden w-[136px] shrink-0 border-r border-white/10 bg-[#0c141c] p-2 text-[10px] text-[#7f94a3] sm:block">
           <div className="mb-2 truncate rounded-md bg-white/[0.06] px-2 py-1.5 font-bold text-[#dce8ee]">资源管理器</div>
           <div className="space-y-1">
             <div className="truncate rounded bg-white/[0.06] px-2 py-1 text-[#dce8ee]">{title}</div>
-            <div className="truncate rounded px-2 py-1">源代码管理</div>
+            <div className="flex items-center gap-1.5 truncate rounded px-2 py-1">
+              <Package className="h-3 w-3 shrink-0" />
+              <span className="truncate">workspace</span>
+            </div>
             <div className="truncate rounded px-2 py-1">时间线</div>
           </div>
         </div>
@@ -270,19 +274,6 @@ function EditorSurface({
         <span className="shrink-0">{session.cursor_label}</span>
       </div>
     </div>
-  );
-}
-
-function EditorToolbarButton({ children, label }: { children: ReactNode; label: string }) {
-  return (
-    <button
-      aria-label={label}
-      className="grid h-6 w-6 place-items-center rounded-md border border-white/8 bg-white/[0.035] text-[#8aa0ad] transition hover:bg-white/[0.07] hover:text-[#dce8ee] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8de0ad]/30"
-      title={label}
-      type="button"
-    >
-      {children}
-    </button>
   );
 }
 

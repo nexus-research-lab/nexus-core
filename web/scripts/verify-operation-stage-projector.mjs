@@ -818,19 +818,19 @@ function verify_stage_window_position_model() {
     "running",
     2,
   );
-  assert(browser_position.includes("top-[48%]"), `Background Safari should use a distinct Stage Manager slot, got ${browser_position}`);
+  assert(browser_position.includes("top-[45%]"), `Background Safari should use a distinct Stage Manager slot, got ${browser_position}`);
 
   const terminal_position = position_for_window(
     { ...mock_stage_window({ id: "terminal", kind: "terminal", phase: "focused" }), layout: "terminal" },
     "running",
   );
-  assert(terminal_position.includes("w-[66%]"), `Focused terminal should own the main desktop area, got ${terminal_position}`);
+  assert(terminal_position.includes("w-[70%]"), `Focused terminal should own the main desktop area, got ${terminal_position}`);
 
   const focused_code_position = position_for_window(
     mock_stage_window({ id: "code-focused", kind: "code_editor", phase: "focused" }),
     "running",
   );
-  assert(focused_code_position.includes("w-[66%]"), `Focused Code should own the main desktop area, got ${focused_code_position}`);
+  assert(focused_code_position.includes("w-[74%]"), `Focused Code should own the main desktop area, got ${focused_code_position}`);
 
   assert(is_stage_manager_background_window(background_code, "completed"), "Completed review should keep prior windows as Stage Manager thumbnails instead of crowding the desktop");
   assert(is_stage_manager_background_window(

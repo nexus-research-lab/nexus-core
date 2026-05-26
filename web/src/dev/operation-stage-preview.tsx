@@ -230,7 +230,7 @@ export function OperationStagePreview() {
           ))}
         </div>
       </div>
-      <section className="min-h-0 flex-1 overflow-hidden rounded-[24px] border border-white/70 bg-white/46 p-2 shadow-[0_28px_90px_rgba(18,28,42,0.16)]">
+      <section className="h-[calc(100vh-96px)] min-h-[620px] overflow-hidden rounded-[24px] border border-white/70 bg-white/46 p-2 shadow-[0_28px_90px_rgba(18,28,42,0.16)]">
         <OperationStageDesktop event={step.event} snapshot={snapshot} />
       </section>
     </main>

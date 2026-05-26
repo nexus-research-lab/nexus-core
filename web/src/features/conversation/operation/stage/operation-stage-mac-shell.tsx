@@ -60,27 +60,27 @@ export function StageMacMenuBar({
   return (
     <div
       aria-label={menu_status.activity_label}
-      className="absolute inset-x-0 top-0 z-40 flex h-8 items-center justify-between border-b border-white/58 bg-white/54 px-4 text-[11px] font-semibold text-(--text-strong) shadow-[0_1px_0_rgba(255,255,255,0.70),0_12px_34px_rgba(18,28,42,0.08)] backdrop-blur-2xl max-md:hidden"
+      className="absolute inset-x-0 top-0 z-40 flex h-7 items-center justify-between border-b border-white/50 bg-white/44 px-4 text-[10px] font-semibold text-(--text-strong) shadow-[0_1px_0_rgba(255,255,255,0.64),0_10px_26px_rgba(18,28,42,0.07)] backdrop-blur-2xl max-md:hidden"
       title={[
         menu_status.activity_label,
         menu_status.window_label,
         menu_status.dock_label,
       ].filter(Boolean).join(" · ")}
     >
-      <div className="flex min-w-0 items-center gap-3">
+      <div className="flex min-w-0 items-center gap-2.5">
         <Apple className="h-3.5 w-3.5 shrink-0" />
         <span className="font-black">{app_name}</span>
         {menu_items.map((item) => (
           <span className="text-(--text-soft)" key={item}>{item}</span>
         ))}
       </div>
-      <div className="flex shrink-0 items-center gap-3 text-(--text-soft)">
-        <Search className="h-3.5 w-3.5" />
-        <Command className="h-3.5 w-3.5" />
-        <SlidersHorizontal className="h-3.5 w-3.5" />
-        <Wifi className="h-3.5 w-3.5" />
-        <Battery className="h-3.5 w-3.5" />
-        <span className="font-mono text-[11px] text-(--text-strong)">{time_label}</span>
+      <div className="flex shrink-0 items-center gap-2.5 text-(--text-soft)">
+        <Search className="h-3 w-3" />
+        <Command className="h-3 w-3" />
+        <SlidersHorizontal className="h-3 w-3" />
+        <Wifi className="h-3 w-3" />
+        <Battery className="h-3 w-3" />
+        <span className="font-mono text-[10px] text-(--text-strong)">{time_label}</span>
       </div>
     </div>
   );
@@ -100,25 +100,25 @@ export function StageDesktopIcons({
   }
 
   return (
-    <div className="absolute right-6 top-16 z-10 hidden grid-cols-1 gap-4 md:grid">
+    <div className="absolute right-4 top-14 z-10 hidden grid-cols-1 gap-3 md:grid">
       {desktop_items.map((window) => {
         const Icon = icon_for_artifact_path(window.target);
         return (
           <button
             aria-label={window.aria_label}
-            className="group flex w-[92px] flex-col items-center gap-1.5 text-center outline-none"
+            className="group flex w-[72px] flex-col items-center gap-1 text-center outline-none"
             key={window.window.id}
             onClick={() => on_restore(window.window.id)}
             title={window.title}
             type="button"
           >
             <div className={cn(
-              "relative grid h-12 w-12 place-items-center rounded-[15px] border border-white/62 bg-white/48 text-(--icon-default) shadow-[0_12px_30px_rgba(18,28,42,0.09)] backdrop-blur-xl transition group-hover:-translate-y-0.5 group-hover:bg-white/70 group-focus-visible:ring-2 group-focus-visible:ring-[rgba(91,114,255,0.38)]",
+              "relative grid h-10 w-10 place-items-center rounded-[13px] border border-white/62 bg-white/42 text-(--icon-default) shadow-[0_10px_24px_rgba(18,28,42,0.08)] backdrop-blur-xl transition group-hover:-translate-y-0.5 group-hover:bg-white/70 group-focus-visible:ring-2 group-focus-visible:ring-[rgba(91,114,255,0.38)]",
               window.window.phase === "focused" && "bg-[rgba(91,114,255,0.14)] text-[color:var(--primary)]",
               window.window.phase === "minimized" && "opacity-78",
               window.window.phase === "closed" && "opacity-62 grayscale-[0.22]",
             )}>
-              <Icon className="h-5 w-5" />
+              <Icon className="h-[18px] w-[18px]" />
               <span className={cn(
                 "absolute -bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full border border-white/72",
                 window.window.phase === "closed"
@@ -128,10 +128,10 @@ export function StageDesktopIcons({
                     : "bg-[rgba(47,184,132,0.72)]",
               )} />
             </div>
-            <p className="line-clamp-2 rounded-[6px] px-1 text-[10px] font-semibold leading-4 text-(--text-strong) group-hover:bg-white/48">
+            <p className="line-clamp-2 rounded-[6px] px-1 text-[9px] font-semibold leading-3 text-(--text-strong) group-hover:bg-white/48">
               {window.label}
             </p>
-            <span className="text-[9px] font-semibold leading-none text-(--text-soft) opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
+            <span className="text-[8px] font-semibold leading-none text-(--text-soft) opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
               {window.file_kind_label}
             </span>
             <span className="sr-only">{window.state_label}</span>
@@ -154,16 +154,16 @@ export function StageLiveStrip({
       : Loader2;
 
   return (
-    <div className="pointer-events-none absolute left-1/2 top-11 z-30 hidden -translate-x-1/2 md:block">
+    <div className="pointer-events-none absolute left-1/2 top-10 z-30 hidden -translate-x-1/2 md:block">
       <div className={cn(
-        "operation-stage-live-strip flex min-w-[280px] max-w-[560px] items-center gap-2 rounded-full border px-3 py-2 text-[10px] font-bold shadow-[0_18px_48px_rgba(18,28,42,0.13)] backdrop-blur-2xl",
+        "operation-stage-live-strip flex min-w-[220px] max-w-[420px] items-center gap-1.5 rounded-full border px-2 py-1.5 text-[9px] font-bold opacity-90 shadow-[0_14px_34px_rgba(18,28,42,0.11)] backdrop-blur-2xl",
         state.tone === "error" && "border-[rgba(223,93,98,0.26)] bg-[rgba(255,246,246,0.82)] text-[color:var(--destructive)]",
         state.tone === "waiting" && "border-[rgba(223,157,46,0.26)] bg-[rgba(255,249,236,0.82)] text-[color:var(--warning)]",
         state.tone === "done" && "border-[rgba(47,184,132,0.24)] bg-[rgba(241,253,247,0.82)] text-[color:var(--success)]",
         state.tone === "active" && "border-[rgba(91,114,255,0.24)] bg-[rgba(247,249,255,0.84)] text-[color:var(--primary)]",
       )}>
-        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/68 shadow-[inset_0_1px_0_rgba(255,255,255,0.76)]">
-          <Icon className={cn("h-3.5 w-3.5", state.tone === "active" && "animate-spin")} />
+        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white/68 shadow-[inset_0_1px_0_rgba(255,255,255,0.76)]">
+          <Icon className={cn("h-3 w-3", state.tone === "active" && "animate-spin")} />
         </span>
         <span className="shrink-0 rounded-full bg-white/58 px-2 py-1 font-black text-(--text-strong)">
           {state.step_label}
@@ -192,16 +192,10 @@ export function StageAgentCursor({
   return (
     <div
       aria-label={`Nexus ${action_label} ${app_label}`}
-      className={cn(
-        "operation-stage-agent-cursor pointer-events-none absolute z-50 hidden -translate-x-2 -translate-y-2 items-start gap-2 md:flex",
-        agent_cursor_anchor_class(active_window),
-      )}
+      className={cn("operation-stage-agent-cursor pointer-events-none absolute z-50 hidden -translate-x-2 -translate-y-2 md:block", agent_cursor_anchor_class(active_window))}
       data-agent-cursor-intent={intent}
     >
       <MousePointer2 className="h-5 w-5 fill-[rgba(32,43,58,0.88)] text-[rgba(32,43,58,0.88)] drop-shadow-[0_8px_14px_rgba(18,28,42,0.22)]" />
-      <div className="mt-4 rounded-full border border-white/72 bg-[rgba(255,255,255,0.78)] px-2.5 py-1 text-[10px] font-bold text-(--text-strong) shadow-[0_12px_30px_rgba(18,28,42,0.14)] backdrop-blur-2xl">
-        {action_label} · {app_label}
-      </div>
     </div>
   );
 }
