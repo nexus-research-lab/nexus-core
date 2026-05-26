@@ -88,10 +88,10 @@ export function StageWindowDock({
   return (
     <div className="absolute inset-x-4 bottom-4 z-30 flex justify-center max-md:relative max-md:inset-x-auto max-md:bottom-auto max-md:mt-3">
       <div className="flex max-w-full flex-col items-center gap-1.5">
-        <div className="operation-window-dock soft-scrollbar flex max-w-full items-end gap-2 overflow-x-auto rounded-[26px] border border-white/70 bg-[rgba(255,255,255,0.60)] px-2.5 py-2 shadow-[0_24px_60px_rgba(18,28,42,0.18),inset_0_1px_0_rgba(255,255,255,0.78)] backdrop-blur-2xl">
+        <div className="operation-window-dock soft-scrollbar flex max-w-full items-end gap-1.5 overflow-x-auto rounded-[24px] border border-white/70 bg-[rgba(255,255,255,0.58)] px-2 py-1.5 shadow-[0_22px_54px_rgba(18,28,42,0.16),inset_0_1px_0_rgba(255,255,255,0.78)] backdrop-blur-2xl">
           <button
             aria-label="恢复 Nexus 工作现场"
-            className="grid h-[44px] w-[44px] shrink-0 place-items-center rounded-[17px] border border-white/60 bg-[linear-gradient(135deg,rgba(91,114,255,0.18),rgba(255,255,255,0.74),rgba(79,162,159,0.14))] text-[13px] font-black text-(--text-strong) shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] transition hover:-translate-y-1 hover:scale-105 hover:bg-white/72 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.42)]"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-[16px] border border-white/60 bg-[linear-gradient(135deg,rgba(91,114,255,0.18),rgba(255,255,255,0.74),rgba(79,162,159,0.14))] text-[13px] font-black text-(--text-strong) shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] transition hover:-translate-y-1 hover:scale-105 hover:bg-white/72 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.42)]"
             onClick={on_restore_all}
             title={active_window ? `${active_app_label} · ${display_window_title(active_window)}` : "Nexus"}
             type="button"
@@ -114,12 +114,12 @@ export function StageWindowDock({
             <button
               aria-label={`${presentation.state_label}：${app_label}`}
               className={cn(
-                "group relative grid shrink-0 place-items-center rounded-[18px] border text-left transition duration-200 ease-out hover:-translate-y-2 hover:scale-110 focus-visible:-translate-y-2 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.42)]",
+                "group relative grid shrink-0 place-items-center rounded-[17px] border text-left transition duration-200 ease-out hover:-translate-y-2 hover:scale-110 focus-visible:-translate-y-2 focus-visible:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.42)]",
                 is_active
-                  ? "h-[52px] w-[52px] border-[rgba(91,114,255,0.32)] bg-[rgba(91,114,255,0.16)] text-[color:var(--primary)] shadow-[0_16px_32px_rgba(91,114,255,0.22)]"
+                  ? "h-12 w-12 border-[rgba(91,114,255,0.32)] bg-[rgba(91,114,255,0.16)] text-[color:var(--primary)] shadow-[0_16px_32px_rgba(91,114,255,0.22)]"
                   : is_running
-                    ? "h-[44px] w-[44px] border-transparent bg-white/42 text-(--icon-muted) hover:bg-white/72 hover:text-(--text-strong)"
-                    : "h-[44px] w-[44px] border-transparent bg-white/20 text-(--icon-muted) opacity-55 hover:bg-white/42 hover:opacity-80",
+                    ? "h-10 w-10 border-transparent bg-white/42 text-(--icon-muted) hover:bg-white/72 hover:text-(--text-strong)"
+                    : "h-10 w-10 border-transparent bg-white/20 text-(--icon-muted) opacity-55 hover:bg-white/42 hover:opacity-80",
               )}
               key={app_label}
               disabled={presentation.is_disabled}
@@ -128,11 +128,11 @@ export function StageWindowDock({
               type="button"
             >
               <span className={cn(
-                "relative grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[14px] border shadow-[inset_0_1px_0_rgba(255,255,255,0.62),0_8px_18px_rgba(18,28,42,0.10)]",
+                "relative grid h-8 w-8 shrink-0 place-items-center rounded-[13px] border shadow-[inset_0_1px_0_rgba(255,255,255,0.62),0_8px_18px_rgba(18,28,42,0.10)]",
                 dock_icon_skin_for_kind(window?.kind ?? kind),
                 is_active ? "ring-2 ring-[rgba(91,114,255,0.24)]" : "ring-0",
               )}>
-                <Icon className="h-[18px] w-[18px]" />
+                <Icon className="h-[17px] w-[17px]" />
                 {is_running ? (
                   <span className={cn(
                     "absolute -bottom-0.5 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full border border-white/72 transition",

@@ -10,6 +10,7 @@ import type {
   StageNarrativePhase,
   StageNarrativeState,
 } from "./operation-stage-model";
+import { event_sequence_label } from "./operation-stage-event-sequence";
 import { initial_revealed_window_count } from "./operation-stage-window-reveal";
 
 export function order_windows_for_reveal(
@@ -43,14 +44,6 @@ function window_reveal_rank(window: StageWindowState, active_window_id: string |
     return 3;
   }
   return 2;
-}
-
-export function event_sequence_label(event: NexusOperationEvent, events: NexusOperationEvent[]): string {
-  const index = events.findIndex((item) => item.id === event.id);
-  if (index >= 0) {
-    return `第 ${index + 1} 步`;
-  }
-  return "当前步";
 }
 
 export function is_low_signal_director_value(value: string | null | undefined): value is string {

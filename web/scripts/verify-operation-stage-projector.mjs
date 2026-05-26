@@ -61,6 +61,7 @@ copyFileSync(join(operation_dir, "operation-summary-events.js"), join(operation_
 copyFileSync(join(operation_dir, "operation-event-io.js"), join(operation_dir, "operation-event-io"));
 mkdirSync(join(operation_dir, "stage"), { recursive: true });
 copyFileSync(join(operation_dir, "stage/operation-stage-window-kinds.js"), join(operation_dir, "stage/operation-stage-window-kinds"));
+copyFileSync(join(operation_dir, "stage/operation-stage-event-sequence.js"), join(operation_dir, "stage/operation-stage-event-sequence"));
 copyFileSync(join(operation_dir, "stage/operation-stage-dock-model.js"), join(operation_dir, "stage/operation-stage-dock-model"));
 copyFileSync(join(operation_dir, "stage/operation-stage-window-actions.js"), join(operation_dir, "stage/operation-stage-window-actions"));
 copyFileSync(join(operation_dir, "stage/operation-stage-agent-cursor.js"), join(operation_dir, "stage/operation-stage-agent-cursor"));
@@ -76,6 +77,7 @@ copyFileSync(join(operation_dir, "stage/operation-stage-minimized-window.js"), j
 copyFileSync(join(operation_dir, "stage/operation-stage-window-drag.js"), join(operation_dir, "stage/operation-stage-window-drag"));
 copyFileSync(join(operation_dir, "stage/operation-stage-window-launch.js"), join(operation_dir, "stage/operation-stage-window-launch"));
 copyFileSync(join(operation_dir, "stage/operation-stage-window-position.js"), join(operation_dir, "stage/operation-stage-window-position"));
+copyFileSync(join(operation_dir, "stage/operation-stage-live-strip.js"), join(operation_dir, "stage/operation-stage-live-strip"));
 mkdirSync(join(operation_dir, "apps"), { recursive: true });
 copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
 copyFileSync(join(operation_dir, "apps/operation-app-surface-policy.js"), join(operation_dir, "apps/operation-app-surface-policy"));
@@ -169,6 +171,9 @@ const {
   position_for_window,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-window-position.js")));
 const {
+  build_stage_live_strip_state,
+} = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-live-strip.js")));
+const {
   build_terminal_entries,
 } = await import(pathToFileURL(join(operation_dir, "apps/terminal-session-model.js")));
 const {
@@ -236,6 +241,7 @@ verify_stage_minimized_window_tile();
 verify_stage_window_drag_model();
 verify_stage_window_launch_model();
 verify_stage_window_position_model();
+verify_stage_live_strip_tracks_current_tool();
 verify_operation_stage_key_is_session_scoped();
 verify_stage_experience_state_machine(now);
 verify_live_episode_narrates_running_round(now);
@@ -804,7 +810,7 @@ function verify_stage_window_position_model() {
     background_code,
     "running",
   );
-  assert(code_position.includes("left-[4%]"), `Background Code should collapse into the left Stage Manager strip, got ${code_position}`);
+  assert(code_position.includes("left-[3%]"), `Background Code should collapse into the left Stage Manager strip, got ${code_position}`);
   assert(is_stage_manager_background_window(background_code, "running"), "Running background windows should render as Stage Manager thumbnails");
 
   const browser_position = position_for_window(
@@ -812,25 +818,76 @@ function verify_stage_window_position_model() {
     "running",
     2,
   );
-  assert(browser_position.includes("top-[52%]"), `Background Safari should use a distinct Stage Manager slot, got ${browser_position}`);
+  assert(browser_position.includes("top-[48%]"), `Background Safari should use a distinct Stage Manager slot, got ${browser_position}`);
 
   const terminal_position = position_for_window(
     { ...mock_stage_window({ id: "terminal", kind: "terminal", phase: "focused" }), layout: "terminal" },
     "running",
   );
-  assert(terminal_position.includes("w-[62%]"), `Focused terminal should own the main desktop area, got ${terminal_position}`);
+  assert(terminal_position.includes("w-[66%]"), `Focused terminal should own the main desktop area, got ${terminal_position}`);
 
   const focused_code_position = position_for_window(
     mock_stage_window({ id: "code-focused", kind: "code_editor", phase: "focused" }),
     "running",
   );
-  assert(focused_code_position.includes("w-[56%]"), `Focused Code should own the main desktop area, got ${focused_code_position}`);
+  assert(focused_code_position.includes("w-[66%]"), `Focused Code should own the main desktop area, got ${focused_code_position}`);
 
   assert(is_stage_manager_background_window(background_code, "completed"), "Completed review should keep prior windows as Stage Manager thumbnails instead of crowding the desktop");
   assert(is_stage_manager_background_window(
     mock_stage_window({ id: "opening-code", kind: "code_editor", phase: "opening" }),
     "running",
   ), "Opening non-focused windows should collapse into Stage Manager thumbnails instead of crowding the desktop");
+}
+
+function verify_stage_live_strip_tracks_current_tool() {
+  const read_event = {
+    id: "tool-read",
+    session_key: "session:stage",
+    round_id: "round-strip",
+    agent_id: "agent-stage",
+    tool_use_id: "tool-read",
+    tool_name: "Read",
+    kind: "workspace_read",
+    surface: "workspace",
+    phase: "done",
+    title: "读取文件",
+    target: "app.ts",
+    updated_at: 1,
+  };
+  const bash_event = {
+    ...read_event,
+    id: "tool-bash",
+    tool_use_id: "tool-bash",
+    tool_name: "Bash",
+    kind: "command_run",
+    surface: "terminal",
+    phase: "running",
+    title: "运行命令",
+    target: "npm test",
+    updated_at: 2,
+  };
+  const strip = build_stage_live_strip_state({
+    active_event: bash_event,
+    active_window: mock_stage_window({
+      id: "terminal",
+      kind: "terminal",
+      phase: "focused",
+      target: "npm test",
+      title: "npm test",
+    }),
+    events: [read_event, bash_event],
+  });
+  assert(strip.step_label === "第 2 步", `Live strip should track event sequence, got ${strip.step_label}`);
+  assert(strip.app_label === "终端", `Live strip should expose active Mac app, got ${strip.app_label}`);
+  assert(strip.detail === "运行 · npm test", `Live strip should describe current tool target, got ${strip.detail}`);
+  assert(strip.tone === "active", `Running live strip should be active, got ${strip.tone}`);
+
+  const done_strip = build_stage_live_strip_state({
+    active_event: { ...bash_event, phase: "done" },
+    active_window: null,
+    events: [read_event, bash_event],
+  });
+  assert(done_strip.tone === "done", `Done live strip should settle, got ${done_strip.tone}`);
 }
 
 function verify_operation_stage_key_is_session_scoped() {

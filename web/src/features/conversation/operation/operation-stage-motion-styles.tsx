@@ -203,6 +203,10 @@ export function OperationStageMotionStyles() {
           animation: nexus-operation-materializing-signal 520ms cubic-bezier(.16,.84,.24,1) both;
         }
 
+        .operation-stage-live-strip {
+          animation: nexus-operation-materializing-signal 420ms cubic-bezier(.16,.84,.24,1) both;
+        }
+
         .operation-window-traffic-icon {
           opacity: 0;
           transform: scale(.72);

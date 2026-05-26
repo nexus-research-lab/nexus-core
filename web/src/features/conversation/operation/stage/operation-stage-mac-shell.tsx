@@ -3,8 +3,11 @@ import {
   Apple,
   Battery,
   Command,
+  CheckCircle2,
+  Loader2,
   MousePointer2,
   Search,
+  AlertTriangle,
   Wifi,
 } from "lucide-react";
 
@@ -23,6 +26,7 @@ import {
   agent_cursor_anchor_class,
   agent_cursor_intent_for_window_kind,
 } from "./operation-stage-agent-cursor";
+import type { StageLiveStripState } from "./operation-stage-live-strip";
 
 export function StageMacMenuBar({
   active_window,
@@ -131,6 +135,41 @@ export function StageDesktopIcons({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+export function StageLiveStrip({
+  state,
+}: {
+  state: StageLiveStripState;
+}) {
+  const Icon = state.tone === "done"
+    ? CheckCircle2
+    : state.tone === "error"
+      ? AlertTriangle
+      : Loader2;
+
+  return (
+    <div className="pointer-events-none absolute left-1/2 top-11 z-30 hidden -translate-x-1/2 md:block">
+      <div className={cn(
+        "operation-stage-live-strip flex min-w-[280px] max-w-[560px] items-center gap-2 rounded-full border px-3 py-2 text-[10px] font-bold shadow-[0_18px_48px_rgba(18,28,42,0.13)] backdrop-blur-2xl",
+        state.tone === "error" && "border-[rgba(223,93,98,0.26)] bg-[rgba(255,246,246,0.82)] text-[color:var(--destructive)]",
+        state.tone === "waiting" && "border-[rgba(223,157,46,0.26)] bg-[rgba(255,249,236,0.82)] text-[color:var(--warning)]",
+        state.tone === "done" && "border-[rgba(47,184,132,0.24)] bg-[rgba(241,253,247,0.82)] text-[color:var(--success)]",
+        state.tone === "active" && "border-[rgba(91,114,255,0.24)] bg-[rgba(247,249,255,0.84)] text-[color:var(--primary)]",
+      )}>
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/68 shadow-[inset_0_1px_0_rgba(255,255,255,0.76)]">
+          <Icon className={cn("h-3.5 w-3.5", state.tone === "active" && "animate-spin")} />
+        </span>
+        <span className="shrink-0 rounded-full bg-white/58 px-2 py-1 font-black text-(--text-strong)">
+          {state.step_label}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-(--text-strong)">{state.title}</span>
+          <span className="block truncate font-semibold text-(--text-soft)">{state.app_label} · {state.detail}</span>
+        </span>
+      </div>
     </div>
   );
 }

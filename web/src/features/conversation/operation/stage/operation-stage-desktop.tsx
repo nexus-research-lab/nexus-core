@@ -28,7 +28,7 @@ import {
 import type {
   StageWindowOverride,
 } from "./operation-stage-model";
-import { StageAgentCursor, StageMacMenuBar, StageDesktopIcons } from "./operation-stage-mac-shell";
+import { StageAgentCursor, StageMacMenuBar, StageDesktopIcons, StageLiveStrip } from "./operation-stage-mac-shell";
 import { DynamicStageFrame } from "./operation-stage-frame";
 import { OperationStageWindow } from "./operation-stage-window";
 import {
@@ -49,6 +49,7 @@ import {
   normalize_stage_window_drag_offset,
 } from "./operation-stage-window-drag";
 import { build_stage_window_launch_state } from "./operation-stage-window-launch";
+import { build_stage_live_strip_state } from "./operation-stage-live-strip";
 
 export function OperationStageDesktop({
   event,
@@ -168,6 +169,11 @@ export function OperationStageDesktop({
   const active_window = useMemo(() => (
     visible_windows.find((window) => window.id === active_window_id) ?? null
   ), [active_window_id, visible_windows]);
+  const live_strip = useMemo(() => build_stage_live_strip_state({
+    active_event: active_narrative_event,
+    active_window,
+    events: narrative_events,
+  }), [active_narrative_event, active_window, narrative_events]);
   const close_window = (window_id: string) => {
     set_focused_window_id((current) => resolve_next_window_focus({
       current_focus_id: current,
@@ -332,6 +338,7 @@ export function OperationStageDesktop({
         windows={window_states}
       />
       <StageDesktopIcons windows={window_states} on_restore={restore_window} />
+      <StageLiveStrip state={live_strip} />
       <StageAgentCursor active_window={active_window} />
       {visible_windows.length ? visible_windows.map((window, index) => {
         const is_active = active_window_id === window.id && window.phase !== "minimized";

@@ -7,12 +7,12 @@ export {
 export {
   build_stage_narrative,
   collect_narrative_events,
-  event_sequence_label,
   is_low_signal_director_value,
   minimum_revealed_window_count,
   order_windows_for_reveal,
   useRevealedWindowCount,
 } from "./operation-stage-narrative";
+export { event_sequence_label } from "./operation-stage-event-sequence";
 export { format_elapsed } from "./operation-stage-time";
 export {
   icon_for_operation_kind,
