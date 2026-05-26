@@ -164,6 +164,7 @@ const {
   build_stage_window_launch_state,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-window-launch.js")));
 const {
+  is_stage_manager_background_window,
   position_for_window,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-window-position.js")));
 const {
@@ -775,23 +776,38 @@ function verify_stage_window_launch_model() {
 }
 
 function verify_stage_window_position_model() {
+  const background_code = mock_stage_window({ id: "code", kind: "code_editor", phase: "background" });
   const code_position = position_for_window(
-    mock_stage_window({ id: "code", kind: "code_editor", phase: "background" }),
+    background_code,
     "running",
   );
-  assert(code_position.includes("left-[10%]"), `Background Code should sit on the left side, got ${code_position}`);
+  assert(code_position.includes("left-[4%]"), `Background Code should collapse into the left Stage Manager strip, got ${code_position}`);
+  assert(is_stage_manager_background_window(background_code, "running"), "Running background windows should render as Stage Manager thumbnails");
 
   const browser_position = position_for_window(
     mock_stage_window({ id: "browser", kind: "browser", phase: "background" }),
     "running",
+    2,
   );
-  assert(browser_position.includes("right-[5%]"), `Background Safari should sit on the right side, got ${browser_position}`);
+  assert(browser_position.includes("top-[52%]"), `Background Safari should use a distinct Stage Manager slot, got ${browser_position}`);
 
   const terminal_position = position_for_window(
     { ...mock_stage_window({ id: "terminal", kind: "terminal", phase: "focused" }), layout: "terminal" },
     "running",
   );
-  assert(terminal_position.includes("bottom-[10%]"), `Focused terminal should anchor near the Dock, got ${terminal_position}`);
+  assert(terminal_position.includes("w-[62%]"), `Focused terminal should own the main desktop area, got ${terminal_position}`);
+
+  const focused_code_position = position_for_window(
+    mock_stage_window({ id: "code-focused", kind: "code_editor", phase: "focused" }),
+    "running",
+  );
+  assert(focused_code_position.includes("w-[56%]"), `Focused Code should own the main desktop area, got ${focused_code_position}`);
+
+  assert(is_stage_manager_background_window(background_code, "completed"), "Completed review should keep prior windows as Stage Manager thumbnails instead of crowding the desktop");
+  assert(is_stage_manager_background_window(
+    mock_stage_window({ id: "opening-code", kind: "code_editor", phase: "opening" }),
+    "running",
+  ), "Opening non-focused windows should collapse into Stage Manager thumbnails instead of crowding the desktop");
 }
 
 function verify_operation_stage_key_is_session_scoped() {

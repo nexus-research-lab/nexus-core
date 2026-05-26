@@ -17,6 +17,7 @@ import {
   collect_narrative_events,
   icon_for_window_kind,
   is_stage_desktop_window_kind,
+  is_stage_manager_background_window,
   minimum_revealed_window_count,
   order_windows_for_reveal,
   position_for_window,
@@ -335,6 +336,10 @@ export function OperationStageDesktop({
       {visible_windows.length ? visible_windows.map((window, index) => {
         const is_active = active_window_id === window.id && window.phase !== "minimized";
         const is_maximized = Boolean(window_overrides[window.id]?.maximized);
+        const background_window_index = visible_windows
+          .filter((item) => is_stage_manager_background_window(item, narrative.phase))
+          .findIndex((item) => item.id === window.id);
+        const is_stage_manager_preview = is_stage_manager_background_window(window, narrative.phase);
         const launch = build_stage_window_launch_state({ index, is_active, window });
         return (
           <OperationStageWindow
@@ -361,7 +366,8 @@ export function OperationStageDesktop({
             on_cycle_focus={cycle_window_focus}
             position_class_name={is_maximized
               ? "left-[4%] top-[8%] h-[78%] w-[92%]"
-              : position_for_window(window, narrative.phase)}
+              : position_for_window(window, narrative.phase, background_window_index)}
+            preview_mode={is_stage_manager_preview ? "stage-manager" : undefined}
             restore_token={window_overrides[window.id]?.restore_token}
             title={window.title}
             tone={window.kind === "terminal" ? "terminal" : "default"}

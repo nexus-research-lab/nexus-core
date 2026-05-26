@@ -22,7 +22,10 @@ import type {
   StageWindowKind,
 } from "../operation-desktop-types";
 import type { OperationKind } from "../operation-types";
-export { position_for_window } from "./operation-stage-window-position";
+export {
+  is_stage_manager_background_window,
+  position_for_window,
+} from "./operation-stage-window-position";
 
 export function icon_for_artifact_path(path: string): LucideIcon {
   if (/\.(tsx?|jsx?|json|ya?ml|toml|css|scss|html?)$/i.test(path)) {

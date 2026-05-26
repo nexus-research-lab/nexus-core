@@ -22,6 +22,7 @@ interface OperationStageWindowProps {
   drag_offset?: { x: number; y: number };
   mobile_hidden?: boolean;
   content_mode?: "flush" | "inset";
+  preview_mode?: "stage-manager";
   restore_token?: number;
   z_index?: number;
   tone?: "default" | "terminal";
@@ -48,6 +49,7 @@ export function OperationStageWindow({
   drag_offset = { x: 0, y: 0 },
   mobile_hidden = false,
   content_mode = "inset",
+  preview_mode,
   restore_token,
   z_index,
   tone = "default",
@@ -200,6 +202,7 @@ export function OperationStageWindow({
         dimmed && "opacity-[0.62] saturate-[0.82]",
         is_dragging && "operation-stage-window-dragging select-none",
         is_restoring && "operation-stage-window-restoring",
+        preview_mode === "stage-manager" && "operation-stage-window-stage-manager rounded-[18px]",
         minimized && "min-h-0",
         mobile_hidden && "max-md:hidden",
         position_class_name,
@@ -355,12 +358,44 @@ export function OperationStageWindow({
             : "overflow-auto p-4",
         minimized && "hidden",
       )}>
-        {tone !== "terminal" && content_mode !== "flush" ? (
+        {preview_mode === "stage-manager" ? (
+          <button
+            aria-label={`切换到 ${titlebar.title_label}`}
+            className="group flex h-full w-full flex-col justify-between overflow-hidden bg-[linear-gradient(145deg,rgba(255,255,255,0.82),rgba(239,244,249,0.68))] p-3 text-left outline-none"
+            onClick={(event) => {
+              event.stopPropagation();
+              on_focus?.();
+            }}
+            type="button"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-[12px] border border-white/64 bg-white/68 text-(--icon-default) shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+                <Icon className="h-4 w-4" />
+              </div>
+              <span className="rounded-full bg-white/52 px-2 py-0.5 text-[9px] font-black text-(--text-soft)">
+                {app_label ?? "Nexus"}
+              </span>
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-[11px] font-black leading-4 text-(--text-strong)">
+                {titlebar.title_label}
+              </p>
+              <p className="mt-1 line-clamp-2 text-[9px] font-semibold leading-3 text-(--text-soft)">
+                后台窗口 · 点击切换
+              </p>
+            </div>
+            <div className="flex h-6 items-end gap-1.5 opacity-70 transition group-hover:opacity-100">
+              <span className="h-2.5 flex-1 rounded-full bg-[rgba(91,114,255,0.18)]" />
+              <span className="h-4 flex-1 rounded-full bg-[rgba(47,184,132,0.18)]" />
+              <span className="h-3 flex-1 rounded-full bg-[rgba(117,131,149,0.16)]" />
+            </div>
+          </button>
+        ) : tone !== "terminal" && content_mode !== "flush" ? (
           <div className="pointer-events-none absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-[10px] border border-(--divider-subtle-color) bg-white/72 text-(--icon-muted) opacity-30">
             <Icon className="h-3.5 w-3.5" />
           </div>
         ) : null}
-        {children}
+        {preview_mode === "stage-manager" ? null : children}
       </div>
     </div>
   );

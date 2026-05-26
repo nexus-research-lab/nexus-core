@@ -17,6 +17,7 @@ export { format_elapsed } from "./operation-stage-time";
 export {
   icon_for_operation_kind,
   icon_for_window_kind,
+  is_stage_manager_background_window,
   position_for_window,
   stage_app_label_for_window_kind,
 } from "./operation-stage-window-meta";
