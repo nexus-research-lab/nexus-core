@@ -44,7 +44,7 @@ export function position_for_window(
   if (window.kind === "permission_wait") {
     return window.phase === "minimized"
       ? "left-[36%] bottom-[8%] h-16 w-[28%]"
-      : is_review_layout ? COMPACT_REVIEW_WORKSPACE : "left-[27%] top-[21%] h-[48%] w-[48%]";
+      : is_review_layout ? COMPACT_REVIEW_WORKSPACE : "left-[23%] top-[14%] h-[62%] w-[56%]";
   }
   if (window.layout === "artifact") {
     return window.phase === "minimized"

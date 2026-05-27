@@ -887,6 +887,13 @@ function verify_stage_window_position_model() {
   );
   assert(focused_code_position.includes("w-[80%]"), `Focused Code should own the main desktop area, got ${focused_code_position}`);
 
+  const permission_position = position_for_window(
+    mock_stage_window({ id: "permission", kind: "permission_wait", phase: "focused" }),
+    "running",
+  );
+  assert(permission_position.includes("h-[62%]"), `Permission window should have enough System Settings height, got ${permission_position}`);
+  assert(permission_position.includes("w-[56%]"), `Permission window should read like a System Settings window, got ${permission_position}`);
+
   assert(is_stage_manager_background_window(background_code, "completed"), "Completed review should keep prior windows as Stage Manager thumbnails instead of crowding the desktop");
   assert(is_stage_manager_background_window(
     mock_stage_window({ id: "opening-code", kind: "code_editor", phase: "opening" }),
