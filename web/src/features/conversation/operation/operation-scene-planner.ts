@@ -18,7 +18,7 @@ import {
 } from "./operation-file-documents";
 import { find_operation_html_artifact } from "./operation-html-artifacts";
 import { build_operation_continuation_brief } from "./operation-stage-experience";
-import { generic_tool_window_config } from "./operation-scene-generic-tool-window";
+import { append_generic_tool_windows } from "./operation-scene-generic-tool-windows";
 import {
   basename,
   collect_round_events,
@@ -282,6 +282,14 @@ function build_windows(
     }));
   }
 
+  append_generic_tool_windows({
+    active_event: event,
+    snapshot,
+    tool_activity_events,
+    windows,
+    window_state,
+  });
+
   if (event.phase === "waiting") {
     windows.push(window_state(event, snapshot, {
       id: "permission-checkpoint",
@@ -324,22 +332,6 @@ function build_windows(
         },
       }));
     }
-  }
-
-  if (
-    is_desktop_tool_activity_event(event) &&
-    !windows.some((window) => window.payload.event.id === event.id)
-  ) {
-    windows.push(window_state(event, snapshot, generic_tool_window_config(event, tool_activity_events, {
-      phase: "focused",
-      z: 40,
-    })));
-  } else if (windows.length === 0 && tool_activity_events.length > 0) {
-    const generic_event = tool_activity_events.at(-1) ?? event;
-    windows.push(window_state(generic_event, snapshot, generic_tool_window_config(generic_event, tool_activity_events, {
-      phase: "focused",
-      z: 36,
-    })));
   }
 
   return windows;

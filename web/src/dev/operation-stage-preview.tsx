@@ -119,6 +119,37 @@ const generic_tool_event: NexusOperationEvent = {
   updated_at: now - 6_500,
 };
 
+const generic_tool_followup_event: NexusOperationEvent = {
+  agent_id,
+  evidence: [
+    { type: "status", label: "校验", value: "cleanup 规则已记录" },
+    { type: "status", label: "结果", value: "2 条执行建议" },
+  ],
+  id: "tool-generic-cleanup",
+  kind: "unknown",
+  message_id: "message-assistant",
+  phase: "running",
+  round_id,
+  session_key,
+  surface: "fallback",
+  target: "useEffect cleanup checklist",
+  title: "整理规则",
+  tool_name: "Rules",
+  tool_use_id: "tool-rules",
+  input_preview: {
+    context: "React useEffect cleanup",
+    mode: "checklist",
+  },
+  result_preview: {
+    checklist: [
+      "取消订阅或移除监听器",
+      "清理计时器并忽略过期异步结果",
+    ],
+  },
+  summary: "把文档片段整理成可执行检查清单。",
+  updated_at: now - 5_900,
+};
+
 const open_event: NexusOperationEvent = {
   agent_id,
   evidence: [
@@ -209,7 +240,7 @@ const workspace_item: WorkspaceActivityItem = {
 const PREVIEW_STEPS = [
   { id: "idle", label: "空桌面", event: live_event, events: [live_event] },
   { id: "write", label: "创建文件", event: write_event, events: [live_event, write_event] },
-  { id: "tool", label: "工具窗口", event: generic_tool_event, events: [live_event, generic_tool_event] },
+  { id: "tool", label: "工具窗口", event: generic_tool_followup_event, events: [live_event, generic_tool_event, generic_tool_followup_event] },
   { id: "permission", label: "权限确认", event: permission_event, events: [live_event, write_event, permission_event] },
   { id: "open", label: "打开预览", event: open_event, events: [live_event, write_event, open_event] },
   { id: "done", label: "完成收束", event: summary_event, events: [live_event, write_event, open_event, summary_event] },

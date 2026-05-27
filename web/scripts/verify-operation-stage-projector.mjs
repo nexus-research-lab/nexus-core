@@ -51,6 +51,7 @@ copyFileSync(join(operation_dir, "operation-types.js"), join(operation_dir, "ope
 copyFileSync(join(operation_dir, "operation-desktop-types.js"), join(operation_dir, "operation-desktop-types"));
 copyFileSync(join(operation_dir, "operation-preview.js"), join(operation_dir, "operation-preview"));
 copyFileSync(join(operation_dir, "operation-scene-generic-tool-window.js"), join(operation_dir, "operation-scene-generic-tool-window"));
+copyFileSync(join(operation_dir, "operation-scene-generic-tool-windows.js"), join(operation_dir, "operation-scene-generic-tool-windows"));
 copyFileSync(join(operation_dir, "operation-scene-planner-helpers.js"), join(operation_dir, "operation-scene-planner-helpers"));
 copyFileSync(join(operation_dir, "operation-scene-window-policy.js"), join(operation_dir, "operation-scene-window-policy"));
 copyFileSync(join(operation_dir, "operation-stage-labels.js"), join(operation_dir, "operation-stage-labels"));
@@ -228,6 +229,7 @@ verify_initial_window_reveal_avoids_desktop_clutter_flash();
 verify_hidden_stage_uses_desktop_state_instead_of_mission_control();
 verify_unclassified_tool_activity_opens_nexus_app_window(now);
 verify_current_unclassified_tool_opens_beside_existing_app_window(now);
+verify_recent_unclassified_tools_remain_as_mac_app_windows(now);
 verify_generic_tool_uses_nexus_tool_surface();
 verify_tool_app_intent_map();
 verify_nexus_tool_session_view(now);
@@ -516,6 +518,55 @@ function verify_current_unclassified_tool_opens_beside_existing_app_window(now) 
   assert(generic_window.payload.event.id === plan_event.id, "Nexus app window should belong to the current unclassified tool");
   assert(desktop.active_window_id === generic_window.id, "Current unclassified tool window should become the focused app window");
   assert(desktop.windows.some((window) => window.kind === "code_editor"), "Existing document app window should remain on the desktop");
+}
+
+function verify_recent_unclassified_tools_remain_as_mac_app_windows(now) {
+  const first_event = {
+    id: "tool-context",
+    session_key: "session:stage",
+    round_id: "round-tool-sequence",
+    agent_id: "agent-stage",
+    tool_use_id: "tool-context",
+    tool_name: "Context7",
+    kind: "unknown",
+    surface: "fallback",
+    phase: "done",
+    title: "查询文档",
+    target: "React cleanup",
+    result_preview: "cleanup docs",
+    updated_at: now - 10,
+  };
+  const second_event = {
+    id: "tool-rules",
+    session_key: "session:stage",
+    round_id: "round-tool-sequence",
+    agent_id: "agent-stage",
+    tool_use_id: "tool-rules",
+    tool_name: "Rules",
+    kind: "unknown",
+    surface: "fallback",
+    phase: "running",
+    title: "整理规则",
+    target: "cleanup checklist",
+    result_preview: "rules",
+    updated_at: now,
+  };
+  const desktop = plan_operation_desktop({
+    event: second_event,
+    snapshot: {
+      key: "session:stage",
+      session_key: "session:stage",
+      active_event: second_event,
+      events: [first_event, second_event],
+      recent_evidence: [],
+      workspace_events: [],
+      updated_at: now,
+    },
+  });
+  const generic_windows = desktop.windows.filter((window) => window.kind === "generic_tool");
+  assert(generic_windows.length === 2, `Recent unclassified tools should remain as separate app windows, got ${generic_windows.length}`);
+  assert(generic_windows.some((window) => window.payload.event.id === first_event.id && window.phase === "background"), "Previous tool app should remain visible as a background window");
+  assert(generic_windows.some((window) => window.payload.event.id === second_event.id && window.phase === "focused"), "Current tool app should be focused");
 }
 
 function verify_generic_tool_uses_nexus_tool_surface() {
