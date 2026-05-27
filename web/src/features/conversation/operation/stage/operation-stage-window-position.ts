@@ -2,15 +2,15 @@ import type { StageWindowState } from "../operation-desktop-types";
 import type { StageNarrativePhase } from "./operation-stage-model";
 
 const STAGE_MANAGER_BACKGROUND_POSITIONS = [
-  "left-[2.5%] top-[15%] h-[10%] w-[8%]",
-  "left-[2.5%] top-[28%] h-[10%] w-[8%]",
-  "left-[2.5%] top-[41%] h-[10%] w-[8%]",
-  "left-[2.5%] top-[54%] h-[10%] w-[8%]",
+  "left-[3.5%] top-[18%] h-[13%] w-[10%]",
+  "left-[3.5%] top-[34%] h-[13%] w-[10%]",
+  "left-[3.5%] top-[50%] h-[13%] w-[10%]",
+  "left-[3.5%] top-[66%] h-[13%] w-[10%]",
 ];
 
 const PRIMARY_WORKSPACE = "left-[12%] top-[10%] h-[69%] w-[80%]";
-const PRIMARY_REVIEW_WORKSPACE = "left-[13%] top-[8%] h-[63%] w-[74%]";
-const COMPACT_REVIEW_WORKSPACE = "left-[24%] top-[15%] h-[54%] w-[54%]";
+const PRIMARY_REVIEW_WORKSPACE = "left-[11%] top-[8%] h-[70%] w-[78%]";
+const COMPACT_REVIEW_WORKSPACE = "left-[22%] top-[13%] h-[60%] w-[58%]";
 
 export function position_for_window(
   window: StageWindowState,
@@ -26,8 +26,8 @@ export function position_for_window(
   if (window.layout === "terminal") {
     if (is_review_layout) {
       return window.phase === "focused"
-        ? "left-[17%] top-[23%] h-[50%] w-[68%]"
-        : "left-[16%] bottom-[11%] h-[21%] w-[58%]";
+        ? "left-[14%] top-[21%] h-[54%] w-[72%]"
+        : "left-[15%] bottom-[13%] h-[22%] w-[60%]";
     }
     return window.phase === "focused"
       ? "left-[15%] top-[24%] h-[47%] w-[75%]"
@@ -49,7 +49,7 @@ export function position_for_window(
   if (window.layout === "artifact") {
     return window.phase === "minimized"
       ? is_review_layout ? "right-[22%] bottom-[9%] h-14 w-[20%]" : "right-[6%] bottom-[9%] h-14 w-[22%]"
-      : is_review_layout ? "right-[18%] top-[16%] h-[45%] w-[28%]" : "right-[5%] top-[16%] h-[46%] w-[31%]";
+      : is_review_layout ? "right-[9%] top-[15%] h-[52%] w-[32%]" : "right-[5%] top-[16%] h-[46%] w-[31%]";
   }
   if (window.kind === "browser") {
     return window.phase === "focused"
@@ -74,8 +74,8 @@ export function position_for_window(
   }
   if (window.kind === "handoff") {
     return window.phase === "focused"
-      ? "left-[14%] top-[7%] h-[76%] w-[72%]"
-      : "left-[24%] top-[16%] h-[50%] w-[44%]";
+      ? "left-[12%] top-[7%] h-[76%] w-[76%]"
+      : "left-[23%] top-[15%] h-[56%] w-[48%]";
   }
   if (window.kind === "summary") {
     return is_review_layout ? COMPACT_REVIEW_WORKSPACE : "left-[28%] top-[15%] h-[52%] w-[46%]";

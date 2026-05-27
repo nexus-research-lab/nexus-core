@@ -304,7 +304,7 @@ export function OperationStagePreview() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col bg-[rgb(236,240,245)] p-4 text-(--text-strong)">
+    <main className="flex h-screen min-h-[720px] flex-col overflow-hidden bg-[rgb(236,240,245)] p-4 text-(--text-strong)">
       <OperationStageMotionStyles />
       <div className="mb-3 flex shrink-0 items-center justify-between gap-3">
         <div>
@@ -324,7 +324,7 @@ export function OperationStagePreview() {
           ))}
         </div>
       </div>
-      <section className="flex h-[calc(100dvh-96px)] min-h-[620px] overflow-hidden rounded-[24px] border border-white/70 bg-white/46 p-2 shadow-[0_28px_90px_rgba(18,28,42,0.16)]">
+      <section className="flex min-h-0 flex-1 overflow-hidden rounded-[24px] border border-white/70 bg-white/46 p-2 shadow-[0_28px_90px_rgba(18,28,42,0.16)]">
         <OperationStageDesktop event={step.event} snapshot={snapshot} />
       </section>
     </main>

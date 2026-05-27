@@ -239,7 +239,7 @@ function WorkspaceTreeRow({
   return (
     <div
       className={cn(
-        "grid grid-cols-[auto_auto_minmax(0,1fr)_72px_86px] items-center gap-2 rounded-[9px] px-2 py-1.5 text-[11px]",
+        "grid grid-cols-[auto_auto_auto_minmax(0,1fr)_72px_86px] items-center gap-2 rounded-[9px] px-2 py-1.5 text-[11px]",
         active ? "bg-[rgba(91,114,255,0.12)] text-[color:var(--primary)]" : "text-(--text-muted) hover:bg-white/70",
       )}
       title={path}

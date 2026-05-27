@@ -858,7 +858,8 @@ function verify_stage_window_position_model() {
     background_code,
     "running",
   );
-  assert(code_position.includes("left-[2.5%]"), `Background Code should collapse into the left Stage Manager strip, got ${code_position}`);
+  assert(code_position.includes("left-[3.5%]"), `Background Code should collapse into the left Stage Manager strip, got ${code_position}`);
+  assert(code_position.includes("w-[10%]"), `Background Code thumbnail should remain readable in the Stage Manager strip, got ${code_position}`);
   assert(is_stage_manager_background_window(background_code, "running"), "Running background windows should render as Stage Manager thumbnails");
 
   const browser_position = position_for_window(
@@ -866,7 +867,7 @@ function verify_stage_window_position_model() {
     "running",
     2,
   );
-  assert(browser_position.includes("top-[41%]"), `Background Safari should use a distinct Stage Manager slot, got ${browser_position}`);
+  assert(browser_position.includes("top-[50%]"), `Background Safari should use a distinct Stage Manager slot, got ${browser_position}`);
 
   const terminal_position = position_for_window(
     { ...mock_stage_window({ id: "terminal", kind: "terminal", phase: "focused" }), layout: "terminal" },
