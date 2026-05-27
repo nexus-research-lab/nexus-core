@@ -37,19 +37,26 @@ export function build_dock_app_slots(
 ): DockAppSlot[] {
   const groups_by_label = new Map(app_groups.map((app) => [app.app_label, app]));
   const pinned_labels = new Set(pinned_apps.map((app) => app.app_label));
-  const pinned_slots = pinned_apps.flatMap((app): DockAppSlot[] => {
+  const pinned_slots = pinned_apps.map((app): DockAppSlot => {
     const group = groups_by_label.get(app.app_label);
     if (!group) {
-      return [];
+      return {
+        app_label: app.app_label,
+        count: 0,
+        is_active: false,
+        is_running: false,
+        kind: app.kind,
+        window: null,
+      };
     }
-    return [{
+    return {
       app_label: app.app_label,
       count: group.count,
       is_active: group.is_active,
       is_running: group.is_running,
       kind: group.window.kind ?? app.kind,
       window: group.window,
-    }];
+    };
   });
   const extra_slots = app_groups
     .filter((app) => !pinned_labels.has(app.app_label))
