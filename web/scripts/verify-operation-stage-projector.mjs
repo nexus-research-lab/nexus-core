@@ -132,6 +132,7 @@ const {
   agent_cursor_intent_for_window_kind,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-agent-cursor.js")));
 const {
+  count_desktop_reveal_events,
   initial_revealed_window_count,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-window-reveal.js")));
 const {
@@ -391,6 +392,11 @@ function verify_agent_cursor_tracks_active_mac_app() {
 }
 
 function verify_initial_window_reveal_avoids_desktop_clutter_flash() {
+  assert(count_desktop_reveal_events([
+    { id: "wake", surface: "conversation" },
+    { id: "write", surface: "editor", tool_use_id: "tool-write" },
+    { id: "open", surface: "terminal", tool_use_id: "tool-open" },
+  ]) === 2, "Desktop reveal should count tool/application events instead of the initial empty desktop wake event");
   assert(initial_revealed_window_count({
     minimum_count: 1,
     phase: "running",

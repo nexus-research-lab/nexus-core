@@ -11,7 +11,10 @@ import type {
   StageNarrativeState,
 } from "./operation-stage-model";
 import { event_sequence_label } from "./operation-stage-event-sequence";
-import { initial_revealed_window_count } from "./operation-stage-window-reveal";
+import {
+  count_desktop_reveal_events,
+  initial_revealed_window_count,
+} from "./operation-stage-window-reveal";
 
 export function order_windows_for_reveal(
   windows: StageWindowState[],
@@ -114,11 +117,11 @@ export function useRevealedWindowCount({
 }
 
 export function minimum_revealed_window_count({
-  event_count,
+  reveal_event_count,
   phase,
   window_count,
 }: {
-  event_count: number;
+  reveal_event_count: number;
   phase: StageNarrativePhase;
   window_count: number;
 }): number {
@@ -128,8 +131,10 @@ export function minimum_revealed_window_count({
   if (phase === "completed" || phase === "settling") {
     return window_count;
   }
-  return Math.min(window_count, Math.max(1, event_count));
+  return Math.min(window_count, Math.max(1, reveal_event_count));
 }
+
+export { count_desktop_reveal_events };
 
 export function build_stage_narrative(
   event: NexusOperationEvent,

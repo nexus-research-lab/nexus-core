@@ -2,6 +2,7 @@ export {
   collect_completion_workspace_artifacts,
 } from "./operation-stage-artifacts";
 export {
+  count_desktop_reveal_events,
   initial_revealed_window_count,
 } from "./operation-stage-window-reveal";
 export {

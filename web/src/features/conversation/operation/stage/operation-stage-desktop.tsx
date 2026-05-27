@@ -15,6 +15,7 @@ import { EmptyStage } from "../operation-stage-idle";
 import {
   build_stage_narrative,
   collect_narrative_events,
+  count_desktop_reveal_events,
   icon_for_window_kind,
   is_stage_desktop_window_kind,
   is_stage_manager_background_window,
@@ -85,11 +86,14 @@ export function OperationStageDesktop({
   const windows_for_reveal = useMemo(() => (
     order_windows_for_reveal(desktop_windows, desktop_active_window_id)
   ), [desktop_active_window_id, desktop_windows]);
+  const reveal_event_count = useMemo(() => (
+    count_desktop_reveal_events(narrative_events)
+  ), [narrative_events]);
   const revealed_window_count = useRevealedWindowCount({
     event_key: `${active_narrative_event.round_id}:${active_narrative_event.id}:${active_narrative_event.phase}`,
     minimum_count: minimum_revealed_window_count({
-      event_count: narrative_events.length,
       phase: narrative.phase,
+      reveal_event_count,
       window_count: windows_for_reveal.length,
     }),
     phase: narrative.phase,
