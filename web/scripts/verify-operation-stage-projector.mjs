@@ -337,21 +337,19 @@ function verify_dock_model_groups_windows_by_mac_app() {
     { app_label: "Safari", kind: "browser" },
     { app_label: "Code", kind: "code_editor" },
   ]);
-  assert(slots[0].app_label === "访达", `Dock should preserve pinned app order, got ${slots[0].app_label}`);
-  assert(slots[1].app_label === "Safari" && slots[1].count === 2, "Dock Safari slot should reflect grouped running windows");
-  assert(slots[2].app_label === "Code" && slots[2].window?.id === "code:a", "Dock Code slot should keep recoverable closed window");
+  assert(!slots.some((slot) => slot.app_label === "访达"), "Desktop Dock should omit pinned apps without a window context");
+  assert(slots[0].app_label === "Safari" && slots[0].count === 2, "Dock Safari slot should reflect grouped running windows");
+  assert(slots[1].app_label === "Code" && slots[1].window?.id === "code:a", "Dock Code slot should keep recoverable closed window");
   assert(slots.at(-1)?.app_label === "预览", `Dock should append unpinned running apps, got ${slots.at(-1)?.app_label}`);
 
-  const safari_presentation = resolve_dock_slot_presentation(slots[1], "Search");
+  const safari_presentation = resolve_dock_slot_presentation(slots[0], "Search");
   assert(safari_presentation.state === "active", `Dock active Safari slot should present as active, got ${safari_presentation.state}`);
   assert(safari_presentation.title === "Safari · 2 个窗口 · 当前", `Dock active Safari title should summarize grouped windows, got ${safari_presentation.title}`);
-  const code_presentation = resolve_dock_slot_presentation(slots[2], "app.ts");
+  const code_presentation = resolve_dock_slot_presentation(slots[1], "app.ts");
   assert(code_presentation.state === "recoverable", `Dock closed Code slot should be recoverable, got ${code_presentation.state}`);
   assert(!code_presentation.is_disabled, "Dock closed Code slot should remain clickable for restore");
-  const idle_finder_presentation = resolve_dock_slot_presentation(slots[0], "访达");
-  assert(idle_finder_presentation.state === "idle", `Dock pinned Finder slot should present as idle, got ${idle_finder_presentation.state}`);
-  assert(idle_finder_presentation.is_disabled, "Dock idle pinned app without a window should be disabled");
   const preview_slot = slots.at(-1);
+  assert(preview_slot, "Dock should keep the minimized Preview app slot");
   const preview_presentation = resolve_dock_slot_presentation(preview_slot, "README.md");
   assert(preview_presentation.state === "minimized", `Dock minimized Preview slot should present as minimized, got ${preview_presentation.state}`);
 }

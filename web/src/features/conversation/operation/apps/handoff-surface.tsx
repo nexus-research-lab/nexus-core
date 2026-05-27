@@ -49,8 +49,8 @@ export function HandoffSurface({
   const resume_prompt = handoff_summary?.resume_prompt ?? event.summary ?? "本轮执行已经归档，可以继续打开产物或回看工具现场。";
 
   return (
-    <div className="flex h-full min-h-[340px] overflow-hidden bg-[#f7faf8] text-(--text-default)">
-      <aside className="soft-scrollbar w-[230px] shrink-0 overflow-auto border-r border-(--divider-subtle-color) bg-white/68 p-3">
+    <div className="flex h-full min-h-[320px] overflow-hidden bg-[#f7faf8] text-(--text-default)">
+      <aside className="soft-scrollbar w-[208px] shrink-0 overflow-auto border-r border-(--divider-subtle-color) bg-white/68 p-3">
         <div className="flex items-center gap-2">
           <span className="grid h-9 w-9 place-items-center rounded-[12px] bg-[rgba(47,184,132,0.12)] text-[color:var(--success)]">
             <CheckCircle2 className="h-5 w-5" />
@@ -61,12 +61,12 @@ export function HandoffSurface({
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-2">
+        <div className="mt-3 grid grid-cols-2 gap-2">
           <HandoffMetric icon={<CheckCircle2 className="h-3.5 w-3.5" />} label="完成" value={`${completed_count}/${tool_events.length || 1}`} />
           <HandoffMetric icon={<Clock3 className="h-3.5 w-3.5" />} label="耗时" value={duration} />
         </div>
 
-        <div className="mt-4 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.12em] text-(--text-soft)">
+        <div className="mt-3 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.12em] text-(--text-soft)">
           <FolderOpen className="h-3 w-3" />
           <span>产物</span>
         </div>
@@ -81,7 +81,7 @@ export function HandoffSurface({
             const related_event = source_events.find((item) => item.target === artifact.value);
             return (
               <button
-                className="flex w-full min-w-0 items-center gap-2 rounded-[11px] border border-white/58 bg-white/48 px-2.5 py-2 text-left transition hover:bg-white/74 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(47,184,132,0.32)]"
+                className="flex w-full min-w-0 items-center gap-2 rounded-[10px] border border-white/58 bg-white/48 px-2.5 py-1.5 text-left transition hover:bg-white/74 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(47,184,132,0.32)]"
                 disabled={!related_event || !on_focus_event}
                 key={artifact.id}
                 onClick={() => related_event && on_focus_event?.(related_event)}
@@ -102,32 +102,32 @@ export function HandoffSurface({
       </aside>
 
       <section className="flex min-w-0 flex-1 flex-col bg-white/76">
-        <div className="border-b border-(--divider-subtle-color) px-5 py-4">
+        <div className="border-b border-(--divider-subtle-color) px-5 py-3">
           <p className="text-[11px] font-black uppercase tracking-[0.14em] text-(--text-soft)">Delivery</p>
-          <h2 className="mt-1 truncate text-[22px] font-black tracking-normal text-(--text-strong)">
+          <h2 className="mt-1 truncate text-[21px] font-black tracking-normal text-(--text-strong)">
             {event.title || "本轮任务已完成"}
           </h2>
-          <p className="mt-2 line-clamp-2 text-[12px] font-semibold leading-5 text-(--text-soft)">
+          <p className="mt-1.5 line-clamp-2 text-[12px] font-semibold leading-5 text-(--text-soft)">
             {resume_prompt}
           </p>
         </div>
 
-        <div className="soft-scrollbar min-h-0 flex-1 overflow-auto p-4">
-          <div className="grid gap-3">
+        <div className="soft-scrollbar min-h-0 flex-1 overflow-auto p-3">
+          <div className="grid gap-2">
             {tool_events.slice(-5).map((item, index) => {
               const profile = resolve_operation_tool_profile(item.tool_name, item.kind, item.surface);
               const io_summary = build_operation_event_io_summary(item);
               return (
                 <button
                   className={cn(
-                    "grid grid-cols-[32px_minmax(0,1fr)_86px] items-center gap-3 rounded-[13px] border border-(--divider-subtle-color) bg-white/62 px-3 py-2.5 text-left transition",
+                    "grid grid-cols-[30px_minmax(0,1fr)_78px] items-center gap-3 rounded-[12px] border border-(--divider-subtle-color) bg-white/62 px-3 py-2 text-left transition",
                     on_focus_event && "hover:bg-[rgba(91,114,255,0.055)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.32)]",
                   )}
                   key={item.id}
                   onClick={() => on_focus_event?.(item)}
                   type="button"
                 >
-                  <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]">
+                  <span className="grid h-7 w-7 place-items-center rounded-[9px] bg-[rgba(47,184,132,0.10)] text-[color:var(--success)]">
                     {index + 1}
                   </span>
                   <span className="min-w-0">
@@ -147,13 +147,13 @@ export function HandoffSurface({
           </div>
         </div>
 
-        <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 border-t border-(--divider-subtle-color) bg-white/66 px-4 py-3 text-[10.5px] font-bold text-(--text-soft)">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 border-t border-(--divider-subtle-color) bg-white/66 px-4 py-2.5 text-[10.5px] font-bold text-(--text-soft)">
           <span className="truncate">现场已收束，历史应用保留在左侧缩略片与 Dock 中。</span>
-          <button className="inline-flex h-8 items-center gap-1.5 rounded-full border border-(--divider-subtle-color) bg-white/62 px-3 text-(--text-strong)" type="button">
+          <button className="inline-flex h-7 items-center gap-1.5 rounded-full border border-(--divider-subtle-color) bg-white/62 px-3 text-(--text-strong)" type="button">
             <RotateCcw className="h-3.5 w-3.5" />
             回看
           </button>
-          <button className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[color:var(--primary)] px-3 text-white" type="button">
+          <button className="inline-flex h-7 items-center gap-1.5 rounded-full bg-[color:var(--primary)] px-3 text-white" type="button">
             <FileText className="h-3.5 w-3.5" />
             继续
             <ArrowRight className="h-3.5 w-3.5" />

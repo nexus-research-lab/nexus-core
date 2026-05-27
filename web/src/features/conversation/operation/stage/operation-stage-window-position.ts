@@ -74,7 +74,7 @@ export function position_for_window(
   }
   if (window.kind === "handoff") {
     return window.phase === "focused"
-      ? "left-[14%] top-[8%] h-[62%] w-[72%]"
+      ? "left-[14%] top-[7%] h-[68%] w-[72%]"
       : "left-[24%] top-[16%] h-[50%] w-[44%]";
   }
   if (window.kind === "summary") {
