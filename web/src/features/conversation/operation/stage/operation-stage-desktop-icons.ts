@@ -3,6 +3,7 @@ import { basename } from "../operation-scene-planner-helpers";
 
 export interface StageDesktopIconItem {
   aria_label: string;
+  extension_label: string;
   file_kind_label: string;
   label: string;
   state_label: string;
@@ -18,10 +19,12 @@ export function build_stage_desktop_icon_items(windows: StageWindowState[]): Sta
     .map((window) => {
       const target = window.target ?? window.payload.target ?? "";
       const label = desktop_icon_label(window);
+      const extension_label = desktop_file_extension_label(target);
       const file_kind_label = desktop_file_kind_label(window);
       const state_label = desktop_file_state_label(window);
       return {
         aria_label: `${desktop_icon_action_label(window)}：${label}`,
+        extension_label,
         file_kind_label,
         label,
         state_label,
@@ -56,6 +59,11 @@ function desktop_icon_label(window: StageWindowState): string {
     return target_label;
   }
   return window.title;
+}
+
+function desktop_file_extension_label(target: string): string {
+  const match = /\.([a-z0-9]+)$/i.exec(basename(target));
+  return match?.[1]?.slice(0, 5).toUpperCase() ?? "FILE";
 }
 
 function desktop_file_kind_label(window: StageWindowState): string {

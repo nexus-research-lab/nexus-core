@@ -776,10 +776,12 @@ function verify_stage_desktop_icon_items() {
   const icons = build_stage_desktop_icon_items(windows);
   assert(icons.length === 2, `Desktop should expose only background artifact file windows, got ${icons.length}`);
   assert(icons[0].label === "notes.md", `Desktop icon should skip the foreground file and use basename label, got ${icons[0].label}`);
+  assert(icons[0].extension_label === "MD", `Desktop icon should expose a file extension badge, got ${icons[0].extension_label}`);
   assert(icons[0].file_kind_label === "文稿", `Desktop markdown icon should be document kind, got ${icons[0].file_kind_label}`);
   assert(icons[0].state_label === "窗口已最小化", `Minimized desktop icon should expose minimized state, got ${icons[0].state_label}`);
   assert(icons[0].aria_label === "恢复文件窗口：notes.md", `Minimized desktop icon should be a restore action, got ${icons[0].aria_label}`);
   assert(icons[1].file_kind_label === "图像", `Image desktop icon should expose image kind, got ${icons[1].file_kind_label}`);
+  assert(icons[1].extension_label === "PNG", `Image desktop icon should expose image extension badge, got ${icons[1].extension_label}`);
   assert(!icons.some((item) => item.label === "preview"), "Desktop should not render synthetic preview artifact icons");
 }
 

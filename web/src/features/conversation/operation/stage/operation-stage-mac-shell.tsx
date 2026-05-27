@@ -114,14 +114,18 @@ export function StageDesktopIcons({
             type="button"
           >
             <div className={cn(
-              "relative grid h-10 w-10 place-items-center rounded-[13px] border border-white/62 bg-white/42 text-(--icon-default) shadow-[0_10px_24px_rgba(18,28,42,0.08)] backdrop-blur-xl transition group-hover:-translate-y-0.5 group-hover:bg-white/70 group-focus-visible:ring-2 group-focus-visible:ring-[rgba(91,114,255,0.38)]",
-              window.window.phase === "focused" && "bg-[rgba(91,114,255,0.14)] text-[color:var(--primary)]",
-              window.window.phase === "minimized" && "opacity-78",
-              window.window.phase === "closed" && "opacity-62 grayscale-[0.22]",
+              "relative grid h-12 w-10 place-items-center rounded-[9px] border border-white/78 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(244,248,252,0.86))] text-(--icon-default) shadow-[0_12px_26px_rgba(18,28,42,0.10),inset_0_1px_0_rgba(255,255,255,0.92)] transition group-hover:-translate-y-0.5 group-hover:bg-white group-focus-visible:ring-2 group-focus-visible:ring-[rgba(91,114,255,0.38)]",
+              window.window.phase === "focused" && "text-[color:var(--primary)]",
+              window.window.phase === "minimized" && "opacity-82",
+              window.window.phase === "closed" && "opacity-64 grayscale-[0.22]",
             )}>
+              <span className="absolute right-0 top-0 h-3.5 w-3.5 rounded-bl-[7px] border-b border-l border-[rgba(160,174,192,0.34)] bg-[linear-gradient(135deg,rgba(226,233,243,0.82),rgba(255,255,255,0.72))]" />
               <Icon className="h-[18px] w-[18px]" />
+              <span className="absolute bottom-1.5 rounded-[5px] bg-[rgba(32,43,58,0.72)] px-1.5 py-px text-[7px] font-black leading-none text-white">
+                {window.extension_label}
+              </span>
               <span className={cn(
-                "absolute -bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full border border-white/72",
+                "absolute -bottom-1.5 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full border border-white/72",
                 window.window.phase === "closed"
                   ? "bg-[rgba(117,131,149,0.55)]"
                   : window.window.phase === "minimized"
