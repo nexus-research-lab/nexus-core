@@ -203,6 +203,7 @@ export function StageAgentCursor({
       className={cn("operation-stage-agent-cursor pointer-events-none absolute z-50 hidden -translate-x-2 -translate-y-2 md:block", agent_cursor_anchor_class(active_window))}
       data-agent-cursor-intent={intent}
     >
+      <span className="operation-stage-agent-cursor-target" />
       <MousePointer2 className="h-5 w-5 fill-[rgba(32,43,58,0.88)] text-[rgba(32,43,58,0.88)] drop-shadow-[0_8px_14px_rgba(18,28,42,0.22)]" />
     </div>
   );

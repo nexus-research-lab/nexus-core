@@ -146,6 +146,12 @@ export function OperationStageMotionStyles() {
           100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
         }
 
+        @keyframes nexus-operation-cursor-target {
+          0%, 100% { opacity: .32; transform: scale(.72); }
+          34% { opacity: .9; transform: scale(1); }
+          68% { opacity: .18; transform: scale(1.42); }
+        }
+
         .operation-stage-window {
           animation: nexus-operation-window-enter 420ms cubic-bezier(.18,.88,.24,1) both;
           animation-delay: var(--operation-delay, 0ms);
@@ -201,6 +207,19 @@ export function OperationStageMotionStyles() {
 
         .operation-stage-agent-cursor {
           animation: nexus-operation-materializing-signal 520ms cubic-bezier(.16,.84,.24,1) both;
+        }
+
+        .operation-stage-agent-cursor-target {
+          position: absolute;
+          left: 12px;
+          top: 11px;
+          width: 18px;
+          height: 18px;
+          border-radius: 999px;
+          border: 1px solid rgba(91, 114, 255, .34);
+          background: rgba(91, 114, 255, .08);
+          box-shadow: 0 0 0 5px rgba(91, 114, 255, .08);
+          animation: nexus-operation-cursor-target 1450ms cubic-bezier(.16,.84,.24,1) infinite;
         }
 
         .operation-stage-live-strip {

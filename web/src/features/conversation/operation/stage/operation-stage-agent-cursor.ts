@@ -58,25 +58,25 @@ export function agent_cursor_action_label(intent: StageAgentCursorIntent): strin
 
 export function agent_cursor_anchor_class(window: StageWindowState): string {
   if (window.kind === "browser") {
-    return "right-[9%] top-[18%]";
+    return "right-[19%] top-[22%]";
   }
   if (window.kind === "terminal") {
-    return "left-[23%] top-[31%]";
+    return "left-[27%] top-[34%]";
   }
   if (window.kind === "finder" || window.kind === "code_editor" || window.kind === "generic_tool") {
-    return "left-[31%] top-[18%]";
+    return "left-[37%] top-[24%]";
   }
   if (window.kind === "handoff") {
-    return "left-[64%] top-[18%]";
+    return "left-[69%] top-[22%]";
   }
   if (window.kind === "run_manifest" || window.kind === "task_board") {
-    return "left-[54%] top-[20%]";
+    return "left-[58%] top-[24%]";
   }
   if (window.kind === "permission_wait") {
-    return "left-[58%] top-[28%]";
+    return "left-[62%] top-[38%]";
   }
   if (window.layout === "artifact") {
-    return "right-[12%] top-[23%]";
+    return "right-[15%] top-[30%]";
   }
-  return "left-[56%] top-[18%]";
+  return "left-[58%] top-[24%]";
 }
