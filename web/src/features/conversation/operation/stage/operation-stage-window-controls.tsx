@@ -58,11 +58,13 @@ export function StageWindowsHiddenState({
 
 export function StageWindowDock({
   active_window_id,
+  on_launch_app,
   on_restore_all,
   windows,
   on_restore,
 }: {
   active_window_id: string | null;
+  on_launch_app: (app: { app_label: string; kind: StageWindowKind }) => void;
   on_restore_all: () => void;
   windows: StageWindowState[];
   on_restore: (window_id: string) => void;
@@ -122,8 +124,14 @@ export function StageWindowDock({
                     : "h-9 w-9 border-transparent bg-white/18 text-(--icon-muted) opacity-55 hover:bg-white/42 hover:opacity-80",
               )}
               key={app_label}
-              disabled={presentation.is_disabled}
-              onClick={() => window && on_restore(window.id)}
+              disabled={presentation.is_disabled && !on_launch_app}
+              onClick={() => {
+                if (window) {
+                  on_restore(window.id);
+                  return;
+                }
+                on_launch_app({ app_label, kind });
+              }}
               title={presentation.title}
               type="button"
             >

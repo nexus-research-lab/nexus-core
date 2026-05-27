@@ -79,6 +79,7 @@ copyFileSync(join(operation_dir, "stage/operation-stage-window-drag.js"), join(o
 copyFileSync(join(operation_dir, "stage/operation-stage-window-launch.js"), join(operation_dir, "stage/operation-stage-window-launch"));
 copyFileSync(join(operation_dir, "stage/operation-stage-window-position.js"), join(operation_dir, "stage/operation-stage-window-position"));
 copyFileSync(join(operation_dir, "stage/operation-stage-live-strip.js"), join(operation_dir, "stage/operation-stage-live-strip"));
+copyFileSync(join(operation_dir, "stage/operation-stage-dock-launch.js"), join(operation_dir, "stage/operation-stage-dock-launch"));
 mkdirSync(join(operation_dir, "apps"), { recursive: true });
 copyFileSync(join(operation_dir, "apps/terminal-session-model.js"), join(operation_dir, "apps/terminal-session-model"));
 copyFileSync(join(operation_dir, "apps/operation-app-surface-policy.js"), join(operation_dir, "apps/operation-app-surface-policy"));
@@ -176,6 +177,10 @@ const {
   build_stage_live_strip_state,
 } = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-live-strip.js")));
 const {
+  build_stage_dock_launch_window,
+  stage_dock_launch_window_id,
+} = await import(pathToFileURL(join(operation_dir, "stage/operation-stage-dock-launch.js")));
+const {
   build_terminal_entries,
 } = await import(pathToFileURL(join(operation_dir, "apps/terminal-session-model.js")));
 const {
@@ -245,6 +250,7 @@ verify_stage_window_drag_model();
 verify_stage_window_launch_model();
 verify_stage_window_position_model();
 verify_stage_live_strip_tracks_current_tool();
+verify_stage_dock_launch_window_model(now);
 verify_operation_stage_key_is_session_scoped();
 verify_stage_experience_state_machine(now);
 verify_live_episode_narrates_running_round(now);
@@ -963,6 +969,42 @@ function verify_stage_live_strip_tracks_current_tool() {
     events: [read_event, bash_event],
   });
   assert(done_strip.tone === "done", `Done live strip should settle, got ${done_strip.tone}`);
+}
+
+function verify_stage_dock_launch_window_model(now) {
+  const event = {
+    id: "event-dock",
+    session_key: "session:stage",
+    round_id: "round-dock",
+    agent_id: "agent-stage",
+    kind: "plan_update",
+    surface: "conversation",
+    phase: "running",
+    title: "Nexus 桌面",
+    updated_at: now,
+  };
+  const window_id = stage_dock_launch_window_id("round-dock", "browser");
+  assert(window_id === "dock-launch:round-dock:browser", `Dock launch id should be stable, got ${window_id}`);
+
+  const browser_window = build_stage_dock_launch_window({
+    app_label: "Safari",
+    event,
+    kind: "browser",
+    snapshot: null,
+  });
+  assert(browser_window.id === window_id, `Dock-launched browser should use stable window id, got ${browser_window.id}`);
+  assert(browser_window.phase === "focused", `Dock-launched app should open focused, got ${browser_window.phase}`);
+  assert(browser_window.kind === "browser", `Dock-launched Safari should open a browser window, got ${browser_window.kind}`);
+  assert(browser_window.payload.query === "新建标签页", `Dock-launched Safari should open a new tab surface, got ${browser_window.payload.query}`);
+
+  const terminal_window = build_stage_dock_launch_window({
+    app_label: "终端",
+    event,
+    kind: "terminal",
+    snapshot: null,
+  });
+  assert(terminal_window.layout === "terminal", `Dock-launched Terminal should use terminal layout, got ${terminal_window.layout}`);
+  assert(terminal_window.payload.lines?.some((line) => line.includes("workspace mounted")), "Dock-launched Terminal should show a ready shell transcript");
 }
 
 function verify_operation_stage_key_is_session_scoped() {
