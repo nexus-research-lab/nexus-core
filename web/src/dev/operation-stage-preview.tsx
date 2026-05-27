@@ -215,6 +215,8 @@ const PREVIEW_STEPS = [
   { id: "done", label: "完成收束", event: summary_event, events: [live_event, write_event, open_event, summary_event] },
 ] as const;
 
+type PreviewStepId = (typeof PREVIEW_STEPS)[number]["id"];
+
 function build_snapshot(events: NexusOperationEvent[], active_event: NexusOperationEvent): NexusOperationSnapshot {
   return {
     active_event,
@@ -230,9 +232,15 @@ function build_snapshot(events: NexusOperationEvent[], active_event: NexusOperat
 }
 
 export function OperationStagePreview() {
-  const [step_id, set_step_id] = useState<(typeof PREVIEW_STEPS)[number]["id"]>("idle");
+  const [step_id, set_step_id] = useState<PreviewStepId>(() => read_preview_step_id());
   const step = PREVIEW_STEPS.find((item) => item.id === step_id) ?? PREVIEW_STEPS[0];
   const snapshot = useMemo(() => build_snapshot([...step.events], step.event), [step]);
+  const select_step = (next_step_id: PreviewStepId) => {
+    set_step_id(next_step_id);
+    const url = new URL(window.location.href);
+    url.searchParams.set("step", next_step_id);
+    window.history.replaceState(null, "", url);
+  };
 
   return (
     <main className="flex min-h-screen flex-col bg-[rgb(236,240,245)] p-4 text-(--text-strong)">
@@ -247,7 +255,7 @@ export function OperationStagePreview() {
             <button
               className={`rounded-full px-3 py-1.5 text-[12px] font-bold transition ${item.id === step.id ? "bg-[rgba(91,114,255,0.16)] text-[color:var(--primary)]" : "text-(--text-soft) hover:bg-white"}`}
               key={item.id}
-              onClick={() => set_step_id(item.id)}
+              onClick={() => select_step(item.id)}
               type="button"
             >
               {item.label}
@@ -260,6 +268,13 @@ export function OperationStagePreview() {
       </section>
     </main>
   );
+}
+
+function read_preview_step_id(): PreviewStepId {
+  const requested_step = new URLSearchParams(window.location.search).get("step");
+  return PREVIEW_STEPS.some((item) => item.id === requested_step)
+    ? requested_step as PreviewStepId
+    : "idle";
 }
 
 apply_theme(detect_initial_theme());
