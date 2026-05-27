@@ -17,6 +17,7 @@ import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
+import type { StageWindowKind } from "./operation-desktop-types";
 import type {
   NexusOperationEvent,
   NexusOperationSnapshot,
@@ -37,14 +38,32 @@ interface IdleParticle {
 }
 
 const IDLE_PARTICLE_GLYPHS = ["{", "}", "<", ">", "/", "\\", "0", "1", "n", "x", "+", "·", ";", ":"];
+const IDLE_DOCK_APPS: Array<{
+  Icon: LucideIcon;
+  kind: StageWindowKind;
+  label: string;
+  skin: IdleDockIconSkin;
+}> = [
+  { Icon: FolderOpen, kind: "finder", label: "访达", skin: "finder" },
+  { Icon: Globe2, kind: "browser", label: "Safari", skin: "safari" },
+  { Icon: TerminalSquare, kind: "terminal", label: "终端", skin: "terminal" },
+  { Icon: Code2, kind: "code_editor", label: "Code", skin: "code" },
+  { Icon: PackageCheck, kind: "handoff", label: "交付台", skin: "handoff" },
+  { Icon: ListChecks, kind: "run_manifest", label: "控制台", skin: "console" },
+  { Icon: ImageIcon, kind: "image_viewer", label: "预览", skin: "preview" },
+];
+
+type IdleDockIconSkin = "code" | "console" | "finder" | "handoff" | "nexus" | "preview" | "safari" | "terminal";
 
 export function EmptyStage({
   exiting = false,
+  on_launch_app,
   subtitle,
   transition_intent = "summary",
 }: {
   active_event?: NexusOperationEvent | null;
   exiting?: boolean;
+  on_launch_app?: (app: { app_label: string; kind: StageWindowKind }) => void;
   previous_event?: NexusOperationEvent | null;
   round_event_count?: number;
   snapshot: NexusOperationSnapshot | null;
@@ -79,7 +98,7 @@ export function EmptyStage({
           :{second_label}
         </div>
       </div>
-      <IdleDock />
+      <IdleDock on_launch_app={on_launch_app} />
 
     </div>
   );
@@ -114,19 +133,25 @@ function IdleMenuBar({
   );
 }
 
-function IdleDock() {
+function IdleDock({
+  on_launch_app,
+}: {
+  on_launch_app?: (app: { app_label: string; kind: StageWindowKind }) => void;
+}) {
   return (
     <div className="absolute inset-x-4 bottom-4 z-10 flex justify-center max-sm:bottom-3">
       <div className="operation-window-dock flex max-w-full items-end gap-2 overflow-x-auto rounded-[26px] border border-white/70 bg-white/58 px-2.5 py-2 shadow-[0_24px_60px_rgba(18,28,42,0.16),inset_0_1px_0_rgba(255,255,255,0.78)] backdrop-blur-2xl">
         <IdleDockIcon active Icon={Compass} label="Nexus" skin="nexus" />
         <div className="h-9 w-px shrink-0 bg-white/56" />
-        <IdleDockIcon Icon={FolderOpen} label="访达" skin="finder" />
-        <IdleDockIcon Icon={Globe2} label="Safari" skin="safari" />
-        <IdleDockIcon Icon={TerminalSquare} label="终端" skin="terminal" />
-        <IdleDockIcon Icon={Code2} label="Code" skin="code" />
-        <IdleDockIcon Icon={PackageCheck} label="交付台" skin="handoff" />
-        <IdleDockIcon Icon={ListChecks} label="控制台" skin="console" />
-        <IdleDockIcon Icon={ImageIcon} label="预览" skin="preview" />
+        {IDLE_DOCK_APPS.map((app) => (
+          <IdleDockIcon
+            Icon={app.Icon}
+            key={app.label}
+            label={app.label}
+            onClick={on_launch_app ? () => on_launch_app({ app_label: app.label, kind: app.kind }) : undefined}
+            skin={app.skin}
+          />
+        ))}
       </div>
     </div>
   );
@@ -136,22 +161,25 @@ function IdleDockIcon({
   active = false,
   Icon,
   label,
+  onClick,
   skin,
 }: {
   active?: boolean;
   Icon: LucideIcon;
   label: string;
-  skin: "code" | "console" | "finder" | "handoff" | "nexus" | "preview" | "safari" | "terminal";
+  onClick?: () => void;
+  skin: IdleDockIconSkin;
 }) {
   return (
     <button
-      aria-label={label}
+      aria-label={onClick ? `打开：${label}` : label}
       className={cn(
         "group relative grid h-[44px] w-[44px] shrink-0 place-items-center rounded-[18px] border transition duration-200 ease-out hover:-translate-y-1 hover:scale-105 focus-visible:-translate-y-1 focus-visible:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(91,114,255,0.42)]",
         active
           ? "border-[rgba(91,114,255,0.30)] bg-[rgba(91,114,255,0.13)] shadow-[0_16px_32px_rgba(91,114,255,0.18)]"
           : "border-transparent bg-white/20 text-[rgba(75,88,108,0.74)] hover:bg-white/44",
       )}
+      onClick={onClick}
       title={label}
       type="button"
     >
@@ -171,7 +199,7 @@ function IdleDockIcon({
   );
 }
 
-function idle_dock_icon_skin(skin: "code" | "console" | "finder" | "handoff" | "nexus" | "preview" | "safari" | "terminal"): string {
+function idle_dock_icon_skin(skin: IdleDockIconSkin): string {
   if (skin === "finder") {
     return "border-[rgba(72,152,224,0.42)] bg-[linear-gradient(135deg,#5ac8fa_0%,#e8f5ff_48%,#ffffff_49%,#7dd3fc_100%)] text-[#14517a]";
   }

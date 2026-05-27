@@ -368,9 +368,10 @@ export function OperationStageDesktop({
     restore_window(target_window_id);
   };
 
-  if (!desktop_windows.length) {
+  if (!stage_windows.length) {
     return (
       <EmptyStage
+        on_launch_app={launch_dock_app}
         snapshot={snapshot}
         subtitle={event.agent_id || "Nexus"}
       />
