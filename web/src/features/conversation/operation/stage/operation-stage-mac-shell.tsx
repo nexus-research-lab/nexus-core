@@ -101,7 +101,7 @@ export function StageDesktopIcons({
   }
 
   return (
-    <div className="absolute right-5 top-16 z-10 hidden grid-cols-1 gap-2.5 md:grid">
+    <div className="absolute right-5 top-28 z-10 hidden grid-cols-1 gap-3 md:grid">
       {desktop_items.map((window) => {
         const Icon = icon_for_artifact_path(window.target);
         return (

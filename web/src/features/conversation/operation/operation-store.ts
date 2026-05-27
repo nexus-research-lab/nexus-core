@@ -26,9 +26,6 @@ export const useOperationStageStore = create<OperationStageStoreState>()(
         set((state) => {
           const next_snapshot = compact_snapshot(snapshot);
           const current_snapshot = state.snapshots[key];
-          if (!has_snapshot_content(next_snapshot) && has_snapshot_content(current_snapshot)) {
-            return state;
-          }
           if (
             current_snapshot &&
             current_snapshot.updated_at > next_snapshot.updated_at &&
