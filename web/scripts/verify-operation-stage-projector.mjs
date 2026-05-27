@@ -1719,10 +1719,10 @@ function verify_terminal_entries_render_real_command_result(now) {
   assert(success_entry.exit_label === "退出 0", `terminal success should show exit 0, got ${success_entry.exit_label}`);
   assert(success_entry.exit_tone === "success", `terminal success should use success tone, got ${success_entry.exit_tone}`);
   assert(
-    success_entry.rows.map((row) => row.stream).join(",") === "system,command,stdout,stdout,exit",
+    success_entry.rows.map((row) => row.stream).join(",") === "command,stdout,stdout,exit",
     `terminal success should render as continuous transcript rows, got ${success_entry.rows.map((row) => row.stream).join(",")}`,
   );
-  assert(success_entry.rows[1].text === "printf \"1\\n2\\n\"", `terminal transcript should include the command row, got ${success_entry.rows[1].text}`);
+  assert(success_entry.rows[0].text === "printf \"1\\n2\\n\"", `terminal transcript should include the command row, got ${success_entry.rows[0].text}`);
   assert(error_entry.stderr.join("\n").includes("missing.txt"), `terminal error content should become stderr, got ${error_entry.stderr.join("\\n")}`);
   assert(error_entry.stdout.length === 0, `terminal error should not populate stdout, got ${error_entry.stdout.length}`);
   assert(error_entry.exit_label === "退出 1", `terminal error should show exit 1, got ${error_entry.exit_label}`);

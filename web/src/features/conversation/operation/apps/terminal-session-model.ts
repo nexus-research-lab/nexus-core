@@ -24,6 +24,14 @@ export interface TerminalEntry {
   rows: TerminalTranscriptRow[];
 }
 
+export interface TerminalSessionSummary {
+  duration_label: string;
+  exit_label: string;
+  exit_tone: TerminalEntry["exit_tone"];
+  phase: OperationPhase;
+  started_label: string;
+}
+
 export interface TerminalTranscriptRow {
   id: string;
   text: string;
@@ -108,6 +116,17 @@ export function build_terminal_entries({
   }];
 }
 
+export function summarize_terminal_entries(entries: TerminalEntry[], event: NexusOperationEvent): TerminalSessionSummary {
+  const last_entry = entries.at(-1);
+  return {
+    duration_label: last_entry?.duration_label ?? format_terminal_duration(event),
+    exit_label: last_entry?.exit_label ?? terminal_exit_label(event, read_exit_code(event.result_preview)),
+    exit_tone: last_entry?.exit_tone ?? terminal_exit_tone(event, read_exit_code(event.result_preview)),
+    phase: last_entry?.phase ?? event.phase,
+    started_label: entries[0]?.started_label ?? format_operation_time(event.started_at ?? event.updated_at),
+  };
+}
+
 export function read_terminal_command(event: NexusOperationEvent, fallback_command: string, fallback_lines: string[]): string {
   return extract_terminal_input_string(event.input_preview, ["command", "cmd", "description"])
     ?? event.target
@@ -166,11 +185,6 @@ function build_terminal_transcript_rows({
       text,
     }));
   return [
-    {
-      id: `${id}:system:start`,
-      stream: "system",
-      text: `Last login: ${started_label} on nexus-session`,
-    },
     {
       id: `${id}:command`,
       stream: "command",

@@ -1,5 +1,6 @@
 import {
   Loader2,
+  SplitSquareHorizontal,
   TerminalSquare,
 } from "lucide-react";
 
@@ -8,6 +9,7 @@ import { cn } from "@/lib/utils";
 import type { NexusOperationEvent } from "../operation-types";
 import {
   build_terminal_entries,
+  summarize_terminal_entries,
   TERMINAL_PHASE_LABEL,
   terminal_cwd_label,
   terminal_shell_title,
@@ -32,6 +34,7 @@ export function TerminalSession({
     related_events,
   });
   const has_running_entry = entries.some((entry) => entry.phase === "running");
+  const session_summary = summarize_terminal_entries(entries, event);
   const session_label = event.agent_id ? `${event.agent_id.slice(0, 6)}@nexus` : "agent@nexus";
   const cwd_label = terminal_cwd_label(event);
   const shell_title = terminal_shell_title(entries[0]?.command ?? command);
@@ -42,10 +45,15 @@ export function TerminalSession({
         cwd_label={cwd_label}
         event={event}
         has_running_entry={has_running_entry}
+        session_summary={session_summary}
         session_label={session_label}
         shell_title={shell_title}
       />
       <div className="soft-scrollbar min-h-0 flex-1 overflow-auto bg-[radial-gradient(70%_36%_at_50%_0%,rgba(141,224,173,0.055),transparent_70%),#080d12] px-3 py-2">
+        <div className="mb-2 flex min-w-0 items-start gap-2 text-[#526875]">
+          <span className="select-none">Last login:</span>
+          <span className="min-w-0 break-words">{session_summary.started_label} on nexus-session</span>
+        </div>
         {entries.map((entry, entry_index) => (
           <div className={entry_index > 0 ? "mt-4 border-t border-white/8 pt-3" : undefined} key={entry.id}>
             {entry_index > 0 ? <TerminalCommandSeparator entry={entry} /> : null}
@@ -63,7 +71,7 @@ export function TerminalSession({
               ) : null}
             </div>
             {entry.phase === "running" ? null : (
-              <div className="mt-2 flex min-w-0 items-center gap-2 pl-5 text-[10px] text-[#526875]">
+              <div className="mt-2 flex min-w-0 items-center gap-2 text-[10px] text-[#526875]">
                 <span className="h-px flex-1 bg-white/8" />
                 <span>{entry.exit_label}</span>
               </div>
@@ -79,12 +87,14 @@ function TerminalTitleBar({
   cwd_label,
   event,
   has_running_entry,
+  session_summary,
   session_label,
   shell_title,
 }: {
   cwd_label: string;
   event: NexusOperationEvent;
   has_running_entry: boolean;
+  session_summary: ReturnType<typeof summarize_terminal_entries>;
   session_label: string;
   shell_title: string;
 }) {
@@ -103,17 +113,23 @@ function TerminalTitleBar({
           {session_label}
         </span>
       </div>
-      <div className="flex min-h-0 items-center justify-between gap-3 border-t border-white/[0.035] px-3 py-1.5">
-        <span className="min-w-0 truncate text-[#536873]">{cwd_label}</span>
-        <span className={cn(
-          "shrink-0 text-[10px] font-semibold",
-          event.phase === "running" && "text-[#8de0ad]",
-          event.phase === "done" && "text-[#8de0ad]",
-          event.phase === "error" && "text-[#ff9d9d]",
-          (event.phase === "queued" || event.phase === "waiting" || event.phase === "cancelled") && "text-[#8aa09b]",
-        )}>
-          {TERMINAL_PHASE_LABEL[event.phase]}
+      <div className="grid min-h-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-white/[0.035] px-3 py-1.5">
+        <span className="flex min-w-0 items-center gap-1.5 truncate text-[#536873]">
+          <SplitSquareHorizontal className="h-3 w-3 shrink-0" />
+          <span className="truncate">{cwd_label}</span>
         </span>
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="hidden shrink-0 text-[#536873] sm:inline">{session_summary.duration_label}</span>
+          <span className={cn(
+            "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+            event.phase === "running" && "bg-[#8de0ad]/10 text-[#8de0ad]",
+            event.phase === "done" && "bg-[#8de0ad]/10 text-[#8de0ad]",
+            event.phase === "error" && "bg-[#ff9d9d]/10 text-[#ff9d9d]",
+            (event.phase === "queued" || event.phase === "waiting" || event.phase === "cancelled") && "bg-white/[0.04] text-[#8aa09b]",
+          )}>
+            {TERMINAL_PHASE_LABEL[event.phase]} · {session_summary.exit_label}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -179,8 +195,8 @@ function TerminalTranscriptLine({
   }
   if (row.stream === "exit") {
     return (
-      <div className="flex min-w-0 items-start gap-2 pl-5 text-[#526875]">
-        <span className="select-none">[process]</span>
+      <div className="flex min-w-0 items-start gap-2 text-[#526875]">
+        <span className="select-none">#</span>
         <span className="min-w-0 break-words whitespace-pre-wrap">{row.text}</span>
       </div>
     );
