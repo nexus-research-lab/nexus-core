@@ -16,6 +16,7 @@ import (
 	connectordomain "github.com/nexus-research-lab/nexus/internal/connectors"
 	"github.com/nexus-research-lab/nexus/internal/connectors/credentials"
 	"github.com/nexus-research-lab/nexus/internal/connectors/providers"
+	authctx "github.com/nexus-research-lab/nexus/internal/infra/authctx"
 	"github.com/nexus-research-lab/nexus/internal/storage"
 	connectorstore "github.com/nexus-research-lab/nexus/internal/storage/connectors"
 )
@@ -107,6 +108,7 @@ const (
 )
 
 type connectionRecord struct {
+	OwnerUserID          string
 	ConnectorID          string
 	State                string
 	Credentials          string
@@ -150,7 +152,7 @@ func NewService(cfg config.Config, db *sql.DB) *Service {
 
 // ListConnectors 列出连接器目录。
 func (s *Service) ListConnectors(ctx context.Context, ownerUserID string, query string, category string, status string) ([]Info, error) {
-	states, err := s.listConnectionStates(ctx)
+	states, err := s.listConnectionStates(ctx, ownerUserID)
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +180,7 @@ func (s *Service) GetConnectorDetail(ctx context.Context, ownerUserID string, co
 	if !ok {
 		return nil, errors.New("connector not found")
 	}
-	state, err := s.connectionState(ctx, entry.ConnectorID)
+	state, err := s.connectionState(ctx, ownerUserID, entry.ConnectorID)
 	if err != nil {
 		return nil, err
 	}
@@ -186,11 +188,11 @@ func (s *Service) GetConnectorDetail(ctx context.Context, ownerUserID string, co
 	return &detail, nil
 }
 
-// GetConnectedCount 返回已连接数量。
-func (s *Service) GetConnectedCount(ctx context.Context) (int, error) {
-	query := "SELECT COUNT(1) FROM connector_connections WHERE state = 'connected'"
+// GetConnectedCount 返回当前 owner 的已连接数量。
+func (s *Service) GetConnectedCount(ctx context.Context, ownerUserID string) (int, error) {
+	query := fmt.Sprintf("SELECT COUNT(1) FROM connector_connections WHERE owner_user_id = %s AND state = 'connected'", s.bind(1))
 	var count int
-	if err := s.db.QueryRowContext(ctx, query).Scan(&count); err != nil {
+	if err := s.db.QueryRowContext(ctx, query, effectiveOwnerUserID(ownerUserID)).Scan(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
@@ -235,7 +237,7 @@ func (s *Service) SaveOAuthClientConfig(ctx context.Context, ownerUserID string,
 	}); err != nil {
 		return nil, err
 	}
-	state, err := s.connectionState(ctx, entry.ConnectorID)
+	state, err := s.connectionState(ctx, ownerUserID, entry.ConnectorID)
 	if err != nil {
 		return nil, err
 	}
@@ -264,6 +266,7 @@ func (s *Service) DeleteOAuthClientConfig(ctx context.Context, ownerUserID strin
 		return nil, err
 	}
 	if err = s.upsertConnection(ctx, connectionRecord{
+		OwnerUserID: ownerUserID,
 		ConnectorID: entry.ConnectorID,
 		State:       "disconnected",
 		Credentials: "",
@@ -275,9 +278,10 @@ func (s *Service) DeleteOAuthClientConfig(ctx context.Context, ownerUserID strin
 	return &info, nil
 }
 
-// ListActiveConnections 列出已连接 connector，暂时保留 ownerUserID 签名供后续 user scope 使用。
+// ListActiveConnections 列出当前 owner 已连接的 connector。
 func (s *Service) ListActiveConnections(ctx context.Context, ownerUserID string) ([]connectordomain.ConnectionSnapshot, error) {
-	rows, err := s.db.QueryContext(ctx, "SELECT connector_id, credentials, credentials_encrypted, auth_type FROM connector_connections WHERE state = 'connected'")
+	query := fmt.Sprintf("SELECT owner_user_id, connector_id, credentials, credentials_encrypted, auth_type FROM connector_connections WHERE owner_user_id = %s AND state = 'connected'", s.bind(1))
+	rows, err := s.db.QueryContext(ctx, query, effectiveOwnerUserID(ownerUserID))
 	if err != nil {
 		return nil, err
 	}
@@ -286,6 +290,7 @@ func (s *Service) ListActiveConnections(ctx context.Context, ownerUserID string)
 	for rows.Next() {
 		var record connectionRecord
 		if err = rows.Scan(
+			&record.OwnerUserID,
 			&record.ConnectorID,
 			&record.Credentials,
 			&record.CredentialsEncrypted,
@@ -304,15 +309,16 @@ func (s *Service) ListActiveConnections(ctx context.Context, ownerUserID string)
 	return result, rows.Err()
 }
 
-// LoadActiveConnection 读取已连接 connector 的 token 快照。
+// LoadActiveConnection 读取当前 owner 已连接 connector 的 token 快照。
 func (s *Service) LoadActiveConnection(ctx context.Context, ownerUserID, connectorID string) (*connectordomain.ConnectionSnapshot, error) {
-	// TODO(connector-user-scope): 追加 owner_user_id 过滤 —— 见 Phase 3。
 	query := fmt.Sprintf(
-		"SELECT connector_id, credentials, credentials_encrypted, auth_type FROM connector_connections WHERE connector_id = %s AND state = 'connected'",
+		"SELECT owner_user_id, connector_id, credentials, credentials_encrypted, auth_type FROM connector_connections WHERE owner_user_id = %s AND connector_id = %s AND state = 'connected'",
 		s.bind(1),
+		s.bind(2),
 	)
 	var record connectionRecord
-	err := s.db.QueryRowContext(ctx, query, strings.TrimSpace(connectorID)).Scan(
+	err := s.db.QueryRowContext(ctx, query, effectiveOwnerUserID(ownerUserID), strings.TrimSpace(connectorID)).Scan(
+		&record.OwnerUserID,
 		&record.ConnectorID,
 		&record.Credentials,
 		&record.CredentialsEncrypted,
@@ -417,6 +423,7 @@ func (s *Service) refreshActiveConnectionIfNeeded(ctx context.Context, ownerUser
 	record.Credentials = string(encoded)
 	record.CredentialsEncrypted = sql.NullString{}
 	if err = s.upsertConnection(ctx, connectionRecord{
+		OwnerUserID: ownerUserID,
 		ConnectorID: record.ConnectorID,
 		State:       "connected",
 		Credentials: record.Credentials,
@@ -592,6 +599,7 @@ func (s *Service) CompleteOAuthCallback(ctx context.Context, ownerUserID string,
 	}
 	credentials := mergeCredentialExtras(normalizeOAuthPayload(payload), extra)
 	if err = s.upsertConnection(ctx, connectionRecord{
+		OwnerUserID: ownerUserID,
 		ConnectorID: entry.ConnectorID,
 		State:       "connected",
 		Credentials: credentials,
@@ -674,6 +682,7 @@ func (s *Service) PollDeviceAuth(ctx context.Context, ownerUserID string, connec
 	}
 	credentials := normalizeOAuthPayload(payload)
 	if err = s.upsertConnection(ctx, connectionRecord{
+		OwnerUserID: ownerUserID,
 		ConnectorID: entry.ConnectorID,
 		State:       "connected",
 		Credentials: credentials,
@@ -689,7 +698,7 @@ func (s *Service) PollDeviceAuth(ctx context.Context, ownerUserID string, connec
 }
 
 // Connect 使用显式凭证直接连接。
-func (s *Service) Connect(ctx context.Context, connectorID string, credentials map[string]string) (*Info, error) {
+func (s *Service) Connect(ctx context.Context, ownerUserID string, connectorID string, credentials map[string]string) (*Info, error) {
 	entry, ok := getConnector(connectorID)
 	if !ok {
 		return nil, errors.New("未知连接器")
@@ -705,6 +714,7 @@ func (s *Service) Connect(ctx context.Context, connectorID string, credentials m
 		return nil, err
 	}
 	if err = s.upsertConnection(ctx, connectionRecord{
+		OwnerUserID: ownerUserID,
 		ConnectorID: entry.ConnectorID,
 		State:       "connected",
 		Credentials: string(payload),
@@ -712,7 +722,7 @@ func (s *Service) Connect(ctx context.Context, connectorID string, credentials m
 	}); err != nil {
 		return nil, err
 	}
-	info := s.toInfo(ctx, "", entry, "connected")
+	info := s.toInfo(ctx, ownerUserID, entry, "connected")
 	return &info, nil
 }
 
@@ -723,6 +733,7 @@ func (s *Service) Disconnect(ctx context.Context, ownerUserID string, connectorI
 		return nil, errors.New("未知连接器")
 	}
 	if err := s.upsertConnection(ctx, connectionRecord{
+		OwnerUserID: ownerUserID,
 		ConnectorID: entry.ConnectorID,
 		State:       "disconnected",
 		Credentials: "",
@@ -781,8 +792,9 @@ func (s *Service) toDetail(ctx context.Context, ownerUserID string, entry Catalo
 	}
 }
 
-func (s *Service) listConnectionStates(ctx context.Context) (map[string]string, error) {
-	rows, err := s.db.QueryContext(ctx, "SELECT connector_id, state FROM connector_connections")
+func (s *Service) listConnectionStates(ctx context.Context, ownerUserID string) (map[string]string, error) {
+	query := fmt.Sprintf("SELECT connector_id, state FROM connector_connections WHERE owner_user_id = %s", s.bind(1))
+	rows, err := s.db.QueryContext(ctx, query, effectiveOwnerUserID(ownerUserID))
 	if err != nil {
 		return nil, err
 	}
@@ -799,13 +811,14 @@ func (s *Service) listConnectionStates(ctx context.Context) (map[string]string, 
 	return result, rows.Err()
 }
 
-func (s *Service) connectionState(ctx context.Context, connectorID string) (string, error) {
+func (s *Service) connectionState(ctx context.Context, ownerUserID, connectorID string) (string, error) {
 	query := fmt.Sprintf(
-		"SELECT state FROM connector_connections WHERE connector_id = %s LIMIT 1",
+		"SELECT state FROM connector_connections WHERE owner_user_id = %s AND connector_id = %s LIMIT 1",
 		s.bind(1),
+		s.bind(2),
 	)
 	var state string
-	err := s.db.QueryRowContext(ctx, query, strings.TrimSpace(connectorID)).Scan(&state)
+	err := s.db.QueryRowContext(ctx, query, effectiveOwnerUserID(ownerUserID), strings.TrimSpace(connectorID)).Scan(&state)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", nil
 	}
@@ -885,15 +898,16 @@ func (s *Service) purgeExpiredStates(ctx context.Context) error {
 }
 
 func (s *Service) upsertConnection(ctx context.Context, record connectionRecord) error {
+	record.OwnerUserID = effectiveOwnerUserID(record.OwnerUserID)
 	if err := s.encryptConnectionCredentials(&record); err != nil {
 		return err
 	}
 	if s.driver == "pgx" {
 		query := `
 INSERT INTO connector_connections (
-    connector_id, state, credentials, credentials_encrypted, auth_type, oauth_state, oauth_state_expires_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7)
-ON CONFLICT (connector_id) DO UPDATE SET
+    owner_user_id, connector_id, state, credentials, credentials_encrypted, auth_type, oauth_state, oauth_state_expires_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+ON CONFLICT (owner_user_id, connector_id) DO UPDATE SET
     state = EXCLUDED.state,
     credentials = EXCLUDED.credentials,
     credentials_encrypted = EXCLUDED.credentials_encrypted,
@@ -904,6 +918,7 @@ ON CONFLICT (connector_id) DO UPDATE SET
 		_, err := s.db.ExecContext(
 			ctx,
 			query,
+			record.OwnerUserID,
 			record.ConnectorID,
 			record.State,
 			record.Credentials,
@@ -916,9 +931,9 @@ ON CONFLICT (connector_id) DO UPDATE SET
 	}
 	query := `
 INSERT INTO connector_connections (
-    connector_id, state, credentials, credentials_encrypted, auth_type, oauth_state, oauth_state_expires_at
-) VALUES (?, ?, ?, ?, ?, ?, ?)
-ON CONFLICT(connector_id) DO UPDATE SET
+    owner_user_id, connector_id, state, credentials, credentials_encrypted, auth_type, oauth_state, oauth_state_expires_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(owner_user_id, connector_id) DO UPDATE SET
     state = excluded.state,
     credentials = excluded.credentials,
     credentials_encrypted = excluded.credentials_encrypted,
@@ -929,6 +944,7 @@ ON CONFLICT(connector_id) DO UPDATE SET
 	_, err := s.db.ExecContext(
 		ctx,
 		query,
+		record.OwnerUserID,
 		record.ConnectorID,
 		record.State,
 		record.Credentials,
@@ -938,6 +954,14 @@ ON CONFLICT(connector_id) DO UPDATE SET
 		nil,
 	)
 	return err
+}
+
+func effectiveOwnerUserID(ownerUserID string) string {
+	ownerUserID = strings.TrimSpace(ownerUserID)
+	if ownerUserID == "" {
+		return authctx.SystemUserID
+	}
+	return ownerUserID
 }
 
 func (s *Service) bind(index int) string {

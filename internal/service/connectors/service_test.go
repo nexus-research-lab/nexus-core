@@ -60,6 +60,7 @@ func TestServiceListsConnectorsAndBuildsAuthURL(t *testing.T) {
 	}
 
 	if err = service.upsertConnection(ctx, connectionRecord{
+		OwnerUserID: auth.SystemUserID,
 		ConnectorID: "github",
 		State:       "connected",
 		Credentials: `{"access_token":"token"}`,
@@ -67,7 +68,7 @@ func TestServiceListsConnectorsAndBuildsAuthURL(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("写入连接状态失败: %v", err)
 	}
-	count, err := service.GetConnectedCount(ctx)
+	count, err := service.GetConnectedCount(ctx, auth.SystemUserID)
 	if err != nil {
 		t.Fatalf("读取已连接数量失败: %v", err)
 	}
@@ -454,6 +455,7 @@ func TestServiceEncryptsConnectionCredentials(t *testing.T) {
 	ctx := context.Background()
 	service := NewService(cfg, db)
 	if err = service.upsertConnection(ctx, connectionRecord{
+		OwnerUserID: auth.SystemUserID,
 		ConnectorID: "github",
 		State:       "connected",
 		Credentials: `{"access_token":"secret-token"}`,
@@ -465,7 +467,7 @@ func TestServiceEncryptsConnectionCredentials(t *testing.T) {
 	var credentialText string
 	var encrypted sql.NullString
 	//goland:noinspection SqlResolve
-	if err = db.QueryRowContext(ctx, "SELECT credentials, credentials_encrypted FROM connector_connections WHERE connector_id = ?", "github").Scan(&credentialText, &encrypted); err != nil {
+	if err = db.QueryRowContext(ctx, "SELECT credentials, credentials_encrypted FROM connector_connections WHERE owner_user_id = ? AND connector_id = ?", auth.SystemUserID, "github").Scan(&credentialText, &encrypted); err != nil {
 		t.Fatalf("读取连接凭证失败: %v", err)
 	}
 	if credentialText != "__encrypted__" {
@@ -501,6 +503,7 @@ func TestServiceLoadActiveConnectionDecryptsAccessToken(t *testing.T) {
 	service := NewService(cfg, db)
 	ctx := context.Background()
 	if err = service.upsertConnection(ctx, connectionRecord{
+		OwnerUserID: auth.SystemUserID,
 		ConnectorID: "github",
 		State:       "connected",
 		Credentials: `{"access_token":"token","scope":"repo"}`,
@@ -529,6 +532,62 @@ func TestServiceLoadActiveConnectionDecryptsAccessToken(t *testing.T) {
 	}
 }
 
+func TestServiceLoadActiveConnectionIsScopedByOwnerUserID(t *testing.T) {
+	cfg := newConnectorsTestConfig(t)
+	cfg.ConnectorCredentialsKey = testConnectorCredentialKey()
+	migrateConnectorsSQLite(t, cfg.DatabaseURL)
+
+	db, err := sql.Open("sqlite", cfg.DatabaseURL)
+	if err != nil {
+		t.Fatalf("打开测试数据库失败: %v", err)
+	}
+	defer func() { _ = db.Close() }()
+
+	service := NewService(cfg, db)
+	ctx := context.Background()
+	if err = service.upsertConnection(ctx, connectionRecord{
+		OwnerUserID: "user-a",
+		ConnectorID: "github",
+		State:       "connected",
+		Credentials: `{"access_token":"token-from-user-a","scope":"repo"}`,
+		AuthType:    "oauth2",
+	}); err != nil {
+		t.Fatalf("写入 user-a 连接状态失败: %v", err)
+	}
+
+	item, err := service.LoadActiveConnection(ctx, "user-b", "github")
+	if err != nil {
+		t.Fatalf("按 user-b 读取连接失败: %v", err)
+	}
+	if item != nil {
+		t.Fatalf("user-b 不应读到 user-a 的连接: %+v", item)
+	}
+
+	items, err := service.ListActiveConnections(ctx, "user-b")
+	if err != nil {
+		t.Fatalf("列出 user-b 连接失败: %v", err)
+	}
+	if len(items) != 0 {
+		t.Fatalf("user-b 不应看到任何连接: %+v", items)
+	}
+
+	count, err := service.GetConnectedCount(ctx, "user-b")
+	if err != nil {
+		t.Fatalf("统计 user-b 连接失败: %v", err)
+	}
+	if count != 0 {
+		t.Fatalf("user-b 已连接数量不正确: got=%d want=0", count)
+	}
+
+	ownerItems, err := service.ListActiveConnections(ctx, "user-a")
+	if err != nil {
+		t.Fatalf("列出 user-a 连接失败: %v", err)
+	}
+	if len(ownerItems) != 1 || ownerItems[0].AccessToken != "token-from-user-a" {
+		t.Fatalf("user-a 连接列表不正确: %+v", ownerItems)
+	}
+}
+
 func TestServiceLoadActiveConnectionRequiresAccessToken(t *testing.T) {
 	cfg := newConnectorsTestConfig(t)
 	migrateConnectorsSQLite(t, cfg.DatabaseURL)
@@ -542,6 +601,7 @@ func TestServiceLoadActiveConnectionRequiresAccessToken(t *testing.T) {
 	service := NewService(cfg, db)
 	ctx := context.Background()
 	if err = service.upsertConnection(ctx, connectionRecord{
+		OwnerUserID: auth.SystemUserID,
 		ConnectorID: "github",
 		State:       "connected",
 		Credentials: `{"scope":"repo"}`,
@@ -595,6 +655,7 @@ func TestServiceLoadActiveConnectionRefreshesExpiredFeishuDocxToken(t *testing.T
 		t.Fatalf("保存飞书 OAuth Client 失败: %v", err)
 	}
 	if err = service.upsertConnection(ctx, connectionRecord{
+		OwnerUserID: auth.SystemUserID,
 		ConnectorID: "feishu-docx",
 		State:       "connected",
 		Credentials: `{"access_token":"old-feishu-docx-token","refresh_token":"old-refresh","expires_at":"1","scope":"docx:document"}`,

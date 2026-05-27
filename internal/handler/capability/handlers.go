@@ -55,7 +55,7 @@ func (h *Handlers) HandleCapabilitySummary(writer http.ResponseWriter, request *
 		return
 	}
 
-	connectorCount, err := h.connectors.GetConnectedCount(request.Context())
+	connectorCount, err := h.connectors.GetConnectedCount(request.Context(), authsvc.OwnerUserID(request.Context()))
 	if err != nil {
 		h.api.WriteFailure(writer, http.StatusInternalServerError, err.Error())
 		return
