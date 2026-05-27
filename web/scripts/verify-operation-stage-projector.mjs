@@ -885,12 +885,14 @@ function verify_stage_window_position_model() {
     "running",
   );
   assert(terminal_position.includes("w-[75%]"), `Focused terminal should own the main desktop area, got ${terminal_position}`);
+  assert(terminal_position.includes("h-[44%]"), `Focused terminal should keep clear of the Dock safe area, got ${terminal_position}`);
 
   const focused_code_position = position_for_window(
     mock_stage_window({ id: "code-focused", kind: "code_editor", phase: "focused" }),
     "running",
   );
   assert(focused_code_position.includes("w-[80%]"), `Focused Code should own the main desktop area, got ${focused_code_position}`);
+  assert(focused_code_position.includes("h-[63%]"), `Focused Code should keep a visible desktop gap above the Dock, got ${focused_code_position}`);
 
   const permission_position = position_for_window(
     mock_stage_window({ id: "permission", kind: "permission_wait", phase: "focused" }),
@@ -898,6 +900,12 @@ function verify_stage_window_position_model() {
   );
   assert(permission_position.includes("h-[62%]"), `Permission window should have enough System Settings height, got ${permission_position}`);
   assert(permission_position.includes("w-[56%]"), `Permission window should read like a System Settings window, got ${permission_position}`);
+
+  const handoff_position = position_for_window(
+    mock_stage_window({ id: "handoff", kind: "handoff", phase: "focused" }),
+    "completed",
+  );
+  assert(handoff_position.includes("h-[62%]"), `Focused handoff window should not collide with the Dock, got ${handoff_position}`);
 
   assert(is_stage_manager_background_window(background_code, "completed"), "Completed review should keep prior windows as Stage Manager thumbnails instead of crowding the desktop");
   assert(is_stage_manager_background_window(

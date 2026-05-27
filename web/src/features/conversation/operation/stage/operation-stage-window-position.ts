@@ -8,9 +8,9 @@ const STAGE_MANAGER_BACKGROUND_POSITIONS = [
   "left-[3.5%] top-[66%] h-[13%] w-[10%]",
 ];
 
-const PRIMARY_WORKSPACE = "left-[12%] top-[10%] h-[69%] w-[80%]";
-const PRIMARY_REVIEW_WORKSPACE = "left-[11%] top-[8%] h-[70%] w-[78%]";
-const COMPACT_REVIEW_WORKSPACE = "left-[22%] top-[13%] h-[60%] w-[58%]";
+const PRIMARY_WORKSPACE = "left-[12%] top-[9%] h-[63%] w-[80%]";
+const PRIMARY_REVIEW_WORKSPACE = "left-[11%] top-[8%] h-[62%] w-[78%]";
+const COMPACT_REVIEW_WORKSPACE = "left-[22%] top-[13%] h-[54%] w-[58%]";
 
 export function position_for_window(
   window: StageWindowState,
@@ -26,12 +26,12 @@ export function position_for_window(
   if (window.layout === "terminal") {
     if (is_review_layout) {
       return window.phase === "focused"
-        ? "left-[14%] top-[21%] h-[54%] w-[72%]"
-        : "left-[15%] bottom-[13%] h-[22%] w-[60%]";
+        ? "left-[14%] top-[19%] h-[50%] w-[72%]"
+        : "left-[15%] bottom-[18%] h-[18%] w-[60%]";
     }
     return window.phase === "focused"
-      ? "left-[15%] top-[24%] h-[47%] w-[75%]"
-      : "left-[14%] bottom-[11%] h-[21%] w-[58%]";
+      ? "left-[15%] top-[22%] h-[44%] w-[75%]"
+      : "left-[14%] bottom-[18%] h-[18%] w-[58%]";
   }
   if (window.layout === "inspector") {
     return window.phase === "minimized"
@@ -53,8 +53,8 @@ export function position_for_window(
   }
   if (window.kind === "browser") {
     return window.phase === "focused"
-      ? is_review_layout ? PRIMARY_REVIEW_WORKSPACE : "left-[12%] top-[9%] h-[70%] w-[80%]"
-      : is_review_layout ? "right-[14%] top-[16%] h-[44%] w-[32%]" : "right-[4%] top-[14%] h-[42%] w-[27%]";
+      ? is_review_layout ? PRIMARY_REVIEW_WORKSPACE : PRIMARY_WORKSPACE
+      : is_review_layout ? "right-[14%] top-[15%] h-[42%] w-[32%]" : "right-[4%] top-[13%] h-[40%] w-[27%]";
   }
   if (window.kind === "code_editor") {
     return window.phase === "focused"
@@ -74,8 +74,8 @@ export function position_for_window(
   }
   if (window.kind === "handoff") {
     return window.phase === "focused"
-      ? "left-[12%] top-[7%] h-[76%] w-[76%]"
-      : "left-[23%] top-[15%] h-[56%] w-[48%]";
+      ? "left-[12%] top-[7%] h-[62%] w-[76%]"
+      : "left-[23%] top-[14%] h-[48%] w-[48%]";
   }
   if (window.kind === "summary") {
     return is_review_layout ? COMPACT_REVIEW_WORKSPACE : "left-[28%] top-[15%] h-[52%] w-[46%]";

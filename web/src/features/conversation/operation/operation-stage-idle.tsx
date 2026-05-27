@@ -6,7 +6,9 @@ import {
   Compass,
   FolderOpen,
   Globe2,
+  ImageIcon,
   ListChecks,
+  PackageCheck,
   Search,
   TerminalSquare,
   Wifi,
@@ -122,7 +124,9 @@ function IdleDock() {
         <IdleDockIcon Icon={Globe2} label="Safari" skin="safari" />
         <IdleDockIcon Icon={TerminalSquare} label="终端" skin="terminal" />
         <IdleDockIcon Icon={Code2} label="Code" skin="code" />
+        <IdleDockIcon Icon={PackageCheck} label="交付台" skin="handoff" />
         <IdleDockIcon Icon={ListChecks} label="控制台" skin="console" />
+        <IdleDockIcon Icon={ImageIcon} label="预览" skin="preview" />
       </div>
     </div>
   );
@@ -137,7 +141,7 @@ function IdleDockIcon({
   active?: boolean;
   Icon: LucideIcon;
   label: string;
-  skin: "code" | "console" | "finder" | "nexus" | "safari" | "terminal";
+  skin: "code" | "console" | "finder" | "handoff" | "nexus" | "preview" | "safari" | "terminal";
 }) {
   return (
     <button
@@ -167,7 +171,7 @@ function IdleDockIcon({
   );
 }
 
-function idle_dock_icon_skin(skin: "code" | "console" | "finder" | "nexus" | "safari" | "terminal"): string {
+function idle_dock_icon_skin(skin: "code" | "console" | "finder" | "handoff" | "nexus" | "preview" | "safari" | "terminal"): string {
   if (skin === "finder") {
     return "border-[rgba(72,152,224,0.42)] bg-[linear-gradient(135deg,#5ac8fa_0%,#e8f5ff_48%,#ffffff_49%,#7dd3fc_100%)] text-[#14517a]";
   }
@@ -182,6 +186,12 @@ function idle_dock_icon_skin(skin: "code" | "console" | "finder" | "nexus" | "sa
   }
   if (skin === "console") {
     return "border-[rgba(117,131,149,0.30)] bg-[linear-gradient(135deg,#f8fafc,#cbd5e1)] text-[#334155]";
+  }
+  if (skin === "handoff") {
+    return "border-[rgba(47,184,132,0.34)] bg-[linear-gradient(135deg,#dffbf0,#f8fffc)] text-[#17734d]";
+  }
+  if (skin === "preview") {
+    return "border-[rgba(72,152,224,0.32)] bg-[linear-gradient(135deg,#e0f2fe,#ffffff_56%,#dbeafe)] text-[#2563eb]";
   }
   return "border-[rgba(91,114,255,0.28)] bg-[linear-gradient(135deg,rgba(91,114,255,0.18),rgba(255,255,255,0.74),rgba(79,162,159,0.14))] text-[rgba(32,43,58,0.92)]";
 }
