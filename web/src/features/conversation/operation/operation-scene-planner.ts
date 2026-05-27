@@ -433,6 +433,9 @@ function resolve_focus_target(
   if (event.surface === "knowledge") {
     return "document";
   }
+  if (event.surface === "terminal" && event.phase === "done" && context.has_html_artifact) {
+    return "browser";
+  }
   if (event.surface === "terminal" && context.has_terminal) {
     return "terminal";
   }

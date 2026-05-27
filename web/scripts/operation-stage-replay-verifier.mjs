@@ -95,9 +95,10 @@ export function verify_completed_round_replay_uses_event_slice({
     event: bash_event,
     snapshot,
   });
-  assert(replay_desktop.active_window_id?.includes(":terminal"), `event replay slice should focus terminal, got ${replay_desktop.active_window_id}`);
+  assert(replay_desktop.active_window_id?.includes(":browser:"), `event replay slice should focus opened browser artifact, got ${replay_desktop.active_window_id}`);
   assert(!replay_desktop.windows.some((window) => window.kind === "handoff" || window.kind === "run_manifest"), "event replay slice should not keep final handoff as the active scene");
   const terminal_window = replay_desktop.windows.find((window) => window.kind === "terminal");
+  assert(terminal_window?.phase === "background", `event replay terminal should remain as background evidence, got ${terminal_window?.phase}`);
   assert(terminal_window?.payload.event.id === bash_event.id, "event replay terminal should keep selected Bash identity");
   assert(terminal_window?.payload.command === "open gomoku.html", `event replay terminal should keep selected command, got ${terminal_window?.payload.command}`);
 }

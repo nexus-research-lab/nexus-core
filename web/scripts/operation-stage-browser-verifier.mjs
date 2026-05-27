@@ -71,4 +71,36 @@ export function verify_html_artifact_opens_browser_srcdoc({
   assert(browser_window, "html stage should include a browser preview window");
   assert(browser_window.title === "gomoku.html", `browser preview should use artifact title, got ${browser_window.title}`);
   assert(browser_window.payload.srcdoc === html_content, "browser preview should carry workspace live html content as srcdoc");
+  const terminal_event = {
+    ...snapshot.active_event,
+    id: "tool-open-preview",
+    kind: "command_run",
+    surface: "terminal",
+    phase: "done",
+    tool_name: "Bash",
+    target: "open gomoku.html",
+    input_preview: {
+      command: "open gomoku.html",
+    },
+    result_preview: {
+      content: "Opening gomoku.html\nSafari preview launched\n",
+      exit_code: 0,
+      is_error: false,
+    },
+    updated_at: now,
+  };
+  const opened_snapshot = {
+    ...snapshot,
+    active_event: terminal_event,
+    events: [...snapshot.events, terminal_event],
+    updated_at: now,
+  };
+  const opened_desktop = plan_operation_desktop({
+    event: terminal_event,
+    snapshot: opened_snapshot,
+  });
+  const opened_browser = opened_desktop.windows.find((window) => window.kind === "browser");
+  assert(opened_browser?.phase === "focused", `done terminal command that opens html should hand focus to Safari, got ${opened_browser?.phase}`);
+  const terminal_window = opened_desktop.windows.find((window) => window.kind === "terminal");
+  assert(terminal_window?.phase === "background", `terminal should remain as background evidence after opening html, got ${terminal_window?.phase}`);
 }
