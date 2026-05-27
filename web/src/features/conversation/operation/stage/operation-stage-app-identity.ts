@@ -23,7 +23,7 @@ export function stage_menu_items_for_window_kind(kind: StageWindowKind | null): 
     return ["文件", "编辑", "交付", "显示", "窗口", "帮助"];
   }
   if (kind === "generic_tool") {
-    return ["工具", "输入", "输出", "日志", "窗口", "帮助"];
+    return ["文件", "编辑", "运行", "显示", "窗口", "帮助"];
   }
   if (kind === "code_editor") {
     return ["文件", "编辑", "选择", "查找", "运行", "终端", "帮助"];
@@ -57,7 +57,7 @@ export function dock_icon_skin_for_kind(kind: StageWindowKind): string {
     return "border-[rgba(91,114,255,0.36)] bg-[linear-gradient(135deg,#243b74,#4f6fff)] text-white";
   }
   if (kind === "generic_tool") {
-    return "border-[rgba(91,114,255,0.30)] bg-[linear-gradient(135deg,rgba(91,114,255,0.18),rgba(255,255,255,0.82),rgba(79,162,159,0.18))] text-[rgba(32,43,58,0.92)]";
+    return "border-[rgba(91,114,255,0.34)] bg-[linear-gradient(135deg,#f8fbff_0%,#7aa2ff_48%,#ff8fb3_100%)] text-white";
   }
   if (kind === "run_manifest" || kind === "evidence") {
     return "border-[rgba(117,131,149,0.30)] bg-[linear-gradient(135deg,#f8fafc,#cbd5e1)] text-[#334155]";

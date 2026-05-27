@@ -56,7 +56,7 @@ export function EmptyStage({
 
   return (
     <div className={cn(
-      "relative h-full min-h-[300px] overflow-hidden bg-[linear-gradient(180deg,rgba(250,252,255,0.98),rgba(239,244,251,0.86))]",
+      "relative h-full min-h-[300px] w-full flex-1 overflow-hidden bg-[linear-gradient(180deg,rgba(250,252,255,0.98),rgba(239,244,251,0.86))]",
       exiting && "pointer-events-none absolute inset-0 z-20 operation-idle-stage-exit",
     )}
     data-stage-experience-phase={exiting ? "awakening" : "idle"}

@@ -37,6 +37,9 @@ function is_desktop_artifact_window(window: StageWindowState): boolean {
   if (!target || basename(target) === "preview") {
     return false;
   }
+  if (window.phase === "focused") {
+    return false;
+  }
   return (
     window.kind === "code_editor" ||
     window.kind === "markdown_reader" ||

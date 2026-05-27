@@ -88,10 +88,18 @@ export function tool_app_intent_for_action(action: OperationActionKind): ToolApp
       sidebar_title: "执行收束",
     };
   }
+  if (action === "skill") {
+    return {
+      app_label: "快捷指令",
+      detail_label: "读取工具上下文",
+      group_label: "工具流程",
+      sidebar_title: "上下文动作",
+    };
+  }
   return {
-    app_label: "Nexus",
-    detail_label: "通用工具调用",
+    app_label: "快捷指令",
+    detail_label: "运行工具动作",
     group_label: "工具",
-    sidebar_title: "工具会话",
+    sidebar_title: "工具动作",
   };
 }

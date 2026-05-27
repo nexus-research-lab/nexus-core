@@ -589,10 +589,10 @@ function verify_nexus_tool_session_view(now) {
 
 function verify_nexus_tool_app_has_own_desktop_identity() {
   const nexus_menu = stage_menu_items_for_window_kind("generic_tool");
-  assert(nexus_menu.includes("工具"), `Nexus tool app menu should expose tool actions, got ${nexus_menu.join(",")}`);
+  assert(nexus_menu.includes("运行"), `Shortcut tool app menu should expose run actions, got ${nexus_menu.join(",")}`);
   assert(!nexus_menu.includes("终端"), `Nexus tool app menu should not reuse Code terminal menus, got ${nexus_menu.join(",")}`);
   const nexus_skin = dock_icon_skin_for_kind("generic_tool");
-  assert(nexus_skin.includes("91,114,255"), `Nexus tool Dock skin should use the Nexus app identity, got ${nexus_skin}`);
+  assert(nexus_skin.includes("#ff8fb3"), `Shortcut tool Dock skin should use the shortcut app identity, got ${nexus_skin}`);
   assert(dock_icon_skin_for_kind("code_editor") !== nexus_skin, "Nexus tool Dock skin should differ from Code");
 }
 
@@ -716,13 +716,12 @@ function verify_stage_desktop_icon_items() {
     mock_stage_window({ id: "png", kind: "image_viewer", phase: "closed", target: "/workspace/screen.png" }),
   ];
   const icons = build_stage_desktop_icon_items(windows);
-  assert(icons.length === 3, `Desktop should expose only artifact file windows, got ${icons.length}`);
-  assert(icons[0].label === "gomoku.html", `Desktop icon should use basename label, got ${icons[0].label}`);
-  assert(icons[0].file_kind_label === "代码文件", `Desktop html icon should be code file, got ${icons[0].file_kind_label}`);
-  assert(icons[0].aria_label === "查看文件窗口：gomoku.html", `Focused desktop icon should be a view action, got ${icons[0].aria_label}`);
-  assert(icons[1].state_label === "窗口已最小化", `Minimized desktop icon should expose minimized state, got ${icons[1].state_label}`);
-  assert(icons[1].aria_label === "恢复文件窗口：notes.md", `Minimized desktop icon should be a restore action, got ${icons[1].aria_label}`);
-  assert(icons[2].file_kind_label === "图像", `Image desktop icon should expose image kind, got ${icons[2].file_kind_label}`);
+  assert(icons.length === 2, `Desktop should expose only background artifact file windows, got ${icons.length}`);
+  assert(icons[0].label === "notes.md", `Desktop icon should skip the foreground file and use basename label, got ${icons[0].label}`);
+  assert(icons[0].file_kind_label === "文稿", `Desktop markdown icon should be document kind, got ${icons[0].file_kind_label}`);
+  assert(icons[0].state_label === "窗口已最小化", `Minimized desktop icon should expose minimized state, got ${icons[0].state_label}`);
+  assert(icons[0].aria_label === "恢复文件窗口：notes.md", `Minimized desktop icon should be a restore action, got ${icons[0].aria_label}`);
+  assert(icons[1].file_kind_label === "图像", `Image desktop icon should expose image kind, got ${icons[1].file_kind_label}`);
   assert(!icons.some((item) => item.label === "preview"), "Desktop should not render synthetic preview artifact icons");
 }
 
@@ -810,7 +809,7 @@ function verify_stage_window_position_model() {
     background_code,
     "running",
   );
-  assert(code_position.includes("left-[3%]"), `Background Code should collapse into the left Stage Manager strip, got ${code_position}`);
+  assert(code_position.includes("left-[2.5%]"), `Background Code should collapse into the left Stage Manager strip, got ${code_position}`);
   assert(is_stage_manager_background_window(background_code, "running"), "Running background windows should render as Stage Manager thumbnails");
 
   const browser_position = position_for_window(
@@ -818,19 +817,19 @@ function verify_stage_window_position_model() {
     "running",
     2,
   );
-  assert(browser_position.includes("top-[45%]"), `Background Safari should use a distinct Stage Manager slot, got ${browser_position}`);
+  assert(browser_position.includes("top-[41%]"), `Background Safari should use a distinct Stage Manager slot, got ${browser_position}`);
 
   const terminal_position = position_for_window(
     { ...mock_stage_window({ id: "terminal", kind: "terminal", phase: "focused" }), layout: "terminal" },
     "running",
   );
-  assert(terminal_position.includes("w-[70%]"), `Focused terminal should own the main desktop area, got ${terminal_position}`);
+  assert(terminal_position.includes("w-[75%]"), `Focused terminal should own the main desktop area, got ${terminal_position}`);
 
   const focused_code_position = position_for_window(
     mock_stage_window({ id: "code-focused", kind: "code_editor", phase: "focused" }),
     "running",
   );
-  assert(focused_code_position.includes("w-[74%]"), `Focused Code should own the main desktop area, got ${focused_code_position}`);
+  assert(focused_code_position.includes("w-[80%]"), `Focused Code should own the main desktop area, got ${focused_code_position}`);
 
   assert(is_stage_manager_background_window(background_code, "completed"), "Completed review should keep prior windows as Stage Manager thumbnails instead of crowding the desktop");
   assert(is_stage_manager_background_window(

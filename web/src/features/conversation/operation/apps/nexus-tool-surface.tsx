@@ -41,14 +41,14 @@ export function NexusToolSurface({
   const output_lines = session.output_text.split("\n").filter(Boolean);
 
   return (
-    <div className="grid h-full min-h-[320px] min-w-0 grid-cols-[168px_minmax(0,1fr)] overflow-hidden bg-[#f6f8fb] max-md:grid-cols-1">
-      <aside className="soft-scrollbar min-h-0 border-r border-(--divider-subtle-color) bg-[#edf2f7]/82 p-2 max-md:hidden">
+    <div className="grid h-full min-h-[320px] min-w-0 grid-cols-[154px_minmax(0,1fr)] overflow-hidden bg-[#f3f5f8] max-md:grid-cols-1">
+      <aside className="soft-scrollbar min-h-0 border-r border-(--divider-subtle-color) bg-[#e9edf3]/86 p-2 max-md:hidden">
         <div className="flex items-center gap-2 px-2 py-2">
           <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[9px] border border-white/72 bg-white/70 text-[color:var(--primary)] shadow-[0_8px_20px_rgba(18,28,42,0.06)]">
             <Settings2 className="h-4 w-4" />
           </span>
           <div className="min-w-0">
-            <p className="truncate text-[12px] font-black text-(--text-strong)">Nexus · {session.app_intent.app_label}</p>
+            <p className="truncate text-[12px] font-black text-(--text-strong)">{session.app_intent.app_label}</p>
             <p className="truncate text-[10px] text-(--text-soft)">{session.app_intent.detail_label}</p>
           </div>
         </div>
@@ -96,7 +96,7 @@ export function NexusToolSurface({
         <div className="grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)_auto]">
           <div className="border-b border-(--divider-subtle-color) bg-white/42 px-4 py-3">
             <section className="min-w-0">
-              <PaneTitle icon={FileText} title="请求" subtitle={event.summary ?? "工具输入"} />
+              <PaneTitle icon={FileText} title="输入" subtitle={event.summary ?? "工具输入"} />
               <div className="mt-3 overflow-hidden rounded-[10px] border border-(--divider-subtle-color) bg-white/72">
                 {session.input_rows.length ? session.input_rows.map((row) => (
                   <div className="grid min-w-0 grid-cols-[88px_minmax(0,1fr)] border-b border-(--divider-subtle-color) text-[10px] last:border-b-0" key={row.key}>
@@ -111,7 +111,7 @@ export function NexusToolSurface({
           </div>
 
           <section className="soft-scrollbar min-h-0 overflow-auto bg-[#fbfcfe] p-4">
-            <PaneTitle icon={RadioTower} title="响应" subtitle="工具输出" />
+            <PaneTitle icon={RadioTower} title="输出" subtitle="工具响应" />
             <pre className="mt-3 min-h-[180px] overflow-auto whitespace-pre-wrap break-words rounded-[10px] border border-(--divider-subtle-color) bg-[#111820] px-3 py-2 font-mono text-[11px] leading-5 text-[#dbe7ee]">
               {session.output_text}
             </pre>
@@ -119,7 +119,7 @@ export function NexusToolSurface({
 
           <footer className="border-t border-(--divider-subtle-color) bg-white/72 px-3 py-2">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-[10px] font-black uppercase tracking-[0.12em] text-(--text-soft)">Events</p>
+              <p className="text-[10px] font-black tracking-normal text-(--text-soft)">运行记录</p>
               <p className="text-[10px] font-semibold text-(--text-soft)">{output_lines.length || 1} 行输出</p>
             </div>
             <div className="mt-1.5 grid max-h-[72px] gap-1 overflow-auto">

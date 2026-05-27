@@ -86,7 +86,7 @@ export function StageWindowDock({
   const active_app_label = active_window ? stage_app_label_for_window_kind(active_window.kind) : "Nexus";
 
   return (
-    <div className="absolute inset-x-4 bottom-3 z-30 flex justify-center max-md:relative max-md:inset-x-auto max-md:bottom-auto max-md:mt-3">
+    <div className="absolute inset-x-4 bottom-5 z-30 flex justify-center max-md:relative max-md:inset-x-auto max-md:bottom-auto max-md:mt-3">
       <div className="flex max-w-full flex-col items-center gap-1.5">
         <div className="operation-window-dock soft-scrollbar flex max-w-full items-end gap-1 overflow-x-auto rounded-[22px] border border-white/66 bg-[rgba(255,255,255,0.50)] px-1.5 py-1 shadow-[0_18px_44px_rgba(18,28,42,0.14),inset_0_1px_0_rgba(255,255,255,0.76)] backdrop-blur-2xl">
           <button
