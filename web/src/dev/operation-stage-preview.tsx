@@ -150,6 +150,35 @@ const generic_tool_followup_event: NexusOperationEvent = {
   updated_at: now - 5_900,
 };
 
+const web_search_event: NexusOperationEvent = {
+  agent_id,
+  evidence: [
+    { type: "url", label: "搜索", value: "nexus mac desktop stage" },
+    { type: "status", label: "结果", value: "3 条网页摘要" },
+  ],
+  id: "tool-web-search",
+  kind: "web_research",
+  message_id: "message-assistant",
+  phase: "done",
+  round_id,
+  session_key,
+  surface: "web",
+  target: "nexus mac desktop stage",
+  title: "搜索桌面交互参考",
+  tool_name: "web_search",
+  tool_use_id: "tool-web-search",
+  input_preview: {
+    query: "nexus mac desktop stage",
+  },
+  result_preview: [
+    "https://developer.apple.com/design/human-interface-guidelines/windows",
+    "macOS window layouts emphasize one focused task with persistent toolbar controls.",
+    "Stage Manager keeps recent app windows as compact previews on the side.",
+  ],
+  summary: "搜索 macOS 窗口、Stage Manager 和应用工具栏的交互参考。",
+  updated_at: now - 5_700,
+};
+
 const open_event: NexusOperationEvent = {
   agent_id,
   evidence: [
@@ -241,6 +270,7 @@ const PREVIEW_STEPS = [
   { id: "idle", label: "空桌面", event: live_event, events: [live_event] },
   { id: "write", label: "创建文件", event: write_event, events: [live_event, write_event] },
   { id: "tool", label: "工具窗口", event: generic_tool_followup_event, events: [live_event, generic_tool_event, generic_tool_followup_event] },
+  { id: "search", label: "浏览搜索", event: web_search_event, events: [live_event, web_search_event] },
   { id: "permission", label: "权限确认", event: permission_event, events: [live_event, write_event, permission_event] },
   { id: "open", label: "打开预览", event: open_event, events: [live_event, write_event, open_event] },
   { id: "done", label: "完成收束", event: summary_event, events: [live_event, write_event, open_event, summary_event] },

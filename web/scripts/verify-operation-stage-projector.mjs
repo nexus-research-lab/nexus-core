@@ -1751,19 +1751,23 @@ function verify_browser_fallback_builds_search_results(now) {
     event,
     query: "nexus stage mac desktop",
     lines: [
+      "[",
       "https://example.com/stage",
+      "\"https://developer.apple.com/design/human-interface-guidelines/windows\",",
       "[Nexus Desktop](https://nexus.example.com/desktop) Window design notes",
       "Local summary without a URL",
+      "]",
     ],
   });
 
-  assert(items.length === 3, `browser fallback should keep search result rows, got ${items.length}`);
+  assert(items.length === 4, `browser fallback should keep search result rows without JSON wrapper rows, got ${items.length}`);
   assert(items[0].url === "https://example.com/stage", `plain URL result should preserve URL, got ${items[0].url}`);
   assert(items[0].title.includes("example.com"), `plain URL result should derive readable title, got ${items[0].title}`);
-  assert(items[1].title === "Nexus Desktop", `markdown link result should preserve title, got ${items[1].title}`);
-  assert(items[1].url === "https://nexus.example.com/desktop", `markdown link result should preserve URL, got ${items[1].url}`);
-  assert(items[2].url.startsWith("nexus-search://"), `plain text result should become a local search row, got ${items[2].url}`);
-  assert(items[2].snippet === "Local summary without a URL", `plain text result should preserve snippet, got ${items[2].snippet}`);
+  assert(items[1].url === "https://developer.apple.com/design/human-interface-guidelines/windows", `quoted URL result should be cleaned, got ${items[1].url}`);
+  assert(items[2].title === "Nexus Desktop", `markdown link result should preserve title, got ${items[2].title}`);
+  assert(items[2].url === "https://nexus.example.com/desktop", `markdown link result should preserve URL, got ${items[2].url}`);
+  assert(items[3].url.startsWith("nexus-search://"), `plain text result should become a local search row, got ${items[3].url}`);
+  assert(items[3].snippet === "Local summary without a URL", `plain text result should preserve snippet, got ${items[3].snippet}`);
 }
 
 function verify_browser_session_view(now) {

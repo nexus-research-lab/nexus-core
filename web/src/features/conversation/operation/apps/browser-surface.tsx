@@ -2,6 +2,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
+  BookOpen,
   ExternalLink,
   Globe2,
   Loader2,
@@ -228,36 +229,63 @@ function BrowserSearchResults({
   return (
     <div className="soft-scrollbar min-h-0 flex-1 overflow-auto bg-[radial-gradient(70%_42%_at_50%_0%,rgba(91,114,255,0.055),transparent_70%),#fbfcfe]">
       <div className="min-h-full px-6 py-6">
-        <div className="mx-auto max-w-[820px]">
-          <div className="mb-5">
-            <div className="flex min-w-0 items-center gap-2 rounded-[18px] border border-(--divider-subtle-color) bg-white px-4 py-3 text-[13px] text-(--text-strong) shadow-[0_16px_42px_rgba(18,28,42,0.08),inset_0_1px_0_rgba(255,255,255,0.82)]">
+        <div className="mx-auto max-w-[860px]">
+          <div className="mb-5 text-center">
+            <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-[18px] bg-white/82 text-[color:var(--primary)] shadow-[0_18px_42px_rgba(18,28,42,0.10),inset_0_1px_0_rgba(255,255,255,0.84)]">
+              <Globe2 className="h-6 w-6" />
+            </div>
+            <div className="mx-auto flex max-w-[640px] min-w-0 items-center gap-2 rounded-[18px] border border-(--divider-subtle-color) bg-white px-4 py-3 text-[13px] text-(--text-strong) shadow-[0_16px_42px_rgba(18,28,42,0.08),inset_0_1px_0_rgba(255,255,255,0.82)]">
               <Search className="h-4 w-4 shrink-0 text-(--icon-muted)" />
               <span className="min-w-0 flex-1 truncate">{query}</span>
               {event.phase === "running" ? <Loader2 className="h-4 w-4 shrink-0 animate-spin text-[color:var(--primary)]" /> : null}
             </div>
             <p className="mt-3 text-[11px] text-(--text-soft)">
-              Safari 搜索 · {PHASE_LABEL[event.phase]} · {result_items.length} 条结果 · {format_browser_origin(query)}
+              Safari 搜索 · {PHASE_LABEL[event.phase]} · {result_items.length} 条结果
             </p>
             {event.phase === "running" ? (
-              <div className="operation-web-loading mt-3 h-1.5 overflow-hidden rounded-full bg-[rgba(91,114,255,0.10)]" />
+              <div className="operation-web-loading mx-auto mt-3 h-1.5 max-w-[420px] overflow-hidden rounded-full bg-[rgba(91,114,255,0.10)]" />
             ) : null}
           </div>
-          <div className="space-y-3">
+
+          <div className="mb-3 grid grid-cols-3 gap-2 max-md:grid-cols-1">
+            <SafariSummaryTile label="来源" value={format_browser_origin(query)} />
+            <SafariSummaryTile label="状态" value={PHASE_LABEL[event.phase]} />
+            <SafariSummaryTile label="记录" value={`${result_items.length} 条`} />
+          </div>
+
+          <div className="overflow-hidden rounded-[16px] border border-(--divider-subtle-color) bg-white/74 shadow-[0_18px_54px_rgba(18,28,42,0.075)]">
+            <div className="grid grid-cols-[22px_minmax(0,1fr)_auto] items-center gap-2 border-b border-(--divider-subtle-color) bg-[#f4f6fa] px-4 py-2 text-[10px] font-black text-(--text-soft)">
+              <BookOpen className="h-3.5 w-3.5" />
+              <span>搜索结果</span>
+              <span>Safari</span>
+            </div>
             {result_items.map((item) => (
               <article
-                className="rounded-[16px] border border-(--divider-subtle-color) bg-white/84 px-4 py-3 shadow-[0_12px_34px_rgba(18,28,42,0.055)]"
+                className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 border-b border-(--divider-subtle-color) px-4 py-3 last:border-b-0"
                 key={`${item.url}:${item.title}`}
               >
-                <p className="truncate text-[11px] font-semibold text-[color:var(--success)]">{item.url}</p>
-                <h3 className="mt-1 line-clamp-2 text-[14px] font-black tracking-[-0.02em] text-(--text-strong)">
-                  {item.title}
-                </h3>
-                <p className="mt-1.5 line-clamp-3 text-[12px] leading-5 text-(--text-default)">{item.snippet}</p>
+                <div className="min-w-0">
+                  <p className="truncate text-[11px] font-semibold text-[color:var(--success)]">{item.url}</p>
+                  <h3 className="mt-1 line-clamp-2 text-[14px] font-black tracking-normal text-(--text-strong)">
+                    {item.title}
+                  </h3>
+                  <p className="mt-1.5 line-clamp-2 text-[12px] leading-5 text-(--text-default)">{item.snippet}</p>
+                </div>
+                <ExternalLink className="mt-1 h-4 w-4 shrink-0 text-(--icon-muted)" />
               </article>
             ))}
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SafariSummaryTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[12px] border border-(--divider-subtle-color) bg-white/66 px-3 py-2 text-left shadow-[0_10px_26px_rgba(18,28,42,0.045)]">
+      <p className="text-[9px] font-black text-(--text-soft)">{label}</p>
+      <p className="mt-0.5 truncate text-[11px] font-black text-(--text-strong)">{value}</p>
     </div>
   );
 }

@@ -22,9 +22,22 @@ export function build_browser_result_items({
       : [event.summary ?? query];
 
   return source_lines
+    .map(clean_browser_result_line)
     .filter((line) => line.trim())
     .slice(0, 6)
     .map((line, index) => normalize_browser_result_line(line, query, index));
+}
+
+function clean_browser_result_line(line: string): string {
+  const trimmed = line.trim();
+  if (trimmed === "[" || trimmed === "]" || trimmed === "{" || trimmed === "}") {
+    return "";
+  }
+  return trimmed
+    .replace(/,$/, "")
+    .replace(/^["']/, "")
+    .replace(/["']$/, "")
+    .trim();
 }
 
 function normalize_browser_result_line(line: string, query: string, index: number): BrowserResultItem {
