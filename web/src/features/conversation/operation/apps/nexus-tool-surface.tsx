@@ -1,13 +1,15 @@
 import {
   CheckCircle2,
+  ChevronRight,
   CircleDot,
   Clock3,
   FileText,
-  GalleryVerticalEnd,
   ListTree,
   Play,
   RadioTower,
+  Search,
   Settings2,
+  Sparkles,
   Workflow,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -45,22 +47,29 @@ export function NexusToolSurface({
   const workflow_steps = build_workflow_steps(session);
 
   return (
-    <div className="grid h-full min-h-[320px] min-w-0 grid-cols-[168px_minmax(0,1fr)] overflow-hidden bg-[#f4f6fa] max-md:grid-cols-1">
-      <aside className="soft-scrollbar min-h-0 border-r border-(--divider-subtle-color) bg-[#eef2f7]/90 p-2 max-md:hidden">
-        <div className="flex items-center gap-2 rounded-[10px] bg-white/58 px-2 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[9px] border border-white/72 bg-white/78 text-[color:var(--primary)] shadow-[0_8px_20px_rgba(18,28,42,0.06)]">
-            <Workflow className="h-4 w-4" />
+    <div className="grid h-full min-h-[320px] min-w-0 grid-cols-[188px_minmax(0,1fr)] overflow-hidden bg-[#f5f6f8] text-(--text-default) max-md:grid-cols-1">
+      <aside className="soft-scrollbar min-h-0 overflow-auto border-r border-(--divider-subtle-color) bg-[#edf0f5]/92 p-2 max-md:hidden">
+        <div className="flex items-center gap-2 rounded-[10px] bg-white/64 px-2 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[9px] border border-white/72 bg-[rgba(91,114,255,0.12)] text-[color:var(--primary)] shadow-[0_8px_20px_rgba(18,28,42,0.06)]">
+            <Sparkles className="h-4 w-4" />
           </span>
           <div className="min-w-0">
-            <p className="truncate text-[12px] font-black text-(--text-strong)">{session.app_intent.app_label}</p>
-            <p className="truncate text-[10px] text-(--text-soft)">{session.app_intent.detail_label}</p>
+            <p className="truncate text-[12px] font-black text-(--text-strong)">快捷指令</p>
+            <p className="truncate text-[10px] text-(--text-soft)">{session.app_intent.group_label} · {session.tool_name}</p>
           </div>
         </div>
-        <div className="mt-2 space-y-0.5">
+
+        <div className="mt-2 flex items-center gap-1.5 rounded-[8px] bg-white/58 px-2 py-1.5 text-[10px] font-semibold text-(--text-soft)">
+          <Search className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">搜索动作</span>
+        </div>
+
+        <div className="mt-2 px-1 text-[9px] font-black uppercase tracking-[0.12em] text-(--text-soft)">动作库</div>
+        <div className="mt-1 space-y-0.5">
           {session.sidebar_items.map((item, index) => (
             <div
               className={cn(
-                "grid w-full min-w-0 grid-cols-[16px_minmax(0,1fr)] items-center gap-1.5 rounded-[7px] px-2 py-1.5 text-left text-[10px] transition",
+                "grid w-full min-w-0 grid-cols-[17px_minmax(0,1fr)_10px] items-center gap-1.5 rounded-[7px] px-2 py-1.5 text-left text-[10px] transition",
                 index === 0 ? "bg-white/86 text-(--text-strong) shadow-[inset_0_1px_0_rgba(255,255,255,0.74)]" : "text-(--text-muted) hover:bg-white/54",
               )}
               title={`${item.label}: ${item.value}`}
@@ -71,24 +80,25 @@ export function NexusToolSurface({
                 <span className="block truncate font-black">{item.label}</span>
                 <span className="block truncate font-semibold text-(--text-soft)">{item.value}</span>
               </span>
+              <ChevronRight className="h-3 w-3 text-(--icon-muted)" />
             </div>
           ))}
         </div>
       </aside>
 
       <section className="flex min-h-0 min-w-0 flex-col">
-        <header className="flex min-w-0 items-center justify-between gap-3 border-b border-(--divider-subtle-color) bg-white/72 px-4 py-2.5">
-          <div className="flex min-w-0 items-center gap-3">
+        <header className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-(--divider-subtle-color) bg-white/76 px-4 py-2.5">
+          <div className="flex min-w-0 items-center gap-2">
             <span className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[9px] border px-2.5 text-[11px] font-black ${ACTION_TONE_CLASS[profile.action]}`}>
               <ActionIcon className="h-4 w-4" />
               {profile.action_label}
             </span>
             <div className="min-w-0">
               <h3 className="truncate text-[14px] font-black tracking-normal text-(--text-strong)">
-                {session.tool_name}
+                {session.tool_name} 快捷指令
               </h3>
               <p className="mt-0.5 truncate text-[10px] font-semibold text-(--text-soft)">
-                {session.app_intent.group_label} · {session.display_target}
+                {session.app_intent.app_label} · {session.display_target}
               </p>
             </div>
           </div>
@@ -106,31 +116,36 @@ export function NexusToolSurface({
           </button>
         </header>
 
-        <div className="soft-scrollbar min-h-0 flex-1 overflow-auto bg-[linear-gradient(180deg,#fbfcfe_0%,#f1f4f8_100%)] px-5 py-4">
-          <section className="mx-auto max-w-[760px]">
-            <div className="mb-3 flex min-w-0 items-center justify-between gap-3">
-              <PaneTitle icon={GalleryVerticalEnd} title="工作流" subtitle={event.summary ?? session.display_target} />
-              <span className="shrink-0 rounded-full bg-white/70 px-2.5 py-1 text-[10px] font-black text-(--text-soft)">
-                {workflow_steps.length} 步
-              </span>
-            </div>
-
-            <div className="space-y-2.5">
+        <div className="soft-scrollbar min-h-0 flex-1 overflow-auto bg-[linear-gradient(180deg,#fbfcfe_0%,#eef2f7_100%)] px-5 py-4">
+          <section className="mx-auto max-w-[740px]">
+            <div className="rounded-[16px] border border-(--divider-subtle-color) bg-white/72 p-3 shadow-[0_18px_52px_rgba(18,28,42,0.08)]">
+              <div className="mb-3 flex min-w-0 items-center justify-between gap-3">
+                <PaneTitle icon={Workflow} title={session.app_intent.detail_label} subtitle={event.summary ?? session.display_target} />
+                <span className="shrink-0 rounded-full bg-[#eef2f7] px-2.5 py-1 text-[10px] font-black text-(--text-soft)">
+                  {workflow_steps.length} 个动作
+                </span>
+              </div>
               {workflow_steps.map((step, index) => (
-                <WorkflowStepCard
+                <ShortcutActionRow
+                  action_icon={ActionIcon}
+                  is_last={index === workflow_steps.length - 1}
                   index={index + 1}
                   key={step.id}
                   label={step.label}
+                  phase={PHASE_LABELS[event.phase]}
                   tone={step.tone}
                   value={step.value}
                 />
               ))}
             </div>
 
-            <div className="mt-4 overflow-hidden rounded-[13px] border border-(--divider-subtle-color) bg-[#111820] shadow-[0_18px_44px_rgba(18,28,42,0.16)]">
+            <div className="mt-3 overflow-hidden rounded-[13px] border border-[#1c2630]/12 bg-[#111820] shadow-[0_18px_44px_rgba(18,28,42,0.16)]">
               <div className="flex items-center justify-between gap-3 border-b border-white/10 px-3 py-2">
                 <PaneTitle compact icon={RadioTower} title="结果" subtitle={`${output_lines.length || 1} 行输出`} />
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#8de0ad]" />
+                <span className={cn(
+                  "h-1.5 w-1.5 shrink-0 rounded-full",
+                  event.phase === "running" ? "animate-pulse bg-[#8de0ad]" : "bg-[#8de0ad]",
+                )} />
               </div>
               <pre className="soft-scrollbar max-h-[180px] overflow-auto whitespace-pre-wrap break-words px-3 py-2 font-mono text-[11px] leading-5 text-[#dbe7ee]">
                 {session.output_text}
@@ -185,31 +200,48 @@ function build_workflow_steps(session: ReturnType<typeof build_nexus_tool_sessio
   ];
 }
 
-function WorkflowStepCard({
+function ShortcutActionRow({
+  action_icon: ActionIcon,
   index,
+  is_last,
   label,
+  phase,
   tone,
   value,
 }: {
+  action_icon: LucideIcon;
   index: number;
+  is_last: boolean;
   label: string;
+  phase: string;
   tone: "input" | "action";
   value: string;
 }) {
   return (
-    <div className="grid min-w-0 grid-cols-[32px_minmax(0,1fr)] items-start gap-3 rounded-[13px] border border-(--divider-subtle-color) bg-white/76 px-3 py-2.5 shadow-[0_12px_30px_rgba(18,28,42,0.055)]">
-      <span className={cn(
-        "grid h-8 w-8 place-items-center rounded-[10px] text-[12px] font-black",
-        tone === "action"
-          ? "bg-[rgba(91,114,255,0.13)] text-[color:var(--primary)]"
-          : "bg-[rgba(47,184,132,0.12)] text-[color:var(--success)]",
-      )}>
-        {index}
-      </span>
-      <span className="min-w-0">
-        <span className="block truncate text-[12px] font-black text-(--text-strong)">{label}</span>
-        <span className="mt-0.5 block break-words font-mono text-[10.5px] leading-5 text-(--text-soft)">{value}</span>
-      </span>
+    <div className="relative grid min-w-0 grid-cols-[38px_minmax(0,1fr)] gap-3">
+      <div className="relative flex justify-center">
+        {!is_last ? <span className="absolute bottom-[-10px] top-9 w-px bg-[rgba(145,157,173,0.28)]" /> : null}
+        <span className={cn(
+          "relative z-10 grid h-9 w-9 place-items-center rounded-[12px] text-[12px] font-black shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]",
+          tone === "action"
+            ? "bg-[rgba(91,114,255,0.14)] text-[color:var(--primary)]"
+            : "bg-[rgba(47,184,132,0.12)] text-[color:var(--success)]",
+        )}>
+          {tone === "action" ? <ActionIcon className="h-4 w-4" /> : index}
+        </span>
+      </div>
+      <div className="mb-2 min-w-0 rounded-[12px] border border-(--divider-subtle-color) bg-white/82 px-3 py-2 shadow-[0_10px_26px_rgba(18,28,42,0.045)]">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+          <p className="truncate text-[12px] font-black text-(--text-strong)">{label}</p>
+          <span className={cn(
+            "rounded-full px-2 py-0.5 text-[9px] font-black",
+            tone === "action" ? "bg-[rgba(91,114,255,0.11)] text-[color:var(--primary)]" : "bg-[#eef2f7] text-(--text-soft)",
+          )}>
+            {tone === "action" ? phase : "输入"}
+          </span>
+        </div>
+        <p className="mt-1 break-words font-mono text-[10.5px] leading-5 text-(--text-soft)">{value}</p>
+      </div>
     </div>
   );
 }
